@@ -1,38 +1,73 @@
-// In-memory token store for session management
-const tokenStore = new Map<string, { adminId: string; email: string; createdAt: Date }>();
+import type { NextAuthOptions } from "next-auth";
+import CredentialsProvider from "next-auth/providers/credentials";
+import { db } from "@/lib/db";
+import bcrypt from "bcryptjs";
+import { validateEnv } from "@/lib/env";
 
-export function createToken(adminId: string, email: string): string {
-  const token = `bf_${Date.now()}_${Math.random().toString(36).substring(2, 15)}`;
-  tokenStore.set(token, { adminId, email, createdAt: new Date() });
-  return token;
-}
+export const authOptions: NextAuthOptions = {
+  providers: [
+    CredentialsProvider({
+      name: "credentials",
+      credentials: {
+        email: { label: "Email", type: "email" },
+        password: { label: "Password", type: "password" },
+      },
+      async authorize(credentials) {
+        if (!credentials?.email || !credentials?.password) return null;
 
-export function validateToken(token: string): { adminId: string; email: string } | null {
-  const data = tokenStore.get(token);
-  if (!data) return null;
-  // Token expires after 24 hours
-  if (Date.now() - data.createdAt.getTime() > 24 * 60 * 60 * 1000) {
-    tokenStore.delete(token);
-    return null;
-  }
-  return { adminId: data.adminId, email: data.email };
-}
+        // Validate environment
+        const env = validateEnv();
 
-export function removeToken(token: string): void {
-  tokenStore.delete(token);
-}
+        const user = await db.user.findUnique({
+          where: { email: credentials.email.toLowerCase().trim() },
+          include: { organization: true },
+        });
 
-export function getTokenFromRequest(request: Request): string | null {
-  // Check Authorization header
-  const authHeader = request.headers.get('authorization');
-  if (authHeader?.startsWith('Bearer ')) {
-    return authHeader.substring(7);
-  }
-  // Check cookie
-  const cookieHeader = request.headers.get('cookie');
-  if (cookieHeader) {
-    const match = cookieHeader.match(/auth_token=([^;]+)/);
-    if (match) return match[1];
-  }
-  return null;
-}
+        if (!user || !user.password) return null;
+
+        const isValid = await bcrypt.compare(credentials.password, user.password);
+        if (!isValid) return null;
+
+        const membership = user.organization[0];
+        return {
+          id: user.id,
+          name: user.name,
+          email: user.email,
+          image: user.image,
+          role: user.role,
+          organizationId: membership?.organizationId,
+          organizationName: membership?.organization?.name,
+        } as any;
+      },
+    }),
+  ],
+  callbacks: {
+    async jwt({ token, user }) {
+      if (user) {
+        token.id = user.id;
+        token.role = (user as any).role;
+        token.organizationId = (user as any).organizationId;
+        token.organizationName = (user as any).organizationName;
+      }
+      return token;
+    },
+    async session({ session, token }) {
+      if (session.user) {
+        (session.user as any).id = token.id;
+        (session.user as any).role = token.role;
+        (session.user as any).organizationId = token.organizationId;
+        (session.user as any).organizationName = token.organizationName;
+      }
+      return session;
+    },
+  },
+  pages: {
+    signIn: "/",
+  },
+  session: {
+    strategy: "jwt",
+    maxAge: 30 * 24 * 60 * 60, // 30 days
+  },
+  // No fallback secret — NEXTAUTH_SECRET is required
+  secret: process.env.NEXTAUTH_SECRET,
+};

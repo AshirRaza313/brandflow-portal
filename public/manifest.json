@@ -1,0 +1,14 @@
+{
+  "name": "BrandFlow Portal",
+  "short_name": "BrandFlow",
+  "description": "All-in-one brand management platform",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#0a0a0f",
+  "theme_color": "#d97706",
+  "orientation": "any",
+  "icons": [
+    { "src": "/brandflow-icon-32.png", "sizes": "32x32", "type": "image/png" },
+    { "src": "/brandflow-icon-32.png", "sizes": "192x192", "type": "image/png", "purpose": "any maskable" }
+  ]
+}

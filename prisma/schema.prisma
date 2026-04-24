@@ -2,117 +2,498 @@ generator client {
   provider = "prisma-client-js"
 }
 
+// ── Dev: SQLite (production uses PostgreSQL/Supabase) ──
+
 datasource db {
   provider = "sqlite"
   url      = env("DATABASE_URL")
 }
 
-model Admin {
-  id        String   @id @default(cuid())
-  name      String
-  email     String   @unique
-  pin       String
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String?
+  access_token      String?
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String?
+  session_state     String?
+  user              User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
 }
 
-model Client {
-  id        String   @id @default(cuid())
-  name      String
-  email     String   @unique
-  phone     String?
-  company   String?
-  address   String?
-  status    String   @default("active")
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  subscriptions Subscription[]
-  invoices    Invoice[]
-  orders      Order[]
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
-model Plan {
-  id          String   @id @default(cuid())
-  name        String
-  price       Float
-  features    String
-  duration    Int      @default(30)
-  status      String   @default("active")
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
 
-  subscriptions Subscription[]
+  @@unique([identifier, token])
 }
 
-model Subscription {
-  id        String   @id @default(cuid())
-  clientId  String
-  planId    String
-  startDate DateTime @default(now())
-  endDate   DateTime
-  status    String   @default("active")
-  amount    Float
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+model User {
+  id            String    @id @default(cuid())
+  name          String
+  email         String    @unique
+  emailVerified DateTime?
+  password      String?
+  image         String?
+  role          String    @default("owner")
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  accounts      Account[]
+  sessions      Session[]
+  organization  OrganizationMember[]
+  attendance    Attendance[]
+  sentInvitations TeamInvitation[] @relation("Inviter")
+  notifications  Notification[]
 
-  client    Client  @relation(fields: [clientId], references: [id])
-  plan      Plan    @relation(fields: [planId], references: [id])
-  invoices  Invoice[]
+  @@index([role])
 }
 
-model Invoice {
+model Organization {
+  id            String   @id @default(cuid())
+  name          String
+  slug          String   @unique
+  logo          String?           // Base64 or URL
+  website       String?
+  phone         String?
+  email         String?
+  currency      String   @default("USD")
+  timezone      String   @default("UTC")
+  plan          String   @default("starter")
+  workingHoursStart String @default("09:00")  // e.g. "09:00"
+  workingHoursEnd   String @default("18:00")  // e.g. "18:00"
+  isActive      Boolean  @default(true)
+  // ── Brand Settings (persisted to DB) ──
+  country       String?
+  religion      String?
+  brandTagline  String?
+  brandColor    String?              // Primary brand color hex
+  secondaryBrandColor String?        // Secondary brand color hex
+  brandDescription String?
+  address       String?
+  taxId         String?
+  favicon       String?              // Base64 or URL
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  members       OrganizationMember[]
+  invitations    TeamInvitation[]
+  products      Product[]
+  orders        Order[]
+  customers     Customer[]
+  expenses      Expense[]
+  coupons       Coupon[]
+  teamTasks     TeamTask[]
+  subscription  Subscription?
+  notifications  Notification[]
+  paymentProofs PaymentProof[]
+  invoices      Invoice[]
+  // ── Billing Security ──
+  paymentRejectionCount Int @default(0)  // Track fake payment rejections
+  isBanned              Boolean @default(false)
+  banReason             String?
+  bannedAt              DateTime?
+
+  @@index([plan])
+  @@index([isActive])
+}
+
+model OrganizationMember {
   id             String   @id @default(cuid())
-  invoiceNumber  String   @unique
-  clientId       String
-  subscriptionId String?
-  amount         Float
-  tax            Float    @default(0)
-  total          Float
-  status         String   @default("paid")
-  dueDate        DateTime
-  paidDate       DateTime?
-  notes          String?
-  createdAt      DateTime @default(now())
-  updatedAt      DateTime @updatedAt
+  organizationId String
+  userId         String
+  role           String   @default("member")
+  roleId         String?
+  pin             String?            // Team member login PIN (6-digit, bcrypt hashed)
+  pinCreatedAt    DateTime?          // When PIN was generated
+  absenceCount    Int      @default(0)   // Consecutive absences for penalty
+  penaltyUntil    DateTime?          // If penalized, access restricted until this date
+  joinedAt       DateTime @default(now())
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  user           User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  roleDef        Role?        @relation(fields: [roleId], references: [id])
 
-  client       Client       @relation(fields: [clientId], references: [id])
-  subscription Subscription? @relation(fields: [subscriptionId], references: [id])
+  @@unique([organizationId, userId])
+  @@index([organizationId, role])
 }
 
 model Product {
-  id        String   @id @default(cuid())
-  name      String
-  price     Float
-  category  String?
-  stock     Int      @default(0)
-  status    String   @default("active")
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id             String   @id @default(cuid())
+  organizationId String
+  name           String
+  description    String?
+  sku            String?
+  price          Float    @default(0)
+  costPrice      Float?
+  stock          Int      @default(0)
+  category       String?
+  status         String   @default("active")
+  imageUrl       String?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  orderItems     OrderItem[]
 
-  orderItems OrderItem[]
+  @@index([organizationId, status])
+  @@index([organizationId, category])
+  @@index([organizationId, createdAt])
+  @@index([organizationId, stock])
+}
+
+model Customer {
+  id             String   @id @default(cuid())
+  organizationId String
+  name           String
+  email          String?
+  phone          String?
+  city           String?
+  address        String?
+  loyaltyTier    String   @default("new")
+  totalSpent     Float    @default(0)
+  orderCount     Int      @default(0)
+  notes          String?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  orders         Order[]
+
+  @@index([organizationId, loyaltyTier])
+  @@index([organizationId, totalSpent])
+  @@index([organizationId, createdAt])
 }
 
 model Order {
-  id        String   @id @default(cuid())
-  clientId  String
-  total     Float
-  status    String   @default("completed")
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id             String   @id @default(cuid())
+  orderNumber    String
+  organizationId String
+  customerId     String?
+  status         String   @default("pending")
+  subtotal       Float    @default(0)
+  discount       Float    @default(0)
+  total          Float    @default(0)
+  channel        String   @default("manual")
+  courier        String?
+  trackingNumber String?
+  notes          String?
+  priority       Int      @default(50)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  customer       Customer?  @relation(fields: [customerId], references: [id], onDelete: SetNull)
+  items          OrderItem[]
 
-  client     Client      @relation(fields: [clientId], references: [id])
-  orderItems OrderItem[]
+  @@index([organizationId, status])
+  @@index([organizationId, createdAt])
+  @@index([organizationId, customerId])
+  @@index([channel])
+  @@index([orderNumber])
 }
 
 model OrderItem {
-  id        String  @id @default(cuid())
-  orderId   String
-  productId String
-  quantity  Int
-  price     Float
-  total     Float
+  id          String   @id @default(cuid())
+  orderId     String
+  productId   String
+  productName String
+  quantity    Int
+  price       Float
+  total       Float
+  order       Order   @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  product     Product @relation(fields: [productId], references: [id])
 
-  order   Order   @relation(fields: [orderId], references: [id])
-  product Product @relation(fields: [productId], references: [id])
+  @@index([orderId])
+  @@index([productId])
+}
+
+model Expense {
+  id             String   @id @default(cuid())
+  organizationId String
+  title          String
+  amount         Float
+  category       String
+  date           DateTime
+  description    String?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  @@index([organizationId, date])
+  @@index([organizationId, category])
+}
+
+model Coupon {
+  id             String   @id @default(cuid())
+  organizationId String
+  code           String
+  type           String   @default("percentage")
+  value          Float
+  minOrder       Float?
+  usageLimit     Int?
+  usageCount     Int      @default(0)
+  expiresAt      DateTime?
+  isActive       Boolean  @default(true)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  @@index([organizationId, isActive])
+  @@index([organizationId, expiresAt])
+}
+
+model TeamTask {
+  id             String   @id @default(cuid())
+  organizationId String
+  assignedTo     String?
+  title          String
+  description    String?
+  status         String   @default("todo")
+  priority       String   @default("medium")
+  dueDate        DateTime?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  @@index([organizationId, status])
+  @@index([organizationId, priority])
+  @@index([assignedTo])
+  @@index([organizationId, dueDate])
+}
+
+model Attendance {
+  id             String   @id @default(cuid())
+  userId         String
+  organizationId String
+  date           DateTime
+  clockIn        DateTime?
+  clockOut       DateTime?
+  totalHours     Float?
+  status         String   @default("present")
+  lateReason     String?            // Required if clocked in late
+  leaveReason    String?            // Required if on leave
+  markedBy       String?            // "self" or "admin"
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+  user           User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, organizationId, date])
+  @@index([organizationId, date])
+  @@index([organizationId, status])
+  @@index([userId, date])
+}
+
+// ── Subscription Plans ──
+model SubscriptionPlan {
+  id           String   @id @default(cuid())
+  name         String   @unique
+  price        Float
+  annualPrice  Float    @default(0)       // Annual pricing (0 = no annual discount)
+  period       String   @default("monthly")
+  features     String   @default("[]")
+  teamLimit    Int      @default(3)
+  orderLimit   Int      @default(100)
+  productLimit Int      @default(50)
+  isActive     Boolean  @default(true)
+  trialDays    Int      @default(14)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+  subscriptions Subscription[]
+}
+
+// ── Organization Subscription ──
+model Subscription {
+  id               String   @id @default(cuid())
+  organizationId   String   @unique
+  planId           String
+  status           String   @default("trial")  // trial, active, pending_payment, expired, cancelled
+  billingCycle     String   @default("monthly")  // monthly, annually
+  trialStartsAt    DateTime @default(now())
+  trialEndsAt      DateTime
+  currentPeriodEnd DateTime?
+  // ── Renewal Reminder Tracking ──
+  lastReminderAt   DateTime?
+  reminderCount    Int      @default(0)
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+  organization     Organization     @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  plan             SubscriptionPlan @relation(fields: [planId], references: [id])
+  payments         PaymentProof[]
+
+  @@index([status])
+}
+
+// ── Invoices (PDF trackable records) ──
+model Invoice {
+  id              String   @id @default(cuid())
+  invoiceNumber   String   @unique
+  organizationId  String
+  subscriptionId  String?
+  paymentProofId  String?
+  planName        String
+  amount          Float
+  billingCycle    String   @default("monthly")
+  status          String   @default("pending")  // pending, paid, approved, cancelled, refunded
+  type            String   @default("subscription")  // subscription, order, custom
+  currencyCode    String   @default("PKR")
+  currencySymbol  String   @default("Rs.")
+  issuedAt        DateTime @default(now())
+  dueDate         DateTime?
+  paidAt          DateTime?
+  periodStart     DateTime?
+  periodEnd       DateTime?
+  notes           String?
+  pdfUrl          String?              // stored PDF path if generated
+  orgName         String?
+  orgEmail        String?
+  orgPhone        String?
+  orgAddress      String?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  organization    Organization  @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  @@index([organizationId])
+  @@index([status])
+  @@index([invoiceNumber])
+}
+
+// ── Payment Proofs ──
+model PaymentProof {
+  id              String    @id @default(cuid())
+  subscriptionId  String
+  organizationId  String
+  planId          String?              // FK to SubscriptionPlan (for robustness)
+  planName        String
+  amount          Float
+  billingCycle    String    @default("monthly")  // monthly, annually
+  transactionId   String    // app-level uniqueness enforced in payment route transaction
+  paymentMethod   String    @default("bank_transfer")
+  screenshotUrl   String?
+  status          String    @default("pending")
+  adminNote       String?
+  reviewedBy      String?
+  reviewedAt      DateTime?
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+  subscription    Subscription @relation(fields: [subscriptionId], references: [id], onDelete: Cascade)
+  organization    Organization @relation(fields: [organizationId], references: [id])
+  @@index([organizationId])
+  @@index([status])
+}
+
+// ── Notification (Push + In-App) ──
+model Notification {
+  id          String   @id @default(cuid())
+  orgId       String?
+  userId      String?
+  title       String
+  message     String
+  type        String   @default("info")  // info, success, warning, error, order, team, marketing
+  actionUrl   String?                       // optional link to navigate to
+  icon        String?                       // optional icon name
+  read        Boolean  @default(false)
+  createdAt   DateTime @default(now())
+
+  organization Organization? @relation(fields: [orgId], references: [id])
+  user        User?            @relation(fields: [userId], references: [id])
+
+  @@index([userId])
+  @@index([orgId])
+  @@index([read])
+  @@index([type])
+  @@index([createdAt])
+}
+
+// ── Admin Settings (Platform Owner) ──
+model PlatformSettings {
+  id              String   @id @default(cuid())
+  companyName     String   @default("BrandFlow")
+  companyEmail    String
+  companyPhone    String?
+  companyWebsite  String?
+  companyAddress  String?
+  supportHours    String   @default("Mon-Fri: 9AM-6PM PKT")
+  whatsappNumber  String?
+  instagramUrl    String?
+  facebookUrl     String?
+  twitterUrl      String?
+  paymentMethods  String   @default("[]")
+  currency        String   @default("PKR")
+  logoUrl         String?
+  faviconUrl      String?
+  primaryBrandColor String  @default("#059669")
+  secondaryBrandColor String @default("#d97706")
+  currencySymbol  String   @default("Rs.")
+  customCss       String   @default("")
+  tagline         String   @default("Pakistan's #1 Brand Management Portal")
+  emailFooterText String?
+  invoiceHeaderText String?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+}
+
+// ── Role Definitions ──
+model Role {
+  id          String   @id @default(cuid())
+  name        String   @unique
+  label       String
+  description String?
+  permissions String   @default("{}")
+  level       Int      @default(0)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  members     OrganizationMember[]
+}
+
+// ── Team Invitations ──
+model TeamInvitation {
+  id             String   @id @default(cuid())
+  organizationId String
+  inviterId      String
+  inviteeEmail   String
+  inviteeName    String
+  role           String   @default("member")
+  roleId         String?
+  pin            String   // 6-digit login PIN (bcrypt hashed)
+  status         String   @default("pending") // pending, accepted, expired, revoked
+  invitedAt      DateTime @default(now())
+  acceptedAt     DateTime?
+  expiresAt      DateTime
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  inviter        User         @relation("Inviter", fields: [inviterId], references: [id])
+
+  @@index([organizationId])
+  @@index([inviteeEmail])
+  @@index([status])
+}
+
+// ── System Settings (Key-Value Store) ──
+model SystemSetting {
+  id        String   @id @default(cuid())
+  key       String   @unique
+  value     String
+  category  String   @default("system")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+// ── Legal Page Content ──
+model LegalPage {
+  id        String   @id @default(cuid())
+  slug      String   @unique
+  title     String
+  content   String   @default("")
+  isActive  Boolean  @default(true)
+  updatedAt DateTime @updatedAt
+  createdAt DateTime @default(now())
 }

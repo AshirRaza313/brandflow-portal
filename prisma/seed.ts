@@ -1,416 +1,295 @@
 import { PrismaClient } from '@prisma/client';
-import { hash } from 'bcryptjs';
-import { v4 as uuidv4 } from 'uuid';
+import bcrypt from 'bcryptjs';
 
 const db = new PrismaClient();
 
-async function main() {
-  console.log('Seeding database...');
+async function seed() {
+  console.log('🌱 Seeding database...');
 
-  // Clean existing data
-  await db.orderItem.deleteMany();
-  await db.order.deleteMany();
-  await db.invoice.deleteMany();
-  await db.subscription.deleteMany();
-  await db.product.deleteMany();
-  await db.client.deleteMany();
-  await db.plan.deleteMany();
-  await db.admin.deleteMany();
-
-  // Create admin
-  const hashedPin = await hash('1234', 10);
-  await db.admin.create({
+  // 1. Create platform settings
+  const settings = await db.platformSettings.create({
     data: {
-      id: 'admin_001',
-      name: 'Admin User',
-      email: 'admin@brandflow.com',
-      pin: hashedPin,
+      companyName: 'BrandFlow',
+      companyEmail: 'support@brandflow.com',
+      companyPhone: '+92-300-1234567',
+      companyWebsite: 'https://brandflow-portal.vercel.app',
+      companyAddress: 'Lahore, Pakistan',
+      supportHours: 'Mon-Fri: 9AM-6PM PKT',
+      whatsappNumber: '+923001234567',
+      instagramUrl: '@brandflow',
+      facebookUrl: 'brandflow',
+      twitterUrl: '@brandflow',
+      paymentMethods: JSON.stringify(['Bank Transfer', 'JazzCash', 'EasyPaisa', 'Credit Card']),
+      currency: 'PKR',
+      primaryBrandColor: '#059669',
+      secondaryBrandColor: '#d97706',
+      currencySymbol: 'Rs.',
+      tagline: "Pakistan's #1 Brand Management Portal",
     },
   });
-  console.log('✓ Admin created');
+  console.log('✅ Platform settings created');
 
-  // Create plans
-  const plans = await Promise.all([
-    db.plan.create({
-      data: {
-        id: 'plan_001',
-        name: 'Starter',
-        price: 29,
-        features: JSON.stringify(['5 Brands', 'Basic Analytics', 'Email Support', '1 GB Storage']),
-        duration: 30,
-        status: 'active',
-      },
-    }),
-    db.plan.create({
-      data: {
-        id: 'plan_002',
-        name: 'Professional',
-        price: 79,
-        features: JSON.stringify(['25 Brands', 'Advanced Analytics', 'Priority Support', '10 GB Storage', 'Custom Reports']),
-        duration: 30,
-        status: 'active',
-      },
-    }),
-    db.plan.create({
-      data: {
-        id: 'plan_003',
-        name: 'Enterprise',
-        price: 199,
-        features: JSON.stringify(['Unlimited Brands', 'Full Analytics Suite', '24/7 Support', '100 GB Storage', 'Custom Reports', 'API Access', 'White Label']),
-        duration: 30,
-        status: 'active',
-      },
-    }),
-  ]);
-  console.log('✓ Plans created');
+  // 2. Create subscription plans
+  const starter = await db.subscriptionPlan.create({
+    data: {
+      name: 'Starter',
+      price: 0,
+      annualPrice: 0,
+      features: JSON.stringify(['5 Products', '50 Orders/month', 'Basic Reports', 'Email Support', '1 Team Member']),
+      teamLimit: 1,
+      orderLimit: 50,
+      productLimit: 5,
+      trialDays: 14,
+      isActive: true,
+    },
+  });
 
-  // Create clients
-  const clients = await Promise.all([
-    db.client.create({
-      data: {
-        id: 'client_001',
-        name: 'Acme Corporation',
-        email: 'contact@acme.com',
-        phone: '+1-555-0101',
-        company: 'Acme Corp',
-        address: '123 Business Ave, New York, NY 10001',
-        status: 'active',
-      },
-    }),
-    db.client.create({
-      data: {
-        id: 'client_002',
-        name: 'TechVentures Inc.',
-        email: 'info@techventures.io',
-        phone: '+1-555-0102',
-        company: 'TechVentures',
-        address: '456 Tech Blvd, San Francisco, CA 94105',
-        status: 'active',
-      },
-    }),
-    db.client.create({
-      data: {
-        id: 'client_003',
-        name: 'GreenLeaf Organics',
-        email: 'hello@greenleaf.co',
-        phone: '+1-555-0103',
-        company: 'GreenLeaf',
-        address: '789 Garden St, Portland, OR 97201',
-        status: 'active',
-      },
-    }),
-    db.client.create({
-      data: {
-        id: 'client_004',
-        name: 'Stellar Design Studio',
-        email: 'team@stellar.design',
-        phone: '+1-555-0104',
-        company: 'Stellar Design',
-        address: '321 Creative Way, Austin, TX 78701',
-        status: 'inactive',
-      },
-    }),
-    db.client.create({
-      data: {
-        id: 'client_005',
-        name: 'BlueWave Media',
-        email: 'ops@bluewave.media',
-        phone: '+1-555-0105',
-        company: 'BlueWave',
-        address: '654 Media Lane, Chicago, IL 60601',
-        status: 'active',
-      },
-    }),
-  ]);
-  console.log('✓ Clients created');
+  const growth = await db.subscriptionPlan.create({
+    data: {
+      name: 'Growth',
+      price: 2999,
+      annualPrice: 29990,
+      features: JSON.stringify(['50 Products', '500 Orders/month', 'Advanced Reports', 'Priority Support', '5 Team Members', 'Coupons & Discounts', 'Customer Loyalty', 'Marketing Tools']),
+      teamLimit: 5,
+      orderLimit: 500,
+      productLimit: 50,
+      trialDays: 14,
+      isActive: true,
+    },
+  });
 
-  // Create subscriptions
-  const now = new Date();
-  const subscriptions = await Promise.all([
-    db.subscription.create({
-      data: {
-        id: 'sub_001',
-        clientId: 'client_001',
-        planId: 'plan_003',
-        startDate: new Date(now.getFullYear(), now.getMonth() - 5, 1),
-        endDate: new Date(now.getFullYear(), now.getMonth() + 7, 1),
-        status: 'active',
-        amount: 199,
-      },
-    }),
-    db.subscription.create({
-      data: {
-        id: 'sub_002',
-        clientId: 'client_002',
-        planId: 'plan_002',
-        startDate: new Date(now.getFullYear(), now.getMonth() - 3, 15),
-        endDate: new Date(now.getFullYear(), now.getMonth() + 1, 15),
-        status: 'active',
-        amount: 79,
-      },
-    }),
-    db.subscription.create({
-      data: {
-        id: 'sub_003',
-        clientId: 'client_003',
-        planId: 'plan_001',
-        startDate: new Date(now.getFullYear(), now.getMonth() - 2, 1),
-        endDate: new Date(now.getFullYear(), now.getMonth(), 1),
-        status: 'expired',
-        amount: 29,
-      },
-    }),
-    db.subscription.create({
-      data: {
-        id: 'sub_004',
-        clientId: 'client_004',
-        planId: 'plan_002',
-        startDate: new Date(now.getFullYear(), now.getMonth() - 6, 10),
-        endDate: new Date(now.getFullYear(), now.getMonth() - 3, 10),
-        status: 'cancelled',
-        amount: 79,
-      },
-    }),
-    db.subscription.create({
-      data: {
-        id: 'sub_005',
-        clientId: 'client_005',
-        planId: 'plan_003',
-        startDate: new Date(now.getFullYear(), now.getMonth() - 1, 1),
-        endDate: new Date(now.getFullYear(), now.getMonth() + 11, 1),
-        status: 'active',
-        amount: 199,
-      },
-    }),
-  ]);
-  console.log('✓ Subscriptions created');
+  const enterprise = await db.subscriptionPlan.create({
+    data: {
+      name: 'Enterprise',
+      price: 7999,
+      annualPrice: 79990,
+      features: JSON.stringify(['Unlimited Products', 'Unlimited Orders', 'Full Analytics Suite', '24/7 Support', 'Unlimited Team', 'AI Tools', 'Custom Integrations', 'White-label Reports', 'API Access', 'SLA Engine']),
+      teamLimit: -1,
+      orderLimit: -1,
+      productLimit: -1,
+      trialDays: 30,
+      isActive: true,
+    },
+  });
+  console.log('✅ Subscription plans created');
 
-  // Create invoices
-  const invoices = await Promise.all([
-    db.invoice.create({
-      data: {
-        id: 'inv_001',
-        invoiceNumber: 'INV-2026-001',
-        clientId: 'client_001',
-        subscriptionId: 'sub_001',
-        amount: 199,
-        tax: 15.92,
-        total: 214.92,
-        status: 'paid',
-        dueDate: new Date(now.getFullYear(), now.getMonth() - 4, 1),
-        paidDate: new Date(now.getFullYear(), now.getMonth() - 4, 1),
-        notes: 'Enterprise plan - monthly',
-      },
-    }),
-    db.invoice.create({
-      data: {
-        id: 'inv_002',
-        invoiceNumber: 'INV-2026-002',
-        clientId: 'client_001',
-        subscriptionId: 'sub_001',
-        amount: 199,
-        tax: 15.92,
-        total: 214.92,
-        status: 'paid',
-        dueDate: new Date(now.getFullYear(), now.getMonth() - 3, 1),
-        paidDate: new Date(now.getFullYear(), now.getMonth() - 3, 2),
-        notes: 'Enterprise plan - monthly',
-      },
-    }),
-    db.invoice.create({
-      data: {
-        id: 'inv_003',
-        invoiceNumber: 'INV-2026-003',
-        clientId: 'client_002',
-        subscriptionId: 'sub_002',
-        amount: 79,
-        tax: 6.32,
-        total: 85.32,
-        status: 'paid',
-        dueDate: new Date(now.getFullYear(), now.getMonth() - 2, 15),
-        paidDate: new Date(now.getFullYear(), now.getMonth() - 2, 14),
-        notes: 'Professional plan - monthly',
-      },
-    }),
-    db.invoice.create({
-      data: {
-        id: 'inv_004',
-        invoiceNumber: 'INV-2026-004',
-        clientId: 'client_002',
-        subscriptionId: 'sub_002',
-        amount: 79,
-        tax: 6.32,
-        total: 85.32,
-        status: 'pending',
-        dueDate: new Date(now.getFullYear(), now.getMonth() + 1, 15),
-        notes: 'Professional plan - monthly',
-      },
-    }),
-    db.invoice.create({
-      data: {
-        id: 'inv_005',
-        invoiceNumber: 'INV-2026-005',
-        clientId: 'client_003',
-        subscriptionId: 'sub_003',
-        amount: 29,
-        tax: 2.32,
-        total: 31.32,
-        status: 'overdue',
-        dueDate: new Date(now.getFullYear(), now.getMonth() - 1, 1),
-        notes: 'Starter plan - monthly',
-      },
-    }),
-    db.invoice.create({
-      data: {
-        id: 'inv_006',
-        invoiceNumber: 'INV-2026-006',
-        clientId: 'client_004',
-        subscriptionId: 'sub_004',
-        amount: 79,
-        tax: 6.32,
-        total: 85.32,
-        status: 'paid',
-        dueDate: new Date(now.getFullYear(), now.getMonth() - 5, 10),
-        paidDate: new Date(now.getFullYear(), now.getMonth() - 5, 10),
-        notes: 'Professional plan - monthly (cancelled)',
-      },
-    }),
-    db.invoice.create({
-      data: {
-        id: 'inv_007',
-        invoiceNumber: 'INV-2026-007',
-        clientId: 'client_001',
-        subscriptionId: 'sub_001',
-        amount: 199,
-        tax: 15.92,
-        total: 214.92,
-        status: 'paid',
-        dueDate: new Date(now.getFullYear(), now.getMonth() - 2, 1),
-        paidDate: new Date(now.getFullYear(), now.getMonth() - 2, 1),
-        notes: 'Enterprise plan - monthly',
-      },
-    }),
-    db.invoice.create({
-      data: {
-        id: 'inv_008',
-        invoiceNumber: 'INV-2026-008',
-        clientId: 'client_001',
-        subscriptionId: 'sub_001',
-        amount: 199,
-        tax: 15.92,
-        total: 214.92,
-        status: 'paid',
-        dueDate: new Date(now.getFullYear(), now.getMonth() - 1, 1),
-        paidDate: new Date(now.getFullYear(), now.getMonth() - 1, 1),
-        notes: 'Enterprise plan - monthly',
-      },
-    }),
-    db.invoice.create({
-      data: {
-        id: 'inv_009',
-        invoiceNumber: 'INV-2026-009',
-        clientId: 'client_005',
-        subscriptionId: 'sub_005',
-        amount: 199,
-        tax: 15.92,
-        total: 214.92,
-        status: 'paid',
-        dueDate: new Date(now.getFullYear(), now.getMonth(), 1),
-        paidDate: new Date(now.getFullYear(), now.getMonth(), 1),
-        notes: 'Enterprise plan - monthly',
-      },
-    }),
-    db.invoice.create({
-      data: {
-        id: 'inv_010',
-        invoiceNumber: 'INV-2026-010',
-        clientId: 'client_005',
-        subscriptionId: 'sub_005',
-        amount: 199,
-        tax: 15.92,
-        total: 214.92,
-        status: 'pending',
-        dueDate: new Date(now.getFullYear(), now.getMonth() + 1, 1),
-        notes: 'Enterprise plan - monthly',
-      },
-    }),
-  ]);
-  console.log('✓ Invoices created');
+  // 3. Create admin user
+  const hashedPassword = await bcrypt.hash('Admin@123', 12);
+  const admin = await db.user.create({
+    data: {
+      name: 'Admin User',
+      email: 'admin@brandflow.com',
+      password: hashedPassword,
+      role: 'platform_owner',
+    },
+  });
+  console.log('✅ Admin user created');
 
-  // Create products
-  const products = await Promise.all([
-    db.product.create({
-      data: { id: 'prod_001', name: 'Brand Identity Kit', price: 499, category: 'Design', stock: 50, status: 'active' },
-    }),
-    db.product.create({
-      data: { id: 'prod_002', name: 'Social Media Package', price: 199, category: 'Marketing', stock: 100, status: 'active' },
-    }),
-    db.product.create({
-      data: { id: 'prod_003', name: 'SEO Audit Report', price: 149, category: 'Analytics', stock: 30, status: 'active' },
-    }),
-    db.product.create({
-      data: { id: 'prod_004', name: 'Content Strategy Plan', price: 349, category: 'Marketing', stock: 25, status: 'active' },
-    }),
-    db.product.create({
-      data: { id: 'prod_005', name: 'Logo Redesign', price: 299, category: 'Design', stock: 40, status: 'active' },
-    }),
-  ]);
-  console.log('✓ Products created');
+  // 4. Create demo organization
+  const org = await db.organization.create({
+    data: {
+      name: 'Demo Store',
+      slug: 'demo-store',
+      email: 'info@demostore.pk',
+      phone: '+92-300-9876543',
+      website: 'https://demostore.pk',
+      currency: 'PKR',
+      timezone: 'Asia/Karachi',
+      plan: 'growth',
+      country: 'Pakistan',
+      brandColor: '#059669',
+      address: '123 Main Market, Lahore',
+      isActive: true,
+    },
+  });
+  console.log('✅ Demo organization created');
 
-  // Create orders with items
-  const ordersData = [
-    { clientId: 'client_001', total: 996, status: 'completed', items: [{ pid: 'prod_001', qty: 1, price: 499 }, { pid: 'prod_002', qty: 1, price: 199 }, { pid: 'prod_003', qty: 2, price: 149 }] },
-    { clientId: 'client_001', total: 349, status: 'completed', items: [{ pid: 'prod_004', qty: 1, price: 349 }] },
-    { clientId: 'client_002', total: 647, status: 'completed', items: [{ pid: 'prod_001', qty: 1, price: 499 }, { pid: 'prod_003', qty: 1, price: 149 }] },
-    { clientId: 'client_002', total: 598, status: 'completed', items: [{ pid: 'prod_005', qty: 2, price: 299 }] },
-    { clientId: 'client_003', total: 199, status: 'completed', items: [{ pid: 'prod_002', qty: 1, price: 199 }] },
-    { clientId: 'client_003', total: 448, status: 'completed', items: [{ pid: 'prod_003', qty: 1, price: 149 }, { pid: 'prod_004', qty: 1, price: 299 }] },
-    { clientId: 'client_004', total: 299, status: 'cancelled', items: [{ pid: 'prod_005', qty: 1, price: 299 }] },
-    { clientId: 'client_004', total: 798, status: 'completed', items: [{ pid: 'prod_001', qty: 1, price: 499 }, { pid: 'prod_002', qty: 1, price: 199 }, { pid: 'prod_003', qty: 1, price: 149 }] },
-    { clientId: 'client_005', total: 199, status: 'completed', items: [{ pid: 'prod_002', qty: 1, price: 199 }] },
-    { clientId: 'client_005', total: 946, status: 'completed', items: [{ pid: 'prod_001', qty: 1, price: 499 }, { pid: 'prod_004', qty: 1, price: 349 }, { pid: 'prod_005', qty: 1, price: 299 }] },
-    { clientId: 'client_001', total: 548, status: 'completed', items: [{ pid: 'prod_004', qty: 1, price: 349 }, { pid: 'prod_005', qty: 1, price: 299 }] },
-    { clientId: 'client_002', total: 299, status: 'pending', items: [{ pid: 'prod_005', qty: 1, price: 299 }] },
-    { clientId: 'client_003', total: 647, status: 'completed', items: [{ pid: 'prod_001', qty: 1, price: 499 }, { pid: 'prod_003', qty: 1, price: 149 }] },
-    { clientId: 'client_005', total: 448, status: 'completed', items: [{ pid: 'prod_003', qty: 1, price: 149 }, { pid: 'prod_004', qty: 1, price: 349 }] },
-    { clientId: 'client_001', total: 199, status: 'completed', items: [{ pid: 'prod_002', qty: 1, price: 199 }] },
+  // 5. Add admin as org member
+  await db.organizationMember.create({
+    data: {
+      organizationId: org.id,
+      userId: admin.id,
+      role: 'owner',
+    },
+  });
+
+  // 6. Create subscription for org
+  const thirtyDaysFromNow = new Date();
+  thirtyDaysFromNow.setDate(thirtyDaysFromNow.getDate() + 30);
+
+  const trialEnd = new Date();
+  trialEnd.setDate(trialEnd.getDate() + 14);
+
+  await db.subscription.create({
+    data: {
+      organizationId: org.id,
+      planId: growth.id,
+      status: 'active',
+      billingCycle: 'monthly',
+      trialStartsAt: new Date(),
+      trialEndsAt: trialEnd,
+      currentPeriodEnd: thirtyDaysFromNow,
+    },
+  });
+  console.log('✅ Subscription created');
+
+  // 7. Create sample customers
+  const customers = [
+    { name: 'Ahmed Khan', email: 'ahmed@email.com', phone: '+92-300-1111111', city: 'Lahore', loyaltyTier: 'gold', totalSpent: 45000, orderCount: 12 },
+    { name: 'Sara Ali', email: 'sara@email.com', phone: '+92-300-2222222', city: 'Karachi', loyaltyTier: 'silver', totalSpent: 28000, orderCount: 8 },
+    { name: 'Usman Malik', email: 'usman@email.com', phone: '+92-300-3333333', city: 'Islamabad', loyaltyTier: 'bronze', totalSpent: 12000, orderCount: 4 },
+    { name: 'Fatima Noor', email: 'fatima@email.com', phone: '+92-300-4444444', city: 'Lahore', loyaltyTier: 'gold', totalSpent: 67000, orderCount: 18 },
+    { name: 'Hassan Raza', email: 'hassan@email.com', phone: '+92-300-5555555', city: 'Rawalpindi', loyaltyTier: 'new', totalSpent: 5000, orderCount: 2 },
   ];
 
-  for (let i = 0; i < ordersData.length; i++) {
-    const od = ordersData[i];
-    const monthOffset = Math.floor(i / 3);
-    const dayOffset = (i % 28) + 1;
+  const createdCustomers = [];
+  for (const c of customers) {
+    const customer = await db.customer.create({
+      data: { ...c, organizationId: org.id },
+    });
+    createdCustomers.push(customer);
+  }
+  console.log(`✅ ${customers.length} customers created`);
+
+  // 8. Create sample products
+  const products = [
+    { name: 'Premium Lawn Suit', sku: 'PLS-001', price: 5500, costPrice: 2800, stock: 45, category: 'Clothing' },
+    { name: 'Embroidered Shawl', sku: 'ES-002', price: 3200, costPrice: 1500, stock: 30, category: 'Accessories' },
+    { name: 'Silk Dupatta', sku: 'SD-003', price: 1800, costPrice: 800, stock: 60, category: 'Accessories' },
+    { name: 'Cotton Kurti', sku: 'CK-004', price: 2200, costPrice: 900, stock: 80, category: 'Clothing' },
+    { name: 'Formal Shoes', sku: 'FS-005', price: 8500, costPrice: 4500, stock: 15, category: 'Footwear' },
+    { name: 'Leather Wallet', sku: 'LW-006', price: 1500, costPrice: 600, stock: 100, category: 'Accessories' },
+    { name: 'Watch - Classic', sku: 'WC-007', price: 12000, costPrice: 6000, stock: 8, category: 'Accessories' },
+    { name: 'Perfume - Oud', sku: 'PO-008', price: 4500, costPrice: 2000, stock: 25, category: 'Fragrance' },
+  ];
+
+  const createdProducts = [];
+  for (const p of products) {
+    const product = await db.product.create({
+      data: { ...p, organizationId: org.id },
+    });
+    createdProducts.push(product);
+  }
+  console.log(`✅ ${products.length} products created`);
+
+  // 9. Create sample orders with items
+  const orderStatuses = ['pending', 'processing', 'shipped', 'delivered', 'delivered', 'delivered', 'completed', 'completed', 'completed', 'completed', 'completed', 'completed', 'cancelled'];
+  let orderCounter = 1001;
+
+  for (let i = 0; i < 15; i++) {
+    const customer = createdCustomers[i % createdCustomers.length];
+    const numItems = Math.floor(Math.random() * 3) + 1;
+    const selectedProducts = [];
+    for (let j = 0; j < numItems; j++) {
+      selectedProducts.push(createdProducts[Math.floor(Math.random() * createdProducts.length)]);
+    }
+
+    const subtotal = selectedProducts.reduce((sum, p) => sum + p.price, 0);
+    const discount = Math.random() > 0.7 ? subtotal * 0.1 : 0;
+    const total = subtotal - discount;
+    const daysAgo = Math.floor(Math.random() * 60);
+    const createdAt = new Date();
+    createdAt.setDate(createdAt.getDate() - daysAgo);
+
     const order = await db.order.create({
       data: {
-        id: `order_${String(i + 1).padStart(3, '0')}`,
-        clientId: od.clientId,
-        total: od.total,
-        status: od.status,
-        createdAt: new Date(now.getFullYear(), now.getMonth() - monthOffset, dayOffset),
+        orderNumber: `ORD-${String(orderCounter++).padStart(5, '0')}`,
+        organizationId: org.id,
+        customerId: customer.id,
+        status: orderStatuses[i % orderStatuses.length],
+        subtotal,
+        discount,
+        total,
+        channel: Math.random() > 0.5 ? 'whatsapp' : 'manual',
+        createdAt,
       },
     });
 
-    for (const item of od.items) {
+    for (const prod of selectedProducts) {
+      const qty = Math.floor(Math.random() * 3) + 1;
       await db.orderItem.create({
         data: {
-          id: uuidv4(),
           orderId: order.id,
-          productId: item.pid,
-          quantity: item.qty,
-          price: item.price,
-          total: item.qty * item.price,
+          productId: prod.id,
+          productName: prod.name,
+          quantity: qty,
+          price: prod.price,
+          total: prod.price * qty,
         },
       });
     }
   }
-  console.log('✓ Orders created');
+  console.log('✅ 15 orders with items created');
 
-  console.log('\n✅ Seeding complete!');
+  // 10. Create invoices
+  let invoiceCounter = 1;
+  const invoiceData = [
+    { planName: 'Growth', amount: 2999, billingCycle: 'monthly', status: 'paid', monthsAgo: 6 },
+    { planName: 'Growth', amount: 2999, billingCycle: 'monthly', status: 'paid', monthsAgo: 5 },
+    { planName: 'Growth', amount: 2999, billingCycle: 'monthly', status: 'paid', monthsAgo: 4 },
+    { planName: 'Growth', amount: 2999, billingCycle: 'monthly', status: 'paid', monthsAgo: 3 },
+    { planName: 'Growth', amount: 2999, billingCycle: 'monthly', status: 'paid', monthsAgo: 2 },
+    { planName: 'Growth', amount: 2999, billingCycle: 'monthly', status: 'paid', monthsAgo: 1 },
+    { planName: 'Growth', amount: 2999, billingCycle: 'monthly', status: 'paid', monthsAgo: 0 },
+    { planName: 'Growth', amount: 2999, billingCycle: 'monthly', status: 'pending', monthsAgo: 0 },
+  ];
+
+  for (const inv of invoiceData) {
+    const issuedAt = new Date();
+    issuedAt.setMonth(issuedAt.getMonth() - inv.monthsAgo);
+
+    const dueDate = new Date(issuedAt);
+    dueDate.setDate(dueDate.getDate() + 15);
+
+    const invoiceNum = `BF-${issuedAt.getFullYear()}-${String(invoiceCounter++).padStart(4, '0')}`;
+
+    await db.invoice.create({
+      data: {
+        invoiceNumber: invoiceNum,
+        organizationId: org.id,
+        planName: inv.planName,
+        amount: inv.amount,
+        billingCycle: inv.billingCycle,
+        status: inv.status,
+        currencyCode: 'PKR',
+        currencySymbol: 'Rs.',
+        issuedAt,
+        dueDate,
+        paidAt: inv.status === 'paid' ? new Date(issuedAt.getTime() + 3 * 24 * 60 * 60 * 1000) : null,
+        orgName: org.name,
+        orgEmail: org.email,
+        orgPhone: org.phone,
+        orgAddress: org.address,
+      },
+    });
+  }
+  console.log(`✅ ${invoiceData.length} invoices created`);
+
+  // 11. Create roles
+  await db.role.create({
+    data: { name: 'owner', label: 'Owner', description: 'Full access to everything', permissions: '{}', level: 100 },
+  });
+  await db.role.create({
+    data: { name: 'manager', label: 'Manager', description: 'Can manage most features', permissions: '{}', level: 80 },
+  });
+  await db.role.create({
+    data: { name: 'member', label: 'Team Member', description: 'Basic access', permissions: '{}', level: 50 },
+  });
+  console.log('✅ Roles created');
+
+  // 12. Create system settings
+  await db.systemSetting.create({ data: { key: 'platform_version', value: '3.0.0', category: 'system' } });
+  await db.systemSetting.create({ data: { key: 'last_cron_run', value: new Date().toISOString(), category: 'system' } });
+  console.log('✅ System settings created');
+
+  console.log('\n🎉 Seed completed successfully!');
+  console.log('\n📧 Login credentials: admin@brandflow.com / Admin@123');
+  console.log('🏪 Demo org: Demo Store');
 }
 
-main()
+seed()
   .catch((e) => {
-    console.error(e);
+    console.error('❌ Seed failed:', e);
     process.exit(1);
   })
   .finally(async () => {
