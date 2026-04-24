@@ -1,6 +1,6 @@
 /**
  * @file use-api.ts
- * @description Comprehensive React Query hooks for all BrandFlow Portal API endpoints.
+ * @description Comprehensive React Query hooks for all BrandForge Portal API endpoints.
  *
  * Each hook wraps a specific API endpoint and provides:
  * - Automatic caching and background refetching

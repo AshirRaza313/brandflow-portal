@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import { useBrandFlowStore } from "@/store/brandflow-store";
+import { useBrandForgeStore } from "@/store/brandflow-store";
 import { fetchWithAuth } from "@/lib/fetch-with-auth";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -43,7 +43,7 @@ interface ProductReportData {
 const TABS = ["best-sellers", "low-stock", "categories"] as const;
 
 export function ProductReportsPage() {
-  const { organization, appTheme } = useBrandFlowStore();
+  const { organization, appTheme } = useBrandForgeStore();
   const isDark = appTheme !== "light";
   const isGold = appTheme === "premium-dark";
   const accent = isGold ? "amber" : "emerald";

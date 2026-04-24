@@ -11,7 +11,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "
 import { Crown, Star, Gift, Users } from "lucide-react";
 import { toast } from "sonner";
 import { motion, AnimatePresence } from "framer-motion";
-import { useBrandFlowStore } from "@/store/brandflow-store";
+import { useBrandForgeStore } from "@/store/brandflow-store";
 
 const subTabs = [
   { id: "tiers", label: "Tiers" },
@@ -36,7 +36,7 @@ interface Reward {
 }
 
 export function LoyaltyPage() {
-  const { appTheme } = useBrandFlowStore();
+  const { appTheme } = useBrandForgeStore();
   const isDark = appTheme !== "light";
 
   const [activeTab, setActiveTab] = useState("tiers");

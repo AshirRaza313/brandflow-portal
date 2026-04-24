@@ -16,20 +16,20 @@ export default function GlobalError({
   const companyName = identity.companyName;
 
   useEffect(() => {
-    console.error("BrandFlow Application Error:", error);
+    console.error("BrandForge Application Error:", error);
   }, [error]);
 
   // Clear broken state and redirect to landing page
   const handleReset = () => {
     try {
-      localStorage.removeItem("brandflow-user");
-      localStorage.removeItem("brandflow-org");
-      localStorage.removeItem("brandflow-brandname");
-      localStorage.removeItem("brandflow-logo");
-      localStorage.removeItem("brandflow-tagline");
-      localStorage.removeItem("brandflow-configured");
-      localStorage.removeItem("brandflow-theme");
-      localStorage.removeItem("brandflow-language");
+      localStorage.removeItem("brandforge-user");
+      localStorage.removeItem("brandforge-org");
+      localStorage.removeItem("brandforge-brandname");
+      localStorage.removeItem("brandforge-logo");
+      localStorage.removeItem("brandforge-tagline");
+      localStorage.removeItem("brandforge-configured");
+      localStorage.removeItem("brandforge-theme");
+      localStorage.removeItem("brandforge-language");
     } catch {}
     // Full page reload to clear any broken React state
     window.location.href = "/";

@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback, useRef } from "react";
-import { useBrandFlowStore } from "@/store/brandflow-store";
+import { useBrandForgeStore } from "@/store/brandflow-store";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -128,7 +128,7 @@ const presetColors = [
 // ============================================================================
 
 function AccessDenied() {
-  const { appTheme } = useBrandFlowStore();
+  const { appTheme } = useBrandForgeStore();
   const isDark = appTheme !== "light";
 
   return (
@@ -155,7 +155,7 @@ function AccessDenied() {
 // ============================================================================
 
 export function PlatformSettingsPage() {
-  const { user, appTheme, setActiveSection } = useBrandFlowStore();
+  const { user, appTheme, setActiveSection } = useBrandForgeStore();
   const isDark = appTheme !== "light";
   const isGold = appTheme === "premium-dark";
 
@@ -708,7 +708,7 @@ export function PlatformSettingsPage() {
                   </Label>
                   <Input
                     type="email"
-                    placeholder="owner@brandflow.pk"
+                    placeholder="owner@brandforge.pk"
                     value={personalDetails.email}
                     onChange={(e) => setPersonalDetails((p) => ({ ...p, email: e.target.value }))}
                     className={inputBg}
@@ -798,7 +798,7 @@ export function PlatformSettingsPage() {
                     Company Name
                   </Label>
                   <Input
-                    placeholder="BrandFlow"
+                    placeholder="BrandForge"
                     value={settings.companyName}
                     onChange={(e) => setSettings((p) => ({ ...p, companyName: e.target.value }))}
                     className={inputBg}
@@ -814,7 +814,7 @@ export function PlatformSettingsPage() {
                     </Label>
                     <Input
                       type="email"
-                      placeholder="support@brandflow.pk"
+                      placeholder="support@brandforge.pk"
                       value={settings.companyEmail}
                       onChange={(e) => setSettings((p) => ({ ...p, companyEmail: e.target.value }))}
                       className={inputBg}
@@ -841,7 +841,7 @@ export function PlatformSettingsPage() {
                     Company Website
                   </Label>
                   <Input
-                    placeholder="https://brandflow.pk"
+                    placeholder="https://brandforge.pk"
                     value={settings.companyWebsite}
                     onChange={(e) => setSettings((p) => ({ ...p, companyWebsite: e.target.value }))}
                     className={inputBg}
@@ -1018,7 +1018,7 @@ export function PlatformSettingsPage() {
                     Instagram URL
                   </Label>
                   <Input
-                    placeholder="https://instagram.com/brandflow"
+                    placeholder="https://instagram.com/brandforge"
                     value={settings.instagramUrl}
                     onChange={(e) => setSettings((p) => ({ ...p, instagramUrl: e.target.value }))}
                     className={inputBg}
@@ -1032,7 +1032,7 @@ export function PlatformSettingsPage() {
                     Facebook URL
                   </Label>
                   <Input
-                    placeholder="https://facebook.com/brandflow"
+                    placeholder="https://facebook.com/brandforge"
                     value={settings.facebookUrl}
                     onChange={(e) => setSettings((p) => ({ ...p, facebookUrl: e.target.value }))}
                     className={inputBg}
@@ -1046,7 +1046,7 @@ export function PlatformSettingsPage() {
                     Twitter / X URL
                   </Label>
                   <Input
-                    placeholder="https://x.com/brandflow"
+                    placeholder="https://x.com/brandforge"
                     value={settings.twitterUrl}
                     onChange={(e) => setSettings((p) => ({ ...p, twitterUrl: e.target.value }))}
                     className={inputBg}
@@ -1497,7 +1497,7 @@ export function PlatformSettingsPage() {
                       background: `linear-gradient(135deg, ${settings.primaryBrandColor} 0%, ${settings.secondaryBrandColor} 100%)`,
                     }}
                   >
-                    BrandFlow Portal
+                    BrandForge Portal
                   </div>
                 </div>
 
@@ -1543,7 +1543,7 @@ export function PlatformSettingsPage() {
                     Email Footer Text
                   </Label>
                   <Textarea
-                    placeholder="Powered by BrandFlow | https://brandflow.pk"
+                    placeholder="Powered by BrandForge | https://brandforge.pk"
                     rows={2}
                     value={settings.emailFooterText}
                     onChange={(e) => setSettings((p) => ({ ...p, emailFooterText: e.target.value }))}

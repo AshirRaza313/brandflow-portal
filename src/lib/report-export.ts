@@ -1,6 +1,6 @@
 // ============================================================================
-// Report Export Utility — Client-branded exports with BrandFlow credit
-// Enterprise plan reports have NO BrandFlow branding
+// Report Export Utility — Client-branded exports with BrandForge credit
+// Enterprise plan reports have NO BrandForge branding
 // ============================================================================
 
 export interface ReportExportOptions {
@@ -14,13 +14,13 @@ export interface ReportExportOptions {
 
 /**
  * Generate HTML header and footer for report exports
- * - Starter/Growth plans: Client branding + small BrandFlow credit at bottom
- * - Enterprise plans: Full client branding, NO BrandFlow credit
+ * - Starter/Growth plans: Client branding + small BrandForge credit at bottom
+ * - Enterprise plans: Full client branding, NO BrandForge credit
  */
 export function generateReportBranding(options: ReportExportOptions) {
   const isEnterprise = options.plan === "enterprise";
   const showBrandflow = !isEnterprise;
-  const brandName = options.platformName || "BrandFlow";
+  const brandName = options.platformName || "BrandForge";
 
   const header = `
     <div style="display:flex;justify-content:space-between;align-items:center;padding:24px 32px;border-bottom:2px solid #e5e7eb;background:#ffffff;">

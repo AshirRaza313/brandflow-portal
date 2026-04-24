@@ -20,7 +20,7 @@ import {
 } from "@/components/ui/dialog";
 import { Loader2 } from "lucide-react";
 import { toast } from "sonner";
-import { useBrandFlowStore } from "@/store/brandflow-store";
+import { useBrandForgeStore } from "@/store/brandflow-store";
 import { cn } from "@/lib/utils";
 
 interface CustomerForm {
@@ -65,7 +65,7 @@ export function CustomerModal({
   organizationId,
   customer,
 }: CustomerModalProps) {
-  const { appTheme } = useBrandFlowStore();
+  const { appTheme } = useBrandForgeStore();
   const isGold = appTheme === "premium-dark";
   const isDark = appTheme === "dark" || isGold;
 

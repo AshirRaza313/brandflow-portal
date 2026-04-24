@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState, useCallback } from "react";
-import { useBrandFlowStore } from "@/store/brandflow-store";
+import { useBrandForgeStore } from "@/store/brandflow-store";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -98,7 +98,7 @@ const urgencyConfig: Record<UrgencyLevel, {
 // ── Component ──
 
 export function StockAlertsPanel() {
-  const { organization, appTheme } = useBrandFlowStore();
+  const { organization, appTheme } = useBrandForgeStore();
   const isGold = appTheme === "premium-dark";
   const isDark = appTheme === "dark" || isGold;
 

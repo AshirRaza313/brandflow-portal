@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback, useMemo } from "react";
-import { useBrandFlowStore } from "@/store/brandflow-store";
+import { useBrandForgeStore } from "@/store/brandflow-store";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -20,7 +20,7 @@ import {
 import {
   Plus, Search, Package, LayoutGrid, List, Trash2, Pencil,
   ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight,
-  Loader2, AlertCircle, ImageIcon, MoreHorizontal,
+  Loader2, AlertCircle, ImageIcon, MoreHorizontal, Tag, RefreshCw, TrendingDown,
 } from "lucide-react";
 import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger,
@@ -58,6 +58,17 @@ interface ProductStats {
 
 const ITEMS_PER_PAGE = 12;
 
+const CATEGORY_COLORS = [
+  { bg: "bg-emerald-500/10", text: "text-emerald-400", border: "border-emerald-500/20", accent: "from-emerald-600 to-emerald-400" },
+  { bg: "bg-violet-500/10", text: "text-violet-400", border: "border-violet-500/20", accent: "from-violet-600 to-violet-400" },
+  { bg: "bg-pink-500/10", text: "text-pink-400", border: "border-pink-500/20", accent: "from-pink-600 to-pink-400" },
+  { bg: "bg-sky-500/10", text: "text-sky-400", border: "border-sky-500/20", accent: "from-sky-600 to-sky-400" },
+  { bg: "bg-orange-500/10", text: "text-orange-400", border: "border-orange-500/20", accent: "from-orange-600 to-orange-400" },
+  { bg: "bg-rose-500/10", text: "text-rose-400", border: "border-rose-500/20", accent: "from-rose-600 to-rose-400" },
+  { bg: "bg-teal-500/10", text: "text-teal-400", border: "border-teal-500/20", accent: "from-teal-600 to-teal-400" },
+  { bg: "bg-cyan-500/10", text: "text-cyan-400", border: "border-cyan-500/20", accent: "from-cyan-600 to-cyan-400" },
+];
+
 const subTabs = [
   { id: "all", label: "All Products" },
   { id: "categories", label: "Categories" },
@@ -80,11 +91,13 @@ function formatPrice(price: number): string {
 // ── Component ────────────────────────────────────────────────────────────────
 
 export function ProductsPage() {
-  const { organization, appTheme } = useBrandFlowStore();
+  const { organization, appTheme } = useBrandForgeStore();
   const isGold = appTheme === "premium-dark";
   const isDark = appTheme === "dark" || isGold;
 
-  const orgId = organization?.id || "1";
+  const orgId = organization?.id;
+
+  if (!orgId) return null;
 
   // ── State ──
   const [products, setProducts] = useState<Product[]>([]);
@@ -978,34 +991,116 @@ export function ProductsPage() {
         {/* ═══════════════════════ CATEGORIES TAB ═══════════════════════ */}
         {activeTab === "categories" && (
           <motion.div key="categories" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} className="space-y-4">
-            <div className="flex justify-end">
+            <div className="flex items-center justify-between">
+              <p className={cn("text-sm", isDark ? "text-slate-400" : "text-muted-foreground")}>
+                {products.length} product{products.length !== 1 ? "s" : ""} across {(() => {
+                  const cats = new Set(products.map(p => p.category || "Uncategorized"));
+                  return cats.size;
+                })()} categor{(() => {
+                  const cats = new Set(products.map(p => p.category || "Uncategorized"));
+                  return cats.size === 1 ? "y" : "ies";
+                })()}
+              </p>
               <Button
                 className={isGold ? "btn-gold" : "bg-emerald-600 hover:bg-emerald-700 text-white"}
-                onClick={() => setCategoryOpen(true)}
+                onClick={() => toast.info("Category management coming soon!")}
               >
-                <Plus className="mr-2 h-4 w-4" /> Add Category
+                <Plus className="mr-2 h-4 w-4" /> Create Category
               </Button>
             </div>
-            {categories.length === 0 ? (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+              {(() => {
+                const catMap = new Map<string, { name: string; count: number; revenue: number; stock: number }>();
+                products.forEach(p => {
+                  const key = p.category || "Uncategorized";
+                  const existing = catMap.get(key) || { name: key, count: 0, revenue: 0, stock: 0 };
+                  existing.count++;
+                  existing.revenue += p.price * p.stock;
+                  existing.stock += p.stock;
+                  catMap.set(key, existing);
+                });
+                return Array.from(catMap.values()).sort((a, b) => b.revenue - a.revenue);
+              })().map((cat, idx) => {
+                const color = CATEGORY_COLORS[idx % CATEGORY_COLORS.length];
+                return (
+                  <motion.div
+                    key={cat.name}
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: idx * 0.04 }}
+                  >
+                    <Card className={cn(
+                      "group transition-all hover:shadow-lg cursor-pointer",
+                      isGold
+                        ? "bg-white/[0.03] border-white/[0.06] hover:bg-white/[0.05] hover:border-amber-500/20"
+                        : isDark
+                          ? "bg-white/[0.03] border-white/[0.06] hover:bg-white/[0.05] hover:border-emerald-500/20"
+                          : "bg-white border hover:border-emerald-200"
+                    )}>
+                      <CardContent className="p-4">
+                        <div className="flex items-start justify-between mb-3">
+                          <div className={cn(
+                            "h-10 w-10 rounded-xl flex items-center justify-center",
+                            color.bg
+                          )}>
+                            <Tag className={cn("h-5 w-5", color.text)} />
+                          </div>
+                          <Badge
+                            variant="outline"
+                            className={cn(
+                              "text-[10px] font-medium px-2 py-0.5",
+                              isDark ? "bg-white/[0.05] border-white/[0.1] text-slate-400" : ""
+                            )}
+                          >
+                            {cat.count} item{cat.count !== 1 ? "s" : ""}
+                          </Badge>
+                        </div>
+                        <h3 className={cn(
+                          "text-sm font-semibold truncate mb-1",
+                          isDark ? "text-white" : "text-foreground"
+                        )}>
+                          {cat.name}
+                        </h3>
+                        <div className="flex items-center justify-between mt-3 pt-3 border-t border-white/[0.06]">
+                          <div>
+                            <p className={cn("text-[10px] uppercase tracking-wider", isDark ? "text-slate-500" : "text-muted-foreground")}>
+                              Revenue
+                            </p>
+                            <p className={cn(
+                              "text-sm font-bold mt-0.5",
+                              isGold ? color.text : isDark ? color.text : "text-foreground"
+                            )}>
+                              {formatPKR(cat.revenue)}
+                            </p>
+                          </div>
+                          <div className="text-right">
+                            <p className={cn("text-[10px] uppercase tracking-wider", isDark ? "text-slate-500" : "text-muted-foreground")}>
+                              Total Stock
+                            </p>
+                            <p className={cn(
+                              "text-sm font-bold mt-0.5",
+                              isDark ? "text-slate-300" : "text-foreground"
+                            )}>
+                              {cat.stock.toLocaleString()}
+                            </p>
+                          </div>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  </motion.div>
+                );
+              })}
+            </div>
+            {products.length === 0 && (
               <Card className={cn(isGold ? "premium-card" : isDark ? "premium-card" : "")}>
                 <CardContent>
                   <EmptyState
                     icon={Package}
                     title="No categories yet"
-                    description="Create categories to organize your products."
+                    description="Add products with categories to see them here."
                   />
                 </CardContent>
               </Card>
-            ) : (
-              <div className="space-y-2">
-                {categories.map((cat) => (
-                  <Card key={cat.id} className={cn(isGold ? "premium-card" : isDark ? "premium-card" : "")}>
-                    <CardContent className="p-3 flex items-center justify-between">
-                      <span className={cn("text-sm font-medium", isDark ? "text-white" : "")}>{cat.name}</span>
-                    </CardContent>
-                  </Card>
-                ))}
-              </div>
             )}
           </motion.div>
         )}
@@ -1013,22 +1108,271 @@ export function ProductsPage() {
         {/* ═══════════════════════ INVENTORY TAB ═══════════════════════ */}
         {activeTab === "inventory" && (
           <motion.div key="inventory" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} className="space-y-4">
+            {/* Stock Summary */}
+            <div className="grid grid-cols-3 gap-3">
+              <Card className={cn(
+                "border",
+                isGold ? "bg-white/[0.03] border-white/[0.06]" : isDark ? "bg-white/[0.03] border-white/[0.06]" : "bg-red-50 border-red-200"
+              )}>
+                <CardContent className="p-4">
+                  <div className="flex items-center gap-2 mb-1">
+                    <div className="h-2.5 w-2.5 rounded-full bg-red-500" />
+                    <p className={cn("text-[10px] font-medium uppercase tracking-wider", isDark ? "text-slate-400" : "text-muted-foreground")}>Out of Stock</p>
+                  </div>
+                  <p className={cn("text-2xl font-bold", isDark ? "text-red-400" : "text-red-600")}>
+                    {products.filter(p => p.stock === 0).length}
+                  </p>
+                </CardContent>
+              </Card>
+              <Card className={cn(
+                "border",
+                isGold ? "bg-white/[0.03] border-white/[0.06]" : isDark ? "bg-white/[0.03] border-white/[0.06]" : "bg-orange-50 border-orange-200"
+              )}>
+                <CardContent className="p-4">
+                  <div className="flex items-center gap-2 mb-1">
+                    <div className="h-2.5 w-2.5 rounded-full bg-orange-500" />
+                    <p className={cn("text-[10px] font-medium uppercase tracking-wider", isDark ? "text-slate-400" : "text-muted-foreground")}>Low Stock</p>
+                  </div>
+                  <p className={cn("text-2xl font-bold", isDark ? "text-orange-400" : "text-orange-600")}>
+                    {products.filter(p => p.stock >= 1 && p.stock <= 10).length}
+                  </p>
+                </CardContent>
+              </Card>
+              <Card className={cn(
+                "border",
+                isGold ? "bg-white/[0.03] border-white/[0.06]" : isDark ? "bg-white/[0.03] border-white/[0.06]" : "bg-emerald-50 border-emerald-200"
+              )}>
+                <CardContent className="p-4">
+                  <div className="flex items-center gap-2 mb-1">
+                    <div className="h-2.5 w-2.5 rounded-full bg-emerald-500" />
+                    <p className={cn("text-[10px] font-medium uppercase tracking-wider", isDark ? "text-slate-400" : "text-muted-foreground")}>In Stock</p>
+                  </div>
+                  <p className={cn("text-2xl font-bold", isDark ? "text-emerald-400" : "text-emerald-600")}>
+                    {products.filter(p => p.stock > 10).length}
+                  </p>
+                </CardContent>
+              </Card>
+            </div>
+
+            {/* Stock Alerts */}
             <StockAlertsPanel />
+
+            {/* Inventory Table */}
+            <Card className={cn(
+              "overflow-hidden",
+              isGold ? "bg-white/[0.03] border-white/[0.06]" : isDark ? "bg-white/[0.03] border-white/[0.06]" : ""
+            )}>
+              <CardContent className="p-0">
+                <div className="overflow-x-auto max-h-[500px] overflow-y-auto">
+                  <Table>
+                    <TableHeader>
+                      <TableRow className={cn(
+                        "hover:bg-transparent",
+                        isDark ? "bg-white/[0.03] border-b border-white/[0.06]" : ""
+                      )}>
+                        <TableHead className={cn(isDark && "text-slate-400")}>Product</TableHead>
+                        <TableHead className={cn(isDark && "text-slate-400")}>SKU</TableHead>
+                        <TableHead className={cn("text-right", isDark && "text-slate-400")}>Price</TableHead>
+                        <TableHead className={cn("text-right", isDark && "text-slate-400")}>Stock</TableHead>
+                        <TableHead className={cn(isDark && "text-slate-400")}>Status</TableHead>
+                        <TableHead className={cn("text-right", isDark && "text-slate-400")}>Value</TableHead>
+                        <TableHead className="w-24"></TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {products.map((product) => {
+                        const stockLevel = product.stock === 0 ? "out" : product.stock <= 10 ? "low" : "ok";
+                        const stockColor = stockLevel === "out"
+                          ? "text-red-400"
+                          : stockLevel === "low"
+                            ? "text-orange-400"
+                            : isDark ? "text-emerald-400" : "text-emerald-600";
+                        const stockBg = stockLevel === "out"
+                          ? "bg-red-500/10 border-red-500/20"
+                          : stockLevel === "low"
+                            ? "bg-orange-500/10 border-orange-500/20"
+                            : "bg-emerald-500/10 border-emerald-500/20";
+                        return (
+                          <TableRow
+                            key={product.id}
+                            className={cn(
+                              isDark ? "border-b border-white/[0.04] hover:bg-white/[0.02]" : "hover:bg-muted/50"
+                            )}
+                          >
+                            <TableCell>
+                              <div className="flex items-center gap-3">
+                                <div className={cn(
+                                  "h-8 w-8 rounded-lg flex items-center justify-center flex-shrink-0",
+                                  isGold ? "bg-amber-500/10" : isDark ? "bg-white/5" : "bg-muted"
+                                )}>
+                                  {product.imageUrl ? (
+                                    <img src={product.imageUrl} alt="" className="h-8 w-8 rounded-lg object-cover" />
+                                  ) : (
+                                    <Package className={cn("h-3.5 w-3.5", isDark ? "text-slate-500" : "text-slate-400")} />
+                                  )}
+                                </div>
+                                <div className="min-w-0">
+                                  <p className={cn("text-sm font-medium truncate max-w-[180px]", isDark ? "text-white" : "")}>
+                                    {product.name}
+                                  </p>
+                                  {product.category && (
+                                    <p className={cn("text-[10px] truncate max-w-[180px]", isDark ? "text-slate-500" : "text-muted-foreground")}>
+                                      {product.category}
+                                    </p>
+                                  )}
+                                </div>
+                              </div>
+                            </TableCell>
+                            <TableCell className={cn("text-sm font-mono", isDark ? "text-slate-400" : "text-muted-foreground")}>
+                              {product.sku || "—"}
+                            </TableCell>
+                            <TableCell className={cn("text-sm text-right font-semibold tabular-nums", isGold ? "gold-gradient-text" : isDark ? "text-white" : "")}>
+                              {formatPrice(product.price)}
+                            </TableCell>
+                            <TableCell className={cn("text-right", isDark ? "" : "")}>
+                              <Badge
+                                variant="outline"
+                                className={cn("text-[10px] font-bold px-2 py-0.5 border", stockBg, stockColor)}
+                              >
+                                {product.stock === 0 ? "Out of stock" : product.stock}
+                              </Badge>
+                            </TableCell>
+                            <TableCell>
+                              <Badge
+                                variant="outline"
+                                className={cn("text-[10px] font-medium px-2 py-0.5", statusBadge(product.status))}
+                              >
+                                {product.status}
+                              </Badge>
+                            </TableCell>
+                            <TableCell className={cn("text-sm text-right font-semibold tabular-nums", isDark ? "text-slate-300" : "")}>
+                              {formatPKR(product.price * product.stock)}
+                            </TableCell>
+                            <TableCell className="pr-4">
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                className={cn(
+                                  "text-[10px] h-7 gap-1",
+                                  stockLevel === "out" && "border-red-500/30 text-red-400 hover:bg-red-500/10",
+                                  stockLevel === "low" && "border-orange-500/30 text-orange-400 hover:bg-orange-500/10",
+                                  stockLevel === "ok" && (isDark ? "border-white/[0.1] text-slate-400 hover:bg-white/[0.05]" : "")
+                                )}
+                                onClick={() => toast.info(`Restock request for "${product.name}" — coming soon!`)}
+                              >
+                                <RefreshCw className="h-3 w-3" /> Restock
+                              </Button>
+                            </TableCell>
+                          </TableRow>
+                        );
+                      })}
+                    </TableBody>
+                  </Table>
+                </div>
+              </CardContent>
+            </Card>
           </motion.div>
         )}
 
         {/* ═══════════════════════ GALLERY TAB ═══════════════════════ */}
         {activeTab === "gallery" && (
           <motion.div key="gallery" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} className="space-y-4">
-            <Card className={cn(isGold ? "premium-card" : isDark ? "premium-card" : "")}>
-              <CardContent>
-                <EmptyState
-                  icon={Package}
-                  title="No product images"
-                  description="Product images will appear here after you add products."
-                />
-              </CardContent>
-            </Card>
+            {products.length === 0 ? (
+              <Card className={cn(isGold ? "premium-card" : isDark ? "premium-card" : "")}>
+                <CardContent>
+                  <EmptyState
+                    icon={Package}
+                    title="No product images"
+                    description="Product images will appear here after you add products."
+                  />
+                </CardContent>
+              </Card>
+            ) : (
+              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
+                {products.map((product, idx) => (
+                  <motion.div
+                    key={product.id}
+                    initial={{ opacity: 0, scale: 0.95 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    transition={{ delay: idx * 0.03, duration: 0.25 }}
+                  >
+                    <Card
+                      className={cn(
+                        "group overflow-hidden cursor-pointer transition-all duration-300",
+                        isGold
+                          ? "bg-white/[0.03] border-white/[0.06] hover:border-amber-500/30 hover:shadow-lg hover:shadow-amber-500/5"
+                          : isDark
+                            ? "bg-white/[0.03] border-white/[0.06] hover:border-emerald-500/30 hover:shadow-lg hover:shadow-emerald-500/5"
+                            : "bg-white border hover:border-emerald-200 hover:shadow-lg"
+                      )}
+                      onClick={() => handleOpenEdit(product)}
+                    >
+                      {/* Image Area */}
+                      <div className={cn(
+                        "relative aspect-square overflow-hidden",
+                        isDark ? "bg-white/[0.02]" : "bg-muted/50"
+                      )}>
+                        {product.imageUrl ? (
+                          <img
+                            src={product.imageUrl}
+                            alt={product.name}
+                            className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
+                          />
+                        ) : (
+                          <div className="w-full h-full flex flex-col items-center justify-center gap-2">
+                            <ImageIcon className={cn("h-10 w-10", isDark ? "text-slate-700" : "text-slate-300")} />
+                            <span className={cn("text-[10px] font-medium", isDark ? "text-slate-600" : "text-slate-400")}>
+                              No image
+                            </span>
+                          </div>
+                        )}
+                        {/* Hover Overlay */}
+                        <div className={cn(
+                          "absolute inset-0 bg-gradient-to-t from-black/70 via-black/0 to-transparent",
+                          "opacity-0 group-hover:opacity-100 transition-opacity duration-300",
+                          "flex items-end p-3"
+                        )}>
+                          <div className="w-full">
+                            <p className="text-white text-xs font-semibold truncate">{product.name}</p>
+                            <p className="text-white/80 text-[10px] font-medium">{formatPrice(product.price)}</p>
+                          </div>
+                        </div>
+                        {/* Stock Badge on image */}
+                        {product.stock === 0 && (
+                          <div className="absolute top-2 right-2">
+                            <Badge className="bg-red-500/90 text-white text-[9px] px-1.5 py-0 border-0">
+                              Out of stock
+                            </Badge>
+                          </div>
+                        )}
+                      </div>
+                      {/* Card Footer */}
+                      <div className="p-2.5">
+                        <h3 className={cn(
+                          "text-xs font-semibold truncate",
+                          isDark ? "text-white" : "text-foreground"
+                        )}>
+                          {product.name}
+                        </h3>
+                        <div className="flex items-center justify-between mt-1">
+                          <span className={cn(
+                            "text-xs font-bold",
+                            isGold ? "gold-gradient-text" : isDark ? "text-white" : ""
+                          )}>
+                            {formatPrice(product.price)}
+                          </span>
+                          {product.category && (
+                            <span className={cn("text-[9px] truncate max-w-[80px]", isDark ? "text-slate-500" : "text-muted-foreground")}>
+                              {product.category}
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                    </Card>
+                  </motion.div>
+                ))}
+              </div>
+            )}
           </motion.div>
         )}
       </AnimatePresence>

@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback, useMemo } from "react";
-import { useBrandFlowStore } from "@/store/brandflow-store";
+import { useBrandForgeStore } from "@/store/brandflow-store";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -108,7 +108,7 @@ function exportToCSV(customers: Customer[], stats: CustomerStats) {
 // ─── Component ───────────────────────────────────────────────────────
 
 export function CustomersPage() {
-  const { organization, appTheme } = useBrandFlowStore();
+  const { organization, appTheme } = useBrandForgeStore();
   const isGold = appTheme === "premium-dark";
   const isDark = appTheme === "dark" || isGold;
 

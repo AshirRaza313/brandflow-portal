@@ -1,7 +1,7 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
-import { useBrandFlowStore } from "@/store/brandflow-store";
+import { useState, useEffect, useCallback, useRef, useMemo } from "react";
+import { useBrandForgeStore } from "@/store/brandflow-store";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -14,7 +14,23 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import { Calendar } from "@/components/ui/calendar";
+import {
+  Pagination,
+  PaginationContent,
+  PaginationItem,
+  PaginationLink,
+  PaginationNext,
+  PaginationPrevious,
+  PaginationEllipsis,
+} from "@/components/ui/pagination";
 import { cn } from "@/lib/utils";
+import { format } from "date-fns";
 import {
   FileText,
   Download,
@@ -27,10 +43,14 @@ import {
   CheckCircle2,
   AlertCircle,
   Building2,
-  Calendar,
+  CalendarIcon,
+  X,
+  ChevronLeft,
+  ChevronRight,
 } from "lucide-react";
 import { toast } from "sonner";
 import { motion, AnimatePresence } from "framer-motion";
+import type { DateRange } from "react-day-picker";
 
 // ── Types ──
 interface InvoiceItem {
@@ -61,6 +81,8 @@ interface InvoiceStats {
   paid: number;
 }
 
+const ITEMS_PER_PAGE = 10;
+
 // ── Status Badge ──
 function getStatusBadge(status: string) {
   switch (status) {
@@ -80,7 +102,7 @@ function getStatusBadge(status: string) {
 
 // ── Main Component ──
 export function InvoiceManagementPage() {
-  const { appTheme } = useBrandFlowStore();
+  const { appTheme } = useBrandForgeStore();
   const isDark = appTheme !== "light";
   const isGold = appTheme === "premium-dark";
 
@@ -88,37 +110,108 @@ export function InvoiceManagementPage() {
   const [invoices, setInvoices] = useState<InvoiceItem[]>([]);
   const [stats, setStats] = useState<InvoiceStats | null>(null);
   const [statusFilter, setStatusFilter] = useState("all");
+  const [searchInput, setSearchInput] = useState("");
   const [searchQuery, setSearchQuery] = useState("");
   const [downloadingId, setDownloadingId] = useState<string | null>(null);
   const [selectedInvoice, setSelectedInvoice] = useState<InvoiceItem | null>(null);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [dateRange, setDateRange] = useState<DateRange | undefined>(undefined);
+  const [dateRangeOpen, setDateRangeOpen] = useState(false);
+
+  const debounceRef = useRef<NodeJS.Timeout | null>(null);
 
   const cardBg = isDark ? "bg-white/[0.03] border-white/[0.06]" : "bg-white border-slate-200";
   const textPrimary = isDark ? "text-white" : "text-slate-900";
   const textSecondary = isDark ? "text-slate-400" : "text-slate-500";
   const accentColor = isGold ? "text-amber-400" : "text-emerald-400";
   const accentBg = isGold ? "bg-amber-500/10" : "bg-emerald-500/10";
+  const inputBg = isDark ? "border-white/[0.1] bg-white/[0.03]" : "";
 
-  const fetchInvoices = useCallback(async () => {
+  // ── Debounced search (300ms) ──
+  useEffect(() => {
+    if (debounceRef.current) clearTimeout(debounceRef.current);
+    debounceRef.current = setTimeout(() => {
+      setSearchQuery(searchInput);
+      setCurrentPage(1);
+    }, 300);
+    return () => {
+      if (debounceRef.current) clearTimeout(debounceRef.current);
+    };
+  }, [searchInput]);
+
+  // ── Reset page (called directly in handlers, not via effect) ──
+  // Page is reset inline when statusFilter or dateRange changes to avoid setState-in-effect.
+
+  // ── Client-side filtering ──
+  const filteredInvoices = useMemo(() => {
+    let result = invoices;
+
+    // Status filter
+    if (statusFilter && statusFilter !== "all") {
+      result = result.filter((inv) => inv.status === statusFilter);
+    }
+
+    // Search filter
+    if (searchQuery) {
+      const q = searchQuery.toLowerCase();
+      result = result.filter(
+        (inv) =>
+          inv.invoiceNumber.toLowerCase().includes(q) ||
+          (inv.orgName && inv.orgName.toLowerCase().includes(q)) ||
+          (inv.organization?.name && inv.organization.name.toLowerCase().includes(q)) ||
+          inv.planName.toLowerCase().includes(q)
+      );
+    }
+
+    // Date range filter
+    if (dateRange?.from) {
+      const from = new Date(dateRange.from);
+      from.setHours(0, 0, 0, 0);
+      result = result.filter((inv) => new Date(inv.issuedAt) >= from);
+    }
+    if (dateRange?.to) {
+      const to = new Date(dateRange.to);
+      to.setHours(23, 59, 59, 999);
+      result = result.filter((inv) => new Date(inv.issuedAt) <= to);
+    }
+
+    return result;
+  }, [invoices, statusFilter, searchQuery, dateRange]);
+
+  // ── Pagination ──
+  const totalPages = Math.max(1, Math.ceil(filteredInvoices.length / ITEMS_PER_PAGE));
+  const paginatedInvoices = useMemo(() => {
+    const start = (currentPage - 1) * ITEMS_PER_PAGE;
+    return filteredInvoices.slice(start, start + ITEMS_PER_PAGE);
+  }, [filteredInvoices, currentPage]);
+
+  const fetchInvoices = useCallback(async (signal?: AbortSignal) => {
     setLoading(true);
     try {
-      const params = new URLSearchParams();
-      if (statusFilter && statusFilter !== "all") params.set("status", statusFilter);
-      if (searchQuery) params.set("search", searchQuery);
-      const res = await fetch(`/api/admin/invoices?${params}`);
-      if (res.ok) {
-        const data = await res.json();
-        setInvoices(data.invoices);
-        setStats(data.stats);
-      } else {
+      if (signal?.aborted) return;
+      const res = await fetch("/api/admin/invoices", { signal });
+      if (!res.ok) {
         toast.error("Failed to load invoices");
+        return;
       }
-    } catch {
+      const data = await res.json();
+      if (signal?.aborted) return;
+      setInvoices(data.invoices);
+      setStats(data.stats);
+    } catch (err) {
+      if (signal?.aborted) return;
       toast.error("Failed to load invoices");
     }
     setLoading(false);
-  }, [statusFilter, searchQuery]);
+  }, []);
 
-  useEffect(() => { fetchInvoices(); }, [fetchInvoices]);
+  /* eslint-disable react-hooks/set-state-in-effect -- fetching initial data on mount */
+  useEffect(() => {
+    const controller = new AbortController();
+    fetchInvoices(controller.signal);
+    return () => controller.abort();
+  }, []);
+  /* eslint-enable react-hooks/set-state-in-effect */
 
   const handleDownload = async (invoice: InvoiceItem) => {
     setDownloadingId(invoice.id);
@@ -165,6 +258,28 @@ export function InvoiceManagementPage() {
       toast.error("Network error downloading invoice");
     }
     setDownloadingId(null);
+  };
+
+  const clearDateRange = () => {
+    setDateRange(undefined);
+    setCurrentPage(1);
+  };
+
+  const hasActiveFilters = searchQuery || statusFilter !== "all" || dateRange?.from || dateRange?.to;
+  const showNoResults = !loading && filteredInvoices.length === 0 && hasActiveFilters;
+  const showEmptyState = !loading && filteredInvoices.length === 0 && !hasActiveFilters;
+
+  // ── Pagination helper: generate page numbers to show ──
+  const getVisiblePages = (current: number, total: number): (number | "ellipsis")[] => {
+    if (total <= 5) return Array.from({ length: total }, (_, i) => i + 1);
+    const pages: (number | "ellipsis")[] = [1];
+    if (current > 3) pages.push("ellipsis");
+    for (let i = Math.max(2, current - 1); i <= Math.min(total - 1, current + 1); i++) {
+      pages.push(i);
+    }
+    if (current < total - 2) pages.push("ellipsis");
+    pages.push(total);
+    return pages;
   };
 
   const totalRevenue = stats?.totalRevenue?._sum?.amount || 0;
@@ -234,17 +349,28 @@ export function InvoiceManagementPage() {
 
       {/* Filters */}
       <div className="flex flex-col sm:flex-row gap-3">
+        {/* Search with debounce */}
         <div className="relative flex-1">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
           <Input
-            placeholder="Search by organization or invoice #..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className={cn("pl-10", isDark ? "border-white/[0.1] bg-white/[0.03]" : "")}
+            placeholder="Search by organization, invoice #, or plan..."
+            value={searchInput}
+            onChange={(e) => setSearchInput(e.target.value)}
+            className={cn("pl-10", inputBg)}
           />
+          {searchInput && (
+            <button
+              onClick={() => setSearchInput("")}
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-300 transition-colors"
+            >
+              <X className="h-3.5 w-3.5" />
+            </button>
+          )}
         </div>
-        <Select value={statusFilter} onValueChange={setStatusFilter}>
-          <SelectTrigger className={cn("w-40", isDark ? "border-white/[0.1] bg-white/[0.03]" : "")}>
+
+        {/* Status filter */}
+        <Select value={statusFilter} onValueChange={(val) => { setStatusFilter(val); setCurrentPage(1); }}>
+          <SelectTrigger className={cn("w-40", inputBg)}>
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
@@ -256,22 +382,131 @@ export function InvoiceManagementPage() {
             <SelectItem value="refunded">Refunded</SelectItem>
           </SelectContent>
         </Select>
+
+        {/* Date range filter */}
+        <Popover open={dateRangeOpen} onOpenChange={setDateRangeOpen}>
+          <PopoverTrigger asChild>
+            <Button
+              variant="outline"
+              className={cn(
+                "w-auto gap-2 justify-start text-left font-normal",
+                inputBg,
+                dateRange?.from && (isDark ? "text-emerald-400 border-emerald-500/30" : "text-emerald-600 border-emerald-300")
+              )}
+            >
+              <CalendarIcon className="h-4 w-4" />
+              {dateRange?.from ? (
+                dateRange.to ? (
+                  <span className="text-xs">
+                    {format(dateRange.from, "MMM d, yyyy")} – {format(dateRange.to, "MMM d, yyyy")}
+                  </span>
+                ) : (
+                  <span className="text-xs">{format(dateRange.from, "MMM d, yyyy")}</span>
+                )
+              ) : (
+                <span className="text-xs text-muted-foreground">Date range</span>
+              )}
+            </Button>
+          </PopoverTrigger>
+          <PopoverContent className="w-auto p-0" align="end">
+            <Calendar
+              mode="range"
+              selected={dateRange}
+              onSelect={(range) => {
+                setDateRange(range);
+                setCurrentPage(1);
+                if (range?.to) setDateRangeOpen(false);
+              }}
+              numberOfMonths={2}
+              defaultMonth={dateRange?.from || new Date()}
+            />
+            {dateRange?.from && (
+              <div className="border-t px-3 py-2 flex items-center justify-between">
+                <span className="text-xs text-muted-foreground">
+                  {dateRange.from && dateRange.to
+                    ? `${format(dateRange.from, "MMM d")} – ${format(dateRange.to, "MMM d, yyyy")}`
+                    : format(dateRange.from, "MMM d, yyyy")}
+                </span>
+                <Button variant="ghost" size="sm" className="h-6 text-xs gap-1" onClick={clearDateRange}>
+                  <X className="h-3 w-3" /> Clear
+                </Button>
+              </div>
+            )}
+          </PopoverContent>
+        </Popover>
       </div>
 
-      {/* Invoice Table */}
-      {invoices.length === 0 ? (
+      {/* Active filters indicator */}
+      {hasActiveFilters && !showNoResults && (
+        <div className="flex items-center gap-2">
+          <span className={cn("text-xs", textSecondary)}>
+            Showing {filteredInvoices.length} of {invoices.length} invoices
+          </span>
+        </div>
+      )}
+
+      {/* No Results Found (search/filter returns empty) */}
+      {showNoResults && (
+        <Card className={cn(cardBg)}>
+          <CardContent className="p-12 text-center">
+            <div className="mx-auto w-16 h-16 rounded-full bg-red-500/10 flex items-center justify-center mb-4">
+              <Search className="h-8 w-8 text-red-400/60" />
+            </div>
+            <h3 className={cn("text-lg font-semibold mb-1", textPrimary)}>No results found</h3>
+            <p className={cn("text-sm mb-4 max-w-md mx-auto", textSecondary)}>
+              No invoices match your current filters. Try adjusting your search query, date range, or status filter.
+            </p>
+            <div className="flex items-center justify-center gap-2 flex-wrap">
+              {searchQuery && (
+                <Badge variant="outline" className="gap-1.5 cursor-pointer hover:bg-red-500/10" onClick={() => setSearchInput("")}>
+                  Search: &quot;{searchQuery}&quot; <X className="h-3 w-3" />
+                </Badge>
+              )}
+              {statusFilter !== "all" && (
+                <Badge variant="outline" className="gap-1.5 cursor-pointer hover:bg-red-500/10" onClick={() => setStatusFilter("all")}>
+                  Status: {statusFilter} <X className="h-3 w-3" />
+                </Badge>
+              )}
+              {dateRange?.from && (
+                <Badge variant="outline" className="gap-1.5 cursor-pointer hover:bg-red-500/10" onClick={clearDateRange}>
+                  {dateRange.to
+                    ? `${format(dateRange.from, "MMM d")} – ${format(dateRange.to, "MMM d")}`
+                    : format(dateRange.from, "MMM d")}{" "}
+                  <X className="h-3 w-3" />
+                </Badge>
+              )}
+            </div>
+            <Button
+              variant="outline"
+              size="sm"
+              className="mt-4 gap-2"
+              onClick={() => {
+                setSearchInput("");
+                setStatusFilter("all");
+                clearDateRange();
+              }}
+            >
+              <X className="h-3.5 w-3.5" /> Clear all filters
+            </Button>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Empty State (no invoices at all) */}
+      {showEmptyState && (
         <Card className={cn(cardBg)}>
           <CardContent className="p-8 text-center">
             <FileText className="h-12 w-12 mx-auto text-slate-400/50 mb-3" />
             <h3 className={cn("font-semibold", textPrimary)}>No Invoices Found</h3>
             <p className={cn("text-sm mt-1", textSecondary)}>
-              {searchQuery || statusFilter !== "all"
-                ? "No invoices match your filters. Try adjusting your search."
-                : "No invoices have been generated yet."}
+              No invoices have been generated yet.
             </p>
           </CardContent>
         </Card>
-      ) : (
+      )}
+
+      {/* Invoice Table */}
+      {!showNoResults && !showEmptyState && (
         <Card className={cn(cardBg, "overflow-hidden")}>
           <CardContent className="p-0">
             <div className="overflow-x-auto">
@@ -289,7 +524,7 @@ export function InvoiceManagementPage() {
                   </tr>
                 </thead>
                 <tbody>
-                  {invoices.map((inv) => (
+                  {paginatedInvoices.map((inv) => (
                     <motion.tr
                       key={inv.id}
                       initial={{ opacity: 0, y: 4 }}
@@ -336,7 +571,7 @@ export function InvoiceManagementPage() {
                       </td>
                       <td className="px-4 py-3">
                         <div className="flex items-center gap-1.5">
-                          <Calendar className="h-3 w-3 text-slate-400" />
+                          <CalendarIcon className="h-3 w-3 text-slate-400" />
                           <span className={cn("text-xs", textSecondary)}>
                             {new Date(inv.issuedAt).toLocaleDateString("en-PK", { month: "short", day: "numeric", year: "numeric" })}
                           </span>
@@ -447,6 +682,56 @@ export function InvoiceManagementPage() {
                 </motion.div>
               )}
             </AnimatePresence>
+
+            {/* Pagination */}
+            {totalPages > 1 && (
+              <div className="border-t px-4 py-3 flex flex-col sm:flex-row items-center justify-between gap-3">
+                <p className={cn("text-xs", textSecondary)}>
+                  Showing {(currentPage - 1) * ITEMS_PER_PAGE + 1}–{Math.min(currentPage * ITEMS_PER_PAGE, filteredInvoices.length)} of {filteredInvoices.length} invoices
+                </p>
+                <Pagination>
+                  <PaginationContent>
+                    <PaginationItem>
+                      <PaginationPrevious
+                        onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+                        className={cn(
+                          currentPage === 1 && "pointer-events-none opacity-50",
+                          isDark && "text-slate-400 hover:text-white hover:bg-white/[0.05]"
+                        )}
+                      />
+                    </PaginationItem>
+                    {getVisiblePages(currentPage, totalPages).map((page, idx) =>
+                      page === "ellipsis" ? (
+                        <PaginationItem key={`ellipsis-${idx}`}>
+                          <PaginationEllipsis />
+                        </PaginationItem>
+                      ) : (
+                        <PaginationItem key={page}>
+                          <PaginationLink
+                            isActive={currentPage === page}
+                            onClick={() => setCurrentPage(page)}
+                            className={cn(
+                              isDark && !currentPage === page && "text-slate-400 hover:text-white hover:bg-white/[0.05]"
+                            )}
+                          >
+                            {page}
+                          </PaginationLink>
+                        </PaginationItem>
+                      )
+                    )}
+                    <PaginationItem>
+                      <PaginationNext
+                        onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
+                        className={cn(
+                          currentPage === totalPages && "pointer-events-none opacity-50",
+                          isDark && "text-slate-400 hover:text-white hover:bg-white/[0.05]"
+                        )}
+                      />
+                    </PaginationItem>
+                  </PaginationContent>
+                </Pagination>
+              </div>
+            )}
           </CardContent>
         </Card>
       )}

@@ -106,13 +106,13 @@ export const POST = withAuth(async (req, authCtx) => {
     });
     let counter = 1;
     if (lastOrder?.orderNumber) {
-      counter = parseInt(lastOrder.orderNumber.replace("BF-", "")) + 1;
+      counter = parseInt(lastOrder.orderNumber.replace("BFR-", "")) + 1;
     }
 
     const subtotal = items.reduce((sum: number, item: any) => sum + item.price * item.quantity, 0);
     const order = await db.order.create({
       data: {
-        orderNumber: `BF-${String(counter).padStart(4, "0")}`,
+        orderNumber: `BFR-${String(counter).padStart(4, "0")}`,
         organizationId,
         customerId: customerId || null,
         channel: channel || "manual",

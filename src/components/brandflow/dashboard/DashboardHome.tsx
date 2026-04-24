@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState, useCallback, useRef } from "react";
-import { useBrandFlowStore } from "@/store/brandflow-store";
+import { useBrandForgeStore } from "@/store/brandflow-store";
 import { fetchWithAuth } from "@/lib/fetch-with-auth";
 import { LoadingSkeleton } from "@/components/brandflow/shared/LoadingSkeleton";
 import { Button } from "@/components/ui/button";
@@ -152,7 +152,7 @@ function AnimatedCounter({ value, prefix = "", suffix = "" }: { value: number; p
 }
 
 export function DashboardHome() {
-  const { setActiveSection, appTheme, brandName, organization } = useBrandFlowStore();
+  const { setActiveSection, appTheme, brandName, organization } = useBrandForgeStore();
   const t = useTranslation();
   const [stats, setStats] = useState<DashboardStats | null>(null);
   const [loading, setLoading] = useState(true);

@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import { useBrandFlowStore } from "@/store/brandflow-store";
+import { useBrandForgeStore } from "@/store/brandflow-store";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
@@ -96,7 +96,7 @@ const PIE_COLORS = ["#059669", "#d97706", "#8b5cf6", "#ec4899", "#06b6d4", "#f59
 // ─── Access Denied Component ────────────────────────────────────────────
 
 function AccessDenied() {
-  const { appTheme } = useBrandFlowStore();
+  const { appTheme } = useBrandForgeStore();
   const isDark = appTheme !== "light";
 
   return (
@@ -121,7 +121,7 @@ function AccessDenied() {
 // ─── Main Component ────────────────────────────────────────────────────
 
 export function AdminDashboard() {
-  const { user, appTheme, setActiveSection } = useBrandFlowStore();
+  const { user, appTheme, setActiveSection } = useBrandForgeStore();
   const isDark = appTheme !== "light";
   const isGold = appTheme === "premium-dark";
 

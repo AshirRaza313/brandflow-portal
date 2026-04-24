@@ -9,10 +9,10 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "
 import { Share2, Users, Gift, DollarSign, Copy, Link, QrCode } from "lucide-react";
 import { toast } from "sonner";
 import { motion } from "framer-motion";
-import { useBrandFlowStore } from "@/store/brandflow-store";
+import { useBrandForgeStore } from "@/store/brandflow-store";
 
 export function ReferralPage() {
-  const { appTheme } = useBrandFlowStore();
+  const { appTheme } = useBrandForgeStore();
   const isDark = appTheme !== "light";
 
   const referralCode = "";

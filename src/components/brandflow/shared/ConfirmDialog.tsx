@@ -1,6 +1,6 @@
 "use client";
 
-import { useBrandFlowStore } from "@/store/brandflow-store";
+import { useBrandForgeStore } from "@/store/brandflow-store";
 import { cn } from "@/lib/utils";
 import {
   AlertDialog,
@@ -34,7 +34,7 @@ export function ConfirmDialog({
   variant = "default",
   onConfirm,
 }: ConfirmDialogProps) {
-  const { appTheme } = useBrandFlowStore();
+  const { appTheme } = useBrandForgeStore();
   const isGold = appTheme === "premium-dark";
   const isDark = appTheme === "dark" || isGold;
 

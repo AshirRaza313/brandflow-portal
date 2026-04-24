@@ -10,7 +10,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Ticket, Clock, Star, TrendingUp, Filter, Zap } from "lucide-react";
 import { EmptyState } from "@/components/brandflow/shared/EmptyState";
 import { toast } from "sonner";
-import { useBrandFlowStore } from "@/store/brandflow-store";
+import { useBrandForgeStore } from "@/store/brandflow-store";
 
 interface TicketItem {
   id: number;
@@ -26,7 +26,7 @@ export function TicketsPage() {
   const [createOpen, setCreateOpen] = useState(false);
   const [tickets, setTickets] = useState<TicketItem[]>([]);
   const [formData, setFormData] = useState({ subject: "", description: "", priority: "Medium", customerName: "" });
-  const { appTheme } = useBrandFlowStore();
+  const { appTheme } = useBrandForgeStore();
   const isDark = appTheme !== "light";
   const isGold = appTheme === "premium-dark";
 

@@ -155,7 +155,7 @@ export const GET = withAuth(async (
       orgCountry: invoice.organization?.country || undefined,
       orgTaxId: invoice.organization?.taxId || undefined,
       // Platform/branding details from Professional Details tab
-      platformName: platformSettings?.companyName || "BrandFlow",
+      platformName: platformSettings?.companyName || "BrandForge",
       platformEmail: platformSettings?.companyEmail || undefined,
       platformPhone: platformSettings?.companyPhone || undefined,
       platformAddress: platformSettings?.companyAddress || undefined,
@@ -169,7 +169,7 @@ export const GET = withAuth(async (
       platformPaymentMethods: parsedPaymentMethods.length > 0 ? parsedPaymentMethods : undefined,
       // Logo (base64 PNG)
       platformLogo: platformSettings?.logoUrl || undefined,
-      platformTagline: platformSettings?.tagline || "Pakistan's #1 Brand Management Portal",
+      platformTagline: platformSettings?.tagline || "Pakistan's #1 Brand Management Platform",
       // Plan details
       planFeatures: planFeatures.length > 0 ? planFeatures : undefined,
       planTeamLimit: planTeamLimit || undefined,

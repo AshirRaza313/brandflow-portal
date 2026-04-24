@@ -3,7 +3,7 @@
 import { motion } from "framer-motion";
 import { DollarSign, ShoppingCart, Users, Star, TrendingUp, TrendingDown, AlertTriangle } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
-import { useBrandFlowStore } from "@/store/brandflow-store";
+import { useBrandForgeStore } from "@/store/brandflow-store";
 
 const containerVariants = {
   hidden: {},
@@ -16,7 +16,7 @@ const cardVariants = {
 };
 
 export function KPICards() {
-  const { appTheme } = useBrandFlowStore();
+  const { appTheme } = useBrandForgeStore();
   const isGold = appTheme === "premium-dark";
   const isDark = appTheme === "dark" || appTheme === "premium-dark";
 

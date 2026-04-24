@@ -15,7 +15,7 @@ import {
 } from "lucide-react";
 import { EmptyState } from "@/components/brandflow/shared/EmptyState";
 import { toast } from "sonner";
-import { useBrandFlowStore } from "@/store/brandflow-store";
+import { useBrandForgeStore } from "@/store/brandflow-store";
 
 const platformFilters = [
   { id: "all", label: "All Platforms", icon: Users },
@@ -44,7 +44,7 @@ interface Collaboration {
 }
 
 export function InfluencersPage() {
-  const { appTheme } = useBrandFlowStore();
+  const { appTheme } = useBrandForgeStore();
   const isDark = appTheme !== "light";
 
   const [searchQuery, setSearchQuery] = useState("");

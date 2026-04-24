@@ -1,7 +1,7 @@
 "use client";
 
 import { motion, AnimatePresence } from "framer-motion";
-import { useBrandFlowStore } from "@/store/brandflow-store";
+import { useBrandForgeStore } from "@/store/brandflow-store";
 import { useMemo } from "react";
 
 const EVENT_ICONS = ["🎉", "✨", "🌟", "🎊", "🎪", "🎆", "🎇", "🪔", "🎀"];
@@ -39,7 +39,7 @@ function generateIcons(seed: number, count: number): FloatingIcon[] {
 
 export function FloatingEventIcons() {
   const { eventThemingEnabled, floatingIconsEnabled, activeEventTheme } =
-    useBrandFlowStore();
+    useBrandForgeStore();
 
   const shouldShow = eventThemingEnabled && floatingIconsEnabled && !!activeEventTheme;
 

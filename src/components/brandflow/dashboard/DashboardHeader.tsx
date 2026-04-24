@@ -4,14 +4,14 @@ import { Search, Bell, Menu } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { useBrandFlowStore } from "@/store/brandflow-store";
+import { useBrandForgeStore } from "@/store/brandflow-store";
 
 interface DashboardHeaderProps {
   onToggleSidebar: () => void;
 }
 
 export function DashboardHeader({ onToggleSidebar }: DashboardHeaderProps) {
-  const { user } = useBrandFlowStore();
+  const { user } = useBrandForgeStore();
 
   const initials = user?.name
     ? user.name.split(" ").map((n: string) => n[0]).join("").toUpperCase().slice(0, 2)

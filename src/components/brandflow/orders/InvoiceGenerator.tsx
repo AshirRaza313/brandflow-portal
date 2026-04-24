@@ -10,7 +10,7 @@ import {
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
-import { useBrandFlowStore } from "@/store/brandflow-store";
+import { useBrandForgeStore } from "@/store/brandflow-store";
 import { usePlatformIdentity } from "@/lib/platform-identity";
 import { Printer, Download, X } from "lucide-react";
 import { toast } from "sonner";
@@ -88,7 +88,7 @@ function getPaymentStatus(status: string): { label: string; color: string; bgCol
 // ── Component ─────────────────────────────────────────────────────────────────
 
 export function InvoiceGenerator({ order, open, onClose }: InvoiceGeneratorProps) {
-  const { brandName, brandLogo, organization } = useBrandFlowStore();
+  const { brandName, brandLogo, organization } = useBrandForgeStore();
   const { identity } = usePlatformIdentity();
   const companyName = identity.companyName;
   const invoiceRef = useRef<HTMLDivElement>(null);
@@ -312,7 +312,7 @@ export function InvoiceGenerator({ order, open, onClose }: InvoiceGeneratorProps
               size="sm"
             >
               <Printer className="h-4 w-4" />
-              Download PDF
+              Print Invoice
             </Button>
           </div>
         </div>

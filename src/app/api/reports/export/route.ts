@@ -78,7 +78,7 @@ export const GET = withAuth(async (req: NextRequest, authCtx) => {
     }
 
     const platformInfo = {
-      platformName: platformSettings?.companyName || "BrandFlow",
+      platformName: platformSettings?.companyName || "BrandForge",
       platformEmail: platformSettings?.companyEmail || undefined,
       platformPhone: platformSettings?.companyPhone || undefined,
       platformWebsite: platformSettings?.companyWebsite || undefined,
@@ -88,7 +88,7 @@ export const GET = withAuth(async (req: NextRequest, authCtx) => {
       platformTwitter: platformSettings?.twitterUrl || undefined,
       platformSupportHours: platformSettings?.supportHours || undefined,
       platformLogo: platformSettings?.logoUrl || undefined,
-      platformTagline: platformSettings?.tagline || "Pakistan's #1 Brand Management Portal",
+      platformTagline: platformSettings?.tagline || "Pakistan's #1 Brand Management Platform",
     };
 
     let reportData: ReportData;

@@ -127,8 +127,8 @@ export function usePushNotifications(): UsePushNotificationsReturn {
 
       // Try to get user/org from localStorage
       try {
-        const user = JSON.parse(localStorage.getItem("brandflow-user") || "{}");
-        const org = JSON.parse(localStorage.getItem("brandflow-org") || "{}");
+        const user = JSON.parse(localStorage.getItem("brandforge-user") || "{}");
+        const org = JSON.parse(localStorage.getItem("brandforge-org") || "{}");
         if (user?.id) subBody.userId = user.id;
         if (org?.id) subBody.orgId = org.id;
       } catch {
@@ -195,7 +195,7 @@ export function usePushNotifications(): UsePushNotificationsReturn {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          title: title || "BrandFlow Test",
+          title: title || "BrandForge Test",
           message: body || "Push notifications are working! 🎉",
           url: "/",
         }),

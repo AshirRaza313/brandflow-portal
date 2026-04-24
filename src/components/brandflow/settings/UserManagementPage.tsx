@@ -17,7 +17,7 @@ import {
 import { toast } from "sonner";
 import { motion, AnimatePresence } from "framer-motion";
 import { EmptyState } from "@/components/brandflow/shared/EmptyState";
-import { useBrandFlowStore } from "@/store/brandflow-store";
+import { useBrandForgeStore } from "@/store/brandflow-store";
 import { usePlatformIdentity } from "@/lib/platform-identity";
 import {
   ROLES,
@@ -66,7 +66,7 @@ const subTabs = [
 // ── Component ──────────────────────────────────────────────────────────────
 
 export function UserManagementPage() {
-  const { organization, user, appTheme } = useBrandFlowStore();
+  const { organization, user, appTheme } = useBrandForgeStore();
   const { identity } = usePlatformIdentity();
   const companyName = identity.companyName;
   const isGold = appTheme === "premium-dark";

@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useRef, useCallback, useEffect } from "react";
-import { useBrandFlowStore } from "@/store/brandflow-store";
+import { useBrandForgeStore } from "@/store/brandflow-store";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -520,7 +520,7 @@ export function SettingsPage() {
     brandColor, setBrandColor, brandGradient, setBrandGradient, organization,
     setBrandName, setBrandLogo, setSelectedCountry, setSelectedReligion, setOrganization,
     appTheme, setAppTheme, brandName, setBrandTagline, setBrandConfigured,
-  } = useBrandFlowStore();
+  } = useBrandForgeStore();
   const [activeTab, setActiveTab] = useState("general");
 
   const isDark = appTheme !== "light";

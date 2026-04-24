@@ -1,11 +1,15 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import { useBrandFlowStore } from "@/store/brandflow-store";
+import { useBrandForgeStore } from "@/store/brandflow-store";
 import { fetchWithAuth } from "@/lib/fetch-with-auth";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Download, BarChart3, TrendingUp, ShoppingBag, DollarSign, RotateCcw, Loader2, FileText, FileSpreadsheet, ChevronDown } from "lucide-react";
+import {
+  AreaChart, Area, BarChart, Bar, PieChart, Pie, Cell,
+  XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer,
+} from "recharts";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { cn } from "@/lib/utils";
 import { motion } from "framer-motion";
@@ -46,10 +50,12 @@ const STATUS_LABELS: Record<string, { label: string; color: string }> = {
   returns: { label: "Returns", color: "bg-amber-500/20 text-amber-300" },
 };
 
+const PIE_COLORS = ["#10b981", "#f59e0b", "#ef4444", "#8b5cf6", "#f97316", "#06b6d4", "#ec4899"];
+
 const TABS = ["daily", "weekly", "monthly"] as const;
 
 export function SalesReportsPage() {
-  const { organization, appTheme } = useBrandFlowStore();
+  const { organization, appTheme } = useBrandForgeStore();
   const isDark = appTheme !== "light";
   const isGold = appTheme === "premium-dark";
   const accentColor = isGold ? "amber" : "emerald";
@@ -274,33 +280,66 @@ export function SalesReportsPage() {
         </Card>
       ) : (
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-          {/* Order Status Breakdown */}
+          {/* Order Status Breakdown - PieChart */}
           <Card className={cn(cardBg)}>
             <CardContent className="p-5">
               <h3 className={cn("text-sm font-semibold mb-4", textPrimary)}>Order Status Breakdown</h3>
-              <div className="space-y-2">
-                {Object.entries(data.statusBreakdown).sort(([, a], [, b]) => b - a).map(([status, count]) => {
-                  const pct = data.stats.totalOrders > 0 ? (count / data.stats.totalOrders) * 100 : 0;
-                  const statusInfo = STATUS_LABELS[status] || { label: status, color: "bg-slate-500/20 text-slate-300" };
-                  return (
-                    <div key={status} className="flex items-center gap-3">
-                      <div className="w-20">
-                        <span className={cn("text-[10px] px-1.5 py-0.5 rounded font-medium", statusInfo.color)}>
+              <div className="flex items-center gap-6">
+                <div className="w-[180px] h-[180px] flex-shrink-0">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <PieChart>
+                      <Pie
+                        data={Object.entries(data.statusBreakdown).sort(([, a], [, b]) => b - a).map(([status, count]) => ({
+                          name: (STATUS_LABELS[status] || { label: status }).label,
+                          value: count,
+                        }))}
+                        cx="50%"
+                        cy="50%"
+                        innerRadius={50}
+                        outerRadius={80}
+                        paddingAngle={2}
+                        dataKey="value"
+                      >
+                        {Object.entries(data.statusBreakdown).sort(([, a], [, b]) => b - a).map((_, i) => (
+                          <Cell key={i} fill={PIE_COLORS[i % PIE_COLORS.length]} />
+                        ))}
+                      </Pie>
+                      <Tooltip
+                        contentStyle={{
+                          backgroundColor: isDark ? "#1a1a2e" : "#fff",
+                          border: isDark ? "1px solid rgba(255,255,255,0.1)" : "1px solid #e2e8f0",
+                          borderRadius: "8px",
+                          fontSize: "12px",
+                          color: isDark ? "#e2e8f0" : "#1e293b",
+                        }}
+                      />
+                    </PieChart>
+                  </ResponsiveContainer>
+                </div>
+                <div className="flex-1 space-y-2 min-w-0">
+                  {Object.entries(data.statusBreakdown).sort(([, a], [, b]) => b - a).map(([status, count], i) => {
+                    const pct = data.stats.totalOrders > 0 ? (count / data.stats.totalOrders) * 100 : 0;
+                    const statusInfo = STATUS_LABELS[status] || { label: status, color: "bg-slate-500/20 text-slate-300" };
+                    return (
+                      <div key={status} className="flex items-center gap-2.5">
+                        <div className="h-2.5 w-2.5 rounded-sm flex-shrink-0" style={{ backgroundColor: PIE_COLORS[i % PIE_COLORS.length] }} />
+                        <span className={cn("text-[10px] px-1.5 py-0.5 rounded font-medium w-20 flex-shrink-0", statusInfo.color)}>
                           {statusInfo.label}
                         </span>
+                        <div className={cn("flex-1 h-1.5 rounded-full overflow-hidden", isDark ? "bg-white/[0.05]" : "bg-slate-100")}>
+                          <motion.div
+                            initial={{ width: 0 }}
+                            animate={{ width: `${pct}%` }}
+                            transition={{ duration: 0.6, delay: i * 0.08 }}
+                            className={cn("h-full rounded-full")}
+                            style={{ backgroundColor: PIE_COLORS[i % PIE_COLORS.length] }}
+                          />
+                        </div>
+                        <span className={cn("text-xs font-mono w-8 text-right flex-shrink-0", textSecondary)}>{count}</span>
                       </div>
-                      <div className={cn("flex-1 h-2 rounded-full overflow-hidden", isDark ? "bg-white/[0.05]" : "bg-slate-100")}>
-                        <motion.div
-                          initial={{ width: 0 }}
-                          animate={{ width: `${pct}%` }}
-                          transition={{ duration: 0.6 }}
-                          className={cn("h-full rounded-full", isGold ? "bg-amber-500" : "bg-emerald-500")}
-                        />
-                      </div>
-                      <span className={cn("text-xs font-mono w-8 text-right", textSecondary)}>{count}</span>
-                    </div>
-                  );
-                })}
+                    );
+                  })}
+                </div>
               </div>
             </CardContent>
           </Card>
@@ -323,34 +362,54 @@ export function SalesReportsPage() {
             </CardContent>
           </Card>
 
-          {/* Daily Breakdown Chart */}
+          {/* Revenue Trend - AreaChart */}
           <Card className={cn(cardBg, "lg:col-span-2")}>
             <CardContent className="p-5">
               <h3 className={cn("text-sm font-semibold mb-4", textPrimary)}>Revenue Trend</h3>
-              <div className="flex items-end gap-1 h-40">
-                {data.dailyBreakdown.map((day, i) => {
-                  const maxRevenue = Math.max(...data.dailyBreakdown.map((d) => d.revenue), 1);
-                  const height = Math.max((day.revenue / maxRevenue) * 100, 2);
-                  return (
-                    <div key={i} className="flex-1 flex flex-col items-center gap-1">
-                      <span className={cn("text-[9px]", textSecondary)}>
-                        {day.revenue > 0 ? `${sym}${day.revenue > 999 ? `${(day.revenue / 1000).toFixed(1)}k` : day.revenue}` : ""}
-                      </span>
-                      <div
-                        className={cn(
-                          "w-full rounded-t-sm transition-all",
-                          day.revenue > 0
-                            ? isGold ? "bg-amber-500/70 hover:bg-amber-500" : "bg-emerald-500/70 hover:bg-emerald-500"
-                            : isDark ? "bg-white/[0.03]" : "bg-slate-100"
-                        )}
-                        style={{ height: `${height}%` }}
-                        title={`${day.date}: ${sym} ${day.revenue.toLocaleString()}`}
-                      />
-                      <span className={cn("text-[8px]", textSecondary)}>{day.date.slice(5)}</span>
-                    </div>
-                  );
-                })}
-              </div>
+              <ResponsiveContainer width="100%" height={260}>
+                <AreaChart data={data.dailyBreakdown} margin={{ top: 5, right: 10, left: 10, bottom: 0 }}>
+                  <defs>
+                    <linearGradient id="revenueGradient" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="5%" stopColor={isGold ? "#f59e0b" : "#10b981"} stopOpacity={0.3} />
+                      <stop offset="95%" stopColor={isGold ? "#f59e0b" : "#10b981"} stopOpacity={0} />
+                    </linearGradient>
+                  </defs>
+                  <CartesianGrid strokeDasharray="3 3" stroke={isDark ? "rgba(255,255,255,0.06)" : "#f1f5f9"} />
+                  <XAxis
+                    dataKey="date"
+                    tickFormatter={(v) => v.slice(5)}
+                    tick={{ fontSize: 10, fill: isDark ? "#64748b" : "#94a3b8" }}
+                    axisLine={{ stroke: isDark ? "rgba(255,255,255,0.06)" : "#e2e8f0" }}
+                    tickLine={false}
+                  />
+                  <YAxis
+                    tick={{ fontSize: 10, fill: isDark ? "#64748b" : "#94a3b8" }}
+                    axisLine={{ stroke: isDark ? "rgba(255,255,255,0.06)" : "#e2e8f0" }}
+                    tickLine={false}
+                    tickFormatter={(v) => v > 999 ? `${(v / 1000).toFixed(1)}k` : String(v)}
+                  />
+                  <Tooltip
+                    contentStyle={{
+                      backgroundColor: isDark ? "#1a1a2e" : "#fff",
+                      border: isDark ? "1px solid rgba(255,255,255,0.1)" : "1px solid #e2e8f0",
+                      borderRadius: "8px",
+                      fontSize: "12px",
+                      color: isDark ? "#e2e8f0" : "#1e293b",
+                    }}
+                    formatter={(value: number) => [`${sym} ${value.toLocaleString()}`, "Revenue"]}
+                    labelFormatter={(label) => `Date: ${label}`}
+                  />
+                  <Area
+                    type="monotone"
+                    dataKey="revenue"
+                    stroke={isGold ? "#f59e0b" : "#10b981"}
+                    strokeWidth={2}
+                    fill="url(#revenueGradient)"
+                    dot={data.dailyBreakdown.length <= 31}
+                    activeDot={{ r: 5, fill: isGold ? "#f59e0b" : "#10b981", strokeWidth: 0 }}
+                  />
+                </AreaChart>
+              </ResponsiveContainer>
             </CardContent>
           </Card>
         </div>

@@ -2,7 +2,7 @@
 
 import React, { useCallback, useEffect, useRef, useState } from "react";
 import { useNotificationStore, type NotificationItem } from "@/store/notification-store";
-import { useBrandFlowStore, type SidebarSection } from "@/store/brandflow-store";
+import { useBrandForgeStore, type SidebarSection } from "@/store/brandflow-store";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Bell,
@@ -231,7 +231,7 @@ function EmptyNotifications({ isDark }: { isDark: boolean }) {
 // ── Main NotificationBell Component ─────────────────────────────────────────
 
 export function NotificationBell() {
-  const { organization, user, appTheme, setActiveSection } = useBrandFlowStore();
+  const { organization, user, appTheme, setActiveSection } = useBrandForgeStore();
   const {
     notifications,
     unreadCount,

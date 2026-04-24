@@ -23,16 +23,16 @@ export const viewport: Viewport = {
 };
 
 export const metadata: Metadata = {
-  title: "BrandFlow — The Pulse of Your Business",
+  title: "BrandForge — Forge Your Brand Empire",
   description: "All-in-one brand operations management portal for modern businesses",
-  keywords: ["BrandFlow", "brand management", "order management", "inventory", "team collaboration", "business operations", "SaaS"],
-  authors: [{ name: "BrandFlow" }],
+  keywords: ["BrandForge", "brand management", "order management", "inventory", "team collaboration", "business operations", "SaaS"],
+  authors: [{ name: "BrandForge" }],
   icons: {
-    icon: "/brandflow-logo.png",
+    icon: "/brandforge-logo.png",
   },
   manifest: "/manifest.json",
   openGraph: {
-    title: "BrandFlow — The Pulse of Your Business",
+    title: "BrandForge — Forge Your Brand Empire",
     description: "All-in-one brand operations management portal for modern businesses",
     type: "website",
   },
@@ -52,10 +52,14 @@ export default function RootLayout({
           href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;500;600;700;800;900&display=swap"
           rel="stylesheet"
         />
+        <style
+          dangerouslySetInnerHTML={{
+            __html: `.font-cinzel, h1.font-cinzel, .brand-title { font-family: 'Cinzel', serif !important; }`,
+          }}
+        />
       </head>
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased bg-background text-foreground`}
-        style={{ fontFamily: "'Cinzel', serif" }}
       >
         <ReactQueryProvider>
           <PlatformIdentityProvider>

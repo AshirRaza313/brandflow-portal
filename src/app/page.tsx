@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useCallback, Component, ReactNode } from "react";
 import dynamic from "next/dynamic";
-import { useBrandFlowStore } from "@/store/brandflow-store";
+import { useBrandForgeStore } from "@/store/brandflow-store";
 import { fetchWithAuth } from "@/lib/fetch-with-auth";
 import { useSubscriptionSync } from "@/hooks/useSubscriptionSync";
 
@@ -151,7 +151,7 @@ function SafeRender({ children, name }: { children: ReactNode; name: string }) {
 }
 
 export default function Home() {
-  const { view, activeSection, appTheme, setAppTheme, sidebarCollapsed, setAuthModalOpen, setAuthModalMode, user, organization } = useBrandFlowStore();
+  const { view, activeSection, appTheme, setAppTheme, sidebarCollapsed, setAuthModalOpen, setAuthModalMode, user, organization } = useBrandForgeStore();
   const [legalPage, setLegalPage] = useState<string | null>(null);
   const [adminLockedFeatures, setAdminLockedFeatures] = useState<Set<string>>(new Set());
 
@@ -186,7 +186,7 @@ export default function Home() {
   // Hydrate theme from localStorage on mount (handles SSR mismatch)
   useEffect(() => {
     try {
-      const saved = localStorage.getItem("brandflow-theme");
+      const saved = localStorage.getItem("brandforge-theme");
       if (saved === "light" || saved === "dark" || saved === "premium-dark") {
         setAppTheme(saved);
       }

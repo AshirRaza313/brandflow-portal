@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { useBrandFlowStore } from "@/store/brandflow-store";
+import { useBrandForgeStore } from "@/store/brandflow-store";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -199,7 +199,7 @@ const getChannelBadgeClasses = (channel: string, isGold: boolean, isDark: boolea
 // ── Component ──────────────────────────────────────────────────────────────
 
 export function OrdersPage() {
-  const { organization, appTheme } = useBrandFlowStore();
+  const { organization, appTheme } = useBrandForgeStore();
   const isGold = appTheme === "premium-dark";
   const isDark = appTheme === "dark" || isGold;
 
@@ -249,12 +249,15 @@ export function OrdersPage() {
       if (search.trim()) params.set("search", search.trim());
 
       const res = await fetch(`/api/orders?${params}`);
+      let data: any;
+      try {
+        data = await res.json();
+      } catch {
+        throw new Error("Failed to parse response");
+      }
       if (!res.ok) {
-        const data = await res.json();
         throw new Error(data.error || "Failed to fetch orders");
       }
-
-      const data = await res.json();
       setOrders(data.orders || []);
       setPagination(data.pagination || { page: 1, limit: ORDERS_PER_PAGE, totalCount: 0, totalPages: 0 });
       setStats(data.stats || { total: 0, pending: 0, confirmed: 0, dispatched: 0, delivered: 0 });

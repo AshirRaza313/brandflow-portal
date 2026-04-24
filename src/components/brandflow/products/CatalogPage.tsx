@@ -7,10 +7,10 @@ import { Input } from "@/components/ui/input";
 import { Package, Search, Download, Filter, DollarSign, Plus } from "lucide-react";
 import { toast } from "sonner";
 import { motion } from "framer-motion";
-import { useBrandFlowStore } from "@/store/brandflow-store";
+import { useBrandForgeStore } from "@/store/brandflow-store";
 
 export function CatalogPage() {
-  const { setActiveSection } = useBrandFlowStore();
+  const { setActiveSection } = useBrandForgeStore();
   const [search, setSearch] = useState("");
   const [categoryFilter, setCategoryFilter] = useState("all");
   const [showWholesale, setShowWholesale] = useState(false);

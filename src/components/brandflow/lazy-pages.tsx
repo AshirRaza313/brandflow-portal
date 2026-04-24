@@ -29,7 +29,7 @@ function PageLoader({ name }: { name: string }) {
  * Helper to create a lazy-loaded page with Suspense fallback.
  * Handles both default exports AND named exports (e.g. `export function DashboardHome()`).
  *
- * React.lazy() requires { default: ComponentType }, but many BrandFlow components
+ * React.lazy() requires { default: ComponentType }, but many BrandForge components
  * use named exports. This helper auto-detects and wraps named exports correctly.
  *
  * Usage: const DashboardHome = lazyPage(() => import("@/components/brandflow/dashboard/DashboardHome"), "Dashboard");

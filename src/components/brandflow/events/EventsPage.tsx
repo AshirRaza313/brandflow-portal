@@ -2,7 +2,7 @@
 
 import { useState, useMemo, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { useBrandFlowStore } from "@/store/brandflow-store";
+import { useBrandForgeStore } from "@/store/brandflow-store";
 import {
   getActiveEvents,
   getUpcomingEvents,
@@ -44,14 +44,14 @@ import {
 } from "lucide-react";
 
 // ============================================================================
-// BrandFlow Icon Component — Uses actual BrandFlow logo (PNG converted to icon)
+// BrandForge Icon Component — Uses actual BrandForge logo (PNG converted to icon)
 // ============================================================================
 
-function BrandFlowIcon({ size = 14, className = "" }: { size?: number; className?: string }) {
+function BrandForgeIcon({ size = 14, className = "" }: { size?: number; className?: string }) {
   return (
     <img
-      src="/brandflow-icon-32.png"
-      alt="BrandFlow"
+      src="/brandforge-icon-32.png"
+      alt="BrandForge"
       width={size}
       height={size}
       className={`object-contain ${className}`}
@@ -109,7 +109,7 @@ function getCountryName(code: string): string {
 function getSkippedEventIds(): Set<string> {
   try {
     if (typeof window === "undefined") return new Set();
-    const raw = localStorage.getItem("brandflow-skipped-events");
+    const raw = localStorage.getItem("brandforge-skipped-events");
     return raw ? new Set(JSON.parse(raw)) : new Set();
   } catch {
     return new Set();
@@ -119,7 +119,7 @@ function getSkippedEventIds(): Set<string> {
 function saveSkippedEventIds(ids: Set<string>) {
   try {
     if (typeof window !== "undefined") {
-      localStorage.setItem("brandflow-skipped-events", JSON.stringify([...ids]));
+      localStorage.setItem("brandforge-skipped-events", JSON.stringify([...ids]));
     }
   } catch {}
 }
@@ -500,7 +500,7 @@ function EventCalendar({
                   <span className="text-[10px] sm:text-xs leading-none">
                     {cell.day}
                   </span>
-                  {/* Event markers — BrandFlow Icon for events */}
+                  {/* Event markers — BrandForge Icon for events */}
                   {hasEvents && (
                     <div className="flex gap-px sm:gap-0.5 mt-0.5 items-center justify-center">
                       {cell.events.slice(0, 2).map((ev, i) => (
@@ -511,8 +511,8 @@ function EventCalendar({
                           title={ev.name}
                         >
                           <img
-                            src="/brandflow-icon-32.png"
-                            alt="BrandFlow"
+                            src="/brandforge-icon-32.png"
+                            alt="BrandForge"
                             className="h-full w-full object-contain"
                             draggable={false}
                           />
@@ -543,8 +543,8 @@ function EventCalendar({
           <div className="flex items-center gap-1.5">
             <div className="h-3.5 w-3.5 sm:h-4 sm:w-4 rounded-[2px] sm:rounded-[3px] bg-violet-500 flex items-center justify-center overflow-hidden">
               <img
-                src="/brandflow-icon-32.png"
-                alt="BrandFlow"
+                src="/brandforge-icon-32.png"
+                alt="BrandForge"
                 className="h-full w-full object-contain"
                 draggable={false}
               />
@@ -723,7 +723,7 @@ export function EventsPage() {
     selectedCountry,
     selectedReligion,
     appTheme,
-  } = useBrandFlowStore();
+  } = useBrandForgeStore();
 
   const [previewEventId, setPreviewEventId] = useState<string | null>(null);
   const [skippedEventIds, setSkippedEventIds] = useState<Set<string>>(() => getSkippedEventIds());

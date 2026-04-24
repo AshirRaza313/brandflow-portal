@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useRef, useMemo } from "react";
-import { useBrandFlowStore, type SidebarSection } from "@/store/brandflow-store";
+import { useBrandForgeStore, type SidebarSection } from "@/store/brandflow-store";
 import {
   Search,
   Menu,
@@ -403,7 +403,7 @@ export function Header() {
     language,
     setLanguage,
     selectedCountry,
-  } = useBrandFlowStore();
+  } = useBrandForgeStore();
 
   // ── Auto-notifications: poll for new DB notifications and show Sonner toasts ──
   useAutoNotifications({

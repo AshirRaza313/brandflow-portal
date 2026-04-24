@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState, useCallback } from "react";
-import { useBrandFlowStore } from "@/store/brandflow-store";
+import { useBrandForgeStore } from "@/store/brandflow-store";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   ShoppingBag,
@@ -58,7 +58,7 @@ interface DailySummary {
 // ── Component ──
 
 export function DailySummaryWidget() {
-  const { organization, appTheme } = useBrandFlowStore();
+  const { organization, appTheme } = useBrandForgeStore();
   const isGold = appTheme === "premium-dark";
   const isDark = appTheme === "dark" || isGold;
 

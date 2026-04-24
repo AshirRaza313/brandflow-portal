@@ -1,6 +1,6 @@
 "use client";
 
-import { useBrandFlowStore, SIDEBAR_GROUP_ORDER, SIDEBAR_STRUCTURE, SidebarSection, SidebarGroup } from "@/store/brandflow-store";
+import { useBrandForgeStore, SIDEBAR_GROUP_ORDER, SIDEBAR_STRUCTURE, SidebarSection, SidebarGroup } from "@/store/brandflow-store";
 import { motion, AnimatePresence } from "framer-motion";
 import { cn } from "@/lib/utils";
 import { useState, useCallback, useMemo, useEffect } from "react";
@@ -85,7 +85,7 @@ export function Sidebar() {
     activeSection, setActiveSection, sidebarOpen, setSidebarOpen,
     user, logout, brandLogo, brandName, appTheme, sidebarCollapsed, toggleSidebarCollapsed,
     brandTagline, brandConfigured, organization,
-  } = useBrandFlowStore();
+  } = useBrandForgeStore();
   const [expandedGroups, setExpandedGroups] = useState<Set<SidebarGroup>>(() => new Set(["main", "guide"]));
   const [adminLockedFeatures, setAdminLockedFeatures] = useState<Set<string>>(new Set());
   const t = useTranslation();
@@ -417,7 +417,7 @@ export function Sidebar() {
               {isCollapsed ? (
                 <>
                   <ChevronRight className="h-3 w-3" />
-                  {!isCollapsed && <span>Expand</span>}
+                  <span>Expand</span>
                 </>
               ) : (
                 <>
@@ -476,7 +476,7 @@ export function Sidebar() {
             </span>
             {!isCollapsed && <span className="text-[10px] font-medium text-slate-500">{visibleGroups.length} groups</span>}
           </div>
-          {/* "Powered by BrandFlow" subtle text */}
+          {/* "Powered by BrandForge" subtle text */}
           <div className="pb-3 flex justify-center">
             <span className="text-[10px] text-slate-500/60">Powered by {companyName}</span>
           </div>

@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useCallback, useEffect, useRef, useState } from "react";
-import { useBrandFlowStore } from "@/store/brandflow-store";
+import { useBrandForgeStore } from "@/store/brandflow-store";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Bell,
@@ -208,7 +208,7 @@ function EmptyNotifications({ isDark }: { isDark: boolean }) {
 // ── Main Component ───────────────────────────────────────────────────────────
 
 export function NotificationCenter() {
-  const { organization, appTheme } = useBrandFlowStore();
+  const { organization, appTheme } = useBrandForgeStore();
   const isGold = appTheme === "premium-dark";
   const isDark = appTheme === "dark" || isGold;
 

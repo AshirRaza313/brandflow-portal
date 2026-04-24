@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useMemo, useEffect } from "react";
-import { useBrandFlowStore } from "@/store/brandflow-store";
+import { useBrandForgeStore } from "@/store/brandflow-store";
 import { usePlatformIdentity } from "@/lib/platform-identity";
 import {
   Dialog,
@@ -33,7 +33,7 @@ export function AuthModal() {
     brandLogo,
     brandName,
     brandTagline,
-  } = useBrandFlowStore();
+  } = useBrandForgeStore();
 
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
@@ -55,7 +55,7 @@ export function AuthModal() {
 
   // Use brand identity if configured, otherwise default to platform identity
   const showBrandIdentity = brandConfigured && brandName;
-  const displayLogo = showBrandIdentity ? brandLogo : "/brandflow-logo.png";
+  const displayLogo = showBrandIdentity ? brandLogo : "/brandforge-logo.png";
   const displayName = showBrandIdentity ? brandName : platformIdentity.companyName;
 
   // Sync tab with authModalMode
@@ -272,7 +272,7 @@ export function AuthModal() {
                 <span className="gold-gradient-text">{displayName}</span>
               </h1>
               <p className="text-sm text-slate-500 mt-1">
-                {showBrandIdentity && brandTagline ? brandTagline : "The Pulse of Your Business"}
+                {showBrandIdentity && brandTagline ? brandTagline : "Forge Your Brand Empire"}
               </p>
             </div>
 

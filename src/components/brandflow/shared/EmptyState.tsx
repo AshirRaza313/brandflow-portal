@@ -1,5 +1,5 @@
 "use client";
-import { useBrandFlowStore } from "@/store/brandflow-store";
+import { useBrandForgeStore } from "@/store/brandflow-store";
 import { cn } from "@/lib/utils";
 import { LucideIcon } from "lucide-react";
 
@@ -11,7 +11,7 @@ interface EmptyStateProps {
 }
 
 export function EmptyState({ icon: Icon, title, description, action }: EmptyStateProps) {
-  const { appTheme } = useBrandFlowStore();
+  const { appTheme } = useBrandForgeStore();
   const isGold = appTheme === "premium-dark";
   const isDark = appTheme === "dark" || isGold;
 

@@ -421,7 +421,7 @@ export function TermsOfServicePage({ onBack }: LegalPageProps) {
                   Support:{" "}
                   <a href={`mailto:${identity.companyEmail}`} className="text-emerald-600 hover:underline">{identity.companyEmail}</a>
                 </p>
-                <p>Website: {identity.companyWebsite || "brandflow.pk"}</p>
+                <p>Website: {identity.companyWebsite || "brandforge.pk"}</p>
               </div>
             </div>
           </section>

@@ -63,7 +63,7 @@ export async function getAuthContext(req: NextRequest): Promise<AuthContext | nu
   }
 
   // ── Method 3: Custom headers (set by Next.js middleware from cookies) ──
-  // This is the primary auth flow for the BrandFlow Portal:
+  // This is the primary auth flow for the BrandForge Portal:
   // Login API → sets cookies → middleware reads cookies → injects x-user-* headers
   const userId = req.headers.get("x-user-id");
   if (userId) {
