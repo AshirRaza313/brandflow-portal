@@ -52,3 +52,23 @@ prompt
 server.log
 # Skills directory
 /skills/
+# Database files
+*.db
+prisma/db/
+db/
+
+# Upload files
+upload/
+
+# Agent context
+agent-ctx/
+
+# Download files (generated)
+download/
+
+# Editor files
+*.swp
+*.swo
+*~
+.idea/
+.vscode/
