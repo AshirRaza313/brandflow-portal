@@ -2,7 +2,7 @@
 
 import { useState, useMemo, useCallback, useRef, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { useBrandForgeStore } from "@/store/brandflow-store";
+import { useBrandOnyxStore } from "@/store/brandflow-store";
 import { usePlatformIdentity } from "@/lib/platform-identity";
 import {
   Card,
@@ -84,7 +84,7 @@ interface ClientConversation {
 
 const MAX_ATTACHMENT_SIZE = 20 * 1024 * 1024; // 20MB
 const MAX_VOICE_DURATION = 300; // 5 minutes
-const ADMIN_ID = "admin-brandforge";
+const ADMIN_ID = "admin-brandonix";
 
 // ============================================================================
 // Helpers
@@ -1020,7 +1020,7 @@ function ClientListItem({
 // ============================================================================
 
 export function SupportChatPage() {
-  const { user, appTheme, organization } = useBrandForgeStore();
+  const { user, appTheme, organization } = useBrandOnyxStore();
   const { identity } = usePlatformIdentity();
   const companyName = identity.companyName;
 
@@ -1037,7 +1037,7 @@ export function SupportChatPage() {
   const orgName = organization?.name || "My Brand";
 
   // Fetch company email for client view (hide personal email)
-  const [companyEmail, setCompanyEmail] = useState("support@brandforge.pk");
+  const [companyEmail, setCompanyEmail] = useState("support@brandonix.pk");
   useEffect(() => {
     if (!isAdmin) {
       fetch("/api/admin/settings")
@@ -1078,10 +1078,10 @@ export function SupportChatPage() {
   // ---------------------------------------------------------------------------
 
   // Get the storage key for a given org's support chat
-  const getStorageKey = useCallback((oid: string) => `brandforge-support-${oid}`, []);
+  const getStorageKey = useCallback((oid: string) => `brandonix-support-${oid}`, []);
 
   // Get the admin index storage key
-  const adminIndexKey = "brandforge-support-admin-index";
+  const adminIndexKey = "brandonix-support-admin-index";
 
   // ---------------------------------------------------------------------------
   // Load messages for the active conversation
@@ -1119,7 +1119,7 @@ export function SupportChatPage() {
   const [clientList, setClientList] = useState<ClientConversation[]>(() => {
     try {
       if (typeof window === "undefined") return [];
-      const raw = localStorage.getItem("brandforge-support-clients");
+      const raw = localStorage.getItem("brandonix-support-clients");
       return raw ? JSON.parse(raw) : [];
     } catch {
       return [];
@@ -1202,7 +1202,7 @@ export function SupportChatPage() {
         );
         try {
           if (typeof window !== "undefined") {
-            localStorage.setItem("brandforge-support-clients", JSON.stringify(updated));
+            localStorage.setItem("brandonix-support-clients", JSON.stringify(updated));
           }
         } catch {}
         return updated;
@@ -1211,7 +1211,7 @@ export function SupportChatPage() {
         const newList = [...prev, { orgId: clientOrgId, orgName: name, lastMessage: lastMsg, lastMessageTime: time, unreadCount: 0 }];
         try {
           if (typeof window !== "undefined") {
-            localStorage.setItem("brandforge-support-clients", JSON.stringify(newList));
+            localStorage.setItem("brandonix-support-clients", JSON.stringify(newList));
           }
         } catch {}
         return newList;
@@ -1398,7 +1398,7 @@ export function SupportChatPage() {
       // Save call history
       try {
         if (typeof window !== "undefined") {
-          const historyRaw = localStorage.getItem("brandforge-call-history") || "[]";
+          const historyRaw = localStorage.getItem("brandonix-call-history") || "[]";
           const history = JSON.parse(historyRaw);
           history.push({
             id: generateId(),
@@ -1410,7 +1410,7 @@ export function SupportChatPage() {
             type: "outgoing",
             timestamp: Date.now(),
           });
-          localStorage.setItem("brandforge-call-history", JSON.stringify(history.slice(-50)));
+          localStorage.setItem("brandonix-call-history", JSON.stringify(history.slice(-50)));
         }
       } catch {}
     }
@@ -1986,7 +1986,7 @@ export function SupportChatPage() {
             <div className="flex items-center gap-2">
               <Lock className={`h-3 w-3 ${isDark ? "text-slate-700" : "text-slate-300"}`} />
               <span className={`text-[9px] ${isDark ? "text-slate-700" : "text-slate-300"}`}>
-                Private support channel &mdash; BrandForge team only
+                Private support channel &mdash; BrandOnyx team only
               </span>
             </div>
             <div className="flex items-center gap-2">

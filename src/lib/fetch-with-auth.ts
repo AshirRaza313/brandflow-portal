@@ -13,14 +13,14 @@
 // ============================================================================
 
 /**
- * Read auth data from localStorage (same keys as brandforge-store.ts).
+ * Read auth data from localStorage (same keys as brandflow-store.ts).
  * Returns null if not logged in.
  */
 function getAuthFromStorage(): { userId: string; email: string; role: string; orgId: string } | null {
   try {
     if (typeof window === "undefined") return null;
-    const userStr = localStorage.getItem("brandforge-user");
-    const orgStr = localStorage.getItem("brandforge-org");
+    const userStr = localStorage.getItem("brandonix-user");
+    const orgStr = localStorage.getItem("brandonix-org");
     if (!userStr) return null;
 
     const user = JSON.parse(userStr);

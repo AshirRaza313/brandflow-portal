@@ -29,13 +29,13 @@ interface PlatformIdentityContextType {
 // ============================================================================
 
 const DEFAULT_IDENTITY: PlatformIdentity = {
-  companyName: "BrandForge",
-  tagline: "Forge Your Brand Empire",
+  companyName: "BrandOnyx",
+  tagline: "Command Your Brand",
   logoUrl: null,
   faviconUrl: null,
   primaryColor: "#d97706",
   secondaryColor: "#059669",
-  companyEmail: "support@brandforge.pk",
+  companyEmail: "support@brandonix.pk",
   companyPhone: null,
   companyWebsite: null,
   loaded: false,
@@ -61,13 +61,13 @@ export function PlatformIdentityProvider({ children }: { children: ReactNode }) 
       const data = await res.json();
       if (data) {
         const mapped: PlatformIdentity = {
-          companyName: data.companyName || "BrandForge",
-          tagline: "Forge Your Brand Empire",
+          companyName: data.companyName || "BrandOnyx",
+          tagline: "Command Your Brand",
           logoUrl: data.logoUrl || null,
           faviconUrl: data.faviconUrl || null,
           primaryColor: data.primaryBrandColor || "#d97706",
           secondaryColor: data.secondaryBrandColor || "#059669",
-          companyEmail: data.companyEmail || "support@brandforge.pk",
+          companyEmail: data.companyEmail || "support@brandonix.pk",
           companyPhone: data.companyPhone || null,
           companyWebsite: data.companyWebsite || null,
           loaded: true,
@@ -76,7 +76,7 @@ export function PlatformIdentityProvider({ children }: { children: ReactNode }) 
 
         // Update page title dynamically
         if (typeof document !== "undefined" && data.companyName) {
-          document.title = `${data.companyName} — Forge Your Brand Empire`;
+          document.title = `${data.companyName} — Command Your Brand`;
         }
 
         // Update favicon if custom
@@ -99,7 +99,7 @@ export function PlatformIdentityProvider({ children }: { children: ReactNode }) 
   // Also refresh when user logs in (check localStorage periodically)
   useEffect(() => {
     const interval = setInterval(() => {
-      const user = localStorage.getItem("brandforge-user");
+      const user = localStorage.getItem("brandonix-user");
       if (user && !loaded) {
         fetchIdentity();
       }

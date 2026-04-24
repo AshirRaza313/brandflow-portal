@@ -3,7 +3,7 @@
 import { LucideIcon, TrendingUp, TrendingDown } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
-import { useBrandForgeStore } from "@/store/brandflow-store";
+import { useBrandOnyxStore } from "@/store/brandflow-store";
 import { cn } from "@/lib/utils";
 
 interface StatsCardProps {
@@ -17,7 +17,7 @@ interface StatsCardProps {
 }
 
 export function StatsCard({ title, value, icon: Icon, change, changeLabel, variant = "default", loading }: StatsCardProps) {
-  const { appTheme } = useBrandForgeStore();
+  const { appTheme } = useBrandOnyxStore();
   const isGold = appTheme === "premium-dark";
   const isDark = appTheme === "dark" || isGold;
 

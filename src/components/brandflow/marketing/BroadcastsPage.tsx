@@ -12,7 +12,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "
 import { Megaphone, Search, Plus } from "lucide-react";
 import { toast } from "sonner";
 import { motion, AnimatePresence } from "framer-motion";
-import { useBrandForgeStore } from "@/store/brandflow-store";
+import { useBrandOnyxStore } from "@/store/brandflow-store";
 
 const subTabs = [
   { id: "whatsapp", label: "WhatsApp" },
@@ -30,7 +30,7 @@ interface Campaign {
 }
 
 export function BroadcastsPage() {
-  const { appTheme } = useBrandForgeStore();
+  const { appTheme } = useBrandOnyxStore();
   const isDark = appTheme !== "light";
   const isGold = appTheme === "premium-dark";
   const [activeTab, setActiveTab] = useState("whatsapp");

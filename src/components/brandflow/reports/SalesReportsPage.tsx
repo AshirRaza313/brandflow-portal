@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import { useBrandForgeStore } from "@/store/brandflow-store";
+import { useBrandOnyxStore } from "@/store/brandflow-store";
 import { fetchWithAuth } from "@/lib/fetch-with-auth";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -55,7 +55,7 @@ const PIE_COLORS = ["#10b981", "#f59e0b", "#ef4444", "#8b5cf6", "#f97316", "#06b
 const TABS = ["daily", "weekly", "monthly"] as const;
 
 export function SalesReportsPage() {
-  const { organization, appTheme } = useBrandForgeStore();
+  const { organization, appTheme } = useBrandOnyxStore();
   const isDark = appTheme !== "light";
   const isGold = appTheme === "premium-dark";
   const accentColor = isGold ? "amber" : "emerald";

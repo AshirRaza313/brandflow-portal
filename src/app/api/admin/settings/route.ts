@@ -18,8 +18,8 @@ export const GET = withAuth(async (_req: NextRequest, authCtx) => {
       // Create default settings
       settings = await db.platformSettings.create({
         data: {
-          companyName: "BrandForge",
-          companyEmail: "support@brandforge.pk",
+          companyName: "BrandOnyx",
+          companyEmail: "support@brandonix.pk",
           currency: "PKR",
         },
       });
@@ -110,7 +110,7 @@ export const PUT = withAuth(async (req: NextRequest, authCtx) => {
     if (!existing) {
       const settings = await db.platformSettings.create({
         data: {
-          companyName: updateData.companyName || "BrandForge",
+          companyName: updateData.companyName || "BrandOnyx",
           companyEmail: updateData.companyEmail || "",
           ...updateData,
         },

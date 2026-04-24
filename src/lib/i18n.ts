@@ -1,7 +1,7 @@
 "use client";
 
 // ============================================================================
-// BrandForge Portal — i18n Translation System (English / Roman Urdu)
+// BrandOnyx Portal — i18n Translation System (English / Roman Urdu)
 // ============================================================================
 
 export type Language = "en" | "ur";
@@ -846,10 +846,10 @@ const translations: Record<Language, Record<string, string>> = {
  *   <h1>{t("dashboard")}</h1>
  */
 export function useTranslation(): (key: string, fallback?: string) => string {
-  // Import useBrandForgeStore dynamically to avoid circular dependency
+  // Import useBrandOnyxStore dynamically to avoid circular dependency
   // eslint-disable-next-line @typescript-eslint/no-require-imports
-  const { useBrandForgeStore } = require("@/store/brandflow-store");
-  const lang = useBrandForgeStore((s: any) => s.language) || "en";
+  const { useBrandOnyxStore } = require("@/store/brandflow-store");
+  const lang = useBrandOnyxStore((s: any) => s.language) || "en";
   return (key: string, fallback?: string) => {
     return translations[lang]?.[key] || translations.en[key] || fallback || key;
   };

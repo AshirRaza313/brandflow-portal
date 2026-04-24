@@ -11,7 +11,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Package, Truck, CheckCircle2, Clock, Calculator, Printer, Globe, BarChart3, MapPin } from "lucide-react";
 import { EmptyState } from "@/components/brandflow/shared/EmptyState";
 import { toast } from "sonner";
-import { useBrandForgeStore } from "@/store/brandflow-store";
+import { useBrandOnyxStore } from "@/store/brandflow-store";
 
 interface Shipment {
   id: number;
@@ -34,7 +34,7 @@ interface Carrier {
 
 export function ShippingPage() {
   const [calculatedRate, setCalculatedRate] = useState<string | null>(null);
-  const { appTheme } = useBrandForgeStore();
+  const { appTheme } = useBrandOnyxStore();
   const isDark = appTheme !== "light";
   const isGold = appTheme === "premium-dark";
 

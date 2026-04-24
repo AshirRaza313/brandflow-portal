@@ -10,7 +10,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Building2, ShoppingCart, DollarSign, Truck, Star } from "lucide-react";
 import { EmptyState } from "@/components/brandflow/shared/EmptyState";
 import { toast } from "sonner";
-import { useBrandForgeStore } from "@/store/brandflow-store";
+import { useBrandOnyxStore } from "@/store/brandflow-store";
 
 interface Supplier {
   id: number;
@@ -26,7 +26,7 @@ export function SuppliersPage() {
   const [createOpen, setCreateOpen] = useState(false);
   const [suppliers, setSuppliers] = useState<Supplier[]>([]);
   const [formData, setFormData] = useState({ name: "", contactEmail: "", phone: "", category: "", address: "" });
-  const { appTheme } = useBrandForgeStore();
+  const { appTheme } = useBrandOnyxStore();
   const isDark = appTheme !== "light";
   const isGold = appTheme === "premium-dark";
 

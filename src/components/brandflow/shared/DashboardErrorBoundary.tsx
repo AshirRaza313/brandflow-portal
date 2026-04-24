@@ -34,12 +34,12 @@ export class DashboardErrorBoundary extends Component<Props, State> {
 
   handleLogout = () => {
     try {
-      localStorage.removeItem("brandforge-user");
-      localStorage.removeItem("brandforge-org");
-      localStorage.removeItem("brandforge-brandname");
-      localStorage.removeItem("brandforge-logo");
-      localStorage.removeItem("brandforge-tagline");
-      localStorage.removeItem("brandforge-configured");
+      localStorage.removeItem("brandonix-user");
+      localStorage.removeItem("brandonix-org");
+      localStorage.removeItem("brandonix-brandname");
+      localStorage.removeItem("brandonix-logo");
+      localStorage.removeItem("brandonix-tagline");
+      localStorage.removeItem("brandonix-configured");
     } catch {}
     window.location.href = "/";
   };

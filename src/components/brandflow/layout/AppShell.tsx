@@ -2,7 +2,7 @@
 
 import { Sidebar } from "./Sidebar";
 import { Header } from "./Header";
-import { useBrandForgeStore } from "@/store/brandflow-store";
+import { useBrandOnyxStore } from "@/store/brandflow-store";
 import { cn } from "@/lib/utils";
 
 interface AppShellProps {
@@ -10,7 +10,7 @@ interface AppShellProps {
 }
 
 export function AppShell({ children }: AppShellProps) {
-  const sidebarCollapsed = useBrandForgeStore((s) => s.sidebarCollapsed);
+  const sidebarCollapsed = useBrandOnyxStore((s) => s.sidebarCollapsed);
 
   return (
     <div className="min-h-screen bg-slate-50">

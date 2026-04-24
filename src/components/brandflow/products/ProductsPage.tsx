@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback, useMemo } from "react";
-import { useBrandForgeStore } from "@/store/brandflow-store";
+import { useBrandOnyxStore } from "@/store/brandflow-store";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -91,7 +91,7 @@ function formatPrice(price: number): string {
 // ── Component ────────────────────────────────────────────────────────────────
 
 export function ProductsPage() {
-  const { organization, appTheme } = useBrandForgeStore();
+  const { organization, appTheme } = useBrandOnyxStore();
   const isGold = appTheme === "premium-dark";
   const isDark = appTheme === "dark" || isGold;
 

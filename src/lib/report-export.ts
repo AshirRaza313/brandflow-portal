@@ -1,6 +1,6 @@
 // ============================================================================
-// Report Export Utility — Client-branded exports with BrandForge credit
-// Enterprise plan reports have NO BrandForge branding
+// Report Export Utility — Client-branded exports with BrandOnyx credit
+// Enterprise plan reports have NO BrandOnyx branding
 // ============================================================================
 
 export interface ReportExportOptions {
@@ -14,13 +14,13 @@ export interface ReportExportOptions {
 
 /**
  * Generate HTML header and footer for report exports
- * - Starter/Growth plans: Client branding + small BrandForge credit at bottom
- * - Enterprise plans: Full client branding, NO BrandForge credit
+ * - Starter/Growth plans: Client branding + small BrandOnyx credit at bottom
+ * - Enterprise plans: Full client branding, NO BrandOnyx credit
  */
 export function generateReportBranding(options: ReportExportOptions) {
   const isEnterprise = options.plan === "enterprise";
   const showBrandflow = !isEnterprise;
-  const brandName = options.platformName || "BrandForge";
+  const brandName = options.platformName || "BrandOnyx";
 
   const header = `
     <div style="display:flex;justify-content:space-between;align-items:center;padding:24px 32px;border-bottom:2px solid #e5e7eb;background:#ffffff;">

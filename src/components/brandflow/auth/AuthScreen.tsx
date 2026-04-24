@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useMemo } from "react";
-import { useBrandForgeStore } from "@/store/brandflow-store";
+import { useBrandOnyxStore } from "@/store/brandflow-store";
 import { usePlatformIdentity } from "@/lib/platform-identity";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -12,7 +12,7 @@ import { toast } from "sonner";
 import { Loader2, Eye, EyeOff } from "lucide-react";
 
 export function AuthScreen() {
-  const { setView, setUser, setOrganization, setBrandName, setBrandConfigured, brandConfigured, brandLogo, brandName, brandTagline } = useBrandForgeStore();
+  const { setView, setUser, setOrganization, setBrandName, setBrandConfigured, brandConfigured, brandLogo, brandName, brandTagline } = useBrandOnyxStore();
   const { identity } = usePlatformIdentity();
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
@@ -27,11 +27,11 @@ export function AuthScreen() {
     confirmPassword: "",
   });
 
-  // Use brand identity if configured, otherwise default BrandForge
+  // Use brand identity if configured, otherwise default BrandOnyx
   const showBrandIdentity = brandConfigured && brandName;
-  const displayLogo = showBrandIdentity ? brandLogo : "/brandforge-logo.png";
+  const displayLogo = showBrandIdentity ? brandLogo : "/brandonix-logo.png";
   const displayName = showBrandIdentity ? brandName : identity.companyName;
-  const displayTagline = showBrandIdentity && brandTagline ? brandTagline : "Forge Your Brand Empire";
+  const displayTagline = showBrandIdentity && brandTagline ? brandTagline : "Command Your Brand";
 
   // Generate floating gold particle positions
   const particles = useMemo(() => {

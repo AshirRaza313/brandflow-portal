@@ -14,7 +14,7 @@ import {
 } from "lucide-react";
 import { EmptyState } from "@/components/brandflow/shared/EmptyState";
 import { toast } from "sonner";
-import { useBrandForgeStore } from "@/store/brandflow-store";
+import { useBrandOnyxStore } from "@/store/brandflow-store";
 
 interface Keyword {
   id: number;
@@ -26,7 +26,7 @@ interface Keyword {
 }
 
 export function SEOManagerPage() {
-  const { appTheme } = useBrandForgeStore();
+  const { appTheme } = useBrandOnyxStore();
   const isDark = appTheme !== "light";
 
   const [keywords, setKeywords] = useState<Keyword[]>([]);

@@ -285,7 +285,7 @@ export function PrivacyPolicyPage({ onBack }: LegalPageProps) {
                   Support:{" "}
                   <a href={`mailto:${identity.companyEmail}`} className="text-emerald-600 hover:underline">{identity.companyEmail}</a>
                 </p>
-                <p>Website: {identity.companyWebsite || "brandforge.pk"}</p>
+                <p>Website: {identity.companyWebsite || "brandflow.pk"}</p>
                 <p className="text-sm text-slate-500 mt-3">
                   For data protection inquiries, we aim to respond within 30 working days as
                   required under applicable Pakistani regulations.

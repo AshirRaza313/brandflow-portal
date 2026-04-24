@@ -22,16 +22,16 @@ export interface EventTheme {
 }
 
 function getSavedBrandName(): string {
-  try { return typeof window !== "undefined" ? localStorage.getItem("brandforge-brandname") || "" : ""; } catch { return ""; }
+  try { return typeof window !== "undefined" ? localStorage.getItem("brandonix-brandname") || "" : ""; } catch { return ""; }
 }
 function getSavedBrandLogo(): string | null {
-  try { return typeof window !== "undefined" ? localStorage.getItem("brandforge-logo") : null; } catch { return null; }
+  try { return typeof window !== "undefined" ? localStorage.getItem("brandonix-logo") : null; } catch { return null; }
 }
 function getSavedBrandTagline(): string {
-  try { return typeof window !== "undefined" ? localStorage.getItem("brandforge-tagline") || "" : ""; } catch { return ""; }
+  try { return typeof window !== "undefined" ? localStorage.getItem("brandonix-tagline") || "" : ""; } catch { return ""; }
 }
 function getSavedBrandConfigured(): boolean {
-  try { return typeof window !== "undefined" ? localStorage.getItem("brandforge-configured") === "true" : false; } catch { return false; }
+  try { return typeof window !== "undefined" ? localStorage.getItem("brandonix-configured") === "true" : false; } catch { return false; }
 }
 
 interface BrandStore {
@@ -67,12 +67,12 @@ interface BrandStore {
 export const useBrandStore = create<BrandStore>((set, get) => ({
   brandName: getSavedBrandName(),
   setBrandName: (name) => {
-    try { localStorage.setItem("brandforge-brandname", name); } catch {}
+    try { localStorage.setItem("brandonix-brandname", name); } catch {}
     set({ brandName: name });
   },
   brandTagline: getSavedBrandTagline(),
   setBrandTagline: (tagline) => {
-    try { localStorage.setItem("brandforge-tagline", tagline); } catch {}
+    try { localStorage.setItem("brandonix-tagline", tagline); } catch {}
     set({ brandTagline: tagline });
   },
   brandColor: "#059669",
@@ -89,12 +89,12 @@ export const useBrandStore = create<BrandStore>((set, get) => ({
     })),
   brandLogo: getSavedBrandLogo(),
   setBrandLogo: (logo) => {
-    try { localStorage.setItem("brandforge-logo", logo || ""); } catch {}
+    try { localStorage.setItem("brandonix-logo", logo || ""); } catch {}
     set({ brandLogo: logo });
   },
   brandConfigured: getSavedBrandConfigured(),
   setBrandConfigured: (v) => {
-    try { localStorage.setItem("brandforge-configured", v ? "true" : "false"); } catch {}
+    try { localStorage.setItem("brandonix-configured", v ? "true" : "false"); } catch {}
     set({ brandConfigured: v });
   },
   activeEventTheme: null,

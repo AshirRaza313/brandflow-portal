@@ -19,7 +19,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { toast } from "sonner";
-import { useBrandForgeStore } from "@/store/brandflow-store";
+import { useBrandOnyxStore } from "@/store/brandflow-store";
 import { cn } from "@/lib/utils";
 
 interface Product {
@@ -51,7 +51,7 @@ interface FormErrors {
 }
 
 export function ProductModal({ open, onClose, onSaved, organizationId, product }: ProductModalProps) {
-  const { appTheme } = useBrandForgeStore();
+  const { appTheme } = useBrandOnyxStore();
   const isGold = appTheme === "premium-dark";
   const isDark = appTheme === "dark" || isGold;
 

@@ -47,7 +47,7 @@ export async function POST(req: NextRequest) {
     if (!org) {
       org = await prisma.organization.create({
         data: {
-          name: "BrandForge Admin",
+          name: "BrandOnyx Admin",
           slug,
           email: adminEmail,
           country: "PK",
@@ -91,9 +91,9 @@ export async function POST(req: NextRequest) {
     if (settingsCount === 0) {
       await prisma.platformSettings.create({
         data: {
-          companyName: "BrandForge",
-          companyEmail: "support@brandforge.pk",
-          tagline: "Forge Your Brand Empire",
+          companyName: "BrandOnyx",
+          companyEmail: "support@brandonix.pk",
+          tagline: "Command Your Brand",
           primaryBrandColor: "#d97706",
           secondaryBrandColor: "#f59e0b",
           currency: "PKR",

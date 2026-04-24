@@ -302,7 +302,7 @@ export function RefundPolicyPage({ onBack }: LegalPageProps) {
                   Support:{" "}
                   <a href={`mailto:${identity.companyEmail}`} className="text-emerald-600 hover:underline">{identity.companyEmail}</a>
                 </p>
-                <p>Website: {identity.companyWebsite || "brandforge.pk"}</p>
+                <p>Website: {identity.companyWebsite || "brandflow.pk"}</p>
                 <p className="text-sm text-slate-500 mt-3">
                   Business Hours: Monday to Friday, 9:00 AM to 6:00 PM Pakistan Standard Time (PKT).
                   We aim to respond to all billing inquiries within 2 business days.

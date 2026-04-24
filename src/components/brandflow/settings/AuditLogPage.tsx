@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState, useCallback, useMemo } from "react";
-import { useBrandForgeStore } from "@/store/brandflow-store";
+import { useBrandOnyxStore } from "@/store/brandflow-store";
 import { useTranslation } from "@/lib/i18n";
 import { LoadingSkeleton } from "@/components/brandflow/shared/LoadingSkeleton";
 import { isPlatformRole } from "@/lib/roles";
@@ -248,7 +248,7 @@ function exportToCSV(activities: AuditEntry[]) {
 // ============================================================================
 
 function AccessDenied() {
-  const { appTheme } = useBrandForgeStore();
+  const { appTheme } = useBrandOnyxStore();
   const t = useTranslation();
   const isGold = appTheme === "premium-dark";
   const isDark = appTheme === "dark" || isGold;
@@ -305,7 +305,7 @@ function AccessDenied() {
 // ============================================================================
 
 export function AuditLogPage() {
-  const { user, organization, appTheme } = useBrandForgeStore();
+  const { user, organization, appTheme } = useBrandOnyxStore();
   const t = useTranslation();
 
   const isGold = appTheme === "premium-dark";

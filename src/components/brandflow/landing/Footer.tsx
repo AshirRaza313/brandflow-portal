@@ -40,13 +40,13 @@ export function Footer({ onLegalClick }: FooterProps) {
           {/* Brand */}
           <div className="col-span-2 md:col-span-1">
             <div className="flex items-center gap-2 mb-4">
-              <img src="/brandforge-logo.png" alt={companyName} className="h-8 w-8 object-contain" />
+              <img src="/brandonix-logo.png" alt={companyName} className="h-8 w-8 object-contain" />
               <span className="text-xl font-bold text-white">
                 {splitBrandName(companyName)}
               </span>
             </div>
             <p className="text-sm text-slate-500 leading-relaxed mb-6">
-              Forge Your Brand Empire. All-in-one operations portal for modern brands.
+              Command Your Brand. All-in-one operations portal for modern brands.
             </p>
             <div className="flex gap-3">
               {[Twitter, Linkedin, Instagram].map((Icon, i) => (

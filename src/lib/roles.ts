@@ -1,5 +1,5 @@
 // ============================================================================
-// 16-Role RBAC System for BrandForge Portal
+// 16-Role RBAC System for BrandOnyx Portal
 // ============================================================================
 
 export interface RolePermission {
@@ -18,7 +18,7 @@ export const ROLES: RoleDefinition[] = [
   {
     name: "platform_owner",
     label: "Platform Owner",
-    description: "Full access to everything — the BrandForge portal owner",
+    description: "Full access to everything — the BrandOnyx portal owner",
     level: 100,
     permissions: { all: true },
   },
@@ -303,7 +303,7 @@ export function canAssignRole(
   // Platform roles: only ADMIN_EMAIL holder
   if (PLATFORM_ROLES.includes(target)) {
     if (!isPlatformOwner) {
-      return { allowed: false, reason: "Platform roles can only be assigned by the BrandForge owner.", code: "PLATFORM_ROLE_BLOCKED" };
+      return { allowed: false, reason: "Platform roles can only be assigned by the BrandOnyx owner.", code: "PLATFORM_ROLE_BLOCKED" };
     }
     return { allowed: true };
   }

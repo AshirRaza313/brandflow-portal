@@ -10,24 +10,24 @@ export type AppView = "landing" | "auth" | "dashboard";
 function getSavedTheme(): "light" | "dark" | "premium-dark" {
   if (typeof window === "undefined") return "premium-dark";
   try {
-    const saved = localStorage.getItem("brandforge-theme");
+    const saved = localStorage.getItem("brandonix-theme");
     if (saved === "light" || saved === "dark" || saved === "premium-dark") return saved;
   } catch {}
   return "premium-dark";
 }
 function saveThemeToStorage(theme: "light" | "dark" | "premium-dark") {
-  try { if (typeof window !== "undefined") localStorage.setItem("brandforge-theme", theme); } catch {}
+  try { if (typeof window !== "undefined") localStorage.setItem("brandonix-theme", theme); } catch {}
 }
 function getSavedLanguage(): "en" | "ur" {
   if (typeof window === "undefined") return "en";
   try {
-    const saved = localStorage.getItem("brandforge-language");
+    const saved = localStorage.getItem("brandonix-language");
     if (saved === "en" || saved === "ur") return saved;
   } catch {}
   return "en";
 }
 function saveLanguageToStorage(lang: "en" | "ur") {
-  try { if (typeof window !== "undefined") localStorage.setItem("brandforge-language", lang); } catch {}
+  try { if (typeof window !== "undefined") localStorage.setItem("brandonix-language", lang); } catch {}
 }
 
 interface UIStore {

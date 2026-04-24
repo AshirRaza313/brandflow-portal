@@ -2,7 +2,7 @@
 
 import { useState, useMemo, useCallback, useRef, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { useBrandForgeStore } from "@/store/brandflow-store";
+import { useBrandOnyxStore } from "@/store/brandflow-store";
 import {
   Card,
   CardContent,
@@ -791,7 +791,7 @@ function TeamInfoPanel({
   isGold: boolean;
   accentClass: string;
 }) {
-  const { user, brandName } = useBrandForgeStore();
+  const { user, brandName } = useBrandOnyxStore();
   const members = useMemo(() => {
     const names = user ? [user.name] : [];
     if (brandName) names.push(`${brandName} Team`);
@@ -884,7 +884,7 @@ function AttachmentPreview({
 // ============================================================================
 
 export function TeamChatPage() {
-  const { user, brandName, appTheme, organization } = useBrandForgeStore();
+  const { user, brandName, appTheme, organization } = useBrandOnyxStore();
 
   const isDark = appTheme === "premium-dark" || appTheme === "dark";
   const isGold = appTheme === "premium-dark";
@@ -913,7 +913,7 @@ export function TeamChatPage() {
 
   // Load messages from localStorage (brand-isolated by organization)
   const orgId = organization?.id || "default";
-  const storageKey = `brandforge-chat-${orgId}-${activeChannelId}`;
+  const storageKey = `brandonix-chat-${orgId}-${activeChannelId}`;
   const [messages, setMessages] = useState<ChatMessage[]>(() => {
     try {
       if (typeof window === "undefined") return [];

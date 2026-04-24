@@ -10,7 +10,7 @@ const testimonials = [
     company: "StyleHaus Boutique",
     role: "Founder & CEO",
     quote:
-      "BrandForge completely transformed how we manage our online store. Orders, inventory, and team tasks — all in one place. We saved 15 hours per week on operations.",
+      "BrandOnyx completely transformed how we manage our online store. Orders, inventory, and team tasks — all in one place. We saved 15 hours per week on operations.",
     avatar: "SC",
     rating: 5,
   },
@@ -28,7 +28,7 @@ const testimonials = [
     company: "TechVenture Store",
     role: "Head of E-Commerce",
     quote:
-      "We switched from 4 different tools to BrandForge. The team collaboration features alone justified the switch. Best investment we made this year.",
+      "We switched from 4 different tools to BrandOnyx. The team collaboration features alone justified the switch. Best investment we made this year.",
     avatar: "AP",
     rating: 5,
   },

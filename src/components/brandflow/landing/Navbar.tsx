@@ -52,7 +52,7 @@ export function Navbar({ onAuthClick }: NavbarProps) {
               <div className="absolute -inset-[1px] rounded-xl bg-gradient-to-br opacity-80 blur-[0.5px]"
                 style={{ background: "linear-gradient(135deg, #d4a017, #f5d060, #b8860b)" }} />
               <div className="relative flex h-8 w-8 items-center justify-center rounded-xl bg-slate-900 shadow-lg overflow-hidden">
-                <img src="/brandforge-logo.png" alt={companyName} className="h-7 w-7 object-contain" />
+                <img src="/brandonix-logo.png" alt={companyName} className="h-7 w-7 object-contain" />
               </div>
             </div>
             <span className="text-xl font-bold text-white">

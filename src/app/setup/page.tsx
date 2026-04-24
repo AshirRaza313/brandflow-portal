@@ -36,7 +36,7 @@ export default function SetupPage() {
           "Content-Type": "application/json",
           "Authorization": "Bearer",
         },
-        body: JSON.stringify({ name: "brandforge-portal" }),
+        body: JSON.stringify({ name: "brandflow-portal" }),
       }).catch(async () => {
         addLog("Neon auto-create failed. Using manual setup...");
         return null;
@@ -117,7 +117,7 @@ export default function SetupPage() {
             </svg>
           </div>
           <h2 className="text-2xl font-bold text-amber-400 mb-3">Setup Complete!</h2>
-          <p className="text-gray-400 mb-2">Your BrandForge portal is ready to use.</p>
+          <p className="text-gray-400 mb-2">Your BrandOnyx portal is ready to use.</p>
           <p className="text-gray-500 text-sm mb-6">Admin login credentials have been set up.</p>
           <button
             onClick={() => router.push("/")}
@@ -134,7 +134,7 @@ export default function SetupPage() {
     return (
       <div className="min-h-screen bg-[#0a0a0f] flex items-center justify-center p-4">
         <div className="max-w-lg w-full bg-[#111118] border border-[rgba(217,119,6,0.15)] rounded-2xl p-8">
-          <h2 className="text-xl font-bold text-amber-400 mb-6">Setting Up BrandForge...</h2>
+          <h2 className="text-xl font-bold text-amber-400 mb-6">Setting Up BrandOnyx...</h2>
           <div className="bg-[#0a0a0f] rounded-xl p-4 h-64 overflow-y-auto font-mono text-xs">
             {logs.map((log, i) => (
               <p key={i} className={`${log.includes("ERROR") ? "text-red-400" : log.includes("successfully") || log.includes("success") ? "text-emerald-400" : "text-gray-400"} mb-1`}>
@@ -157,7 +157,7 @@ export default function SetupPage() {
       <div className="max-w-xl w-full">
         {/* Header */}
         <div className="text-center mb-8">
-          <h1 className="text-3xl font-bold text-amber-400 mb-2">BrandForge Setup</h1>
+          <h1 className="text-3xl font-bold text-amber-400 mb-2">BrandOnyx Setup</h1>
           <p className="text-gray-400">Configure your portal database connection</p>
         </div>
 

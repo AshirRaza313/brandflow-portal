@@ -12,7 +12,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "
 import { Plus, Calendar as CalendarIcon, Megaphone, Gift, Tag, ShoppingBag, ChevronLeft, ChevronRight } from "lucide-react";
 import { toast } from "sonner";
 import { motion } from "framer-motion";
-import { useBrandForgeStore } from "@/store/brandflow-store";
+import { useBrandOnyxStore } from "@/store/brandflow-store";
 
 interface CalendarEvent {
   id: number;
@@ -24,7 +24,7 @@ interface CalendarEvent {
 }
 
 export function MarketingCalendarPage() {
-  const { appTheme } = useBrandForgeStore();
+  const { appTheme } = useBrandOnyxStore();
   const isDark = appTheme !== "light";
 
   const [currentMonth, setCurrentMonth] = useState(new Date().getMonth());

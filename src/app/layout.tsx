@@ -23,17 +23,18 @@ export const viewport: Viewport = {
 };
 
 export const metadata: Metadata = {
-  title: "BrandForge — Forge Your Brand Empire",
-  description: "All-in-one brand operations management portal for modern businesses",
-  keywords: ["BrandForge", "brand management", "order management", "inventory", "team collaboration", "business operations", "SaaS"],
-  authors: [{ name: "BrandForge" }],
+  title: "BrandOnyx — Command Your Brand",
+  description: "Premium all-in-one brand operations management portal for modern businesses",
+
+  keywords: ["BrandOnyx", "brand management", "order management", "inventory", "team collaboration", "business operations", "SaaS"],
+  authors: [{ name: "BrandOnyx" }],
   icons: {
-    icon: "/brandforge-logo.png",
+    icon: "/brandonix-logo.png",
   },
   manifest: "/manifest.json",
   openGraph: {
-    title: "BrandForge — Forge Your Brand Empire",
-    description: "All-in-one brand operations management portal for modern businesses",
+    title: "BrandOnyx — Command Your Brand",
+    description: "Premium all-in-one brand operations management portal for modern businesses",
     type: "website",
   },
 };

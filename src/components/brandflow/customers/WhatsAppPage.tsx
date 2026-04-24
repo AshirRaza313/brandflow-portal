@@ -8,10 +8,10 @@ import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { MessageCircle, Send } from "lucide-react";
 import { toast } from "sonner";
 import { motion } from "framer-motion";
-import { useBrandForgeStore } from "@/store/brandflow-store";
+import { useBrandOnyxStore } from "@/store/brandflow-store";
 
 export function WhatsAppPage() {
-  const { setActiveSection } = useBrandForgeStore();
+  const { setActiveSection } = useBrandOnyxStore();
   const [search, setSearch] = useState("");
   const [messageText, setMessageText] = useState("");
 

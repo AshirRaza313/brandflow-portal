@@ -10,7 +10,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Warehouse, Package, BarChart3, AlertTriangle, Boxes, Move, ClipboardList, ShoppingCart, ArrowRightLeft } from "lucide-react";
 import { EmptyState } from "@/components/brandflow/shared/EmptyState";
 import { toast } from "sonner";
-import { useBrandForgeStore } from "@/store/brandflow-store";
+import { useBrandOnyxStore } from "@/store/brandflow-store";
 
 interface StockMovement {
   id: number;
@@ -25,7 +25,7 @@ interface StockMovement {
 }
 
 export function WarehousePage() {
-  const { appTheme } = useBrandForgeStore();
+  const { appTheme } = useBrandOnyxStore();
   const isDark = appTheme !== "light";
   const isGold = appTheme === "premium-dark";
 

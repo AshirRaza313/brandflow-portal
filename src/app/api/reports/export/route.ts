@@ -78,7 +78,7 @@ export const GET = withAuth(async (req: NextRequest, authCtx) => {
     }
 
     const platformInfo = {
-      platformName: platformSettings?.companyName || "BrandForge",
+      platformName: platformSettings?.companyName || "BrandOnyx",
       platformEmail: platformSettings?.companyEmail || undefined,
       platformPhone: platformSettings?.companyPhone || undefined,
       platformWebsite: platformSettings?.companyWebsite || undefined,

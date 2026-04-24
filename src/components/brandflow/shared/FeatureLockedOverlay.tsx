@@ -3,7 +3,7 @@
 import { motion } from "framer-motion";
 import { Lock, Crown, ArrowRight, Check } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { useBrandForgeStore } from "@/store/brandflow-store";
+import { useBrandOnyxStore } from "@/store/brandflow-store";
 import { getFeatureLock, getLockedFeatures, FEATURE_LOCKS } from "@/lib/feature-lock";
 import { useMemo } from "react";
 
@@ -44,7 +44,7 @@ export function FeatureLockedOverlay({
   requiredPlan,
   currentPlan,
 }: FeatureLockedOverlayProps) {
-  const { setActiveSection, appTheme } = useBrandForgeStore();
+  const { setActiveSection, appTheme } = useBrandOnyxStore();
   const isGold = appTheme === "premium-dark";
 
   const planLabel = requiredPlan === "growth" ? "Growth" : "Enterprise";

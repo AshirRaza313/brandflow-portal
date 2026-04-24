@@ -242,9 +242,9 @@ export function UserGuidePage() {
 
   if (!initDone && typeof window !== "undefined") {
     try {
-      const stored = localStorage.getItem("brandforge-appTheme");
+      const stored = localStorage.getItem("brandonix-appTheme");
       if (stored) setAppTheme(stored);
-      const userData = localStorage.getItem("brandforge-user");
+      const userData = localStorage.getItem("brandonix-user");
       if (userData) {
         const u = JSON.parse(userData);
         setUserRole(u.role || null);
@@ -284,7 +284,7 @@ export function UserGuidePage() {
   const saveGuide = async () => {
     setSaving(true);
     try {
-      const userData = localStorage.getItem("brandforge-user");
+      const userData = localStorage.getItem("brandonix-user");
       const userId = userData ? JSON.parse(userData)?.id : null;
       const r = await fetch("/api/admin/guide", {
         method: "PUT",

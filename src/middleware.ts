@@ -11,7 +11,7 @@ const ALLOWED_ORIGINS = [
   // "https://yourdomain.com",
   // "https://app.yourdomain.com",
   // Vercel preview deployments
-  /^https:\/\/brandforge-portal.*\.vercel\.app$/,
+  /^https:\/\/brandonix-portal.*\.vercel\.app$/,
   /^https:\/\/.*-ashirraza313.*\.vercel\.app$/,
 ];
 

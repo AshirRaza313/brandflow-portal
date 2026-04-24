@@ -385,7 +385,7 @@ export interface OrganizationInfo {
 // Store Interface
 // ============================================================================
 
-interface BrandForgeStore {
+interface BrandOnyxStore {
   view: AppView;
   setView: (view: AppView) => void;
   activeSection: SidebarSection;
@@ -520,7 +520,7 @@ interface BrandForgeStore {
 function getSavedLanguage(): "en" | "ur" {
   if (typeof window === "undefined") return "en";
   try {
-    const saved = localStorage.getItem("brandforge-language");
+    const saved = localStorage.getItem("brandonix-language");
     if (saved === "en" || saved === "ur") return saved;
   } catch {}
   return "en";
@@ -529,7 +529,7 @@ function getSavedLanguage(): "en" | "ur" {
 function saveLanguageToStorage(lang: "en" | "ur") {
   try {
     if (typeof window !== "undefined") {
-      localStorage.setItem("brandforge-language", lang);
+      localStorage.setItem("brandonix-language", lang);
     }
   } catch {}
 }
@@ -537,7 +537,7 @@ function saveLanguageToStorage(lang: "en" | "ur") {
 function getSavedTheme(): "light" | "dark" | "premium-dark" {
   if (typeof window === "undefined") return "premium-dark";
   try {
-    const saved = localStorage.getItem("brandforge-theme");
+    const saved = localStorage.getItem("brandonix-theme");
     if (saved === "light" || saved === "dark" || saved === "premium-dark") return saved;
   } catch {}
   return "premium-dark";
@@ -546,7 +546,7 @@ function getSavedTheme(): "light" | "dark" | "premium-dark" {
 function saveThemeToStorage(theme: "light" | "dark" | "premium-dark") {
   try {
     if (typeof window !== "undefined") {
-      localStorage.setItem("brandforge-theme", theme);
+      localStorage.setItem("brandonix-theme", theme);
     }
   } catch {}
 }
@@ -554,13 +554,13 @@ function saveThemeToStorage(theme: "light" | "dark" | "premium-dark") {
 // Persist auth state to localStorage
 function getSavedUser(): any {
   try {
-    const saved = typeof window !== 'undefined' ? localStorage.getItem('brandforge-user') : null;
+    const saved = typeof window !== 'undefined' ? localStorage.getItem('brandonix-user') : null;
     return saved ? JSON.parse(saved) : null;
   } catch { return null; }
 }
 function getSavedOrg(): any {
   try {
-    const saved = typeof window !== 'undefined' ? localStorage.getItem('brandforge-org') : null;
+    const saved = typeof window !== 'undefined' ? localStorage.getItem('brandonix-org') : null;
     return saved ? JSON.parse(saved) : null;
   } catch { return null; }
 }
@@ -593,26 +593,26 @@ function syncAuthCookies() {
 if (typeof window !== 'undefined') syncAuthCookies();
 function getSavedBrandName(): string {
   try {
-    return typeof window !== 'undefined' ? localStorage.getItem('brandforge-brandname') || '' : '';
+    return typeof window !== 'undefined' ? localStorage.getItem('brandonix-brandname') || '' : '';
   } catch { return ''; }
 }
 function getSavedBrandLogo(): string | null {
   try {
-    return typeof window !== 'undefined' ? localStorage.getItem('brandforge-logo') : null;
+    return typeof window !== 'undefined' ? localStorage.getItem('brandonix-logo') : null;
   } catch { return null; }
 }
 function getSavedBrandTagline(): string {
   try {
-    return typeof window !== 'undefined' ? localStorage.getItem('brandforge-tagline') || '' : '';
+    return typeof window !== 'undefined' ? localStorage.getItem('brandonix-tagline') || '' : '';
   } catch { return ''; }
 }
 function getSavedBrandConfigured(): boolean {
   try {
-    return typeof window !== 'undefined' ? localStorage.getItem('brandforge-configured') === 'true' : false;
+    return typeof window !== 'undefined' ? localStorage.getItem('brandonix-configured') === 'true' : false;
   } catch { return false; }
 }
 
-export const useBrandForgeStore = create<BrandForgeStore>((set, get) => ({
+export const useBrandOnyxStore = create<BrandOnyxStore>((set, get) => ({
   view: getSavedUser() ? "dashboard" : "landing",
   setView: (view) => set({ view }),
   activeSection: "dashboard",
@@ -621,14 +621,14 @@ export const useBrandForgeStore = create<BrandForgeStore>((set, get) => ({
   // Brand Name
   brandName: getSavedBrandName(),
   setBrandName: (name) => {
-    try { localStorage.setItem('brandforge-brandname', name); } catch {}
+    try { localStorage.setItem('brandonix-brandname', name); } catch {}
     set({ brandName: name });
   },
 
   // Brand Tagline
   brandTagline: getSavedBrandTagline(),
   setBrandTagline: (tagline) => {
-    try { localStorage.setItem('brandforge-tagline', tagline); } catch {}
+    try { localStorage.setItem('brandonix-tagline', tagline); } catch {}
     set({ brandTagline: tagline });
   },
 
@@ -704,12 +704,12 @@ export const useBrandForgeStore = create<BrandForgeStore>((set, get) => ({
   // User & Org — persisted to localStorage
   user: getSavedUser(),
   setUser: (user) => {
-    try { localStorage.setItem('brandforge-user', JSON.stringify(user)); } catch {}
+    try { localStorage.setItem('brandonix-user', JSON.stringify(user)); } catch {}
     set({ user, view: user ? 'dashboard' : 'auth' });
   },
   organization: getSavedOrg(),
   setOrganization: (org) => {
-    try { localStorage.setItem('brandforge-org', JSON.stringify(org)); } catch {}
+    try { localStorage.setItem('brandonix-org', JSON.stringify(org)); } catch {}
     set({ organization: org });
   },
 
@@ -733,14 +733,14 @@ export const useBrandForgeStore = create<BrandForgeStore>((set, get) => ({
   // Brand Logo — persisted to localStorage
   brandLogo: getSavedBrandLogo(),
   setBrandLogo: (logo) => {
-    try { localStorage.setItem('brandforge-logo', logo || ''); } catch {}
+    try { localStorage.setItem('brandonix-logo', logo || ''); } catch {}
     set({ brandLogo: logo });
   },
 
   // Brand Configured — persisted to localStorage
   brandConfigured: getSavedBrandConfigured(),
   setBrandConfigured: (v) => {
-    try { localStorage.setItem('brandforge-configured', v ? 'true' : 'false'); } catch {}
+    try { localStorage.setItem('brandonix-configured', v ? 'true' : 'false'); } catch {}
     set({ brandConfigured: v });
   },
 
@@ -767,12 +767,12 @@ export const useBrandForgeStore = create<BrandForgeStore>((set, get) => ({
   // Logout — clear persisted auth, keep appTheme and sidebarCollapsed
   logout: () => {
     try {
-      localStorage.removeItem('brandforge-user');
-      localStorage.removeItem('brandforge-org');
-      localStorage.removeItem('brandforge-brandname');
-      localStorage.removeItem('brandforge-logo');
-      localStorage.removeItem('brandforge-tagline');
-      localStorage.removeItem('brandforge-configured');
+      localStorage.removeItem('brandonix-user');
+      localStorage.removeItem('brandonix-org');
+      localStorage.removeItem('brandonix-brandname');
+      localStorage.removeItem('brandonix-logo');
+      localStorage.removeItem('brandonix-tagline');
+      localStorage.removeItem('brandonix-configured');
       // Clear auth cookies (set by login API for middleware auth injection)
       document.cookie = 'bf-user-id=; path=/; max-age=0';
       document.cookie = 'bf-user-email=; path=/; max-age=0';
@@ -822,7 +822,7 @@ export const useBrandForgeStore = create<BrandForgeStore>((set, get) => ({
 }));
 
 export function useSubTabForSection(section: SidebarSection): string | null {
-  const store = useBrandForgeStore();
+  const store = useBrandOnyxStore();
   switch (section) {
     case "orders": return store.ordersSubTab;
     case "tasks": return store.tasksSubTab;

@@ -2,10 +2,10 @@ generator client {
   provider = "prisma-client-js"
 }
 
-// ── Dev: SQLite (production uses PostgreSQL/Supabase) ──
+// ── Production: PostgreSQL (Supabase) ──
 
 datasource db {
-  provider = "sqlite"
+  provider = "postgresql"
   url      = env("DATABASE_URL")
 }
 
@@ -417,7 +417,7 @@ model Notification {
 // ── Admin Settings (Platform Owner) ──
 model PlatformSettings {
   id              String   @id @default(cuid())
-  companyName     String   @default("BrandFlow")
+  companyName     String   @default("BrandOnyx")
   companyEmail    String
   companyPhone    String?
   companyWebsite  String?
@@ -435,7 +435,7 @@ model PlatformSettings {
   secondaryBrandColor String @default("#d97706")
   currencySymbol  String   @default("Rs.")
   customCss       String   @default("")
-  tagline         String   @default("Pakistan's #1 Brand Management Portal")
+  tagline         String   @default("Premium Brand Management Portal")
   emailFooterText String?
   invoiceHeaderText String?
   createdAt       DateTime @default(now())

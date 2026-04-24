@@ -155,7 +155,7 @@ export const GET = withAuth(async (
       orgCountry: invoice.organization?.country || undefined,
       orgTaxId: invoice.organization?.taxId || undefined,
       // Platform/branding details from Professional Details tab
-      platformName: platformSettings?.companyName || "BrandForge",
+      platformName: platformSettings?.companyName || "BrandOnyx",
       platformEmail: platformSettings?.companyEmail || undefined,
       platformPhone: platformSettings?.companyPhone || undefined,
       platformAddress: platformSettings?.companyAddress || undefined,

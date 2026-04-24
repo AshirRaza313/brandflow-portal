@@ -149,7 +149,7 @@ export function SubscriptionReceipt({
 
         {/* Receipt Content */}
         <div id="receipt-printable">
-          {/* BrandForge Header */}
+          {/* BrandOnyx Header */}
           <div className="relative p-8 overflow-hidden" style={{ background: "linear-gradient(135deg, #0a0a0f 0%, #1a1a2e 100%)" }}>
             <div className="absolute inset-0 opacity-5" style={{ background: "radial-gradient(circle at 80% 50%, rgba(217,119,6,0.3), transparent 60%)" }} />
             <div className="relative z-10">

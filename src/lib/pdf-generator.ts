@@ -1,5 +1,5 @@
 // ============================================================================
-// PDF Generator — BrandForge ULTRA PREMIUM Invoice & Report PDFs
+// PDF Generator — BrandOnyx ULTRA PREMIUM Invoice & Report PDFs
 // Uses pdfkit with EMBEDDED TTF fonts (base64 in font-buffers.ts)
 // Serverless-safe — no filesystem dependency for fonts
 // BLACK Background + GOLD Everything — Luxury Shine Theme
@@ -621,7 +621,7 @@ export async function generateInvoicePDF(invoice: InvoiceData): Promise<Buffer> 
     const P = 44;
     const CW = W - P * 2;
 
-    const platformName = invoice.platformName || "BrandForge";
+    const platformName = invoice.platformName || "BrandOnyx";
     const cycleLabel = invoice.billingCycle === "annually" ? "Annual" : "Monthly";
     const hasLogo = !!invoice.platformLogo;
 
@@ -999,7 +999,7 @@ export async function generateReportPDF(report: ReportData): Promise<Buffer> {
     const H = 841.89;
     const P = 48;
     const CW = W - P * 2;
-    const brandName = report.brandName || "BrandForge";
+    const brandName = report.brandName || "BrandOnyx";
     const platformName = report.platformName || brandName;
     const hasLogo = !!report.platformLogo;
     const hasBrandLogo = !!report.brandLogo;

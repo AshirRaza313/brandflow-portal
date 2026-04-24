@@ -76,7 +76,7 @@ export const GET = withAuth(async (
         orgEmail: invoice.orgEmail || undefined,
         orgPhone: invoice.orgPhone || undefined,
         orgAddress: invoice.orgAddress || undefined,
-        platformName: platformSettings?.companyName || "BrandForge",
+        platformName: platformSettings?.companyName || "BrandOnyx",
         platformEmail: platformSettings?.companyEmail,
         platformPhone: platformSettings?.companyPhone || undefined,
         platformAddress: platformSettings?.companyAddress || undefined,

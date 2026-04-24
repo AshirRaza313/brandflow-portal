@@ -1,11 +1,11 @@
 "use client";
 
 import { Skeleton } from "@/components/ui/skeleton";
-import { useBrandForgeStore } from "@/store/brandflow-store";
+import { useBrandOnyxStore } from "@/store/brandflow-store";
 import { cn } from "@/lib/utils";
 
 export function LoadingSkeleton() {
-  const { appTheme } = useBrandForgeStore();
+  const { appTheme } = useBrandOnyxStore();
   const isGold = appTheme === "premium-dark";
   const isDark = appTheme === "dark" || isGold;
 

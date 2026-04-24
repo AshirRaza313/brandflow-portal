@@ -16,20 +16,20 @@ export default function GlobalError({
   const companyName = identity.companyName;
 
   useEffect(() => {
-    console.error("BrandForge Application Error:", error);
+    console.error("BrandOnyx Application Error:", error);
   }, [error]);
 
   // Clear broken state and redirect to landing page
   const handleReset = () => {
     try {
-      localStorage.removeItem("brandforge-user");
-      localStorage.removeItem("brandforge-org");
-      localStorage.removeItem("brandforge-brandname");
-      localStorage.removeItem("brandforge-logo");
-      localStorage.removeItem("brandforge-tagline");
-      localStorage.removeItem("brandforge-configured");
-      localStorage.removeItem("brandforge-theme");
-      localStorage.removeItem("brandforge-language");
+      localStorage.removeItem("brandonix-user");
+      localStorage.removeItem("brandonix-org");
+      localStorage.removeItem("brandonix-brandname");
+      localStorage.removeItem("brandonix-logo");
+      localStorage.removeItem("brandonix-tagline");
+      localStorage.removeItem("brandonix-configured");
+      localStorage.removeItem("brandonix-theme");
+      localStorage.removeItem("brandonix-language");
     } catch {}
     // Full page reload to clear any broken React state
     window.location.href = "/";

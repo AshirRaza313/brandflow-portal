@@ -9,7 +9,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { RotateCcw, Clock, CheckCircle2, DollarSign, PackageCheck, ShieldCheck } from "lucide-react";
 import { EmptyState } from "@/components/brandflow/shared/EmptyState";
 import { toast } from "sonner";
-import { useBrandForgeStore } from "@/store/brandflow-store";
+import { useBrandOnyxStore } from "@/store/brandflow-store";
 
 interface ReturnPolicy {
   id: number;
@@ -20,7 +20,7 @@ interface ReturnPolicy {
 
 export function ReturnsPage() {
   const [filterStatus, setFilterStatus] = useState("all");
-  const { appTheme } = useBrandForgeStore();
+  const { appTheme } = useBrandOnyxStore();
   const isDark = appTheme !== "light";
   const isGold = appTheme === "premium-dark";
 

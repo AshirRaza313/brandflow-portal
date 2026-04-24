@@ -1,6 +1,6 @@
 // ============================================================================
 // Currency System — Country-to-Currency Mapping
-// BrandForge uses PKR as default (Pakistani portal), but supports multi-currency
+// BrandOnyx uses PKR as default (Pakistani portal), but supports multi-currency
 // ============================================================================
 
 export interface CurrencyInfo {

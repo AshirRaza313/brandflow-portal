@@ -50,13 +50,13 @@ interface AuthStore {
 
 function getSavedUser(): any {
   try {
-    const saved = typeof window !== "undefined" ? localStorage.getItem("brandforge-user") : null;
+    const saved = typeof window !== "undefined" ? localStorage.getItem("brandonix-user") : null;
     return saved ? JSON.parse(saved) : null;
   } catch { return null; }
 }
 function getSavedOrg(): any {
   try {
-    const saved = typeof window !== "undefined" ? localStorage.getItem("brandforge-org") : null;
+    const saved = typeof window !== "undefined" ? localStorage.getItem("brandonix-org") : null;
     return saved ? JSON.parse(saved) : null;
   } catch { return null; }
 }
@@ -64,12 +64,12 @@ function getSavedOrg(): any {
 export const useAuthStore = create<AuthStore>((set, get) => ({
   user: getSavedUser(),
   setUser: (user) => {
-    try { localStorage.setItem("brandforge-user", JSON.stringify(user)); } catch {}
+    try { localStorage.setItem("brandonix-user", JSON.stringify(user)); } catch {}
     set({ user });
   },
   organization: getSavedOrg(),
   setOrganization: (org) => {
-    try { localStorage.setItem("brandforge-org", JSON.stringify(org)); } catch {}
+    try { localStorage.setItem("brandonix-org", JSON.stringify(org)); } catch {}
     set({ organization: org });
   },
   authModalOpen: false,
@@ -78,12 +78,12 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
   setAuthModalMode: (mode) => set({ authModalMode: mode, authModalOpen: mode !== null }),
   logout: () => {
     try {
-      localStorage.removeItem("brandforge-user");
-      localStorage.removeItem("brandforge-org");
-      localStorage.removeItem("brandforge-brandname");
-      localStorage.removeItem("brandforge-logo");
-      localStorage.removeItem("brandforge-tagline");
-      localStorage.removeItem("brandforge-configured");
+      localStorage.removeItem("brandonix-user");
+      localStorage.removeItem("brandonix-org");
+      localStorage.removeItem("brandonix-brandname");
+      localStorage.removeItem("brandonix-logo");
+      localStorage.removeItem("brandonix-tagline");
+      localStorage.removeItem("brandonix-configured");
     } catch {}
     set({
       user: null,

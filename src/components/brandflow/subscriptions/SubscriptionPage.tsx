@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import { useBrandForgeStore } from "@/store/brandflow-store";
+import { useBrandOnyxStore } from "@/store/brandflow-store";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -156,7 +156,7 @@ const pageVariants = {
 // ── Main Component ──
 
 export function SubscriptionPage() {
-  const { user, organization, appTheme } = useBrandForgeStore();
+  const { user, organization, appTheme } = useBrandOnyxStore();
   const isDark = appTheme !== "light";
   const isGold = appTheme === "premium-dark";
   const isPlatform = isPlatformRole(user?.role || "");

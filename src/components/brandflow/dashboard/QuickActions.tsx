@@ -4,7 +4,7 @@ import { motion } from "framer-motion";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { ShoppingCart, Plus, FileBarChart, Brain } from "lucide-react";
-import { useBrandForgeStore } from "@/store/brandflow-store";
+import { useBrandOnyxStore } from "@/store/brandflow-store";
 import { toast } from "sonner";
 
 const actions = [
@@ -15,7 +15,7 @@ const actions = [
 ];
 
 export function QuickActions() {
-  const { setActiveSection } = useBrandForgeStore();
+  const { setActiveSection } = useBrandOnyxStore();
 
   return (
     <motion.div

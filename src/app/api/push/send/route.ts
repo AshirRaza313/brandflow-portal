@@ -10,7 +10,7 @@ import logger from "@/lib/logger";
 function configureVapid() {
   const publicKey = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY;
   const privateKey = process.env.VAPID_PRIVATE_KEY;
-  const subject = process.env.VAPID_SUBJECT || "mailto:noreply@brandforge-portal.vercel.app";
+  const subject = process.env.VAPID_SUBJECT || "mailto:noreply@brandonix-portal.vercel.app";
 
   if (!publicKey || !privateKey) {
     throw new Error("VAPID keys are not configured. Set NEXT_PUBLIC_VAPID_PUBLIC_KEY and VAPID_PRIVATE_KEY in environment variables.");
@@ -50,10 +50,10 @@ export const POST = withAuth(async (req: NextRequest, authCtx) => {
     const {
       userId,       // Send to a specific user
       orgId,        // Or send to all users in an org
-      title = "BrandForge",
+      title = "BrandOnyx",
       message = "You have a new notification",
       url = "/",
-      icon = "/brandforge-icon-32.png",
+      icon = "/brandonix-icon-32.png",
     } = body;
 
     if (!userId && !orgId) {

@@ -3,7 +3,7 @@
 import { useEffect } from "react";
 
 /**
- * ServiceWorkerRegistrar — registers the BrandForge PWA service worker
+ * ServiceWorkerRegistrar — registers the BrandOnyx PWA service worker
  * on mount. Must be a client component placed inside <body>.
  */
 export function ServiceWorkerRegistrar() {

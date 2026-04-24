@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { useBrandForgeStore } from "@/store/brandflow-store";
+import { useBrandOnyxStore } from "@/store/brandflow-store";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -72,7 +72,7 @@ const EXCLUDED_ROLES = ["platform_owner", "platform_admin", "owner", "custom"];
 // ── Component ──────────────────────────────────────────────────────────────
 
 export function TeamPage() {
-  const { organization, appTheme, user } = useBrandForgeStore();
+  const { organization, appTheme, user } = useBrandOnyxStore();
   const isGold = appTheme === "premium-dark";
   const isDark = appTheme === "dark" || isGold;
 
