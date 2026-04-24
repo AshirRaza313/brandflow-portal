@@ -15,10 +15,40 @@
 /**
  * Read auth data from localStorage (same keys as brandflow-store.ts).
  * Returns null if not logged in.
+ * Includes auto-migration from legacy keys (brandflow-*, brandforge-*) → brandonix-*
  */
+function migrateLegacyKeys() {
+  try {
+    if (typeof window === "undefined") return;
+    const legacyPrefixes = ["brandforge", "brandflow"];
+    const newPrefix = "brandonix";
+    const keySuffixes = ["-user", "-org", "-brandname", "-logo", "-tagline", "-configured", "-theme", "-language", "-appTheme"];
+    for (const oldPrefix of legacyPrefixes) {
+      for (const suffix of keySuffixes) {
+        const oldKey = `${oldPrefix}${suffix}`;
+        const newKey = `${newPrefix}${suffix}`;
+        if (localStorage.getItem(oldKey) && !localStorage.getItem(newKey)) {
+          localStorage.setItem(newKey, localStorage.getItem(oldKey)!);
+          localStorage.removeItem(oldKey);
+        }
+      }
+      // Also migrate chat/support/call/skipped keys
+      const extraKeys = ["-chat-messages", "-support-chat", "-call-logs", "-skipped-setup"];
+      for (const suffix of extraKeys) {
+        const oldKey = `${oldPrefix}${suffix}`;
+        const newKey = `${newPrefix}${suffix}`;
+        if (localStorage.getItem(oldKey) && !localStorage.getItem(newKey)) {
+          localStorage.setItem(newKey, localStorage.getItem(oldKey)!);
+          localStorage.removeItem(oldKey);
+        }
+      }
+    }
+  } catch { /* silent */ }
+}
 function getAuthFromStorage(): { userId: string; email: string; role: string; orgId: string } | null {
   try {
     if (typeof window === "undefined") return null;
+    migrateLegacyKeys();
     const userStr = localStorage.getItem("brandonix-user");
     const orgStr = localStorage.getItem("brandonix-org");
     if (!userStr) return null;
