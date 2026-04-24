@@ -154,6 +154,19 @@ export default function Home() {
   const { view, activeSection, appTheme, setAppTheme, sidebarCollapsed, setAuthModalOpen, setAuthModalMode, user, organization } = useBrandForgeStore();
   const [legalPage, setLegalPage] = useState<string | null>(null);
   const [adminLockedFeatures, setAdminLockedFeatures] = useState<Set<string>>(new Set());
+  const [dbNotConfigured, setDbNotConfigured] = useState(false);
+
+  // ── Check if database is configured on mount ──
+  useEffect(() => {
+    fetch("/api/setup/init")
+      .then((res) => res.json())
+      .then((data) => {
+        if (data.needsDatabase) {
+          setDbNotConfigured(true);
+        }
+      })
+      .catch(() => {});
+  }, []);
 
   // ── Real-time subscription sync (polls every 60s for plan changes) ──
   const {
@@ -235,6 +248,20 @@ export default function Home() {
         <CTASection onAuthClick={handleAuthClick} />
         <Footer onLegalClick={setLegalPage} />
         <AuthModal />
+      </div>
+    );
+  }
+
+  // ── DATABASE NOT CONFIGURED — Show setup page ──
+  if (dbNotConfigured) {
+    window.location.href = "/setup";
+    return (
+      <div className="min-h-screen bg-[#0a0a0f] flex items-center justify-center">
+        <div className="text-center">
+          <div className="w-12 h-12 border-4 border-amber-500/30 border-t-amber-500 rounded-full animate-spin mx-auto mb-4" />
+          <p className="text-amber-400 font-semibold">Database Setup Required</p>
+          <p className="text-gray-500 text-sm mt-1">Redirecting to setup page...</p>
+        </div>
       </div>
     );
   }
