@@ -5,6 +5,9 @@ import { getCurrencyForCountry } from "@/lib/currency";
 import { withAuth } from "@/lib/auth-middleware";
 import logger from "@/lib/logger";
 
+// Extend Vercel serverless function timeout to 60s (PDF generation is heavy)
+export const maxDuration = 60;
+
 // ── Chart Color Palettes ──
 const PIE_COLORS = ["#f59e0b", "#34d399", "#60a5fa", "#f87171", "#a78bfa", "#fb923c", "#38bdf8", "#4ade80"];
 const BAR_COLORS = [
@@ -622,17 +625,25 @@ export const GET = withAuth(async (req: NextRequest, authCtx) => {
 
     let pdfBuffer: Buffer;
     try {
-      pdfBuffer = await generateReportPDF(reportData);
+      // Wrap PDF generation in a timeout to prevent hanging on Vercel
+      pdfBuffer = await Promise.race([
+        generateReportPDF(reportData),
+        new Promise<never>((_, reject) =>
+          setTimeout(() => reject(new Error("PDF generation timed out (30s)")), 30000)
+        ),
+      ]);
     } catch (pdfErr: any) {
-      console.error("[Report Export] PDF generation error:", pdfErr?.message);
+      const errMsg = pdfErr?.message || String(pdfErr);
+      console.error("[Report Export] PDF generation error:", errMsg);
       return NextResponse.json(
-        { error: "Report PDF generation failed", details: pdfErr?.message },
+        { error: "Report PDF generation failed", details: errMsg },
         { status: 500 },
       );
     }
 
     if (!pdfBuffer || pdfBuffer.length < 100) {
-      return NextResponse.json({ error: "Generated report PDF is invalid" }, { status: 500 });
+      console.error("[Report Export] PDF buffer invalid, length:", pdfBuffer?.length);
+      return NextResponse.json({ error: "Generated report PDF is invalid or empty" }, { status: 500 });
     }
 
     return new Response(pdfBuffer, {
@@ -644,12 +655,13 @@ export const GET = withAuth(async (req: NextRequest, authCtx) => {
       },
     });
   } catch (error: any) {
-    console.error("[Report Export] Unhandled error:", error?.message);
-    if (error?.message?.includes("DATABASE_URL") || error?.message?.includes("Database connection")) {
+    const errMsg = error?.message || String(error);
+    console.error("[Report Export] Unhandled error:", errMsg);
+    if (errMsg.includes("DATABASE_URL") || errMsg.includes("Database connection")) {
       return dbErrorResponse(error);
     }
     return NextResponse.json(
-      { error: "Failed to generate report", details: error?.message },
+      { error: "Failed to generate report", details: errMsg },
       { status: 500 },
     );
   }

@@ -120,11 +120,23 @@ export function ProductReportsPage() {
         a.click();
         document.body.removeChild(a);
         URL.revokeObjectURL(url);
+        toast.success("Report exported successfully!");
       } else {
-        toast.error("Failed to export report. Please try again.");
+        let errorMsg = "Failed to export report. Please try again.";
+        try {
+          const errBody = await res.json();
+          if (errBody?.error) errorMsg = errBody.error;
+          if (errBody?.details) errorMsg += ` (${errBody.details})`;
+          console.error("[Export] Server error:", res.status, errBody);
+        } catch {
+          console.error("[Export] HTTP error status:", res.status, res.statusText);
+          errorMsg += ` (HTTP ${res.status})`;
+        }
+        toast.error(errorMsg);
       }
     } catch (err) {
-      console.error("Export failed:", err);
+      console.error("[Export] Network/fetch error:", err);
+      toast.error("Export failed — check your connection and try again.");
     }
     setExporting(false);
   };
