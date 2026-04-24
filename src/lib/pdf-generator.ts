@@ -999,11 +999,24 @@ export async function generateReportPDF(report: ReportData): Promise<Buffer> {
     const H = 841.89;
     const P = 48;
     const CW = W - P * 2;
-    const brandName = report.brandName || "BrandOnyx";
-    const platformName = report.platformName || brandName;
-    const hasLogo = !!report.platformLogo;
-    const hasBrandLogo = !!report.brandLogo;
-    const accentColor = report.brandColor || C.gold;
+
+    // ── SANITIZE ALL STRING INPUTS — prevent null.length errors in pdfkit ──
+    const brandName = String(report.brandName || "BrandOnyx");
+    const platformName = String(report.platformName || brandName);
+    const hasLogo = !!(report.platformLogo && typeof report.platformLogo === "string" && report.platformLogo.length > 0);
+    const hasBrandLogo = !!(report.brandLogo && typeof report.brandLogo === "string" && report.brandLogo.length > 0);
+    const accentColor = String(report.brandColor || C.gold);
+    const safeOrgName = String(report.orgName || "Organization");
+    const safeOrgEmail = report.orgEmail ? String(report.orgEmail) : null;
+    const safeTitle = String(report.title || "Report");
+    const safeSubtitle = report.subtitle ? String(report.subtitle) : null;
+    const safePeriod = String(report.period || "");
+    const safeGeneratedAt = String(report.generatedAt || new Date().toLocaleString("en-PK"));
+    const safePlan = report.plan ? String(report.plan) : null;
+    const safeSummary = report.summary ? String(report.summary) : null;
+    const safeTagline = report.platformTagline ? String(report.platformTagline) : null;
+    const safePlatformLogo = hasLogo ? report.platformLogo! : null;
+    const safeBrandLogo = hasBrandLogo ? report.brandLogo! : null;
 
     // Check for empty data state
     const isDataEmpty = isEmptyData(report.stats);
@@ -1017,6 +1030,11 @@ export async function generateReportPDF(report: ReportData): Promise<Buffer> {
     }
 
     try {
+      // ── VALIDATE FONT BUFFERS — fail fast if fonts are missing/corrupt ──
+      if (!FONT_REGULAR || !FONT_REGULAR.length || !FONT_BOLD || !FONT_BOLD.length) {
+        throw new Error(`Font buffers invalid: REGULAR=${FONT_REGULAR?.length ?? 0}, BOLD=${FONT_BOLD?.length ?? 0}`);
+      }
+
       // ── REGISTER FONTS FIRST ──
       ensureFontsRegistered(doc);
 
@@ -1083,8 +1101,8 @@ export async function generateReportPDF(report: ReportData): Promise<Buffer> {
       let logoCenterY = topDecoY + 30;
       const logoTargetSize = 60;
 
-      if (hasBrandLogo) {
-        const brandParsed = parseBase64DataUri(report.brandLogo!);
+      if (hasBrandLogo && safeBrandLogo) {
+        const brandParsed = parseBase64DataUri(safeBrandLogo);
         if (brandParsed) {
           try {
             const logoBuffer = Buffer.from(brandParsed.base64, "base64");
@@ -1099,8 +1117,8 @@ export async function generateReportPDF(report: ReportData): Promise<Buffer> {
         } else {
           renderCoverDefaultLogo(doc, W / 2, logoCenterY, logoTargetSize, accentColor);
         }
-      } else if (hasLogo) {
-        const logoParsed = parseBase64DataUri(report.platformLogo!);
+      } else if (hasLogo && safePlatformLogo) {
+        const logoParsed = parseBase64DataUri(safePlatformLogo);
         if (logoParsed) {
           try {
             const logoBuffer = Buffer.from(logoParsed.base64, "base64");
@@ -1124,22 +1142,22 @@ export async function generateReportPDF(report: ReportData): Promise<Buffer> {
       // Organization name
       doc.save();
       doc.font(FONT.regular).fontSize(14).fillColor(C.goldMid);
-      doc.text(report.orgName, P, logoCenterY, { width: CW, align: "center" });
+      doc.text(safeOrgName, P, logoCenterY, { width: CW, align: "center" });
       doc.restore();
       logoCenterY += 30;
 
       // Report title (large, bold, gold)
       doc.save();
       doc.font(FONT.bold).fontSize(30).fillColor(C.goldBright);
-      doc.text(report.title, P, logoCenterY, { width: CW, align: "center" });
+      doc.text(safeTitle, P, logoCenterY, { width: CW, align: "center" });
       doc.restore();
       logoCenterY += 42;
 
       // Subtitle
-      if (report.subtitle) {
+      if (safeSubtitle) {
         doc.save();
         doc.font(FONT.italic).fontSize(12).fillColor(C.gold);
-        doc.text(report.subtitle, P, logoCenterY, { width: CW, align: "center" });
+        doc.text(safeSubtitle, P, logoCenterY, { width: CW, align: "center" });
         doc.restore();
         logoCenterY += 22;
       }
@@ -1151,19 +1169,19 @@ export async function generateReportPDF(report: ReportData): Promise<Buffer> {
       doc.roundedRect(W / 2 - periodW / 2, logoCenterY, periodW, periodH, 6).fill(C.goldBg2);
       doc.roundedRect(W / 2 - periodW / 2, logoCenterY, periodW, periodH, 6).lineWidth(0.5).strokeColor(C.goldBorder2).stroke();
       doc.font(FONT.regular).fontSize(10).fillColor(C.gold);
-      doc.text(report.period, W / 2 - periodW / 2 + 8, logoCenterY + 9, { width: periodW - 16, align: "center" });
+      doc.text(safePeriod, W / 2 - periodW / 2 + 8, logoCenterY + 9, { width: periodW - 16, align: "center" });
       doc.restore();
       logoCenterY += periodH + 16;
 
       // Plan badge (if exists)
-      if (report.plan) {
+      if (safePlan) {
         doc.save();
         const planW = 140;
         const planH = 22;
         doc.roundedRect(W / 2 - planW / 2, logoCenterY, planW, planH, 4).fill(C.goldBg);
         doc.roundedRect(W / 2 - planW / 2, logoCenterY, planW, planH, 4).lineWidth(0.3).strokeColor(C.goldBorder).stroke();
         doc.font(FONT.bold).fontSize(8).fillColor(C.goldMid);
-        doc.text(report.plan, W / 2 - planW / 2 + 4, logoCenterY + 7, { width: planW - 8, align: "center" });
+        doc.text(safePlan, W / 2 - planW / 2 + 4, logoCenterY + 7, { width: planW - 8, align: "center" });
         doc.restore();
         logoCenterY += planH + 14;
       }
@@ -1188,22 +1206,22 @@ export async function generateReportPDF(report: ReportData): Promise<Buffer> {
       const coverBottomY = H - 100;
       doc.save();
       doc.font(FONT.regular).fontSize(8).fillColor(C.goldDim);
-      doc.text(`Generated on ${report.generatedAt}`, P, coverBottomY, { width: CW, align: "center" });
+      doc.text(`Generated on ${safeGeneratedAt}`, P, coverBottomY, { width: CW, align: "center" });
       doc.restore();
 
-      if (report.platformTagline || report.orgEmail) {
+      if (safeTagline || safeOrgEmail) {
         doc.save();
         doc.font(FONT.italic).fontSize(8).fillColor(C.goldDim);
-        const taglineText = report.platformTagline || `Prepared for ${report.orgName}`;
+        const taglineText = safeTagline || `Prepared for ${safeOrgName}`;
         doc.text(taglineText, P, coverBottomY + 14, { width: CW, align: "center" });
         doc.restore();
       }
 
       // Footer contact on cover
       const coverContactParts: string[] = [];
-      if (report.platformWebsite) coverContactParts.push(report.platformWebsite);
-      if (report.platformEmail) coverContactParts.push(report.platformEmail);
-      if (report.platformPhone) coverContactParts.push(report.platformPhone);
+      if (report.platformWebsite) coverContactParts.push(String(report.platformWebsite));
+      if (safeOrgEmail) coverContactParts.push(safeOrgEmail);
+      if (report.platformPhone) coverContactParts.push(String(report.platformPhone));
       if (coverContactParts.length > 0) {
         doc.save();
         doc.font(FONT.regular).fontSize(7).fillColor(C.goldDim);
@@ -1235,8 +1253,8 @@ export async function generateReportPDF(report: ReportData): Promise<Buffer> {
 
       // ── CONTENT HEADER ──
       let contentLogoRightX = P;
-      if (hasLogo) {
-        const logoParsed = parseBase64DataUri(report.platformLogo!);
+      if (hasLogo && safePlatformLogo) {
+        const logoParsed = parseBase64DataUri(safePlatformLogo);
         if (logoParsed) {
           try {
             const logoBuffer = Buffer.from(logoParsed.base64, "base64");
@@ -1257,28 +1275,28 @@ export async function generateReportPDF(report: ReportData): Promise<Buffer> {
       }
 
       doc.font(FONT.bold).fontSize(14).fillColor(C.goldBright);
-      doc.text(report.title, contentLogoRightX, tableY + 2);
+      doc.text(safeTitle, contentLogoRightX, tableY + 2);
 
       doc.font(FONT.italic).fontSize(8).fillColor(C.goldMid);
-      doc.text(report.subtitle || "Business Analytics Report", contentLogoRightX, tableY + 20);
+      doc.text(safeSubtitle || "Business Analytics Report", contentLogoRightX, tableY + 20);
 
       // Period badge (top right)
       doc.save();
       doc.roundedRect(W - P - 160, tableY + 4, 160, 18, 4).fill(C.goldBg);
       doc.roundedRect(W - P - 160, tableY + 4, 160, 18, 4).lineWidth(0.3).strokeColor(C.goldBorder).stroke();
       doc.font(FONT.regular).fontSize(7.5).fillColor(C.gold);
-      doc.text(report.period, W - P - 155, tableY + 9, { width: 150, align: "center" });
+      doc.text(safePeriod, W - P - 155, tableY + 9, { width: 150, align: "center" });
       doc.restore();
 
       goldLine(doc, P, tableY + 36, W - P, tableY + 36, 0.6);
 
       doc.font(FONT.regular).fontSize(8).fillColor(C.gold);
-      let orgInfo = `Prepared for: ${report.orgName}`;
-      if (report.orgEmail) orgInfo += `  |  ${report.orgEmail}`;
+      let orgInfo = `Prepared for: ${safeOrgName}`;
+      if (safeOrgEmail) orgInfo += `  |  ${safeOrgEmail}`;
       doc.text(orgInfo, P, tableY + 42, { width: CW });
 
       doc.font(FONT.regular).fontSize(7).fillColor(C.goldDim);
-      doc.text(`Generated: ${report.generatedAt}`, P, tableY + 54);
+      doc.text(`Generated: ${safeGeneratedAt}`, P, tableY + 54);
 
       goldLine(doc, P, tableY + 66, W - P, tableY + 66, 0.4);
 
@@ -1306,14 +1324,15 @@ export async function generateReportPDF(report: ReportData): Promise<Buffer> {
 
             // Label
             doc.font(FONT.bold).fontSize(6.5).fillColor(C.goldMid);
-            doc.text(stat.label.toUpperCase(), cx + 10, tableY + 8, { width: cardW2 - 20 });
+            doc.text(String(stat.label || "").toUpperCase(), cx + 10, tableY + 8, { width: cardW2 - 20 });
 
             // Value
             doc.font(FONT.bold).fontSize(18).fillColor(C.goldBright);
-            doc.text(String(stat.value), cx + 10, tableY + 22, { width: cardW2 - 20 });
+            doc.text(String(stat.value ?? 0), cx + 10, tableY + 22, { width: cardW2 - 20 });
 
             // Trend indicator (look up from comparison data)
-            const change = comparisonMap.get(stat.label.toLowerCase());
+            const safeLabel = String(stat.label || "").toLowerCase();
+            const change = comparisonMap.get(safeLabel);
             if (change !== undefined && change !== null) {
               drawTrendIndicator(doc, cx + 10, tableY + 46, change, FONT.bold);
             }
@@ -1366,20 +1385,22 @@ export async function generateReportPDF(report: ReportData): Promise<Buffer> {
         }
 
         // ── COMPARISON TABLE ──
-        if (report.comparison && report.comparison.stats.length > 0) {
-          const compTableH = (report.comparison.stats.length + 1) * 24 + 40;
+        if (report.comparison && report.comparison.stats && report.comparison.stats.length > 0) {
+          const safeCompStats = report.comparison.stats.filter(s => s != null);
+          if (safeCompStats.length === 0) { /* skip */ } else {
+          const compTableH = (safeCompStats.length + 1) * 24 + 40;
           tableY = ensureSpace(doc, tableY, compTableH + 30, W, H, P);
 
           doc.font(FONT.bold).fontSize(12).fillColor(C.goldBright);
-          doc.text(`Period Comparison vs ${report.comparison.previousPeriodLabel}`, P, tableY);
+          doc.text(`Period Comparison vs ${String(report.comparison.previousPeriodLabel || "Previous")}`, P, tableY);
           tableY += 18;
 
           const compHeaders = ["Metric", "Current Period", "Previous Period", "Change"];
-          const compRows = report.comparison.stats.map((s) => [
-            s.label,
-            typeof s.currentValue === "number" ? s.currentValue.toLocaleString("en-PK") : String(s.currentValue),
-            typeof s.previousValue === "number" ? s.previousValue.toLocaleString("en-PK") : String(s.previousValue),
-            s.change,
+          const compRows = safeCompStats.map((s) => [
+            String(s.label || ""),
+            typeof s.currentValue === "number" ? s.currentValue.toLocaleString("en-PK") : String(s.currentValue ?? 0),
+            typeof s.previousValue === "number" ? s.previousValue.toLocaleString("en-PK") : String(s.previousValue ?? 0),
+            typeof s.change === "number" ? s.change : 0,
           ]);
 
           const colWidths = [CW * 0.3, CW * 0.25, CW * 0.25, CW * 0.2];
@@ -1431,27 +1452,29 @@ export async function generateReportPDF(report: ReportData): Promise<Buffer> {
           });
 
           tableY += tblH + 16;
+          } // end safeCompStats check
         }
 
         // ── DATA TABLES (enhanced with alternating row colors) ──
         if (report.tables && Array.isArray(report.tables) && report.tables.length > 0) {
           report.tables.forEach((table) => {
-          if (!table || !table.headers || !table.rows) return;
+          if (!table || !table.headers || !table.rows || !Array.isArray(table.headers) || !Array.isArray(table.rows)) return;
           const rowCount = table.rows.length;
           const tblH = Math.max((rowCount + 1) * 22 + 8, 40);
 
           tableY = ensureSpace(doc, tableY, tblH + 34, W, H, P);
 
           doc.font(FONT.bold).fontSize(11).fillColor(C.goldBright);
-          doc.text(table.title, P, tableY);
+          doc.text(String(table.title || "Data Table"), P, tableY);
           tableY += 18;
 
           drawCard(doc, P, tableY, CW, tblH, 6);
 
-          const colW = CW / table.headers.length;
-          table.headers.forEach((header, i) => {
+          const safeHeaders = table.headers.filter(h => h != null);
+          const colW = safeHeaders.length > 0 ? CW / safeHeaders.length : CW;
+          safeHeaders.forEach((header, i) => {
             doc.font(FONT.bold).fontSize(7).fillColor(C.goldMid);
-            doc.text(header.toUpperCase(), P + 10 + i * colW, tableY + 9, { width: colW - 20 });
+            doc.text(String(header).toUpperCase(), P + 10 + i * colW, tableY + 9, { width: colW - 20 });
           });
 
           doc.save();
@@ -1463,6 +1486,7 @@ export async function generateReportPDF(report: ReportData): Promise<Buffer> {
             doc.text("No data available for this period", P, tableY + 30, { width: CW, align: "center" });
           } else {
             table.rows.forEach((row, ri) => {
+              if (!row || !Array.isArray(row)) return;
               const ry = tableY + 26 + ri * 22;
 
               // Alternating row color (subtle gold background)
@@ -1474,7 +1498,7 @@ export async function generateReportPDF(report: ReportData): Promise<Buffer> {
 
               row.forEach((cell, ci) => {
                 doc.font(FONT.regular).fontSize(8).fillColor(C.gold);
-                doc.text(String(cell), P + 10 + ci * colW, ry, { width: colW - 20 });
+                doc.text(String(cell ?? ""), P + 10 + ci * colW, ry, { width: colW - 20 });
               });
             });
           }
@@ -1484,13 +1508,13 @@ export async function generateReportPDF(report: ReportData): Promise<Buffer> {
         }
 
         // ── SUMMARY ──
-        if (report.summary) {
+        if (safeSummary) {
           tableY = ensureSpace(doc, tableY, 60, W, H, P);
           drawCard(doc, P, tableY, CW, 38);
           doc.font(FONT.bold).fontSize(7).fillColor(C.goldMid);
           doc.text("SUMMARY", P + 14, tableY + 8);
           doc.font(FONT.regular).fontSize(8).fillColor(C.gold);
-          doc.text(report.summary, P + 14, tableY + 20, { width: CW - 28 });
+          doc.text(safeSummary, P + 14, tableY + 20, { width: CW - 28 });
           tableY += 48;
         }
       }
@@ -1530,9 +1554,9 @@ export async function generateReportPDF(report: ReportData): Promise<Buffer> {
         // Footer contact info on last content page
         if (i === range.count - 1) {
           const footerParts: string[] = [];
-          if (report.platformWebsite) footerParts.push(report.platformWebsite);
-          if (report.platformEmail) footerParts.push(report.platformEmail);
-          if (report.platformPhone) footerParts.push(report.platformPhone);
+          if (report.platformWebsite) footerParts.push(String(report.platformWebsite));
+          if (safeOrgEmail) footerParts.push(safeOrgEmail);
+          if (report.platformPhone) footerParts.push(String(report.platformPhone));
 
           if (footerParts.length > 0) {
             doc.save();
