@@ -905,27 +905,70 @@ export async function generateInvoicePDF(invoice: InvoiceData): Promise<Buffer> 
         doc.text(invoice.transactionId, payValueX, payY + 22);
       }
 
-      // ── AMOUNT SECTION ──
+      // ── AMOUNT SECTION — Itemized Table ──
+      const amtCardH = 100;
       const amtY = y + planCardH + 12;
-      drawCardBright(doc, P, amtY, CW, 62);
+      drawCardBright(doc, P, amtY, CW, amtCardH);
 
-      doc.font(FONT.regular).fontSize(9).fillColor(C.goldMid);
-      doc.text(`${invoice.planName.charAt(0).toUpperCase() + invoice.planName.slice(1)} Plan - ${cycleLabel} Subscription`, P + 20, amtY + 12);
+      // Table header row
+      const tableLeft = P + 16;
+      const tableRight = W - P - 16;
+      const tableW = tableRight - tableLeft;
+      const descColW = tableW * 0.42;
+      const qtyColW = tableW * 0.12;
+      const unitPriceColW = tableW * 0.23;
+      const amtColW = tableW * 0.23;
+      const col1X = tableLeft;
+      const col2X = tableLeft + descColW;
+      const col3X = col2X + qtyColW;
+      const col4X = col3X + unitPriceColW;
 
-      doc.font(FONT.bold).fontSize(9).fillColor(C.gold);
-      doc.text(formatCurrency(invoice.amount, invoice.currencySymbol), W - P - 20, amtY + 12, { width: 160, align: "right" });
-
+      const headerY = amtY + 14;
+      // Header background
       doc.save();
-      doc.moveTo(P + 20, amtY + 28).lineTo(W - P - 20, amtY + 28).lineWidth(0.4).strokeColor(C.goldLine).stroke();
+      doc.roundedRect(tableLeft, headerY - 2, tableW, 18, 3).fill(C.goldBg3);
       doc.restore();
 
-      doc.font(FONT.bold).fontSize(10).fillColor(C.goldMid);
-      doc.text("Total Due", P + 20, amtY + 36);
+      doc.font(FONT.bold).fontSize(7).fillColor(C.gold);
+      doc.text("DESCRIPTION", col1X + 6, headerY + 2);
+      doc.text("QTY", col2X + 4, headerY + 2);
+      doc.text("UNIT PRICE", col3X + 4, headerY + 2);
+      doc.text("AMOUNT", col4X + 4, headerY + 2);
 
-      doc.font(FONT.bold).fontSize(20).fillColor(C.goldBright);
-      doc.text(formatCurrency(invoice.amount, invoice.currencySymbol), W - P - 20, amtY + 34, { width: 200, align: "right" });
+      // Divider under header
+      doc.save();
+      doc.moveTo(tableLeft, headerY + 18).lineTo(tableRight, headerY + 18).lineWidth(0.3).strokeColor(C.goldLine).stroke();
+      doc.restore();
 
-      y = amtY + 62 + 10;
+      // Data row
+      const rowY = headerY + 24;
+      const planLabel = `${invoice.planName.charAt(0).toUpperCase() + invoice.planName.slice(1)} Plan — ${cycleLabel} Subscription`;
+      doc.font(FONT.regular).fontSize(8).fillColor(C.goldBright);
+      doc.text(planLabel, col1X + 6, rowY, { width: descColW - 10 });
+
+      doc.font(FONT.regular).fontSize(8).fillColor(C.gold);
+      doc.text("1", col2X + 4, rowY);
+
+      doc.font(FONT.regular).fontSize(8).fillColor(C.gold);
+      doc.text(formatCurrency(invoice.amount, invoice.currencySymbol), col3X + 4, rowY);
+
+      doc.font(FONT.bold).fontSize(8).fillColor(C.goldBright);
+      doc.text(formatCurrency(invoice.amount, invoice.currencySymbol), col4X + 4, rowY);
+
+      // Divider before total
+      const totalDivY = rowY + 20;
+      doc.save();
+      doc.moveTo(tableLeft, totalDivY).lineTo(tableRight, totalDivY).lineWidth(0.5).strokeColor(C.goldBorder2).stroke();
+      doc.restore();
+
+      // Total row
+      doc.font(FONT.bold).fontSize(10).fillColor(C.gold);
+      doc.text("Total Due", col1X + 6, totalDivY + 8);
+
+      doc.font(FONT.bold).fontSize(18).fillColor(C.goldBright);
+      doc.text(formatCurrency(invoice.amount, invoice.currencySymbol), col4X + 4, totalDivY + 5, { width: amtColW - 6, align: "right" });
+
+      y = amtY + amtCardH + 10;
 
       // ── NOTES ──
       if (invoice.notes) {

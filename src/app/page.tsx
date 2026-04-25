@@ -151,7 +151,7 @@ function SafeRender({ children, name }: { children: ReactNode; name: string }) {
 }
 
 export default function Home() {
-  const { view, activeSection, appTheme, setAppTheme, sidebarCollapsed, setAuthModalOpen, setAuthModalMode, user, organization } = useValtrioxStore();
+  const { view, activeSection, appTheme, setAppTheme, sidebarCollapsed, setView, setAuthModalOpen, setAuthModalMode, user, organization } = useValtrioxStore();
   const [legalPage, setLegalPage] = useState<string | null>(null);
   const [adminLockedFeatures, setAdminLockedFeatures] = useState<Set<string>>(new Set());
   const [dbNotConfigured, setDbNotConfigured] = useState(false);
@@ -218,7 +218,7 @@ export default function Home() {
   if (view === "landing") {
     const handleAuthClick = (mode: "login" | "signup") => {
       setAuthModalMode(mode);
-      setAuthModalOpen(true);
+      setView("auth");
     };
 
     // ── Legal Page View ──

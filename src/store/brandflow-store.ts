@@ -613,7 +613,7 @@ function getSavedBrandConfigured(): boolean {
 }
 
 export const useValtrioxStore = create<ValtrioxStore>((set, get) => ({
-  view: getSavedUser() ? "dashboard" : "auth",
+  view: getSavedUser() ? "dashboard" : "landing",
   setView: (view) => set({ view }),
   activeSection: "dashboard",
   setActiveSection: (section) => set({ activeSection: section, sidebarOpen: false }),
@@ -705,7 +705,7 @@ export const useValtrioxStore = create<ValtrioxStore>((set, get) => ({
   user: getSavedUser(),
   setUser: (user) => {
     try { localStorage.setItem('valtriox-user', JSON.stringify(user)); } catch {}
-    set({ user, view: user ? 'dashboard' : 'auth' });
+    set({ user, view: user ? 'dashboard' : 'landing' });
   },
   organization: getSavedOrg(),
   setOrganization: (org) => {
@@ -780,7 +780,7 @@ export const useValtrioxStore = create<ValtrioxStore>((set, get) => ({
       document.cookie = 'vt-org-id=; path=/; max-age=0';
     } catch {}
     set({
-      view: "auth",
+      view: "landing",
       user: null,
       organization: null,
       activeSection: "dashboard",

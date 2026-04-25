@@ -9,7 +9,7 @@ import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { motion, AnimatePresence } from "framer-motion";
 import { toast } from "sonner";
-import { Loader2, Eye, EyeOff, Sparkles, Shield, ArrowRight } from "lucide-react";
+import { Loader2, Eye, EyeOff, Sparkles, Shield, ArrowRight, ArrowLeft } from "lucide-react";
 
 // ── Canvas-based Premium Gold Particle System ──
 
@@ -196,7 +196,17 @@ function GoldParticleCanvas() {
 }
 
 export function AuthScreen() {
-  const { setView, setUser, setOrganization, setBrandName, setBrandConfigured, brandConfigured, brandLogo, brandName, brandTagline } = useValtrioxStore();
+  const { setView, setUser, setOrganization, setBrandName, setBrandConfigured, brandConfigured, brandLogo, brandName, brandTagline, authModalMode } = useValtrioxStore();
+  const [defaultTab, setDefaultTab] = useState<string>("login");
+
+  // Sync default tab with store's authModalMode (set from landing page click)
+  useEffect(() => {
+    if (authModalMode === "signup") {
+      setDefaultTab("register");
+    } else {
+      setDefaultTab("login");
+    }
+  }, [authModalMode]);
   const { identity } = usePlatformIdentity();
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
@@ -387,6 +397,18 @@ export function AuthScreen() {
         transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
         className="w-full max-w-md relative z-10"
       >
+        {/* Back to Home button */}
+        <motion.button
+          onClick={() => setView("landing")}
+          className="flex items-center gap-2 text-slate-500 hover:text-amber-400 transition-colors mb-6 text-xs group"
+          initial={{ opacity: 0, x: -10 }}
+          animate={{ opacity: 1, x: 0 }}
+          transition={{ delay: 0.2 }}
+        >
+          <ArrowLeft className="h-3.5 w-3.5 group-hover:-translate-x-0.5 transition-transform" />
+          <span>Back to Home</span>
+        </motion.button>
+
         {/* Logo + Brand Identity */}
         <motion.div
           className="text-center mb-10"
@@ -474,7 +496,7 @@ export function AuthScreen() {
                 </div>
               </div>
 
-              <Tabs defaultValue="login" className="w-full">
+              <Tabs value={defaultTab} onValueChange={setDefaultTab} className="w-full">
                 <TabsList className="grid w-full grid-cols-3 mb-7 bg-white/[0.04] border border-white/[0.06] rounded-xl h-11 p-1">
                   <TabsTrigger
                     value="login"
@@ -496,7 +518,7 @@ export function AuthScreen() {
                   </TabsTrigger>
                 </TabsList>
 
-                <TabsContent value="login">
+                <TabsContent value="login" forceMount={true} hidden={defaultTab !== "login"}>
                   <form onSubmit={handleLogin} className="space-y-4">
                     <div className="space-y-2">
                       <Label htmlFor="login-email" className="text-slate-400 text-xs font-medium uppercase tracking-wider">Email</Label>
@@ -542,7 +564,7 @@ export function AuthScreen() {
                   </form>
                 </TabsContent>
 
-                <TabsContent value="register">
+                <TabsContent value="register" forceMount={true} hidden={defaultTab !== "register"}>
                   <form onSubmit={handleRegister} className="space-y-3">
                     <div className="space-y-2">
                       <Label htmlFor="reg-name" className="text-slate-400 text-xs font-medium uppercase tracking-wider">Full Name</Label>
@@ -628,7 +650,7 @@ export function AuthScreen() {
                   </form>
                 </TabsContent>
 
-                <TabsContent value="pin-login">
+                <TabsContent value="pin-login" forceMount={true} hidden={defaultTab !== "pin-login"}>
                   <form onSubmit={handlePinLogin} className="space-y-4">
                     <div className="space-y-2">
                       <Label htmlFor="pin-email" className="text-slate-400 text-xs font-medium uppercase tracking-wider">Email</Label>
