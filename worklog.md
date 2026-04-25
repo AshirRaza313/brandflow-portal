@@ -49,3 +49,53 @@ Stage Summary:
 - Fix: Replaced all 4 rgba gradient stop instances with hex color equivalents
 - Commit: 5767937 pushed to main
 - Remaining rgba() strings in color constants (C.goldBg etc.) used in fillColor() are non-crashing (silently fail) - cosmetic only
+---
+Task ID: 1
+Agent: Main Agent
+Task: Fix print CSS for reports (hide header/sidebar), apply dark+gold print theme, fix invoice overlap, ultra premium auth screens
+
+Work Log:
+- Analyzed codebase structure: reports use window.print() directly without any @media print CSS
+- Found that globals.css had NO print styles at all
+- Added comprehensive @media print CSS to globals.css (200+ lines)
+  - Hides <aside> (sidebar), <header> (top bar with searchbar/hamburger/user icon)
+  - Removes sidebar margin from main content area
+  - Applies dark black (#0a0a0f) + golden (#d4a017) luxury theme to all printed content
+  - Forces -webkit-print-color-adjust: exact for color accuracy
+  - Hides buttons, dropdowns, tabs, loaders, animations during print
+  - Shows scrollable areas fully (overflow: visible)
+  - Adds "Valtriox Portal — Brand Report" header on print
+  - Gold-tinted borders, table headers, status badges
+- Fixed InvoiceGenerator.tsx content overlap issue
+  - Root cause: Print window opened via innerHTML had NO Tailwind CSS, so flex layouts were broken
+  - Added comprehensive Tailwind CSS fallback classes in print window's <style> block
+  - Covers flex, gap, padding, margin, font-size, color, border, position, shadow, gradient utilities
+  - Fixed table column alignment with nth-child selectors
+  - Added Separator component support via data-slot attribute
+- Fixed SubscriptionInvoiceView.tsx with same Tailwind fallback approach
+  - Added 80+ Tailwind utility class definitions for print window
+  - Font sizes, colors, spacing, flexbox, grid, gradients all covered
+- Redesigned AuthScreen.tsx with ultra premium look
+  - Added canvas-based gold particle system (60 particles: dots, sparks, rings)
+  - Animated radial background glows with motion.div orbs
+  - Dot grid pattern overlay
+  - Subtle connecting lines between close particles
+  - Conic gradient glow ring around logo
+  - Enhanced glassmorphism card with gradient border glow
+  - Top/bottom gold shimmer accent lines
+  - Corner gold accents
+  - Premium button hover animations (framer-motion scale)
+  - Sparkles, Shield, ArrowRight icons
+  - "Secured by Valtriox" footer with decorative lines
+- Redesigned AuthModal.tsx with same ultra premium treatment
+  - Canvas-based particle system (35 particles) adapted for modal context
+  - Gradient border glow
+  - Top gold accent line
+  - Bottom gold shimmer
+  - Consistent styling with AuthScreen
+
+Stage Summary:
+- All 4 issues resolved: print hiding, print theme, invoice overlap, auth screen premium look
+- Build successful with no errors
+- Committed and pushed to GitHub (c505b06)
+- Files modified: globals.css, AuthScreen.tsx, AuthModal.tsx, InvoiceGenerator.tsx, SubscriptionInvoiceView.tsx

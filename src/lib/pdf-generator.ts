@@ -657,18 +657,9 @@ export async function generateInvoicePDF(invoice: InvoiceData): Promise<Buffer> 
       // ── FULL PAGE BLACK BACKGROUND ──
       doc.rect(0, 0, W, H).fill(C.bg);
 
-      // ── VALTRIOX WATERMARK (diagonal, subtle) for paid plans ──
+      // Watermark plan check (will be drawn at the end, on top of all content)
       const planLower = (invoice.planName || "").toLowerCase();
-      if (planLower.includes("growth") || planLower.includes("enterprise")) {
-        doc.save();
-        doc.fontSize(52).fillColor("#1a1a2e");
-        doc.translate(W / 2, H / 2);
-        doc.rotate(-35);
-        doc.font(FONT.bold).text("VALTRIOX", -160, -40, { width: 320, align: "center" });
-        doc.fontSize(14).fillColor("#1a1a28");
-        doc.font(FONT.regular).text("POWERED BY VALTRIOX", -100, 20, { width: 200, align: "center" });
-        doc.restore();
-      }
+      const showWatermark = planLower.includes("growth") || planLower.includes("enterprise");
 
       // Subtle gradient header area
       doc.save();
@@ -680,14 +671,6 @@ export async function generateInvoicePDF(invoice: InvoiceData): Promise<Buffer> 
 
       // ── TOP GOLD ACCENT BAR ──
       doc.rect(0, 0, W, 3).fill(C.gold);
-
-      // ── PREMIUM BADGE ──
-      doc.save();
-      doc.roundedRect(W - 82, 10, 68, 20, 4).fill(C.goldBg3);
-      doc.roundedRect(W - 82, 10, 68, 20, 4).lineWidth(0.5).strokeColor(C.goldBorder2).stroke();
-      doc.fontSize(7).fillColor(C.gold);
-      doc.font(FONT.bold).text("PREMIUM", W - 80, 16, { width: 64, align: "center" });
-      doc.restore();
 
       // ── HEADER SECTION ──
       let y = 18;
@@ -777,8 +760,8 @@ export async function generateInvoicePDF(invoice: InvoiceData): Promise<Buffer> 
       doc.restore();
 
       // ── BILLED TO (left) + INVOICE DETAILS (right) ──
-      const leftColW = CW * 0.5;
-      const rightColX = P + leftColW + 20;
+      const leftColW = CW * 0.48;
+      const rightColX = P + leftColW + 24;
       const billedToStartY = y + 26;
 
       doc.font(FONT.bold).fontSize(7).fillColor(C.goldMid);
@@ -787,16 +770,16 @@ export async function generateInvoicePDF(invoice: InvoiceData): Promise<Buffer> 
       doc.font(FONT.bold).fontSize(13).fillColor(C.goldBright);
       doc.text(invoice.orgName, P, billedToStartY + 12);
 
-      doc.font(FONT.regular).fontSize(8.5).fillColor(C.goldMid);
+      doc.font(FONT.regular).fontSize(8).fillColor(C.goldMid);
       let detailY = billedToStartY + 28;
-      if (invoice.orgEmail) { doc.text(invoice.orgEmail, P, detailY); detailY += 12; }
-      if (invoice.orgPhone) { doc.text(invoice.orgPhone, P, detailY); detailY += 12; }
-      if (invoice.orgAddress) { doc.text(invoice.orgAddress, P, detailY, { width: leftColW - 10 }); detailY += 12; }
-      if (invoice.orgCountry) { doc.text(invoice.orgCountry, P, detailY); detailY += 12; }
+      if (invoice.orgEmail) { doc.text(invoice.orgEmail, P, detailY); detailY += 13; }
+      if (invoice.orgPhone) { doc.text(invoice.orgPhone, P, detailY); detailY += 13; }
+      if (invoice.orgAddress) { doc.text(invoice.orgAddress, P, detailY, { width: leftColW - 10 }); detailY += 13; }
+      if (invoice.orgCountry) { doc.text(invoice.orgCountry, P, detailY); detailY += 13; }
       if (invoice.orgTaxId) {
-        doc.font(FONT.regular).fontSize(7.5).fillColor(C.goldDim);
+        doc.font(FONT.regular).fontSize(7).fillColor(C.goldDim);
         doc.text(`Tax ID: ${invoice.orgTaxId}`, P, detailY);
-        detailY += 12;
+        detailY += 13;
       }
 
       const leftEndY = detailY;
@@ -816,11 +799,13 @@ export async function generateInvoicePDF(invoice: InvoiceData): Promise<Buffer> 
 
       let dY = billedToStartY + 12;
       for (const [label, value] of details) {
-        doc.font(FONT.bold).fontSize(7.5).fillColor(C.goldMid);
+        doc.font(FONT.bold).fontSize(7).fillColor(C.goldMid);
         doc.text(label, rightColX, dY);
-        doc.font(FONT.regular).fontSize(8).fillColor(C.goldBright);
-        doc.text(value, rightColX + 68, dY, { width: CW - leftColW - 88 });
-        dY += 13;
+        doc.font(FONT.regular).fontSize(7.5).fillColor(C.goldBright);
+        // Truncate long period strings to avoid overlap
+        const displayValue = value.length > 40 ? value.substring(0, 37) + "..." : value;
+        doc.text(displayValue, rightColX + 72, dY, { width: CW - leftColW - 96 });
+        dY += 14;
       }
 
       y = Math.max(leftEndY, dY) + 8;
@@ -828,20 +813,31 @@ export async function generateInvoicePDF(invoice: InvoiceData): Promise<Buffer> 
       y += 10;
 
       // ── PLAN DETAILS CARD ──
-      const planCardH = 185;
+      // Dynamically calculate card height based on features
+      let planCardH = 140;
+      if (invoice.planFeatures && invoice.planFeatures.length > 0) {
+        const perCol = Math.ceil(invoice.planFeatures.length / 2);
+        planCardH = 48 + perCol * 13 + 52;
+      }
+      planCardH = Math.max(planCardH, 140);
       drawCardBright(doc, P, y, CW, planCardH);
 
       doc.font(FONT.bold).fontSize(14).fillColor(C.goldBright);
       doc.text(`${invoice.planName.charAt(0).toUpperCase() + invoice.planName.slice(1)} Plan`, P + 16, y + 14);
 
+      // ── CYCLE BADGE ──
+      // Measure plan title width to avoid overlap
       doc.save();
-      doc.roundedRect(P + 180, y + 12, 55, 18, 4).fill(C.goldBg3);
-      doc.roundedRect(P + 180, y + 12, 55, 18, 4).lineWidth(0.3).strokeColor(C.goldBorder2).stroke();
+      const planTitleText = `${invoice.planName.charAt(0).toUpperCase() + invoice.planName.slice(1)} Plan`;
+      const planTitleWidth = doc.font(FONT.bold).fontSize(14).widthOfString(planTitleText);
+      const cycleBadgeX = Math.max(P + planTitleWidth + 16, P + 200);
+      doc.roundedRect(cycleBadgeX, y + 12, 55, 18, 4).fill(C.goldBg3);
+      doc.roundedRect(cycleBadgeX, y + 12, 55, 18, 4).lineWidth(0.3).strokeColor(C.goldBorder2).stroke();
       doc.font(FONT.bold).fontSize(7.5).fillColor(C.gold);
-      doc.text(cycleLabel, P + 180, y + 17, { width: 55, align: "center" });
+      doc.text(cycleLabel, cycleBadgeX, y + 17, { width: 55, align: "center" });
       doc.restore();
 
-      let badgeX = P + 245;
+      let badgeX = cycleBadgeX + 62;
       const fmtLimit = (v: number | undefined) => {
         if (!v) return null;
         if (v < 0) return "Unlimited";
@@ -864,27 +860,29 @@ export async function generateInvoicePDF(invoice: InvoiceData): Promise<Buffer> 
       }
 
       if (invoice.planFeatures && invoice.planFeatures.length > 0) {
-        const featStartY = y + 36;
+        const featStartY = y + 40;
         doc.font(FONT.bold).fontSize(7).fillColor(C.goldMid);
         doc.text("PLAN FEATURES", P + 16, featStartY);
         const colW = (CW - 32) / 2;
         const perCol = Math.ceil(invoice.planFeatures.length / 2);
         for (let ci = 0; ci < 2; ci++) {
-          let fy = featStartY + 13;
+          let fy = featStartY + 14;
           const start = ci * perCol;
           const end = Math.min(start + perCol, invoice.planFeatures.length);
           for (let fi = start; fi < end; fi++) {
             const feature = invoice.planFeatures[fi];
             const fx = P + 16 + ci * colW;
             doc.circle(fx + 3, fy + 3.5, 1.5).fill(C.gold);
-            doc.font(FONT.regular).fontSize(8).fillColor(C.goldMid);
-            doc.text(feature, fx + 10, fy, { width: colW - 14 });
+            doc.font(FONT.regular).fontSize(7.5).fillColor(C.goldMid);
+            // Truncate long feature names to avoid overlap
+            const featText = feature.length > 32 ? feature.substring(0, 29) + "..." : feature;
+            doc.text(featText, fx + 10, fy, { width: colW - 14 });
             fy += 13;
           }
         }
       }
 
-      const payY = y + planCardH - 48;
+      const payY = y + planCardH - 50;
       doc.save();
       doc.moveTo(P + 16, payY).lineTo(W - P - 16, payY).lineWidth(0.4).strokeColor(C.goldLine).stroke();
       doc.restore();
@@ -1005,6 +1003,20 @@ export async function generateInvoicePDF(invoice: InvoiceData): Promise<Buffer> 
 
       // Bottom gold bar
       doc.rect(0, H - 3, W, 3).fill(C.gold);
+
+      // ── VALTRIOX WATERMARK — drawn LAST so it appears ON TOP of all content ──
+      if (showWatermark) {
+        doc.save();
+        doc.opacity(0.04);
+        doc.fontSize(52).fillColor(C.gold);
+        doc.translate(W / 2, H / 2);
+        doc.rotate(-35);
+        doc.font(FONT.bold).text("VALTRIOX", -160, -40, { width: 320, align: "center" });
+        doc.fontSize(14).fillColor(C.goldMid);
+        doc.font(FONT.regular).text("POWERED BY VALTRIOX", -100, 20, { width: 200, align: "center" });
+        doc.opacity(1);
+        doc.restore();
+      }
 
     } catch (renderErr) {
       hasErrored = true;
@@ -1620,6 +1632,16 @@ export async function generateReportPDF(report: ReportData): Promise<Buffer> {
             doc.restore();
           }
         }
+
+        // ── CONFIDENTIAL WATERMARK on content pages — drawn ON TOP of all content ──
+        doc.save();
+        doc.opacity(0.03);
+        doc.font(FONT.bold).fontSize(72).fillColor(C.gold);
+        doc.translate(W / 2, H / 2);
+        doc.rotate(-Math.PI / 7);
+        doc.text("CONFIDENTIAL", -200, -36, { width: 400, align: "center" });
+        doc.opacity(1);
+        doc.restore();
       }
 
     } catch (renderErr: any) {

@@ -64,7 +64,7 @@ interface UIStore {
 }
 
 export const useUIStore = create<UIStore>((set) => ({
-  view: "landing",
+  view: "auth",
   setView: (view) => set({ view }),
   activeSection: "dashboard",
   setActiveSection: (section) => set({ activeSection: section, sidebarOpen: false }),

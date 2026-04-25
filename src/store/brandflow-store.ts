@@ -613,7 +613,7 @@ function getSavedBrandConfigured(): boolean {
 }
 
 export const useValtrioxStore = create<ValtrioxStore>((set, get) => ({
-  view: getSavedUser() ? "dashboard" : "landing",
+  view: getSavedUser() ? "dashboard" : "auth",
   setView: (view) => set({ view }),
   activeSection: "dashboard",
   setActiveSection: (section) => set({ activeSection: section, sidebarOpen: false }),
@@ -780,7 +780,7 @@ export const useValtrioxStore = create<ValtrioxStore>((set, get) => ({
       document.cookie = 'vt-org-id=; path=/; max-age=0';
     } catch {}
     set({
-      view: "landing",
+      view: "auth",
       user: null,
       organization: null,
       activeSection: "dashboard",
