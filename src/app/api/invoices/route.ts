@@ -2,13 +2,13 @@ import { NextRequest, NextResponse } from "next/server";
 import { db, ensureDb, dbErrorResponse } from "@/lib/db";
 import { generateInvoiceNumber, generateInvoicePDF } from "@/lib/pdf-generator";
 import { getCurrencyForCountry } from "@/lib/currency";
-import { withAuth } from "@/lib/auth-middleware";
+import { withAuth, isPlatformRole } from "@/lib/auth-middleware";
 import logger from "@/lib/logger";
 
 // POST /api/invoices — Create a new invoice
 export const POST = withAuth(async (req: NextRequest, authCtx) => {
   try {
-    logger.info("[Invoices] POST request", { userId: authCtx.userId, orgId: authCtx.organizationId });
+    logger.info("[Invoices] POST request", { userId: authCtx.userId, orgId: authCtx.organizationId, role: authCtx.role });
     await ensureDb();
     const body = await req.json();
     const {
@@ -33,8 +33,10 @@ export const POST = withAuth(async (req: NextRequest, authCtx) => {
       );
     }
 
-    // Security: verify the organizationId matches the auth context
-    if (organizationId !== authCtx.organizationId) {
+    // Security: platform admins can create invoices for ANY organization;
+    // regular users can only create for their own.
+    const isAdmin = isPlatformRole(authCtx.role);
+    if (!isAdmin && organizationId !== authCtx.organizationId) {
       return NextResponse.json(
         { error: "Organization mismatch. You can only create invoices for your own organization." },
         { status: 403 }

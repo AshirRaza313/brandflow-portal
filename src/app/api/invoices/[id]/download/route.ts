@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db, ensureDb, dbErrorResponse } from "@/lib/db";
 import { generateInvoicePDF } from "@/lib/pdf-generator";
-import { withAuth, RouteContext } from "@/lib/auth-middleware";
+import { withAuth, RouteContext, isPlatformRole } from "@/lib/auth-middleware";
 import logger from "@/lib/logger";
 
 function safeDate(value: any): Date | null {
@@ -22,7 +22,7 @@ export const GET = withAuth(async (req: NextRequest, authCtx, ctx: RouteContext)
 
     const invoice = await db.invoice.findUnique({ where: { id } });
     if (!invoice) return NextResponse.json({ error: "Invoice not found" }, { status: 404 });
-    if (invoice.organizationId !== authCtx.organizationId) return NextResponse.json({ error: "Not found" }, { status: 404 });
+    if (!isPlatformRole(authCtx.role) && invoice.organizationId !== authCtx.organizationId) return NextResponse.json({ error: "Not found" }, { status: 404 });
 
     let platformSettings: any = null;
     try { platformSettings = await db.platformSettings.findFirst(); } catch {}

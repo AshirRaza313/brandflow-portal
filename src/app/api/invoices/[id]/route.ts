@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db, ensureDb, dbErrorResponse } from "@/lib/db";
 import { generateInvoicePDF } from "@/lib/pdf-generator";
-import { withAuth, RouteContext } from "@/lib/auth-middleware";
+import { withAuth, RouteContext, isPlatformRole } from "@/lib/auth-middleware";
 import logger from "@/lib/logger";
 
 // Helper: safely parse date from DB
@@ -44,8 +44,8 @@ export const GET = withAuth(async (
       return NextResponse.json({ error: "Invoice not found" }, { status: 404 });
     }
 
-    // Security: verify the invoice belongs to the user's organization
-    if (invoice.organizationId !== authCtx.organizationId) {
+    // Security: platform admins can view ANY invoice; regular users only their own org
+    if (!isPlatformRole(authCtx.role) && invoice.organizationId !== authCtx.organizationId) {
       return NextResponse.json({ error: "Invoice not found" }, { status: 404 });
     }
 
