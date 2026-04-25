@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { useValtrioxStore } from "@/store/brandflow-store";
+import { fetchWithAuth } from "@/lib/fetch-with-auth";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -98,7 +99,7 @@ export function AdminSubscriptionsPage() {
         status: statusFilter,
         limit: "50",
       });
-      const res = await fetch(`/api/admin/subscriptions?${params}`);
+      const res = await fetchWithAuth(`/api/admin/subscriptions?${params}`);
       if (res.ok) {
         const data = await res.json();
         setSubscriptions(data.subscriptions);
@@ -118,7 +119,7 @@ export function AdminSubscriptionsPage() {
   const executeAction = async (subId: string, action: string, extraData: Record<string, any> = {}) => {
     setActionLoading((p) => ({ ...p, [subId]: true }));
     try {
-      const res = await fetch(`/api/admin/subscriptions/${subId}`, {
+      const res = await fetchWithAuth(`/api/admin/subscriptions/${subId}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -150,7 +151,7 @@ export function AdminSubscriptionsPage() {
       const paymentProofId = latestApprovedPayment?.id || undefined;
 
       // Step 1: Create invoice in DB
-      const createRes = await fetch("/api/invoices", {
+      const createRes = await fetchWithAuth("/api/invoices", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -176,7 +177,7 @@ export function AdminSubscriptionsPage() {
 
       // Step 2: Download the PDF
       try {
-        const dlRes = await fetch(`/api/invoices/${newInvoice.id}/download`);
+        const dlRes = await fetchWithAuth(`/api/invoices/${newInvoice.id}/download`);
         if (dlRes.ok) {
           const blob = await dlRes.blob();
           const url = URL.createObjectURL(blob);

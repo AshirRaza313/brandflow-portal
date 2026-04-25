@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback, useRef, useMemo } from "react";
 import { useValtrioxStore } from "@/store/brandflow-store";
+import { fetchWithAuth } from "@/lib/fetch-with-auth";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -189,7 +190,7 @@ export function InvoiceManagementPage() {
     setLoading(true);
     try {
       if (signal?.aborted) return;
-      const res = await fetch("/api/admin/invoices", { signal });
+      const res = await fetchWithAuth("/api/admin/invoices", { signal });
       if (!res.ok) {
         toast.error("Failed to load invoices");
         return;
@@ -216,7 +217,7 @@ export function InvoiceManagementPage() {
   const handleDownload = async (invoice: InvoiceItem) => {
     setDownloadingId(invoice.id);
     try {
-      const res = await fetch(`/api/invoices/${invoice.id}/download`);
+      const res = await fetchWithAuth(`/api/invoices/${invoice.id}/download`);
       if (res.ok) {
         const blob = await res.blob();
         // Validate it's actually a PDF (not an error JSON)

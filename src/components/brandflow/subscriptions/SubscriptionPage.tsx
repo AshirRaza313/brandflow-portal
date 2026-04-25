@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { useValtrioxStore } from "@/store/brandflow-store";
+import { fetchWithAuth } from "@/lib/fetch-with-auth";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -202,7 +203,7 @@ export function SubscriptionPage() {
 
   const fetchPlans = useCallback(async () => {
     try {
-      const res = await fetch("/api/subscriptions/plans");
+      const res = await fetchWithAuth("/api/subscriptions/plans");
       if (res.ok) {
         const data = await res.json();
         setPlans(data.plans);
@@ -267,7 +268,7 @@ export function SubscriptionPage() {
 
     setSubmittingPayment(true);
     try {
-      const res = await fetch("/api/subscriptions/payment", {
+      const res = await fetchWithAuth("/api/subscriptions/payment", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
