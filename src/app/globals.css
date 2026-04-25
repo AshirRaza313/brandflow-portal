@@ -862,6 +862,231 @@ html {
 }
 
 /* ==========================================
+   Print Styles — Ultra Premium Black + Gold
+   ========================================== */
+
+@media print {
+  /* Hide sidebar */
+  aside {
+    display: none !important;
+  }
+
+  /* Hide mobile sidebar overlay */
+  [class*="fixed inset-0 z-40"] {
+    display: none !important;
+  }
+
+  /* Hide header bar (searchbar, user icon, hamburger, etc.) */
+  header {
+    display: none !important;
+  }
+
+  /* Remove sidebar margin from main content */
+  [class*="lg:ml-[60px]"],
+  [class*="lg:ml-[260px]"] {
+    margin-left: 0 !important;
+  }
+
+  /* Full width for print */
+  .flex-1.flex.flex-col.min-w-0 {
+    margin-left: 0 !important;
+  }
+
+  /* Hide floating event icons */
+  [class*="FloatingEvent"] {
+    display: none !important;
+  }
+
+  /* Hide no-print elements */
+  .no-print {
+    display: none !important;
+  }
+
+  /* Page setup */
+  @page {
+    size: A4;
+    margin: 12mm;
+  }
+
+  html, body {
+    background: #0a0a0f !important;
+    color: #f5f5f5 !important;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+
+  /* Main content area — dark black background */
+  main {
+    background: #0a0a0f !important;
+    padding: 0 !important;
+    margin: 0 !important;
+  }
+
+  /* Card styling — dark with gold borders */
+  [class*="bg-white"],
+  [class*="bg-white/"] {
+    background: #111118 !important;
+    border-color: rgba(212, 160, 23, 0.2) !important;
+    color: #f5f5f5 !important;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+
+  /* Text colors — light on dark */
+  [class*="text-slate-900"],
+  [class*="text-slate-800"],
+  [class*="text-slate-700"] {
+    color: #f5f5f5 !important;
+    -webkit-print-color-adjust: exact !important;
+  }
+
+  [class*="text-slate-500"],
+  [class*="text-slate-400"],
+  [class*="text-muted-foreground"] {
+    color: #94a3b8 !important;
+  }
+
+  /* Gold accent text */
+  [class*="text-amber-400"],
+  [class*="text-amber-500"],
+  [class*="text-amber-600"] {
+    color: #d4a017 !important;
+    -webkit-print-color-adjust: exact !important;
+  }
+
+  /* KPI Cards — premium dark with gold top border */
+  [class*="bg-white/[0.03]"] {
+    background: rgba(255, 255, 255, 0.03) !important;
+    border: 1px solid rgba(212, 160, 23, 0.15) !important;
+    -webkit-print-color-adjust: exact !important;
+  }
+
+  /* Table headers — dark with gold underline */
+  table thead th {
+    background: rgba(212, 160, 23, 0.08) !important;
+    color: #d4a017 !important;
+    border-bottom: 2px solid rgba(212, 160, 23, 0.3) !important;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+
+  /* Table borders — subtle gold */
+  table td,
+  table th {
+    border-color: rgba(212, 160, 23, 0.1) !important;
+    color: #e2e8f0 !important;
+    -webkit-print-color-adjust: exact !important;
+  }
+
+  /* Status badges — keep colors */
+  [class*="bg-yellow-"],
+  [class*="bg-blue-"],
+  [class*="bg-red-"],
+  [class*="bg-amber-"],
+  [class*="bg-orange-"],
+  [class*="bg-emerald-"],
+  [class*="bg-green-"] {
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+
+  /* Buttons — hide action buttons */
+  button, [class*="DropdownMenu"], [class*="Button"] {
+    display: none !important;
+  }
+
+  /* Tabs — hide tab bar for print */
+  [class*="flex flex-wrap gap-1 border-b"] {
+    display: none !important;
+  }
+
+  /* Export dropdown — hide */
+  [class*="Export Report"] {
+    display: none !important;
+  }
+
+  /* Print header for report identification */
+  main > div > div:first-child::before {
+    content: "Valtriox Portal — Brand Report";
+    display: block;
+    text-align: center;
+    font-size: 24px;
+    font-weight: 800;
+    color: #d4a017;
+    margin-bottom: 8px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    -webkit-print-color-adjust: exact !important;
+  }
+
+  main > div > div:first-child::after {
+    content: "Printed on " attr(data-print-date);
+    display: block;
+    text-align: center;
+    font-size: 11px;
+    color: #64748b;
+    margin-bottom: 24px;
+  }
+
+  /* Charts — ensure visibility */
+  [class*="recharts-"],
+  svg {
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+
+  /* Borders — gold tint */
+  [class*="border-slate-"],
+  [class*="border-white/"] {
+    border-color: rgba(212, 160, 23, 0.1) !important;
+  }
+
+  /* Separator */
+  [class*="border-b border-slate-200"],
+  hr {
+    border-color: rgba(212, 160, 23, 0.15) !important;
+  }
+
+  /* Scrollable areas — remove scroll, show all */
+  [class*="overflow-y-auto"],
+  [class*="overflow-x-auto"] {
+    overflow: visible !important;
+    max-height: none !important;
+  }
+
+  /* Animation/transition elements — reset */
+  [class*="animate-"] {
+    animation: none !important;
+    opacity: 1 !important;
+    transform: none !important;
+  }
+
+  /* Motion elements */
+  [class*="motion-"] {
+    opacity: 1 !important;
+    transform: none !important;
+  }
+
+  /* Loader — hide */
+  [class*="animate-spin"] {
+    display: none !important;
+  }
+
+  /* Progress bars — ensure colors print */
+  [class*="bg-amber-500"] {
+    background: #d4a017 !important;
+    -webkit-print-color-adjust: exact !important;
+  }
+
+  [class*="bg-slate-100"],
+  [class*="bg-white/[0.02]"],
+  [class*="bg-white/[0.05]"] {
+    background: rgba(255, 255, 255, 0.05) !important;
+    -webkit-print-color-adjust: exact !important;
+  }
+}
+
+/* ==========================================
    Responsive Utilities
    ========================================== */
 

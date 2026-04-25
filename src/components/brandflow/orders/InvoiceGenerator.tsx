@@ -124,69 +124,122 @@ export function InvoiceGenerator({ order, open, onClose }: InvoiceGeneratorProps
             max-width: 800px;
             margin: 0 auto;
           }
-          .invoice-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: flex-start;
-            margin-bottom: 32px;
-            padding-bottom: 24px;
-            border-bottom: 2px solid #e2e8f0;
+          /* ── Fallback: make flex layouts work via common Tailwind classes ── */
+          .flex { display: flex; }
+          .flex-col { flex-direction: column; }
+          .items-center { align-items: center; }
+          .items-start { align-items: flex-start; }
+          .justify-between { justify-content: space-between; }
+          .justify-end { justify-content: flex-end; }
+          .gap-2 { gap: 8px; }
+          .gap-3 { gap: 12px; }
+          .gap-8 { gap: 32px; }
+          .text-center { text-align: center; }
+          .text-right { text-align: right; }
+          .w-full { width: 100%; }
+          .w-64 { width: 256px; }
+          .w-10, .h-10 { width: 40px; height: 40px; }
+          .rounded-lg { border-radius: 8px; }
+          .rounded-xl { border-radius: 12px; }
+          .inline-flex { display: inline-flex; }
+          .object-cover { object-fit: cover; }
+          .space-y-2 > * + * { margin-top: 8px; }
+          .space-y-1 > * + * { margin-top: 4px; }
+          .font-medium { font-weight: 500; }
+          .font-semibold { font-weight: 600; }
+          .font-bold { font-weight: 700; }
+          .font-extrabold { font-weight: 800; }
+          .tracking-tight { letter-spacing: -0.025em; }
+          .tracking-wider { letter-spacing: 0.05em; }
+          .mt-1 { margin-top: 4px; }
+          .mt-2 { margin-top: 8px; }
+          .mt-6 { margin-top: 24px; }
+          .mt-8 { margin-top: 32px; }
+          .mb-1 { margin-bottom: 4px; }
+          .mb-2 { margin-bottom: 8px; }
+          .mx-8 { margin-left: 32px; margin-right: 32px; }
+          .pt-1 { padding-top: 4px; }
+          .pt-4 { padding-top: 16px; }
+          .pt-6 { padding-top: 24px; }
+          .pt-8 { padding-top: 32px; }
+          .pb-3 { padding-bottom: 12px; }
+          .pb-6 { padding-bottom: 24px; }
+          .pb-8 { padding-bottom: 32px; }
+          .px-2 { padding-left: 8px; padding-right: 8px; }
+          .px-3 { padding-left: 12px; padding-right: 12px; }
+          .px-4 { padding-left: 16px; padding-right: 16px; }
+          .px-8 { padding-left: 32px; padding-right: 32px; }
+          .py-0\\.5 { padding-top: 2px; padding-bottom: 2px; }
+          .py-3 { padding-top: 12px; padding-bottom: 12px; }
+          .py-4 { padding-top: 16px; padding-bottom: 16px; }
+          .p-4 { padding: 16px; }
+          .uppercase { text-transform: uppercase; }
+          .overflow-hidden { overflow: hidden; }
+          .text-xs { font-size: 0.75rem; line-height: 1rem; }
+          .text-sm { font-size: 0.875rem; line-height: 1.25rem; }
+          .text-base { font-size: 1rem; line-height: 1.5rem; }
+          .text-xl { font-size: 1.25rem; line-height: 1.75rem; }
+          .text-2xl { font-size: 1.5rem; line-height: 2rem; }
+          .text-\\[11px\\] { font-size: 11px; }
+          .text-\\[10px\\] { font-size: 10px; }
+
+          /* ── Color utilities ── */
+          .text-slate-900 { color: #0f172a; }
+          .text-slate-700 { color: #334155; }
+          .text-slate-500 { color: #64748b; }
+          .text-amber-600 { color: #C9A227; }
+          .text-red-600 { color: #dc2626; }
+          .text-muted-foreground { color: #64748b; }
+          .text-foreground { color: #0f172a; }
+          .bg-amber-600 { background-color: #C9A227; }
+          .bg-slate-50 { background-color: #f8fafc; }
+          .bg-amber-50 { background-color: #fffbeb; }
+          .bg-red-50 { background-color: #fef2f2; }
+          .bg-amber-500\\/20 { background-color: rgba(245, 158, 11, 0.2); }
+          .bg-red-500\\/20 { background-color: rgba(239, 68, 68, 0.2); }
+          .border-slate-100 { border-color: #f1f5f9; }
+          .border-slate-200 { border-color: #e2e8f0; }
+          .border-b { border-bottom-width: 1px; }
+          .border-b-2 { border-bottom-width: 2px; }
+          .border-t { border-top-width: 1px; }
+          .sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0,0,0,0); white-space: nowrap; }
+
+          /* ── Separator ── */
+          [data-slot="separator"] {
+            border-bottom: 1px solid #e2e8f0;
+            margin-left: 32px;
+            margin-right: 32px;
           }
-          .brand-info h1 {
-            font-size: 24px;
-            font-weight: 800;
-            color: #0f172a;
-            letter-spacing: -0.5px;
-          }
-          .brand-info p {
-            font-size: 12px;
-            color: #64748b;
-            margin-top: 4px;
-          }
-          .invoice-meta {
-            text-align: right;
-          }
-          .invoice-meta h2 {
-            font-size: 28px;
-            font-weight: 800;
-            color: #C9A227;
-            letter-spacing: -0.5px;
-          }
-          .invoice-meta p {
-            font-size: 13px;
-            color: #64748b;
-            margin-top: 4px;
-          }
-          .billing-section {
-            display: flex;
-            justify-content: space-between;
-            margin-bottom: 32px;
-            gap: 40px;
-          }
-          .bill-to h3, .invoice-details h3 {
-            font-size: 11px;
-            font-weight: 700;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-            color: #94a3b8;
-            margin-bottom: 12px;
-          }
-          .bill-to p, .invoice-details p {
-            font-size: 13px;
-            color: #334155;
-            line-height: 1.8;
-          }
-          .bill-to .name {
-            font-weight: 600;
-            font-size: 15px;
-            color: #0f172a;
-          }
+          .shrink-0 { flex-shrink: 0; }
+          .h-px { height: 1px; }
+          .h-1\\.5 { height: 6px; }
+          .w-1\\.5 { width: 6px; }
+          .bg-current { background-color: currentColor; }
+          .border { border-width: 1px; border-style: solid; }
+          .relative { position: relative; }
+          .absolute { position: absolute; }
+          .top-1\\/2 { top: 50%; }
+          .-translate-y-1\\/2 { transform: translateY(-50%); }
+          .right-3 { right: 12px; }
+          .cursor-pointer { cursor: pointer; }
+          .hover\\:text-amber-400:hover { color: #fbbf24; }
+          .transition-colors { transition-property: color, background-color, border-color; }
+          .bg-gradient-to-br { background-image: linear-gradient(to bottom right, var(--tw-gradient-stops)); }
+          .from-amber-400 { --tw-gradient-from: #fbbf24; --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to); }
+          .to-amber-600 { --tw-gradient-to: #d97706; }
+          .text-white { color: #ffffff; }
+          .shadow-lg { box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1), 0 4px 6px -4px rgba(0,0,0,0.1); }
+          .max-w-sm { max-width: 24rem; }
+          .bg-\\[\\#0a0a0f\\] { background-color: #0a0a0f; }
+          .backdrop-blur-xl { backdrop-filter: blur(24px); }
+          .border-b \\+ \\{ border-bottom-width: 1px; }
+
+          /* ── Invoice-specific layout ── */
           table {
             width: 100%;
             border-collapse: collapse;
-            margin-bottom: 24px;
           }
-          thead th {
+          table thead th {
             background: #f8fafc;
             font-size: 11px;
             font-weight: 700;
@@ -197,80 +250,21 @@ export function InvoiceGenerator({ order, open, onClose }: InvoiceGeneratorProps
             text-align: left;
             border-bottom: 2px solid #e2e8f0;
           }
-          thead th:last-child {
-            text-align: right;
-          }
-          tbody td {
+          table thead th:nth-child(2) { text-align: center; width: 80px; }
+          table thead th:nth-child(3),
+          table thead th:nth-child(4) { text-align: right; width: 112px; }
+          table tbody td {
             padding: 12px 16px;
             font-size: 13px;
             color: #334155;
             border-bottom: 1px solid #f1f5f9;
+            vertical-align: middle;
           }
-          tbody td:last-child {
-            text-align: right;
-            font-weight: 600;
-            color: #0f172a;
-          }
-          tbody tr:last-child td {
-            border-bottom: none;
-          }
-          .totals-section {
-            display: flex;
-            justify-content: flex-end;
-          }
-          .totals-table {
-            width: 280px;
-          }
-          .totals-table .row {
-            display: flex;
-            justify-content: space-between;
-            padding: 8px 0;
-            font-size: 13px;
-            color: #64748b;
-          }
-          .totals-table .row.total {
-            border-top: 2px solid #e2e8f0;
-            margin-top: 8px;
-            padding-top: 16px;
-            font-size: 18px;
-            font-weight: 800;
-            color: #0f172a;
-          }
-          .payment-badge {
-            display: inline-flex;
-            align-items: center;
-            gap: 6px;
-            padding: 6px 16px;
-            border-radius: 100px;
-            font-size: 12px;
-            font-weight: 700;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-            margin-top: 16px;
-          }
-          .payment-badge.paid { background: #ecfdf5; color: #C9A227; }
-          .payment-badge.unpaid { background: #fffbeb; color: #C9A227; }
-          .payment-badge.cancelled { background: #fef2f2; color: #dc2626; }
-          .payment-badge.refunded { background: #fffbeb; color: #C9A227; }
-          .footer {
-            margin-top: 48px;
-            padding-top: 24px;
-            border-top: 1px solid #e2e8f0;
-            text-align: center;
-            color: #94a3b8;
-            font-size: 11px;
-          }
-          .notes {
-            margin-top: 24px;
-            padding: 16px;
-            background: #f8fafc;
-            border-radius: 8px;
-            font-size: 13px;
-            color: #64748b;
-          }
-          .notes strong {
-            color: #334155;
-          }
+          table tbody td:nth-child(2) { text-align: center; }
+          table tbody td:nth-child(3),
+          table tbody td:nth-child(4) { text-align: right; }
+          table tbody tr:last-child td { border-bottom: none; }
+
           @media print {
             body { padding: 20px; }
           }
