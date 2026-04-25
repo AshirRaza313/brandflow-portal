@@ -45,9 +45,11 @@ function formatMonthLabel(date: Date): string {
   return `${months[date.getMonth()]} ${date.getFullYear()}`;
 }
 
-// Helper: truncate label for chart display
-function truncateLabel(str: string, maxLen: number = 18): string {
-  return str.length > maxLen ? str.slice(0, maxLen - 1) + "\u2026" : str;
+// Helper: truncate label for chart display (null-safe)
+function truncateLabel(str: string | null | undefined, maxLen: number = 18): string {
+  if (!str) return "Unknown";
+  const s = String(str);
+  return s.length > maxLen ? s.slice(0, maxLen - 1) + "\u2026" : s;
 }
 
 // GET /api/reports/export?type=sales|customers|products&orgId=xxx&period=daily|weekly|monthly
@@ -175,7 +177,8 @@ export const GET = withAuth(async (req: NextRequest, authCtx) => {
         // ── Pie Chart Data: Order Status Breakdown ──
         const statusMap = new Map<string, number>();
         orders.forEach((o) => {
-          const status = o.status.charAt(0).toUpperCase() + o.status.slice(1);
+          const rawStatus = String(o.status || "unknown");
+          const status = rawStatus.charAt(0).toUpperCase() + rawStatus.slice(1);
           statusMap.set(status, (statusMap.get(status) || 0) + 1);
         });
         const pieChartData = Array.from(statusMap.entries())
@@ -185,10 +188,12 @@ export const GET = withAuth(async (req: NextRequest, authCtx) => {
         // ── Bar Chart Data: Top 5 Products by Revenue ──
         const productRevenueMap = new Map<string, number>();
         orders.forEach((o) => {
-          o.items.forEach((item) => {
+          if (!o.items || !Array.isArray(o.items)) return;
+          o.items.forEach((item: any) => {
+            const pName = truncateLabel(item.productName);
             productRevenueMap.set(
-              item.productName,
-              (productRevenueMap.get(item.productName) || 0) + (Number(item.total) || 0),
+              pName,
+              (productRevenueMap.get(pName) || 0) + (Number(item.total) || 0),
             );
           });
         });
@@ -196,7 +201,7 @@ export const GET = withAuth(async (req: NextRequest, authCtx) => {
           .sort((a, b) => b[1] - a[1])
           .slice(0, 5)
           .map(([label, value], i) => ({
-            label: truncateLabel(label),
+            label: String(label || "Product"),
             value: Math.round(value),
             color: BAR_COLORS[i % BAR_COLORS.length],
           }));
@@ -246,11 +251,12 @@ export const GET = withAuth(async (req: NextRequest, authCtx) => {
               headers: ["Order #", "Customer", "Amount", "Status", "Date"],
               rows: orders.slice(0, 20).map((o) => {
                 const cDate = safeDate(o.createdAt);
+                const rawStatus = String(o.status || "unknown");
                 return [
                   o.orderNumber || "N/A",
                   "Customer",
                   `${sym} ${(Number(o.total) || 0).toLocaleString()}`,
-                  o.status.charAt(0).toUpperCase() + o.status.slice(1),
+                  rawStatus.charAt(0).toUpperCase() + rawStatus.slice(1),
                   cDate
                     ? cDate.toLocaleDateString("en-PK", { month: "short", day: "numeric" })
                     : "N/A",
@@ -341,7 +347,7 @@ export const GET = withAuth(async (req: NextRequest, authCtx) => {
           .sort((a, b) => Number(b.totalSpent || 0) - Number(a.totalSpent || 0))
           .slice(0, 10)
           .map((c, i) => ({
-            label: truncateLabel(c.name, 15),
+            label: truncateLabel(c.name, 15) || "Customer",
             value: Math.round(Number(c.totalSpent) || 0),
             color: BAR_COLORS[i % BAR_COLORS.length],
           }));
@@ -355,7 +361,8 @@ export const GET = withAuth(async (req: NextRequest, authCtx) => {
           gold: "Gold",
         };
         customers.forEach((c) => {
-          const tier = tierLabels[c.loyaltyTier] || c.loyaltyTier.charAt(0).toUpperCase() + c.loyaltyTier.slice(1);
+          const rawTier = String(c.loyaltyTier || "new").toLowerCase();
+          const tier = tierLabels[rawTier] || rawTier.charAt(0).toUpperCase() + rawTier.slice(1);
           tierMap.set(tier, (tierMap.get(tier) || 0) + 1);
         });
         const pieChartData = Array.from(tierMap.entries())
@@ -409,11 +416,11 @@ export const GET = withAuth(async (req: NextRequest, authCtx) => {
                 .sort((a, b) => Number(b.totalSpent || 0) - Number(a.totalSpent || 0))
                 .slice(0, 20)
                 .map((c) => [
-                  c.name,
+                  c.name || "Customer",
                   c.phone || "\u2014",
                   `${sym} ${Number(c.totalSpent || 0).toLocaleString()}`,
                   String(c.orderCount || 0),
-                  c.loyaltyTier || "\u2014",
+                  String(c.loyaltyTier || "\u2014"),
                 ]),
             },
           ],
@@ -443,7 +450,7 @@ export const GET = withAuth(async (req: NextRequest, authCtx) => {
 
         // ── Current Metrics ──
         const totalSold = products.reduce(
-          (s, p) => s + p.orderItems.reduce((is, item) => is + (Number(item.quantity) || 0), 0),
+          (s, p) => s + (p.orderItems || []).reduce((is: number, item: any) => is + (Number(item.quantity) || 0), 0),
           0,
         );
         const outOfStock = products.filter((p) => Number(p.stock) <= 0).length;
@@ -522,11 +529,11 @@ export const GET = withAuth(async (req: NextRequest, authCtx) => {
         // ── Build Product Rows (sorted by revenue, for table + bar chart) ──
         const productRows = [...products]
           .map((p) => ({
-            name: p.name,
+            name: p.name || "Untitled",
             category: p.category || "\u2014",
             price: Number(p.price),
-            qty: p.orderItems.reduce((s, item) => s + (Number(item.quantity) || 0), 0),
-            revenue: p.orderItems.reduce((s, item) => s + (Number(item.total) || 0), 0),
+            qty: (p.orderItems || []).reduce((s: number, item: any) => s + (Number(item.quantity) || 0), 0),
+            revenue: (p.orderItems || []).reduce((s: number, item: any) => s + (Number(item.total) || 0), 0),
           }))
           .sort((a, b) => b.revenue - a.revenue || b.qty - a.qty);
 

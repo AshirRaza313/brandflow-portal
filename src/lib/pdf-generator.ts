@@ -353,7 +353,7 @@ function drawVerticalBarChart(
     doc.save();
     doc.font(fn).fontSize(6).fillColor(C.goldDim);
     // Truncate long labels
-    let lbl = item.label;
+    let lbl = String(item.label || "");
     if (lbl.length > 8) lbl = lbl.substring(0, 7) + "…";
     doc.text(lbl, bx - 2, chartY + chartH + 6, { width: barWidth + 4, align: "center" });
     doc.restore();
@@ -415,7 +415,7 @@ function drawHorizontalBarChart(
     // Label on the left
     doc.save();
     doc.font(fn).fontSize(7.5).fillColor(C.gold);
-    let lbl = item.label;
+    let lbl = String(item.label || "");
     if (lbl.length > 14) lbl = lbl.substring(0, 13) + "…";
     doc.text(lbl, x + 10, by + barH / 2 - 4, { width: padLeft - 20, align: "right" });
     doc.restore();
@@ -566,7 +566,7 @@ function drawDonutChart(
     // Label
     doc.save();
     doc.font(fn).fontSize(6.5).fillColor(C.gold);
-    let lbl = item.label;
+    let lbl = String(item.label || "");
     if (lbl.length > 16) lbl = lbl.substring(0, 15) + "…";
     const pctTxt = ` ${lbl} (${((item.value / total) * 100).toFixed(1)}%)`;
     doc.text(pctTxt, lx + 10, ly, { width: colW - 12 });
