@@ -56,7 +56,7 @@ export const GET = withAuth(async (req: NextRequest, authCtx, ctx: RouteContext)
       platformTwitter: platformSettings?.twitterUrl || undefined,
       platformSupportHours: platformSettings?.supportHours || undefined,
       platformInvoiceHeaderText: platformSettings?.invoiceHeaderText || undefined,
-      platformPaymentMethods: platformSettings?.paymentMethods || undefined,
+      platformPaymentMethods: (() => { try { const p = platformSettings?.paymentMethods; return p ? JSON.parse(p) : undefined; } catch { return undefined; } })(),
       platformLogo: platformSettings?.logoUrl || undefined,
       platformTagline: platformSettings?.tagline || "The Universal Brand Management Portal",
     };

@@ -156,12 +156,13 @@ const C = {
   goldDim: "#b45309",
   goldFaint: "#92400e",
   goldUltraFaint: "#78350f",
-  goldBg: "rgba(217,119,6,0.04)",
-  goldBg2: "rgba(217,119,6,0.08)",
-  goldBg3: "rgba(217,119,6,0.12)",
-  goldBorder: "rgba(217,119,6,0.15)",
-  goldBorder2: "rgba(217,119,6,0.25)",
-  goldLine: "rgba(217,119,6,0.3)",
+  // Pre-blended hex colors against #0a0a0f background (pdfkit does NOT support rgba() strings)
+  goldBg: "#120e0f",
+  goldBg2: "#1b130e",
+  goldBg3: "#23170e",
+  goldBorder: "#291a0e",
+  goldBorder2: "#3e250d",
+  goldLine: "#482b0c",
   green: "#34d399",
   yellow: "#fbbf24",
   red: "#f87171",
@@ -760,11 +761,11 @@ export async function generateInvoicePDF(invoice: InvoiceData): Promise<Buffer> 
 
       // ── STATUS BADGE ──
       const statusMap: Record<string, { color: string; bg: string; label: string }> = {
-        pending: { color: C.yellow, bg: "rgba(251,191,36,0.08)", label: "PENDING" },
-        paid: { color: C.green, bg: "rgba(52,211,153,0.08)", label: "PAID" },
-        approved: { color: C.green, bg: "rgba(52,211,153,0.08)", label: "APPROVED" },
-        cancelled: { color: "#94a3b8", bg: "rgba(148,163,184,0.06)", label: "CANCELLED" },
-        refunded: { color: C.red, bg: "rgba(248,113,113,0.08)", label: "REFUNDED" },
+        pending: { color: C.yellow, bg: "#1d1811", label: "PENDING" },
+        paid: { color: C.green, bg: "#0d1a1a", label: "PAID" },
+        approved: { color: C.green, bg: "#0d1a1a", label: "APPROVED" },
+        cancelled: { color: "#94a3b8", bg: "#121319", label: "CANCELLED" },
+        refunded: { color: C.red, bg: "#1d1217", label: "REFUNDED" },
       };
       const st = statusMap[invoice.status] || statusMap.pending;
 
@@ -939,12 +940,21 @@ export async function generateInvoicePDF(invoice: InvoiceData): Promise<Buffer> 
       }
 
       // ── ACCEPTED PAYMENT METHODS ──
-      if (invoice.platformPaymentMethods && invoice.platformPaymentMethods.length > 0) {
+      // Safely parse paymentMethods (could be string or string[])
+      let paymentMethods: string[] = [];
+      if (invoice.platformPaymentMethods) {
+        if (Array.isArray(invoice.platformPaymentMethods)) {
+          paymentMethods = invoice.platformPaymentMethods;
+        } else if (typeof invoice.platformPaymentMethods === "string") {
+          try { paymentMethods = JSON.parse(invoice.platformPaymentMethods); } catch { paymentMethods = []; }
+        }
+      }
+      if (paymentMethods.length > 0) {
         drawCard(doc, P, y, CW, 30);
         doc.font(FONT.bold).fontSize(7).fillColor(C.goldMid);
         doc.text("ACCEPTED PAYMENT METHODS", P + 14, y + 8);
-        const pmText = invoice.platformPaymentMethods
-          .map(pm => pm.replace(/_/g, " ").replace(/\b\w/g, l => l.toUpperCase()))
+        const pmText = paymentMethods
+          .map((pm: string) => String(pm).replace(/_/g, " ").replace(/\b\w/g, (l: string) => l.toUpperCase()))
           .join("  •  ");
         doc.font(FONT.regular).fontSize(7.5).fillColor(C.goldMid);
         doc.text(pmText, P + 14, y + 17, { width: CW - 28 });
