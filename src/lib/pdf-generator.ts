@@ -943,10 +943,11 @@ export async function generateInvoicePDF(invoice: InvoiceData): Promise<Buffer> 
 
       doc.save();
       const footerGrad = doc.linearGradient(P, 0, W - P, 0);
-      footerGrad.stop(0, "rgba(217,119,6,0)");
-      footerGrad.stop(0.3, "rgba(217,119,6,0.4)");
-      footerGrad.stop(0.7, "rgba(217,119,6,0.4)");
-      footerGrad.stop(1, "rgba(217,119,6,0)");
+      // pdfkit _normalizeColor does NOT support rgba() strings; use pre-blended hex against #0a0a0f
+      footerGrad.stop(0, "#0a0a0f");
+      footerGrad.stop(0.3, "#5d360b");
+      footerGrad.stop(0.7, "#5d360b");
+      footerGrad.stop(1, "#0a0a0f");
       doc.moveTo(P, footerY).lineTo(W - P, footerY).lineWidth(1).stroke(footerGrad);
       doc.restore();
 
@@ -1103,9 +1104,9 @@ export async function generateReportPDF(report: ReportData): Promise<Buffer> {
       const topDecoY = 180;
       doc.save();
       const decoGrad = doc.linearGradient(W / 2 - 100, 0, W / 2 + 100, 0);
-      decoGrad.stop(0, "rgba(217,119,6,0)");
-      decoGrad.stop(0.5, "rgba(217,119,6,0.5)");
-      decoGrad.stop(1, "rgba(217,119,6,0)");
+      decoGrad.stop(0, "#0a0a0f");
+      decoGrad.stop(0.5, "#72410b");
+      decoGrad.stop(1, "#0a0a0f");
       doc.moveTo(W / 2 - 100, topDecoY).lineTo(W / 2 + 100, topDecoY).lineWidth(0.8).stroke(decoGrad);
       doc.restore();
 
@@ -1208,9 +1209,9 @@ export async function generateReportPDF(report: ReportData): Promise<Buffer> {
       // Decorative bottom line
       doc.save();
       const decoGrad2 = doc.linearGradient(W / 2 - 100, 0, W / 2 + 100, 0);
-      decoGrad2.stop(0, "rgba(217,119,6,0)");
-      decoGrad2.stop(0.5, "rgba(217,119,6,0.5)");
-      decoGrad2.stop(1, "rgba(217,119,6,0)");
+      decoGrad2.stop(0, "#0a0a0f");
+      decoGrad2.stop(0.5, "#72410b");
+      decoGrad2.stop(1, "#0a0a0f");
       doc.moveTo(W / 2 - 100, logoCenterY).lineTo(W / 2 + 100, logoCenterY).lineWidth(0.8).stroke(decoGrad2);
       doc.restore();
 
@@ -1551,9 +1552,9 @@ export async function generateReportPDF(report: ReportData): Promise<Buffer> {
         // Footer line
         doc.save();
         const fGrad = doc.linearGradient(P, 0, W - P, 0);
-        fGrad.stop(0, "rgba(217,119,6,0)");
-        fGrad.stop(0.5, "rgba(217,119,6,0.4)");
-        fGrad.stop(1, "rgba(217,119,6,0)");
+        fGrad.stop(0, "#0a0a0f");
+        fGrad.stop(0.5, "#5d360b");
+        fGrad.stop(1, "#0a0a0f");
         doc.moveTo(P, H - 50).lineTo(W - P, H - 50).lineWidth(0.5).stroke(fGrad);
         doc.restore();
 
