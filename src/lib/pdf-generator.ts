@@ -1381,7 +1381,11 @@ export async function generateReportPDF(report: ReportData): Promise<Buffer> {
           tableY = ensureSpace(doc, tableY, 230, W, H, P);
 
           doc.font(FONT.bold).fontSize(12).fillColor(C.goldBright);
-          doc.text("Revenue Trend", P, tableY);
+          const trendTitle = safeTitle.includes("Sales") ? "Revenue Trend Over Time"
+            : safeTitle.includes("Customer") ? "Customer Growth Trend"
+            : safeTitle.includes("Product") ? "Sales Volume Trend"
+            : "Trend Overview";
+          doc.text(trendTitle, P, tableY);
           tableY += 18;
 
           drawVerticalBarChart(doc, P, tableY, CW, 200, report.trendChartData, "", FONT.regular);
@@ -1394,7 +1398,11 @@ export async function generateReportPDF(report: ReportData): Promise<Buffer> {
           tableY = ensureSpace(doc, tableY, barChartH + 30, W, H, P);
 
           doc.font(FONT.bold).fontSize(12).fillColor(C.goldBright);
-          doc.text("Top Items", P, tableY);
+          const barTitle = safeTitle.includes("Sales") ? "Top 5 Products by Revenue"
+            : safeTitle.includes("Customer") ? "Top 10 Customers by Spend"
+            : safeTitle.includes("Product") ? "Top 10 Products by Revenue"
+            : "Top Performing Items";
+          doc.text(barTitle, P, tableY);
           tableY += 18;
 
           drawHorizontalBarChart(doc, P, tableY, CW, barChartH, report.barChartData, "", FONT.regular);
@@ -1406,7 +1414,11 @@ export async function generateReportPDF(report: ReportData): Promise<Buffer> {
           tableY = ensureSpace(doc, tableY, 260, W, H, P);
 
           doc.font(FONT.bold).fontSize(12).fillColor(C.goldBright);
-          doc.text("Distribution", P, tableY);
+          const pieTitle = safeTitle.includes("Sales") ? "Order Status Distribution"
+            : safeTitle.includes("Customer") ? "Customer Tier Distribution"
+            : safeTitle.includes("Product") ? "Stock Status Distribution"
+            : "Category Distribution";
+          doc.text(pieTitle, P, tableY);
           tableY += 18;
 
           // Donut chart centered
