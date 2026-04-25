@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback, useMemo } from "react";
-import { useBrandOnyxStore } from "@/store/brandflow-store";
+import { useValtrioxStore } from "@/store/brandflow-store";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -59,8 +59,8 @@ interface ProductStats {
 const ITEMS_PER_PAGE = 12;
 
 const CATEGORY_COLORS = [
-  { bg: "bg-emerald-500/10", text: "text-emerald-400", border: "border-emerald-500/20", accent: "from-emerald-600 to-emerald-400" },
-  { bg: "bg-violet-500/10", text: "text-violet-400", border: "border-violet-500/20", accent: "from-violet-600 to-violet-400" },
+  { bg: "bg-amber-500/10", text: "text-amber-400", border: "border-amber-500/20", accent: "from-amber-600 to-amber-400" },
+  { bg: "bg-yellow-500/10", text: "text-yellow-400", border: "border-yellow-500/20", accent: "from-yellow-600 to-yellow-400" },
   { bg: "bg-pink-500/10", text: "text-pink-400", border: "border-pink-500/20", accent: "from-pink-600 to-pink-400" },
   { bg: "bg-sky-500/10", text: "text-sky-400", border: "border-sky-500/20", accent: "from-sky-600 to-sky-400" },
   { bg: "bg-orange-500/10", text: "text-orange-400", border: "border-orange-500/20", accent: "from-orange-600 to-orange-400" },
@@ -91,7 +91,7 @@ function formatPrice(price: number): string {
 // ── Component ────────────────────────────────────────────────────────────────
 
 export function ProductsPage() {
-  const { organization, appTheme } = useBrandOnyxStore();
+  const { organization, appTheme } = useValtrioxStore();
   const isGold = appTheme === "premium-dark";
   const isDark = appTheme === "dark" || isGold;
 
@@ -291,7 +291,7 @@ export function ProductsPage() {
   const statusBadge = (status: string) => {
     switch (status) {
       case "active":
-        return "bg-emerald-500/10 text-emerald-400 border-emerald-500/20";
+        return "bg-amber-500/10 text-amber-400 border-amber-500/20";
       case "draft":
         return "bg-amber-500/10 text-amber-400 border-amber-500/20";
       case "archived":
@@ -375,7 +375,7 @@ export function ProductsPage() {
           </p>
         </div>
         <Button
-          className={isGold ? "btn-gold" : "bg-emerald-600 hover:bg-emerald-700 text-white"}
+          className={isGold ? "btn-gold" : "bg-amber-600 hover:bg-amber-700 text-white"}
           onClick={handleOpenCreate}
         >
           <Plus className="mr-2 h-4 w-4" /> Add Product
@@ -393,7 +393,7 @@ export function ProductsPage() {
               activeTab === tab.id
                 ? isGold
                   ? "border-amber-500 text-amber-400"
-                  : "border-emerald-500 text-emerald-600"
+                  : "border-amber-500 text-amber-600"
                 : isDark
                   ? "border-transparent text-slate-500 hover:text-slate-300"
                   : "border-transparent text-slate-500 hover:text-slate-700"
@@ -422,7 +422,7 @@ export function ProductsPage() {
                 isGold
                   ? "bg-white/[0.03] border-white/[0.06] hover:border-amber-500/20"
                   : isDark
-                    ? "bg-white/[0.03] border-white/[0.06] hover:border-emerald-500/20"
+                    ? "bg-white/[0.03] border-white/[0.06] hover:border-amber-500/20"
                     : "bg-white border"
               )}>
                 <CardContent className="p-4">
@@ -437,9 +437,9 @@ export function ProductsPage() {
                     </div>
                     <div className={cn(
                       "h-10 w-10 rounded-lg flex items-center justify-center flex-shrink-0",
-                      isGold ? "bg-amber-500/10" : "bg-emerald-500/10"
+                      isGold ? "bg-amber-500/10" : "bg-amber-500/10"
                     )}>
-                      <Package className={cn("h-5 w-5", isGold ? "text-amber-400" : "text-emerald-400")} />
+                      <Package className={cn("h-5 w-5", isGold ? "text-amber-400" : "text-amber-400")} />
                     </div>
                   </div>
                 </CardContent>
@@ -451,8 +451,8 @@ export function ProductsPage() {
                 isGold
                   ? "bg-white/[0.03] border-white/[0.06] hover:border-amber-500/20"
                   : isDark
-                    ? "bg-white/[0.03] border-white/[0.06] hover:border-emerald-500/20"
-                    : "bg-emerald-50 border-emerald-200"
+                    ? "bg-white/[0.03] border-white/[0.06] hover:border-amber-500/20"
+                    : "bg-amber-50 border-amber-200"
               )}>
                 <CardContent className="p-4">
                   <div className="flex items-center justify-between">
@@ -460,15 +460,15 @@ export function ProductsPage() {
                       <p className={cn("text-xs font-medium uppercase tracking-wider", isDark ? "text-slate-400" : "text-muted-foreground")}>
                         Active
                       </p>
-                      <p className={cn("text-2xl font-bold mt-1", isGold ? "text-amber-400" : isDark ? "text-emerald-400" : "text-emerald-600")}>
+                      <p className={cn("text-2xl font-bold mt-1", isGold ? "text-amber-400" : isDark ? "text-amber-400" : "text-amber-600")}>
                         {stats?.active ?? products.filter((p) => p.status === "active").length}
                       </p>
                     </div>
                     <div className={cn(
                       "h-10 w-10 rounded-lg flex items-center justify-center flex-shrink-0",
-                      isGold ? "bg-amber-500/10" : "bg-emerald-500/10"
+                      isGold ? "bg-amber-500/10" : "bg-amber-500/10"
                     )}>
-                      <Package className={cn("h-5 w-5", isGold ? "text-amber-400" : "text-emerald-400")} />
+                      <Package className={cn("h-5 w-5", isGold ? "text-amber-400" : "text-amber-400")} />
                     </div>
                   </div>
                 </CardContent>
@@ -480,7 +480,7 @@ export function ProductsPage() {
                 isGold
                   ? "bg-white/[0.03] border-white/[0.06] hover:border-amber-500/20"
                   : isDark
-                    ? "bg-white/[0.03] border-white/[0.06] hover:border-emerald-500/20"
+                    ? "bg-white/[0.03] border-white/[0.06] hover:border-amber-500/20"
                     : "bg-red-50 border-red-200"
               )}>
                 <CardContent className="p-4">
@@ -506,7 +506,7 @@ export function ProductsPage() {
                 isGold
                   ? "bg-white/[0.03] border-white/[0.06] hover:border-amber-500/20"
                   : isDark
-                    ? "bg-white/[0.03] border-white/[0.06] hover:border-emerald-500/20"
+                    ? "bg-white/[0.03] border-white/[0.06] hover:border-amber-500/20"
                     : "bg-white border"
               )}>
                 <CardContent className="p-4">
@@ -521,9 +521,9 @@ export function ProductsPage() {
                     </div>
                     <div className={cn(
                       "h-10 w-10 rounded-lg flex items-center justify-center flex-shrink-0",
-                      isGold ? "bg-amber-500/10" : "bg-emerald-500/10"
+                      isGold ? "bg-amber-500/10" : "bg-amber-500/10"
                     )}>
-                      <span className={cn("text-lg font-bold", isGold ? "text-amber-400" : "text-emerald-400")}>Rs.</span>
+                      <span className={cn("text-lg font-bold", isGold ? "text-amber-400" : "text-amber-400")}>Rs.</span>
                     </div>
                   </div>
                 </CardContent>
@@ -595,8 +595,8 @@ export function ProductsPage() {
                   isGold
                     ? "bg-amber-500/5 border-amber-500/20"
                     : isDark
-                      ? "bg-emerald-500/5 border-emerald-500/20"
-                      : "bg-emerald-50 border-emerald-200"
+                      ? "bg-amber-500/5 border-amber-500/20"
+                      : "bg-amber-50 border-amber-200"
                 )}
               >
                 <span className={cn("text-sm font-medium", isDark ? "text-slate-300" : "text-slate-700")}>
@@ -679,9 +679,9 @@ export function ProductsPage() {
                         isGold
                           ? "bg-white/[0.03] border-white/[0.06] hover:bg-white/[0.05] hover:border-amber-500/20"
                           : isDark
-                            ? "bg-white/[0.03] border-white/[0.06] hover:bg-white/[0.05] hover:border-emerald-500/20"
-                            : "bg-white border hover:border-emerald-200",
-                        selectedIds.has(product.id) && (isGold ? "ring-2 ring-amber-500/50 border-amber-500/30" : "ring-2 ring-emerald-500/50 border-emerald-500/30")
+                            ? "bg-white/[0.03] border-white/[0.06] hover:bg-white/[0.05] hover:border-amber-500/20"
+                            : "bg-white border hover:border-amber-200",
+                        selectedIds.has(product.id) && (isGold ? "ring-2 ring-amber-500/50 border-amber-500/30" : "ring-2 ring-amber-500/50 border-amber-500/30")
                       )}
                       onClick={() => handleOpenEdit(product)}
                     >
@@ -824,7 +824,7 @@ export function ProductsPage() {
                           className={cn(
                             "cursor-pointer group",
                             isDark ? "border-b border-white/[0.04] hover:bg-white/[0.02]" : "hover:bg-muted/50",
-                            selectedIds.has(product.id) && (isGold ? "bg-amber-500/5" : "bg-emerald-500/5")
+                            selectedIds.has(product.id) && (isGold ? "bg-amber-500/5" : "bg-amber-500/5")
                           )}
                           onClick={() => handleOpenEdit(product)}
                         >
@@ -956,7 +956,7 @@ export function ProductsPage() {
                         size="icon"
                         className={cn(
                           "h-8 w-8 text-sm",
-                          page === currentPage && (isGold ? "bg-gradient-to-r from-amber-600 via-yellow-500 to-amber-600 text-black" : "bg-emerald-600 text-white hover:bg-emerald-700")
+                          page === currentPage && (isGold ? "bg-gradient-to-r from-amber-600 via-yellow-500 to-amber-600 text-black" : "bg-amber-600 text-white hover:bg-amber-700")
                         )}
                         onClick={() => setCurrentPage(page)}
                       >
@@ -1002,7 +1002,7 @@ export function ProductsPage() {
                 })()}
               </p>
               <Button
-                className={isGold ? "btn-gold" : "bg-emerald-600 hover:bg-emerald-700 text-white"}
+                className={isGold ? "btn-gold" : "bg-amber-600 hover:bg-amber-700 text-white"}
                 onClick={() => toast.info("Category management coming soon!")}
               >
                 <Plus className="mr-2 h-4 w-4" /> Create Category
@@ -1034,8 +1034,8 @@ export function ProductsPage() {
                       isGold
                         ? "bg-white/[0.03] border-white/[0.06] hover:bg-white/[0.05] hover:border-amber-500/20"
                         : isDark
-                          ? "bg-white/[0.03] border-white/[0.06] hover:bg-white/[0.05] hover:border-emerald-500/20"
-                          : "bg-white border hover:border-emerald-200"
+                          ? "bg-white/[0.03] border-white/[0.06] hover:bg-white/[0.05] hover:border-amber-500/20"
+                          : "bg-white border hover:border-amber-200"
                     )}>
                       <CardContent className="p-4">
                         <div className="flex items-start justify-between mb-3">
@@ -1140,14 +1140,14 @@ export function ProductsPage() {
               </Card>
               <Card className={cn(
                 "border",
-                isGold ? "bg-white/[0.03] border-white/[0.06]" : isDark ? "bg-white/[0.03] border-white/[0.06]" : "bg-emerald-50 border-emerald-200"
+                isGold ? "bg-white/[0.03] border-white/[0.06]" : isDark ? "bg-white/[0.03] border-white/[0.06]" : "bg-amber-50 border-amber-200"
               )}>
                 <CardContent className="p-4">
                   <div className="flex items-center gap-2 mb-1">
-                    <div className="h-2.5 w-2.5 rounded-full bg-emerald-500" />
+                    <div className="h-2.5 w-2.5 rounded-full bg-amber-500" />
                     <p className={cn("text-[10px] font-medium uppercase tracking-wider", isDark ? "text-slate-400" : "text-muted-foreground")}>In Stock</p>
                   </div>
-                  <p className={cn("text-2xl font-bold", isDark ? "text-emerald-400" : "text-emerald-600")}>
+                  <p className={cn("text-2xl font-bold", isDark ? "text-amber-400" : "text-amber-600")}>
                     {products.filter(p => p.stock > 10).length}
                   </p>
                 </CardContent>
@@ -1186,12 +1186,12 @@ export function ProductsPage() {
                           ? "text-red-400"
                           : stockLevel === "low"
                             ? "text-orange-400"
-                            : isDark ? "text-emerald-400" : "text-emerald-600";
+                            : isDark ? "text-amber-400" : "text-amber-600";
                         const stockBg = stockLevel === "out"
                           ? "bg-red-500/10 border-red-500/20"
                           : stockLevel === "low"
                             ? "bg-orange-500/10 border-orange-500/20"
-                            : "bg-emerald-500/10 border-emerald-500/20";
+                            : "bg-amber-500/10 border-amber-500/20";
                         return (
                           <TableRow
                             key={product.id}
@@ -1302,8 +1302,8 @@ export function ProductsPage() {
                         isGold
                           ? "bg-white/[0.03] border-white/[0.06] hover:border-amber-500/30 hover:shadow-lg hover:shadow-amber-500/5"
                           : isDark
-                            ? "bg-white/[0.03] border-white/[0.06] hover:border-emerald-500/30 hover:shadow-lg hover:shadow-emerald-500/5"
-                            : "bg-white border hover:border-emerald-200 hover:shadow-lg"
+                            ? "bg-white/[0.03] border-white/[0.06] hover:border-amber-500/30 hover:shadow-lg hover:shadow-amber-500/5"
+                            : "bg-white border hover:border-amber-200 hover:shadow-lg"
                       )}
                       onClick={() => handleOpenEdit(product)}
                     >
@@ -1457,7 +1457,7 @@ export function ProductsPage() {
                 type="submit"
                 className={cn(
                   "flex-1",
-                  isGold ? "btn-gold" : "bg-emerald-600 hover:bg-emerald-700 text-white"
+                  isGold ? "btn-gold" : "bg-amber-600 hover:bg-amber-700 text-white"
                 )}
               >
                 Create Category

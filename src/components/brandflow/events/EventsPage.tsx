@@ -2,7 +2,7 @@
 
 import { useState, useMemo, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { useBrandOnyxStore } from "@/store/brandflow-store";
+import { useValtrioxStore } from "@/store/brandflow-store";
 import {
   getActiveEvents,
   getUpcomingEvents,
@@ -44,14 +44,14 @@ import {
 } from "lucide-react";
 
 // ============================================================================
-// BrandOnyx Icon Component — Uses actual BrandOnyx logo (PNG converted to icon)
+// Valtriox Icon Component — Uses actual Valtriox logo (PNG converted to icon)
 // ============================================================================
 
-function BrandOnyxIcon({ size = 14, className = "" }: { size?: number; className?: string }) {
+function ValtrioxIcon({ size = 14, className = "" }: { size?: number; className?: string }) {
   return (
     <img
-      src="/brandonix-icon-32.png"
-      alt="BrandOnyx"
+      src="/valtriox-icon-32.png"
+      alt="Valtriox"
       width={size}
       height={size}
       className={`object-contain ${className}`}
@@ -72,8 +72,8 @@ const DAY_NAMES = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 const DAY_NAMES_SHORT = ["S", "M", "T", "W", "T", "F", "S"];
 
 const TYPE_CONFIG: Record<string, { label: string; color: string; darkColor: string }> = {
-  religious: { label: "Religious", color: "bg-purple-100 text-purple-700 border-purple-200", darkColor: "bg-purple-500/15 text-purple-300 border-purple-500/30" },
-  national: { label: "National", color: "bg-emerald-100 text-emerald-700 border-emerald-200", darkColor: "bg-emerald-500/15 text-emerald-300 border-emerald-500/30" },
+  religious: { label: "Religious", color: "bg-amber-100 text-amber-700 border-amber-200", darkColor: "bg-amber-500/15 text-amber-300 border-amber-500/30" },
+  national: { label: "National", color: "bg-amber-100 text-amber-700 border-amber-200", darkColor: "bg-amber-500/15 text-amber-300 border-amber-500/30" },
   cultural: { label: "Cultural", color: "bg-amber-100 text-amber-700 border-amber-200", darkColor: "bg-amber-500/15 text-amber-300 border-amber-500/30" },
   commercial: { label: "Commercial", color: "bg-rose-100 text-rose-700 border-rose-200", darkColor: "bg-rose-500/15 text-rose-300 border-rose-500/30" },
 };
@@ -109,7 +109,7 @@ function getCountryName(code: string): string {
 function getSkippedEventIds(): Set<string> {
   try {
     if (typeof window === "undefined") return new Set();
-    const raw = localStorage.getItem("brandonix-skipped-events");
+    const raw = localStorage.getItem("valtriox-skipped-events");
     return raw ? new Set(JSON.parse(raw)) : new Set();
   } catch {
     return new Set();
@@ -119,7 +119,7 @@ function getSkippedEventIds(): Set<string> {
 function saveSkippedEventIds(ids: Set<string>) {
   try {
     if (typeof window !== "undefined") {
-      localStorage.setItem("brandonix-skipped-events", JSON.stringify([...ids]));
+      localStorage.setItem("valtriox-skipped-events", JSON.stringify([...ids]));
     }
   } catch {}
 }
@@ -294,8 +294,8 @@ function EventCard({
                     ? "bg-amber-500/20 text-amber-300 hover:bg-amber-500/30 border border-amber-500/30"
                     : "bg-amber-600 hover:bg-amber-700 text-white"
                   : isApplied
-                    ? "bg-emerald-500/20 text-emerald-300 hover:bg-emerald-500/30 border border-emerald-500/30"
-                    : "bg-emerald-600 hover:bg-emerald-700 text-white"
+                    ? "bg-amber-500/20 text-amber-300 hover:bg-amber-500/30 border border-amber-500/30"
+                    : "bg-amber-600 hover:bg-amber-700 text-white"
               }`}
               onClick={(e) => {
                 e.stopPropagation();
@@ -400,9 +400,9 @@ function EventCalendar({
   const goToNext = () => setViewDate(new Date(year, month + 1, 1));
   const goToToday = () => setViewDate(new Date());
 
-  const accentClass = isGold ? "text-amber-500" : "text-emerald-500";
-  const accentBg = isGold ? "bg-amber-500/15" : "bg-emerald-500/15";
-  const accentRing = isGold ? "ring-amber-500/40" : "ring-emerald-500/40";
+  const accentClass = isGold ? "text-amber-500" : "text-amber-500";
+  const accentBg = isGold ? "bg-amber-500/15" : "bg-amber-500/15";
+  const accentRing = isGold ? "ring-amber-500/40" : "ring-amber-500/40";
 
   const calendarCells: Array<{
     day: number;
@@ -500,7 +500,7 @@ function EventCalendar({
                   <span className="text-[10px] sm:text-xs leading-none">
                     {cell.day}
                   </span>
-                  {/* Event markers — BrandOnyx Icon for events */}
+                  {/* Event markers — Valtriox Icon for events */}
                   {hasEvents && (
                     <div className="flex gap-px sm:gap-0.5 mt-0.5 items-center justify-center">
                       {cell.events.slice(0, 2).map((ev, i) => (
@@ -511,8 +511,8 @@ function EventCalendar({
                           title={ev.name}
                         >
                           <img
-                            src="/brandonix-icon-32.png"
-                            alt="BrandOnyx"
+                            src="/valtriox-icon-32.png"
+                            alt="Valtriox"
                             className="h-full w-full object-contain"
                             draggable={false}
                           />
@@ -537,14 +537,14 @@ function EventCalendar({
         {/* Legend */}
         <div className="flex flex-wrap items-center gap-3 sm:gap-4 mt-3 sm:mt-4 pt-2 sm:pt-3 border-t border-border">
           <div className="flex items-center gap-1.5">
-            <div className={`h-2 w-2 rounded-full ${isGold ? "bg-amber-500" : "bg-emerald-500"}`} />
+            <div className={`h-2 w-2 rounded-full ${isGold ? "bg-amber-500" : "bg-amber-500"}`} />
             <span className={`text-[10px] sm:text-[11px] ${isDark ? "text-slate-500" : "text-slate-400"}`}>Active Today</span>
           </div>
           <div className="flex items-center gap-1.5">
-            <div className="h-3.5 w-3.5 sm:h-4 sm:w-4 rounded-[2px] sm:rounded-[3px] bg-violet-500 flex items-center justify-center overflow-hidden">
+            <div className="h-3.5 w-3.5 sm:h-4 sm:w-4 rounded-[2px] sm:rounded-[3px] bg-yellow-500 flex items-center justify-center overflow-hidden">
               <img
-                src="/brandonix-icon-32.png"
-                alt="BrandOnyx"
+                src="/valtriox-icon-32.png"
+                alt="Valtriox"
                 className="h-full w-full object-contain"
                 draggable={false}
               />
@@ -617,7 +617,7 @@ function SkippedEventsPanel({
   isGold: boolean;
   onUnskip: (id: string) => void;
 }) {
-  const accentClass = isGold ? "text-amber-400" : "text-emerald-400";
+  const accentClass = isGold ? "text-amber-400" : "text-amber-400";
   const [isExpanded, setIsExpanded] = useState(false);
 
   if (events.length === 0) return null;
@@ -723,7 +723,7 @@ export function EventsPage() {
     selectedCountry,
     selectedReligion,
     appTheme,
-  } = useBrandOnyxStore();
+  } = useValtrioxStore();
 
   const [previewEventId, setPreviewEventId] = useState<string | null>(null);
   const [skippedEventIds, setSkippedEventIds] = useState<Set<string>>(() => getSkippedEventIds());
@@ -845,7 +845,7 @@ export function EventsPage() {
   const previewedEvent = previewEventId ? allEventsMap.get(previewEventId) : null;
 
   // Accent color
-  const accentClass = isGold ? "text-amber-500" : "text-emerald-500";
+  const accentClass = isGold ? "text-amber-500" : "text-amber-500";
 
   return (
     <div className="space-y-4 sm:space-y-6 min-w-0 overflow-hidden">
@@ -896,7 +896,7 @@ export function EventsPage() {
               eventThemingEnabled
                 ? isGold
                   ? "bg-amber-600 hover:bg-amber-700 text-white"
-                  : "bg-emerald-600 hover:bg-emerald-700 text-white"
+                  : "bg-amber-600 hover:bg-amber-700 text-white"
                 : isDark
                   ? "bg-white/[0.06] text-slate-300 hover:bg-white/[0.1]"
                   : ""
@@ -923,17 +923,17 @@ export function EventsPage() {
             exit={{ opacity: 0, y: -10 }}
             className={`rounded-xl p-2.5 sm:p-4 border flex flex-col sm:flex-row sm:items-center gap-1.5 sm:gap-3 ${
               isDark
-                ? `bg-emerald-500/5 border-emerald-500/20`
-                : "bg-emerald-50/50 border-emerald-200"
+                ? `bg-amber-500/5 border-amber-500/20`
+                : "bg-amber-50/50 border-amber-200"
             }`}
           >
-            <Filter className={`h-4 w-4 sm:h-5 sm:w-5 flex-shrink-0 ${isGold ? "text-amber-500" : "text-emerald-600"}`} />
+            <Filter className={`h-4 w-4 sm:h-5 sm:w-5 flex-shrink-0 ${isGold ? "text-amber-500" : "text-amber-600"}`} />
             <div className="min-w-0">
-              <p className={`text-xs sm:text-sm font-semibold ${isDark ? "text-emerald-300" : "text-emerald-800"} break-words`}>
+              <p className={`text-xs sm:text-sm font-semibold ${isDark ? "text-amber-300" : "text-amber-800"} break-words`}>
                 Showing events for: {countryInfo ? `${countryInfo.name} (${countryInfo.flag})` : "All Countries"}
                 {selectedReligion && ` • ${selectedReligion.charAt(0).toUpperCase() + selectedReligion.slice(1)}`}
               </p>
-              <p className={`text-[10px] sm:text-xs mt-0.5 ${isDark ? "text-emerald-400/60" : "text-emerald-600"}`}>
+              <p className={`text-[10px] sm:text-xs mt-0.5 ${isDark ? "text-amber-400/60" : "text-amber-600"}`}>
                 {visibleActiveEvents.length} active, {visibleUpcomingEvents.length} upcoming, {visibleAllEvents.length} total events match your filters
               </p>
             </div>
@@ -1026,13 +1026,13 @@ export function EventsPage() {
           <TabsTrigger
             value="active"
             className={`gap-1 sm:gap-1.5 text-xs sm:text-sm data-[state=active]:${
-              isGold ? "bg-amber-500/15 text-amber-400" : "bg-emerald-500/15 text-emerald-600"
+              isGold ? "bg-amber-500/15 text-amber-400" : "bg-amber-500/15 text-amber-600"
             } ${isDark ? "text-slate-400" : ""} shrink-0`}
           >
             <PartyPopper className="h-3 w-3 sm:h-3.5 sm:w-3.5" />
             Active
             {visibleActiveEvents.length > 0 && (
-              <Badge variant="secondary" className={`h-4 sm:h-5 min-w-[16px] sm:min-w-[20px] text-[9px] sm:text-[10px] px-1 ${isGold ? "bg-amber-500/20 text-amber-400" : "bg-emerald-500/20 text-emerald-600"}`}>
+              <Badge variant="secondary" className={`h-4 sm:h-5 min-w-[16px] sm:min-w-[20px] text-[9px] sm:text-[10px] px-1 ${isGold ? "bg-amber-500/20 text-amber-400" : "bg-amber-500/20 text-amber-600"}`}>
                 {visibleActiveEvents.length}
               </Badge>
             )}
@@ -1040,13 +1040,13 @@ export function EventsPage() {
           <TabsTrigger
             value="upcoming"
             className={`gap-1 sm:gap-1.5 text-xs sm:text-sm data-[state=active]:${
-              isGold ? "bg-amber-500/15 text-amber-400" : "bg-emerald-500/15 text-emerald-600"
+              isGold ? "bg-amber-500/15 text-amber-400" : "bg-amber-500/15 text-amber-600"
             } ${isDark ? "text-slate-400" : ""} shrink-0`}
           >
             <Clock className="h-3 w-3 sm:h-3.5 sm:w-3.5" />
             Upcoming
             {visibleUpcomingEvents.length > 0 && (
-              <Badge variant="secondary" className={`h-4 sm:h-5 min-w-[16px] sm:min-w-[20px] text-[9px] sm:text-[10px] px-1 ${isGold ? "bg-amber-500/20 text-amber-400" : "bg-emerald-500/20 text-emerald-600"}`}>
+              <Badge variant="secondary" className={`h-4 sm:h-5 min-w-[16px] sm:min-w-[20px] text-[9px] sm:text-[10px] px-1 ${isGold ? "bg-amber-500/20 text-amber-400" : "bg-amber-500/20 text-amber-600"}`}>
                 {visibleUpcomingEvents.length}
               </Badge>
             )}
@@ -1054,7 +1054,7 @@ export function EventsPage() {
           <TabsTrigger
             value="all"
             className={`gap-1 sm:gap-1.5 text-xs sm:text-sm data-[state=active]:${
-              isGold ? "bg-amber-500/15 text-amber-400" : "bg-emerald-500/15 text-emerald-600"
+              isGold ? "bg-amber-500/15 text-amber-400" : "bg-amber-500/15 text-amber-600"
             } ${isDark ? "text-slate-400" : ""} shrink-0`}
           >
             <Globe className="h-3 w-3 sm:h-3.5 sm:w-3.5" />
@@ -1066,7 +1066,7 @@ export function EventsPage() {
           <TabsTrigger
             value="calendar"
             className={`gap-1 sm:gap-1.5 text-xs sm:text-sm data-[state=active]:${
-              isGold ? "bg-amber-500/15 text-amber-400" : "bg-emerald-500/15 text-emerald-600"
+              isGold ? "bg-amber-500/15 text-amber-400" : "bg-amber-500/15 text-amber-600"
             } ${isDark ? "text-slate-400" : ""} shrink-0`}
           >
             <Calendar className="h-3 w-3 sm:h-3.5 sm:w-3.5" />

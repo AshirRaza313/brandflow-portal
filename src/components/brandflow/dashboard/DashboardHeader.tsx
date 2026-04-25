@@ -4,14 +4,14 @@ import { Search, Bell, Menu } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { useBrandOnyxStore } from "@/store/brandflow-store";
+import { useValtrioxStore } from "@/store/brandflow-store";
 
 interface DashboardHeaderProps {
   onToggleSidebar: () => void;
 }
 
 export function DashboardHeader({ onToggleSidebar }: DashboardHeaderProps) {
-  const { user } = useBrandOnyxStore();
+  const { user } = useValtrioxStore();
 
   const initials = user?.name
     ? user.name.split(" ").map((n: string) => n[0]).join("").toUpperCase().slice(0, 2)
@@ -48,7 +48,7 @@ export function DashboardHeader({ onToggleSidebar }: DashboardHeaderProps) {
 
         <div className="flex items-center gap-2">
           <Avatar className="h-8 w-8">
-            <AvatarFallback className="bg-emerald-100 text-emerald-700 text-xs">
+            <AvatarFallback className="bg-amber-100 text-amber-700 text-xs">
               {initials}
             </AvatarFallback>
           </Avatar>

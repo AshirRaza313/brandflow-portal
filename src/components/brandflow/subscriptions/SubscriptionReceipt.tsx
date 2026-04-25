@@ -72,9 +72,9 @@ export function SubscriptionReceipt({
           .receipt { max-width: 800px; margin: 0 auto; border: 1px solid #e5e7eb; border-radius: 12px; overflow: hidden; }
           .header { background: linear-gradient(135deg, #0a0a0f, #1a1a2e); color: white; padding: 32px; position: relative; }
           .header h1 { font-size: 28px; font-weight: 800; }
-          .header .brand { color: #d97706; }
-          .watermark { position: absolute; top: 50%; right: 30px; transform: translateY(-50%) rotate(-15deg); font-size: 60px; opacity: 0.06; font-weight: 900; color: #d97706; }
-          .approved-badge { display: inline-flex; align-items: center; gap: 6px; background: #059669; color: white; padding: 4px 12px; border-radius: 20px; font-size: 12px; font-weight: 600; margin-top: 12px; }
+          .header .brand { color: #C9A227; }
+          .watermark { position: absolute; top: 50%; right: 30px; transform: translateY(-50%) rotate(-15deg); font-size: 60px; opacity: 0.06; font-weight: 900; color: #C9A227; }
+          .approved-badge { display: inline-flex; align-items: center; gap: 6px; background: #C9A227; color: white; padding: 4px 12px; border-radius: 20px; font-size: 12px; font-weight: 600; margin-top: 12px; }
           .body { padding: 32px; }
           .info-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; margin-bottom: 24px; }
           .info-block h3 { font-size: 11px; text-transform: uppercase; letter-spacing: 1px; color: #9ca3af; margin-bottom: 8px; }
@@ -82,14 +82,14 @@ export function SubscriptionReceipt({
           .divider { border: none; border-top: 1px solid #f3f4f6; margin: 24px 0; }
           .plan-card { background: #f9fafb; border: 1px solid #e5e7eb; border-radius: 8px; padding: 20px; margin-bottom: 24px; }
           .plan-row { display: flex; justify-content: space-between; align-items: center; padding: 8px 0; }
-          .plan-row.total { border-top: 2px solid #d97706; margin-top: 8px; padding-top: 12px; font-size: 18px; font-weight: 700; color: #d97706; }
+          .plan-row.total { border-top: 2px solid #C9A227; margin-top: 8px; padding-top: 12px; font-size: 18px; font-weight: 700; color: #C9A227; }
           .plan-row .label { font-size: 14px; color: #6b7280; }
           .plan-row .value { font-size: 14px; font-weight: 600; color: #111827; }
           .footer { text-align: center; padding: 24px 32px; border-top: 1px solid #f3f4f6; background: #f9fafb; }
           .footer p { font-size: 11px; color: #9ca3af; line-height: 1.6; }
-          .footer .brand { color: #d97706; font-weight: 600; }
-          .stamp { position: absolute; bottom: 120px; right: 40px; width: 120px; height: 120px; border: 3px solid #059669; border-radius: 50%; display: flex; align-items: center; justify-content: center; transform: rotate(-15deg); opacity: 0.3; }
-          .stamp-text { color: #059669; font-size: 14px; font-weight: 800; text-transform: uppercase; letter-spacing: 1px; }
+          .footer .brand { color: #C9A227; font-weight: 600; }
+          .stamp { position: absolute; bottom: 120px; right: 40px; width: 120px; height: 120px; border: 3px solid #C9A227; border-radius: 50%; display: flex; align-items: center; justify-content: center; transform: rotate(-15deg); opacity: 0.3; }
+          .stamp-text { color: #C9A227; font-size: 14px; font-weight: 800; text-transform: uppercase; letter-spacing: 1px; }
         </style>
       </head>
       <body>
@@ -149,27 +149,27 @@ export function SubscriptionReceipt({
 
         {/* Receipt Content */}
         <div id="receipt-printable">
-          {/* BrandOnyx Header */}
+          {/* Valtriox Header */}
           <div className="relative p-8 overflow-hidden" style={{ background: "linear-gradient(135deg, #0a0a0f 0%, #1a1a2e 100%)" }}>
             <div className="absolute inset-0 opacity-5" style={{ background: "radial-gradient(circle at 80% 50%, rgba(217,119,6,0.3), transparent 60%)" }} />
             <div className="relative z-10">
               <div className="flex items-center justify-between">
                 <div>
-                  <h1 className="text-2xl font-black tracking-tight" style={{ color: "#d97706" }}>
+                  <h1 className="text-2xl font-black tracking-tight" style={{ color: "#C9A227" }}>
                     {data.platformName || companyName}
                   </h1>
                   <p className="text-xs text-slate-500 mt-1">Pakistan&apos;s #1 Brand Management Portal</p>
                 </div>
                 <div className="text-right">
                   <div className="flex items-center justify-end gap-1.5 mb-1">
-                    <CheckCircle2 className="h-4 w-4 text-emerald-400" />
-                    <span className="text-xs font-bold text-emerald-400 uppercase tracking-wider">Payment Confirmed</span>
+                    <CheckCircle2 className="h-4 w-4 text-amber-400" />
+                    <span className="text-xs font-bold text-amber-400 uppercase tracking-wider">Payment Confirmed</span>
                   </div>
                   <p className="text-xs text-slate-500">Receipt #{data.receiptNumber}</p>
                 </div>
               </div>
               <div className="flex items-center gap-2 mt-3">
-                <span className="text-[10px] px-2 py-0.5 rounded-full font-semibold" style={{ background: "rgba(217,119,6,0.15)", color: "#d97706" }}>
+                <span className="text-[10px] px-2 py-0.5 rounded-full font-semibold" style={{ background: "rgba(217,119,6,0.15)", color: "#C9A227" }}>
                   Official Receipt
                 </span>
                 <span className="text-[10px] text-slate-600">
@@ -178,7 +178,7 @@ export function SubscriptionReceipt({
               </div>
             </div>
             {/* Watermark */}
-            <div className="absolute top-1/2 right-8 -translate-y-1/2 -rotate-12 text-6xl font-black opacity-[0.03]" style={{ color: "#d97706" }}>
+            <div className="absolute top-1/2 right-8 -translate-y-1/2 -rotate-12 text-6xl font-black opacity-[0.03]" style={{ color: "#C9A227" }}>
               APPROVED
             </div>
           </div>
@@ -216,7 +216,7 @@ export function SubscriptionReceipt({
                   <Shield className="h-4 w-4 text-amber-400" />
                   <h3 className="text-sm font-semibold text-white capitalize">{data.planName} Plan</h3>
                 </div>
-                <Badge className="bg-emerald-500/20 text-emerald-300 border-emerald-500/30 text-[10px]">Active</Badge>
+                <Badge className="bg-amber-500/20 text-amber-300 border-amber-500/30 text-[10px]">Active</Badge>
               </div>
               <div className="space-y-2">
                 <div className="flex justify-between text-xs">
@@ -258,7 +258,7 @@ export function SubscriptionReceipt({
           <div className="p-4 text-center border-t" style={{ borderColor: "rgba(255,255,255,0.06)", background: "rgba(0,0,0,0.2)" }}>
             <p className="text-[10px] text-slate-600">
               This is an official receipt generated by{" "}
-              <span className="font-semibold" style={{ color: "#d97706" }}>{companyName}</span>.
+              <span className="font-semibold" style={{ color: "#C9A227" }}>{companyName}</span>.
               {" "}Thank you for your business!
             </p>
             {data.platformAddress && (

@@ -9,10 +9,10 @@ import logger from "@/lib/logger";
 export const maxDuration = 60;
 
 // ── Chart Color Palettes ──
-const PIE_COLORS = ["#f59e0b", "#34d399", "#60a5fa", "#f87171", "#a78bfa", "#fb923c", "#38bdf8", "#4ade80"];
+const PIE_COLORS = ["#f59e0b", "#E8D48B", "#60a5fa", "#f87171", "#a78bfa", "#fb923c", "#38bdf8", "#4ade80"];
 const BAR_COLORS = [
-  "#f59e0b", "#fbbf24", "#d97706", "#b45309", "#92400e",
-  "#78350f", "#fcd34d", "#fde68a", "#fef3c7", "#34d399",
+  "#f59e0b", "#fbbf24", "#C9A227", "#b45309", "#92400e",
+  "#78350f", "#fcd34d", "#fde68a", "#fef3c7", "#E8D48B",
 ];
 
 // ── Change Calculation Helper ──
@@ -81,7 +81,7 @@ export const GET = withAuth(async (req: NextRequest, authCtx) => {
     }
 
     const platformInfo = {
-      platformName: platformSettings?.companyName || "BrandOnyx",
+      platformName: platformSettings?.companyName || "Valtriox",
       platformEmail: platformSettings?.companyEmail || undefined,
       platformPhone: platformSettings?.companyPhone || undefined,
       platformWebsite: platformSettings?.companyWebsite || undefined,

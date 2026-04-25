@@ -131,7 +131,7 @@ export function Sidebar({ collapsed, onToggle, onLogout, activeItem, onItemClick
         {/* Logo area */}
         <div className="flex items-center justify-between h-16 px-4 flex-shrink-0">
           <div className="flex items-center gap-2">
-            <div className="w-8 h-8 rounded-lg bg-emerald-600 flex items-center justify-center">
+            <div className="w-8 h-8 rounded-lg bg-amber-600 flex items-center justify-center">
               <Activity className="w-5 h-5 text-white" />
             </div>
             <AnimatePresence>
@@ -142,7 +142,7 @@ export function Sidebar({ collapsed, onToggle, onLogout, activeItem, onItemClick
                   exit={{ opacity: 0, width: 0 }}
                   className="text-lg font-bold text-white overflow-hidden whitespace-nowrap"
                 >
-                  Brand<span className="text-emerald-400">Flow</span>
+                  Brand<span className="text-amber-400">Flow</span>
                 </motion.span>
               )}
             </AnimatePresence>
@@ -198,7 +198,7 @@ export function Sidebar({ collapsed, onToggle, onLogout, activeItem, onItemClick
                           className={cn(
                             "flex items-center gap-3 w-full px-3 py-2 rounded-lg text-sm transition-all duration-200",
                             activeItem === item.id
-                              ? "bg-emerald-600/20 text-emerald-400"
+                              ? "bg-amber-600/20 text-amber-400"
                               : "text-slate-400 hover:bg-slate-800 hover:text-white"
                           )}
                         >
@@ -219,7 +219,7 @@ export function Sidebar({ collapsed, onToggle, onLogout, activeItem, onItemClick
           <div className="p-4 border-t border-slate-700/50 flex-shrink-0">
             <div className="flex items-center gap-3">
               <Avatar className="h-9 w-9">
-                <AvatarFallback className="bg-emerald-600/20 text-emerald-400 text-sm">
+                <AvatarFallback className="bg-amber-600/20 text-amber-400 text-sm">
                   JD
                 </AvatarFallback>
               </Avatar>

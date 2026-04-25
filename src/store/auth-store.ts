@@ -50,13 +50,13 @@ interface AuthStore {
 
 function getSavedUser(): any {
   try {
-    const saved = typeof window !== "undefined" ? localStorage.getItem("brandonix-user") : null;
+    const saved = typeof window !== "undefined" ? localStorage.getItem("valtriox-user") : null;
     return saved ? JSON.parse(saved) : null;
   } catch { return null; }
 }
 function getSavedOrg(): any {
   try {
-    const saved = typeof window !== "undefined" ? localStorage.getItem("brandonix-org") : null;
+    const saved = typeof window !== "undefined" ? localStorage.getItem("valtriox-org") : null;
     return saved ? JSON.parse(saved) : null;
   } catch { return null; }
 }
@@ -64,12 +64,12 @@ function getSavedOrg(): any {
 export const useAuthStore = create<AuthStore>((set, get) => ({
   user: getSavedUser(),
   setUser: (user) => {
-    try { localStorage.setItem("brandonix-user", JSON.stringify(user)); } catch {}
+    try { localStorage.setItem("valtriox-user", JSON.stringify(user)); } catch {}
     set({ user });
   },
   organization: getSavedOrg(),
   setOrganization: (org) => {
-    try { localStorage.setItem("brandonix-org", JSON.stringify(org)); } catch {}
+    try { localStorage.setItem("valtriox-org", JSON.stringify(org)); } catch {}
     set({ organization: org });
   },
   authModalOpen: false,
@@ -78,12 +78,12 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
   setAuthModalMode: (mode) => set({ authModalMode: mode, authModalOpen: mode !== null }),
   logout: () => {
     try {
-      localStorage.removeItem("brandonix-user");
-      localStorage.removeItem("brandonix-org");
-      localStorage.removeItem("brandonix-brandname");
-      localStorage.removeItem("brandonix-logo");
-      localStorage.removeItem("brandonix-tagline");
-      localStorage.removeItem("brandonix-configured");
+      localStorage.removeItem("valtriox-user");
+      localStorage.removeItem("valtriox-org");
+      localStorage.removeItem("valtriox-brandname");
+      localStorage.removeItem("valtriox-logo");
+      localStorage.removeItem("valtriox-tagline");
+      localStorage.removeItem("valtriox-configured");
     } catch {}
     set({
       user: null,

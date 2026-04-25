@@ -11,7 +11,7 @@ import { usePlatformIdentity } from "@/lib/platform-identity";
 
 const faqs = [
   {
-    question: "Is BrandOnyx really free?",
+    question: "Is Valtriox really free?",
     answer:
       "Yes! Our Starter plan is completely free forever with no credit card required. You get up to 3 team members, 100 orders per month, basic analytics, and 5 AI queries per day. It's perfect for small businesses just getting started.",
   },
@@ -23,22 +23,22 @@ const faqs = [
   {
     question: "Can I migrate from another platform?",
     answer:
-      "Absolutely! BrandOnyx offers easy import tools for data from popular platforms like Shopify, WooCommerce, and others. Our support team is also available to help with migration to ensure a smooth transition.",
+      "Absolutely! Valtriox offers easy import tools for data from popular platforms like Shopify, WooCommerce, and others. Our support team is also available to help with migration to ensure a smooth transition.",
   },
   {
     question: "Is my data secure?",
     answer:
-      "Enterprise-grade security is at the core of BrandOnyx. We use AES-256 encryption for data at rest, TLS 1.3 for data in transit, and our infrastructure is hosted on secure cloud providers with SOC 2 Type II compliance.",
+      "Enterprise-grade security is at the core of Valtriox. We use AES-256 encryption for data at rest, TLS 1.3 for data in transit, and our infrastructure is hosted on secure cloud providers with SOC 2 Type II compliance.",
   },
   {
     question: "Do you offer custom branding?",
     answer:
-      "White-label branding is available on our Enterprise plan. This includes custom logos, colors, domains, and branded email templates to make BrandOnyx feel like your own platform.",
+      "White-label branding is available on our Enterprise plan. This includes custom logos, colors, domains, and branded email templates to make Valtriox feel like your own platform.",
   },
   {
     question: "What integrations are available?",
     answer:
-      "BrandOnyx integrates with WooCommerce, Shopify, WhatsApp Business API, Google Analytics, Stripe, and more. Enterprise customers also get access to our API for custom integrations.",
+      "Valtriox integrates with WooCommerce, Shopify, WhatsApp Business API, Google Analytics, Stripe, and more. Enterprise customers also get access to our API for custom integrations.",
   },
 ];
 
@@ -82,10 +82,10 @@ export function FAQ() {
                 className="bg-white/[0.03] border border-white/[0.08] rounded-xl px-6 data-[state=open]:shadow-sm data-[state=open]:border-amber-500/20 data-[state=open]:bg-white/[0.05]"
               >
                 <AccordionTrigger className="text-left text-base font-medium text-white hover:text-amber-400 py-5 hover:no-underline">
-                  {faq.question.replaceAll("BrandOnyx", companyName)}
+                  {faq.question.replaceAll("Valtriox", companyName)}
                 </AccordionTrigger>
                 <AccordionContent className="text-slate-400 leading-relaxed pb-5">
-                  {faq.answer.replaceAll("BrandOnyx", companyName)}
+                  {faq.answer.replaceAll("Valtriox", companyName)}
                 </AccordionContent>
               </AccordionItem>
             ))}

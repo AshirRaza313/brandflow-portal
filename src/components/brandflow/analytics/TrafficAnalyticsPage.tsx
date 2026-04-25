@@ -15,7 +15,7 @@ export function TrafficAnalyticsPage() {
         </div>
         <button
           onClick={() => toast.info("Export will be available once traffic data exists")}
-          className="px-4 py-2 text-sm font-medium bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg transition-colors"
+          className="px-4 py-2 text-sm font-medium bg-amber-600 hover:bg-amber-700 text-white rounded-lg transition-colors"
         >
           Export Report
         </button>
@@ -36,8 +36,8 @@ export function TrafficAnalyticsPage() {
                   <p className="text-xs font-medium text-slate-500 uppercase tracking-wider">{stat.title}</p>
                   <p className="text-2xl font-bold text-slate-800 mt-1">{stat.value}</p>
                 </div>
-                <div className="h-10 w-10 rounded-lg bg-emerald-100 flex items-center justify-center">
-                  <stat.icon className="h-5 w-5 text-emerald-600" />
+                <div className="h-10 w-10 rounded-lg bg-amber-100 flex items-center justify-center">
+                  <stat.icon className="h-5 w-5 text-amber-600" />
                 </div>
               </div>
             </CardContent>

@@ -1,5 +1,5 @@
 // ============================================================================
-// PDF Generator — BrandOnyx ULTRA PREMIUM Invoice & Report PDFs
+// PDF Generator — Valtriox ULTRA PREMIUM Invoice & Report PDFs
 // Uses pdfkit with EMBEDDED TTF fonts (base64 in font-buffers.ts)
 // Serverless-safe — no filesystem dependency for fonts
 // BLACK Background + GOLD Everything — Luxury Shine Theme
@@ -165,7 +165,7 @@ function formatCurrency(amount: number, symbol: string): string {
 export function generateInvoiceNumber(existingCount: number): string {
   const year = new Date().getFullYear();
   const seq = String(existingCount + 1).padStart(4, "0");
-  return `BFR-${year}-${seq}`;
+  return `VTX-${year}-${seq}`;
 }
 
 function goldLine(doc: any, x1: number, y1: number, x2: number, y2: number, width: number = 0.5) {
@@ -193,12 +193,12 @@ function parseBase64DataUri(dataUri: string): { mimeType: string; base64: string
   return { mimeType: match[1], base64: match[2] };
 }
 
-// Helper: render default BFR logo and return right X position
+// Helper: render default VTX logo and return right X position
 function renderDefaultLogo(doc: any, x: number, y: number): number {
   doc.save();
   doc.roundedRect(x, y, 38, 38, 6).fill(C.gold);
   doc.fontSize(15).fillColor(C.bg);
-  doc.font(FONT.bold).text("BFR", x + 5, y + 11, { width: 28, align: "center" });
+  doc.font(FONT.bold).text("VTX", x + 5, y + 11, { width: 28, align: "center" });
   doc.restore();
   return x + 48;
 }
@@ -621,7 +621,7 @@ export async function generateInvoicePDF(invoice: InvoiceData): Promise<Buffer> 
     const P = 44;
     const CW = W - P * 2;
 
-    const platformName = invoice.platformName || "BrandOnyx";
+    const platformName = invoice.platformName || "Valtriox";
     const cycleLabel = invoice.billingCycle === "annually" ? "Annual" : "Monthly";
     const hasLogo = !!invoice.platformLogo;
 
@@ -683,7 +683,7 @@ export async function generateInvoicePDF(invoice: InvoiceData): Promise<Buffer> 
 
       // Slogan — from DB or default
       doc.font(FONT.italic).fontSize(8).fillColor(C.goldMid);
-      doc.text(invoice.platformTagline || "Pakistan's #1 Brand Management Platform", headerRightStartX, y + 24);
+      doc.text(invoice.platformTagline || "The Universal Brand Management Portal", headerRightStartX, y + 24);
 
       // Platform contact info (right side of header)
       const rx = W - P;
@@ -1001,7 +1001,7 @@ export async function generateReportPDF(report: ReportData): Promise<Buffer> {
     const CW = W - P * 2;
 
     // ── SANITIZE ALL STRING INPUTS — prevent null.length errors in pdfkit ──
-    const brandName = String(report.brandName || "BrandOnyx");
+    const brandName = String(report.brandName || "Valtriox");
     const platformName = String(report.platformName || brandName);
     const hasLogo = !!(report.platformLogo && typeof report.platformLogo === "string" && report.platformLogo.length > 0);
     const hasBrandLogo = !!(report.brandLogo && typeof report.brandLogo === "string" && report.brandLogo.length > 0);
@@ -1541,7 +1541,7 @@ export async function generateReportPDF(report: ReportData): Promise<Buffer> {
         // Powered by
         doc.save();
         doc.font(FONT.italic).fontSize(7).fillColor(C.gold);
-        doc.text(`Powered by ${platformName} - Pakistan's #1 Brand Management Platform`, P, H - 44, { width: CW, align: "center" });
+        doc.text(`Powered by ${platformName} - The Universal Brand Management Portal`, P, H - 44, { width: CW, align: "center" });
         doc.restore();
 
         // Page number: "Page X of Y"
@@ -1595,7 +1595,7 @@ function renderCoverDefaultLogo(doc: any, centerX: number, y: number, size: numb
   doc.roundedRect(centerX - size / 2 - 4, y - 4, size + 8, size + 8, 10).lineWidth(0.5).strokeColor(C.goldBorder2).stroke();
   doc.roundedRect(centerX - size / 2, y, size, size, 8).fill(color);
   doc.fontSize(size * 0.35).fillColor(C.bg);
-  doc.font(FONT.bold).text("BFR", centerX - size / 2, y + size * 0.3, { width: size, align: "center" });
+  doc.font(FONT.bold).text("VTX", centerX - size / 2, y + size * 0.3, { width: size, align: "center" });
   doc.restore();
 }
 

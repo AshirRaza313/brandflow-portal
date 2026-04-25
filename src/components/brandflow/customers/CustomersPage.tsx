@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback, useMemo } from "react";
-import { useBrandOnyxStore } from "@/store/brandflow-store";
+import { useValtrioxStore } from "@/store/brandflow-store";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -108,7 +108,7 @@ function exportToCSV(customers: Customer[], stats: CustomerStats) {
 // ─── Component ───────────────────────────────────────────────────────
 
 export function CustomersPage() {
-  const { organization, appTheme } = useBrandOnyxStore();
+  const { organization, appTheme } = useValtrioxStore();
   const isGold = appTheme === "premium-dark";
   const isDark = appTheme === "dark" || isGold;
 
@@ -242,7 +242,7 @@ export function CustomersPage() {
     isGold
       ? "bg-white/[0.02] border-white/[0.06] hover:border-amber-500/20 hover:shadow-[0_2px_20px_rgba(212,160,23,0.05)]"
       : isDark
-        ? "bg-white/[0.03] border-white/[0.06] hover:border-emerald-500/20"
+        ? "bg-white/[0.03] border-white/[0.06] hover:border-amber-500/20"
         : "bg-white hover:shadow-md"
   );
 
@@ -251,7 +251,7 @@ export function CustomersPage() {
     isGold
       ? "bg-white/[0.02] border-white/[0.06] hover:border-amber-500/20"
       : isDark
-        ? "bg-white/[0.03] border-white/[0.06] hover:border-emerald-500/20"
+        ? "bg-white/[0.03] border-white/[0.06] hover:border-amber-500/20"
         : "bg-white border-slate-200"
   );
 
@@ -317,7 +317,7 @@ export function CustomersPage() {
             className={cn(
               isGold
                 ? "bg-gradient-to-r from-amber-600 via-yellow-500 to-amber-600 text-black hover:shadow-[0_4px_20px_rgba(212,160,23,0.3)]"
-                : "bg-emerald-600 hover:bg-emerald-700 text-white"
+                : "bg-amber-600 hover:bg-amber-700 text-white"
             )}
           >
             <Plus className="mr-2 h-4 w-4" /> Add Customer
@@ -336,7 +336,7 @@ export function CustomersPage() {
               activeTab === tab.id
                 ? isGold
                   ? "border-amber-500 text-amber-400"
-                  : "border-emerald-600 text-emerald-600"
+                  : "border-amber-600 text-amber-600"
                 : isDark
                   ? "border-transparent text-slate-500 hover:text-slate-300"
                   : "border-transparent text-slate-500 hover:text-slate-700"
@@ -374,7 +374,7 @@ export function CustomersPage() {
                       </div>
                       <div className={cn(
                         "h-10 w-10 rounded-lg flex items-center justify-center flex-shrink-0",
-                        isGold ? "bg-amber-500/10 text-amber-400" : isDark ? "bg-emerald-500/10 text-emerald-400" : "bg-emerald-100 text-emerald-600"
+                        isGold ? "bg-amber-500/10 text-amber-400" : isDark ? "bg-amber-500/10 text-amber-400" : "bg-amber-100 text-amber-600"
                       )}>
                         <Users className="h-5 w-5" />
                       </div>
@@ -396,7 +396,7 @@ export function CustomersPage() {
                       </div>
                       <div className={cn(
                         "h-10 w-10 rounded-lg flex items-center justify-center flex-shrink-0",
-                        isGold ? "bg-amber-500/10 text-amber-400" : isDark ? "bg-emerald-500/10 text-emerald-400" : "bg-emerald-100 text-emerald-600"
+                        isGold ? "bg-amber-500/10 text-amber-400" : isDark ? "bg-amber-500/10 text-amber-400" : "bg-amber-100 text-amber-600"
                       )}>
                         <Star className="h-5 w-5" />
                       </div>
@@ -418,7 +418,7 @@ export function CustomersPage() {
                       </div>
                       <div className={cn(
                         "h-10 w-10 rounded-lg flex items-center justify-center flex-shrink-0",
-                        isGold ? "bg-amber-500/10 text-amber-400" : isDark ? "bg-emerald-500/10 text-emerald-400" : "bg-emerald-100 text-emerald-600"
+                        isGold ? "bg-amber-500/10 text-amber-400" : isDark ? "bg-amber-500/10 text-amber-400" : "bg-amber-100 text-amber-600"
                       )}>
                         <Award className="h-5 w-5" />
                       </div>
@@ -432,28 +432,28 @@ export function CustomersPage() {
                   isGold
                     ? "bg-amber-500/5 border-amber-500/20 hover:border-amber-500/30"
                     : isDark
-                      ? "bg-purple-500/5 border-purple-500/20 hover:border-purple-500/30"
-                      : "bg-purple-50 border-purple-200"
+                      ? "bg-amber-500/5 border-amber-500/20 hover:border-amber-500/30"
+                      : "bg-amber-50 border-amber-200"
                 )}>
                   <CardContent className="p-4">
                     <div className="flex items-center justify-between">
                       <div className="flex-1 min-w-0">
                         <p className={cn(
                           "text-xs font-medium uppercase tracking-wider",
-                          isGold ? "text-amber-400" : isDark ? "text-purple-400" : "text-purple-600"
+                          isGold ? "text-amber-400" : isDark ? "text-amber-400" : "text-amber-600"
                         )}>
                           VIP Customers
                         </p>
                         <p className={cn(
                           "text-2xl font-bold mt-1",
-                          isGold ? "text-amber-400" : isDark ? "text-purple-400" : "text-purple-700"
+                          isGold ? "text-amber-400" : isDark ? "text-amber-400" : "text-amber-700"
                         )}>
                           {stats.vipCount}
                         </p>
                       </div>
                       <div className={cn(
                         "h-10 w-10 rounded-lg flex items-center justify-center flex-shrink-0",
-                        isGold ? "bg-amber-500/10 text-amber-400" : "bg-purple-100 text-purple-600"
+                        isGold ? "bg-amber-500/10 text-amber-400" : "bg-amber-100 text-amber-600"
                       )}>
                         <Crown className="h-5 w-5" />
                       </div>
@@ -534,8 +534,8 @@ export function CustomersPage() {
                                       isGold
                                         ? "bg-gradient-to-br from-amber-500/20 to-yellow-500/20 text-amber-400"
                                         : isDark
-                                          ? "bg-emerald-500/10 text-emerald-400"
-                                          : "bg-emerald-100 text-emerald-700"
+                                          ? "bg-amber-500/10 text-amber-400"
+                                          : "bg-amber-100 text-amber-700"
                                     )}>
                                       {customer.name.charAt(0).toUpperCase()}
                                     </div>
@@ -653,8 +653,8 @@ export function CustomersPage() {
                                 isGold
                                   ? "bg-gradient-to-br from-amber-500/20 to-yellow-500/20 text-amber-400"
                                   : isDark
-                                    ? "bg-emerald-500/10 text-emerald-400"
-                                    : "bg-emerald-100 text-emerald-700"
+                                    ? "bg-amber-500/10 text-amber-400"
+                                    : "bg-amber-100 text-amber-700"
                               )}>
                                 {customer.name.charAt(0).toUpperCase()}
                               </div>
@@ -759,7 +759,7 @@ export function CustomersPage() {
                               currentPage === pageNum
                                 ? isGold
                                   ? "bg-gradient-to-r from-amber-600 via-yellow-500 to-amber-600 text-black"
-                                  : "bg-emerald-600 text-white hover:bg-emerald-700"
+                                  : "bg-amber-600 text-white hover:bg-amber-700"
                                 : isGold && "border-white/10 text-slate-300 hover:bg-white/5 hover:text-white"
                             )}
                             onClick={() => setCurrentPage(pageNum)}
@@ -843,7 +843,7 @@ export function CustomersPage() {
                 className={cn(
                   isGold
                     ? "bg-gradient-to-r from-amber-600 via-yellow-500 to-amber-600 text-black"
-                    : "bg-emerald-600 hover:bg-emerald-700 text-white"
+                    : "bg-amber-600 hover:bg-amber-700 text-white"
                 )}
               >
                 <Plus className="mr-2 h-4 w-4" /> Add Note
@@ -945,7 +945,7 @@ export function CustomersPage() {
                 className={cn(
                   isGold
                     ? "bg-gradient-to-r from-amber-600 via-yellow-500 to-amber-600 text-black"
-                    : "bg-emerald-600 hover:bg-emerald-700 text-white"
+                    : "bg-amber-600 hover:bg-amber-700 text-white"
                 )}
               >
                 Add Note

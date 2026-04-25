@@ -22,16 +22,16 @@ export interface EventTheme {
 }
 
 function getSavedBrandName(): string {
-  try { return typeof window !== "undefined" ? localStorage.getItem("brandonix-brandname") || "" : ""; } catch { return ""; }
+  try { return typeof window !== "undefined" ? localStorage.getItem("valtriox-brandname") || "" : ""; } catch { return ""; }
 }
 function getSavedBrandLogo(): string | null {
-  try { return typeof window !== "undefined" ? localStorage.getItem("brandonix-logo") : null; } catch { return null; }
+  try { return typeof window !== "undefined" ? localStorage.getItem("valtriox-logo") : null; } catch { return null; }
 }
 function getSavedBrandTagline(): string {
-  try { return typeof window !== "undefined" ? localStorage.getItem("brandonix-tagline") || "" : ""; } catch { return ""; }
+  try { return typeof window !== "undefined" ? localStorage.getItem("valtriox-tagline") || "" : ""; } catch { return ""; }
 }
 function getSavedBrandConfigured(): boolean {
-  try { return typeof window !== "undefined" ? localStorage.getItem("brandonix-configured") === "true" : false; } catch { return false; }
+  try { return typeof window !== "undefined" ? localStorage.getItem("valtriox-configured") === "true" : false; } catch { return false; }
 }
 
 interface BrandStore {
@@ -67,17 +67,17 @@ interface BrandStore {
 export const useBrandStore = create<BrandStore>((set, get) => ({
   brandName: getSavedBrandName(),
   setBrandName: (name) => {
-    try { localStorage.setItem("brandonix-brandname", name); } catch {}
+    try { localStorage.setItem("valtriox-brandname", name); } catch {}
     set({ brandName: name });
   },
   brandTagline: getSavedBrandTagline(),
   setBrandTagline: (tagline) => {
-    try { localStorage.setItem("brandonix-tagline", tagline); } catch {}
+    try { localStorage.setItem("valtriox-tagline", tagline); } catch {}
     set({ brandTagline: tagline });
   },
-  brandColor: "#059669",
+  brandColor: "#C9A227",
   setBrandColor: (color) => set({ brandColor: color }),
-  brandGradient: "linear-gradient(135deg, #059669 0%, #D97706 100%)",
+  brandGradient: "linear-gradient(135deg, #C9A227 0%, #B8860B 100%)",
   setBrandGradient: (gradient) => set({ brandGradient: gradient }),
   brandBgColor: "#ffffff",
   setBrandBgColor: (color) => set({ brandBgColor: color }),
@@ -89,12 +89,12 @@ export const useBrandStore = create<BrandStore>((set, get) => ({
     })),
   brandLogo: getSavedBrandLogo(),
   setBrandLogo: (logo) => {
-    try { localStorage.setItem("brandonix-logo", logo || ""); } catch {}
+    try { localStorage.setItem("valtriox-logo", logo || ""); } catch {}
     set({ brandLogo: logo });
   },
   brandConfigured: getSavedBrandConfigured(),
   setBrandConfigured: (v) => {
-    try { localStorage.setItem("brandonix-configured", v ? "true" : "false"); } catch {}
+    try { localStorage.setItem("valtriox-configured", v ? "true" : "false"); } catch {}
     set({ brandConfigured: v });
   },
   activeEventTheme: null,

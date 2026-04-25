@@ -9,22 +9,22 @@ async function seed() {
   // 1. Create platform settings
   const settings = await db.platformSettings.create({
     data: {
-      companyName: 'BrandFlow',
-      companyEmail: 'support@brandflow.com',
+      companyName: 'Valtriox',
+      companyEmail: 'support@valtriox.com',
       companyPhone: '+92-300-1234567',
-      companyWebsite: 'https://brandflow-portal.vercel.app',
+      companyWebsite: 'https://valtriox.vercel.app',
       companyAddress: 'Lahore, Pakistan',
       supportHours: 'Mon-Fri: 9AM-6PM PKT',
       whatsappNumber: '+923001234567',
-      instagramUrl: '@brandflow',
-      facebookUrl: 'brandflow',
-      twitterUrl: '@brandflow',
+      instagramUrl: '@valtriox',
+      facebookUrl: 'valtriox',
+      twitterUrl: '@valtriox',
       paymentMethods: JSON.stringify(['Bank Transfer', 'JazzCash', 'EasyPaisa', 'Credit Card']),
       currency: 'PKR',
-      primaryBrandColor: '#059669',
-      secondaryBrandColor: '#d97706',
+      primaryBrandColor: '#C9A227',
+      secondaryBrandColor: '#B8860B',
       currencySymbol: 'Rs.',
-      tagline: "Pakistan's #1 Brand Management Portal",
+      tagline: "The Universal Brand Management Portal",
     },
   });
   console.log('✅ Platform settings created');
@@ -78,7 +78,7 @@ async function seed() {
   const admin = await db.user.create({
     data: {
       name: 'Admin User',
-      email: 'admin@brandflow.com',
+      email: 'admin@valtriox.com',
       password: hashedPassword,
       role: 'platform_owner',
     },
@@ -97,7 +97,7 @@ async function seed() {
       timezone: 'Asia/Karachi',
       plan: 'growth',
       country: 'Pakistan',
-      brandColor: '#059669',
+      brandColor: '#C9A227',
       address: '123 Main Market, Lahore',
       isActive: true,
     },
@@ -241,7 +241,7 @@ async function seed() {
     const dueDate = new Date(issuedAt);
     dueDate.setDate(dueDate.getDate() + 15);
 
-    const invoiceNum = `BF-${issuedAt.getFullYear()}-${String(invoiceCounter++).padStart(4, '0')}`;
+    const invoiceNum = `VTX-${issuedAt.getFullYear()}-${String(invoiceCounter++).padStart(4, '0')}`;
 
     await db.invoice.create({
       data: {
@@ -283,7 +283,7 @@ async function seed() {
   console.log('✅ System settings created');
 
   console.log('\n🎉 Seed completed successfully!');
-  console.log('\n📧 Login credentials: admin@brandflow.com / Admin@123');
+  console.log('\n📧 Login credentials: admin@valtriox.com / Admin@123');
   console.log('🏪 Demo org: Demo Store');
 }
 

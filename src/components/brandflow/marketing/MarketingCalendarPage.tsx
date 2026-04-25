@@ -12,7 +12,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "
 import { Plus, Calendar as CalendarIcon, Megaphone, Gift, Tag, ShoppingBag, ChevronLeft, ChevronRight } from "lucide-react";
 import { toast } from "sonner";
 import { motion } from "framer-motion";
-import { useBrandOnyxStore } from "@/store/brandflow-store";
+import { useValtrioxStore } from "@/store/brandflow-store";
 
 interface CalendarEvent {
   id: number;
@@ -24,7 +24,7 @@ interface CalendarEvent {
 }
 
 export function MarketingCalendarPage() {
-  const { appTheme } = useBrandOnyxStore();
+  const { appTheme } = useValtrioxStore();
   const isDark = appTheme !== "light";
 
   const [currentMonth, setCurrentMonth] = useState(new Date().getMonth());
@@ -59,9 +59,9 @@ export function MarketingCalendarPage() {
     switch (type) {
       case "sale": return "bg-amber-500";
       case "content": return "bg-blue-500";
-      case "event": return "bg-purple-500";
+      case "event": return "bg-amber-500";
       case "launch": return "bg-rose-500";
-      default: return "bg-emerald-500";
+      default: return "bg-amber-500";
     }
   };
 
@@ -77,7 +77,7 @@ export function MarketingCalendarPage() {
           <h1 className={`text-xl sm:text-2xl font-bold ${isDark ? "text-white" : "text-slate-900"}`}>Marketing Calendar</h1>
           <p className={`text-sm mt-1 ${isDark ? "text-slate-400" : "text-slate-500"}`}>Plan and schedule your marketing activities</p>
         </div>
-        <Button className="bg-emerald-600 hover:bg-emerald-700" onClick={() => setEventOpen(true)}><Plus className="mr-2 h-4 w-4" /> Add Event</Button>
+        <Button className="bg-amber-600 hover:bg-amber-700" onClick={() => setEventOpen(true)}><Plus className="mr-2 h-4 w-4" /> Add Event</Button>
       </div>
 
       {/* Legend */}
@@ -184,7 +184,7 @@ export function MarketingCalendarPage() {
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setEventOpen(false)}>Cancel</Button>
-            <Button className="bg-emerald-600 hover:bg-emerald-700" onClick={handleCreateEvent}>Add Event</Button>
+            <Button className="bg-amber-600 hover:bg-amber-700" onClick={handleCreateEvent}>Add Event</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

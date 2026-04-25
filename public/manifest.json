@@ -1,14 +1,14 @@
 {
-  "name": "BrandOnyx Portal",
-  "short_name": "BrandOnyx",
-  "description": "All-in-one brand management platform",
+  "name": "Valtriox Portal",
+  "short_name": "Valtriox",
+  "description": "The Universal Brand Management Portal",
   "start_url": "/",
   "display": "standalone",
-  "background_color": "#0a0a0f",
-  "theme_color": "#d97706",
+  "background_color": "#0A0A0A",
+  "theme_color": "#C9A227",
   "orientation": "any",
   "icons": [
-    { "src": "/brandonix-icon-32.png", "sizes": "32x32", "type": "image/png" },
-    { "src": "/brandonix-icon-32.png", "sizes": "192x192", "type": "image/png", "purpose": "any maskable" }
+    { "src": "/valtriox-icon-32.png", "sizes": "32x32", "type": "image/png" },
+    { "src": "/valtriox-icon-32.png", "sizes": "192x192", "type": "image/png", "purpose": "any maskable" }
   ]
 }

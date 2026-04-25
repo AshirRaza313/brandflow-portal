@@ -2,7 +2,7 @@
 
 import React, { useCallback, useEffect, useRef, useState } from "react";
 import { useNotificationStore, type NotificationItem } from "@/store/notification-store";
-import { useBrandOnyxStore, type SidebarSection } from "@/store/brandflow-store";
+import { useValtrioxStore, type SidebarSection } from "@/store/brandflow-store";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Bell,
@@ -56,8 +56,8 @@ const TYPE_CONFIG: Record<NotifType, TypeConfig> = {
   },
   success: {
     icon: <CheckCircle2 className="h-4 w-4" />,
-    iconBg: "bg-emerald-100 text-emerald-600 dark:bg-emerald-500/15 dark:text-emerald-400",
-    dotColor: "bg-emerald-500",
+    iconBg: "bg-amber-100 text-amber-600 dark:bg-amber-500/15 dark:text-amber-400",
+    dotColor: "bg-amber-500",
     label: "Success",
   },
   warning: {
@@ -80,8 +80,8 @@ const TYPE_CONFIG: Record<NotifType, TypeConfig> = {
   },
   team: {
     icon: <Users className="h-4 w-4" />,
-    iconBg: "bg-purple-100 text-purple-600 dark:bg-purple-500/15 dark:text-purple-400",
-    dotColor: "bg-purple-500",
+    iconBg: "bg-amber-100 text-amber-600 dark:bg-amber-500/15 dark:text-amber-400",
+    dotColor: "bg-amber-500",
     label: "Team",
   },
   marketing: {
@@ -139,8 +139,8 @@ function NotificationItemCard({
           : isGold
             ? "bg-amber-500/[0.06] hover:bg-amber-500/[0.1]"
             : isDark
-              ? "bg-emerald-500/[0.06] hover:bg-emerald-500/[0.1]"
-              : "bg-emerald-50/60 hover:bg-emerald-50"
+              ? "bg-amber-500/[0.06] hover:bg-amber-500/[0.1]"
+              : "bg-amber-50/60 hover:bg-amber-50"
       )}
     >
       <div
@@ -189,7 +189,7 @@ function NotificationItemCard({
           {!notification.read && notification.actionUrl && (
             <span className={cn(
               "inline-flex items-center gap-0.5 text-[10px] font-medium",
-              isGold ? "text-amber-400" : isDark ? "text-emerald-400" : "text-emerald-600"
+              isGold ? "text-amber-400" : isDark ? "text-amber-400" : "text-amber-600"
             )}>
               <ArrowRight className="h-2.5 w-2.5" />
               View
@@ -231,7 +231,7 @@ function EmptyNotifications({ isDark }: { isDark: boolean }) {
 // ── Main NotificationBell Component ─────────────────────────────────────────
 
 export function NotificationBell() {
-  const { organization, user, appTheme, setActiveSection } = useBrandOnyxStore();
+  const { organization, user, appTheme, setActiveSection } = useValtrioxStore();
   const {
     notifications,
     unreadCount,
@@ -352,8 +352,8 @@ export function NotificationBell() {
                 (isGold
                   ? "bg-amber-500/10 text-amber-400"
                   : isDark
-                    ? "bg-emerald-500/10 text-emerald-400"
-                    : "bg-emerald-50 text-emerald-600")
+                    ? "bg-amber-500/10 text-amber-400"
+                    : "bg-amber-50 text-amber-600")
             )}
           >
             <AnimatePresence mode="wait">
@@ -450,14 +450,14 @@ export function NotificationBell() {
                       isGold
                         ? "bg-gradient-to-br from-amber-500/20 to-yellow-500/20"
                         : isDark
-                          ? "bg-emerald-500/15"
-                          : "bg-emerald-50"
+                          ? "bg-amber-500/15"
+                          : "bg-amber-50"
                     )}
                   >
                     <Sparkles
                       className={cn(
                         "h-4 w-4",
-                        isGold ? "text-amber-400" : isDark ? "text-emerald-400" : "text-emerald-600"
+                        isGold ? "text-amber-400" : isDark ? "text-amber-400" : "text-amber-600"
                       )}
                     />
                   </div>
@@ -524,8 +524,8 @@ export function NotificationBell() {
                         isGold
                           ? "bg-amber-500/15 text-amber-400 border border-amber-500/20"
                           : isDark
-                            ? "bg-emerald-500/15 text-emerald-400 border border-emerald-500/20"
-                            : "bg-emerald-50 text-emerald-700 border border-emerald-200"
+                            ? "bg-amber-500/15 text-amber-400 border border-amber-500/20"
+                            : "bg-amber-50 text-amber-700 border border-amber-200"
                       )}
                     >
                       <span className="h-1.5 w-1.5 rounded-full bg-current animate-pulse" />

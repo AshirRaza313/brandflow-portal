@@ -8,10 +8,10 @@ import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { MessageCircle, Send } from "lucide-react";
 import { toast } from "sonner";
 import { motion } from "framer-motion";
-import { useBrandOnyxStore } from "@/store/brandflow-store";
+import { useValtrioxStore } from "@/store/brandflow-store";
 
 export function WhatsAppPage() {
-  const { setActiveSection } = useBrandOnyxStore();
+  const { setActiveSection } = useValtrioxStore();
   const [search, setSearch] = useState("");
   const [messageText, setMessageText] = useState("");
 
@@ -66,7 +66,7 @@ export function WhatsAppPage() {
           <div className="p-3 border-t bg-white">
             <div className="flex gap-2">
               <Input placeholder="Type a message..." value={messageText} onChange={(e) => setMessageText(e.target.value)} className="flex-1" disabled onKeyDown={(e) => { if (e.key === "Enter" && messageText) { setMessageText(""); toast.success("Message sent!"); } }} />
-              <Button className="bg-emerald-600 hover:bg-emerald-700" disabled={!messageText} onClick={() => { if (messageText) { setMessageText(""); toast.success("Message sent!"); } }}>
+              <Button className="bg-amber-600 hover:bg-amber-700" disabled={!messageText} onClick={() => { if (messageText) { setMessageText(""); toast.success("Message sent!"); } }}>
                 <Send className="h-4 w-4" />
               </Button>
             </div>

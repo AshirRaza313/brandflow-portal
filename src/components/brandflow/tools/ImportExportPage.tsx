@@ -47,7 +47,7 @@ export function ImportExportPage() {
           { id: "export-data", label: "Export Data" },
           { id: "backup", label: "Backup" },
         ].map((tab) => (
-          <button key={tab.id} onClick={() => setActiveTab(tab.id)} className={`px-4 py-2.5 text-sm font-medium border-b-2 transition-colors ${activeTab === tab.id ? "border-emerald-600 text-emerald-600" : "border-transparent text-slate-500 hover:text-slate-700"}`}>
+          <button key={tab.id} onClick={() => setActiveTab(tab.id)} className={`px-4 py-2.5 text-sm font-medium border-b-2 transition-colors ${activeTab === tab.id ? "border-amber-600 text-amber-600" : "border-transparent text-slate-500 hover:text-slate-700"}`}>
             {tab.label}
           </button>
         ))}
@@ -58,9 +58,9 @@ export function ImportExportPage() {
           <motion.div key="import" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} className="space-y-6">
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               {[
-                { id: "products", label: "Products", icon: Package, description: "Import product catalog from CSV/Excel", color: "bg-emerald-100 text-emerald-700" },
+                { id: "products", label: "Products", icon: Package, description: "Import product catalog from CSV/Excel", color: "bg-amber-100 text-amber-700" },
                 { id: "customers", label: "Customers", icon: Users, description: "Import customer list from CSV/Excel", color: "bg-blue-100 text-blue-700" },
-                { id: "orders", label: "Orders", icon: ShoppingBag, description: "Import order history from CSV/Excel", color: "bg-purple-100 text-purple-700" },
+                { id: "orders", label: "Orders", icon: ShoppingBag, description: "Import order history from CSV/Excel", color: "bg-amber-100 text-amber-700" },
               ].map((type) => (
                 <Card key={type.id} className="hover:shadow-md transition-shadow cursor-pointer" onClick={() => toast.info(`Select "${type.label}" to import`)}>
                   <CardContent className="p-4 text-center">
@@ -73,7 +73,7 @@ export function ImportExportPage() {
             </div>
             <Card>
               <CardContent className="p-6">
-                <div className={`border-2 border-dashed rounded-xl p-8 text-center transition-colors cursor-pointer hover:border-emerald-300 hover:bg-emerald-50`}
+                <div className={`border-2 border-dashed rounded-xl p-8 text-center transition-colors cursor-pointer hover:border-amber-300 hover:bg-amber-50`}
                   onClick={() => fileInputRef.current?.click()}>
                   <input ref={fileInputRef} type="file" accept=".csv,.xlsx,.xls" className="hidden" onChange={handleImport} />
                   <Upload className="h-10 w-10 text-muted-foreground mx-auto mb-3" />
@@ -97,9 +97,9 @@ export function ImportExportPage() {
         {activeTab === "export-data" && (
           <motion.div key="export" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} className="space-y-4">
             {[
-              { id: "products", label: "Product Catalog", icon: Package, color: "bg-emerald-100 text-emerald-700" },
+              { id: "products", label: "Product Catalog", icon: Package, color: "bg-amber-100 text-amber-700" },
               { id: "customers", label: "Customer List", icon: Users, color: "bg-blue-100 text-blue-700" },
-              { id: "orders", label: "Order History", icon: ShoppingBag, color: "bg-purple-100 text-purple-700" },
+              { id: "orders", label: "Order History", icon: ShoppingBag, color: "bg-amber-100 text-amber-700" },
               { id: "analytics", label: "Analytics Report", icon: Database, color: "bg-amber-100 text-amber-700" },
             ].map((type) => (
               <Card key={type.id} className="hover:shadow-sm">
@@ -131,7 +131,7 @@ export function ImportExportPage() {
               <Card className="flex-1 mr-4">
                 <CardContent className="p-4">
                   <div className="flex items-center gap-3">
-                    <Database className="h-8 w-8 text-emerald-600" />
+                    <Database className="h-8 w-8 text-amber-600" />
                     <div>
                       <p className="font-semibold text-sm">Auto Backup</p>
                       <p className="text-xs text-muted-foreground">Daily at 2:00 AM UTC</p>
@@ -139,7 +139,7 @@ export function ImportExportPage() {
                   </div>
                 </CardContent>
               </Card>
-              <Button className="bg-emerald-600 hover:bg-emerald-700" onClick={() => toast.success("Backup started!")}>
+              <Button className="bg-amber-600 hover:bg-amber-700" onClick={() => toast.success("Backup started!")}>
                 <RefreshCcw className="mr-2 h-4 w-4" /> Backup Now
               </Button>
             </div>

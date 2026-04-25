@@ -14,7 +14,7 @@ export function PackagingPage() {
           <h1 className="text-2xl font-bold text-slate-900">Packaging Management</h1>
           <p className="text-sm text-slate-500 mt-1">Manage packing workflow, materials, and quality control</p>
         </div>
-        <Button className="bg-emerald-600 hover:bg-emerald-700 text-white" onClick={() => toast.info("No orders in packing queue")}>
+        <Button className="bg-amber-600 hover:bg-amber-700 text-white" onClick={() => toast.info("No orders in packing queue")}>
           <Package className="mr-2 h-4 w-4" /> Start Packing
         </Button>
       </div>
@@ -58,7 +58,7 @@ export function PackagingPage() {
           <CardContent className="p-4">
             <div className="flex items-center justify-between mb-4">
               <p className="text-base font-semibold text-slate-900 flex items-center gap-2">
-                <CheckCircle2 className="h-5 w-5 text-emerald-600" /> QC Checklist
+                <CheckCircle2 className="h-5 w-5 text-amber-600" /> QC Checklist
               </p>
               <span className="text-xs text-slate-400">0/0</span>
             </div>

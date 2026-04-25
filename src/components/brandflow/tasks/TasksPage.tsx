@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { useBrandOnyxStore } from "@/store/brandflow-store";
+import { useValtrioxStore } from "@/store/brandflow-store";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -52,7 +52,7 @@ const viewTabs = [
 const statusColumns: { id: TaskStatus; label: string; color: string; headerColor: string; dotColor: string }[] = [
   { id: "todo", label: "To Do", color: "bg-slate-50", headerColor: "text-slate-700", dotColor: "bg-slate-400" },
   { id: "in_progress", label: "In Progress", color: "bg-amber-50/80", headerColor: "text-amber-700", dotColor: "bg-amber-400" },
-  { id: "done", label: "Done", color: "bg-emerald-50/80", headerColor: "text-emerald-700", dotColor: "bg-emerald-400" },
+  { id: "done", label: "Done", color: "bg-amber-50/80", headerColor: "text-amber-700", dotColor: "bg-amber-400" },
 ];
 
 const priorityConfig: Record<string, { label: string; color: string; dotClass: string }> = {
@@ -65,7 +65,7 @@ const priorityConfig: Record<string, { label: string; color: string; dotClass: s
 // ── Component ──────────────────────────────────────────────────────────────
 
 export function TasksPage() {
-  const { organization, appTheme } = useBrandOnyxStore();
+  const { organization, appTheme } = useValtrioxStore();
   const isGold = appTheme === "premium-dark";
   const isDark = appTheme === "dark" || isGold;
 
@@ -248,12 +248,12 @@ export function TasksPage() {
   const getColumnCardBg = (colId: TaskStatus) => {
     if (isGold) return "bg-white/[0.02] border-white/[0.06]";
     if (isDark) return "bg-white/[0.02] border-white/[0.06]";
-    return colId === "todo" ? "bg-slate-50/80 border-slate-200" : colId === "in_progress" ? "bg-amber-50/60 border-amber-200" : "bg-emerald-50/60 border-emerald-200";
+    return colId === "todo" ? "bg-slate-50/80 border-slate-200" : colId === "in_progress" ? "bg-amber-50/60 border-amber-200" : "bg-amber-50/60 border-amber-200";
   };
 
   const getTaskCardBg = () => {
     if (isGold) return "bg-white/[0.05] border-white/[0.08] hover:border-amber-500/20";
-    if (isDark) return "bg-white/[0.05] border-white/[0.08] hover:border-emerald-500/20";
+    if (isDark) return "bg-white/[0.05] border-white/[0.08] hover:border-amber-500/20";
     return "bg-white border-slate-200 hover:border-slate-300 hover:shadow-sm";
   };
 
@@ -293,7 +293,7 @@ export function TasksPage() {
             Refresh
           </Button>
           <Button
-            className={isGold ? "bg-gradient-to-r from-amber-600 via-yellow-500 to-amber-600 text-black hover:shadow-[0_4px_20px_rgba(212,160,23,0.3)] hover:-translate-y-0.5" : "bg-emerald-600 hover:bg-emerald-700"}
+            className={isGold ? "bg-gradient-to-r from-amber-600 via-yellow-500 to-amber-600 text-black hover:shadow-[0_4px_20px_rgba(212,160,23,0.3)] hover:-translate-y-0.5" : "bg-amber-600 hover:bg-amber-700"}
             onClick={() => openCreate()}
           >
             <Plus className="mr-2 h-4 w-4" /> New Task
@@ -322,7 +322,7 @@ export function TasksPage() {
                   ? isGold
                     ? "bg-gradient-to-r from-amber-600/20 to-yellow-500/20 text-amber-400"
                     : isDark
-                      ? "bg-emerald-600/20 text-emerald-400"
+                      ? "bg-amber-600/20 text-amber-400"
                       : "bg-white text-slate-900 shadow-sm"
                   : isDark
                     ? "text-slate-400 hover:text-slate-300"
@@ -339,7 +339,7 @@ export function TasksPage() {
             placeholder="Search tasks..."
             value={searchInput}
             onChange={(e) => handleSearchChange(e.target.value)}
-            className={cn("pl-9", isDark && "border-white/10 bg-white/[0.03] focus-visible:border-emerald-500/50 placeholder:text-slate-500")}
+            className={cn("pl-9", isDark && "border-white/10 bg-white/[0.03] focus-visible:border-amber-500/50 placeholder:text-slate-500")}
           />
         </div>
       </div>

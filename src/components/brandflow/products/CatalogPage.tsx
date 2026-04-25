@@ -7,10 +7,10 @@ import { Input } from "@/components/ui/input";
 import { Package, Search, Download, Filter, DollarSign, Plus } from "lucide-react";
 import { toast } from "sonner";
 import { motion } from "framer-motion";
-import { useBrandOnyxStore } from "@/store/brandflow-store";
+import { useValtrioxStore } from "@/store/brandflow-store";
 
 export function CatalogPage() {
-  const { setActiveSection } = useBrandOnyxStore();
+  const { setActiveSection } = useValtrioxStore();
   const [search, setSearch] = useState("");
   const [categoryFilter, setCategoryFilter] = useState("all");
   const [showWholesale, setShowWholesale] = useState(false);
@@ -55,7 +55,7 @@ export function CatalogPage() {
             </div>
             <h3 className="text-lg font-semibold text-foreground mb-1">No products in catalog</h3>
             <p className="text-sm text-muted-foreground max-w-sm mb-4">Add products to create your shareable catalog.</p>
-            <Button className="bg-emerald-600 hover:bg-emerald-700" onClick={() => setActiveSection("add-product")}>
+            <Button className="bg-amber-600 hover:bg-amber-700" onClick={() => setActiveSection("add-product")}>
               <Plus className="mr-2 h-4 w-4" /> Add Product
             </Button>
           </CardContent>

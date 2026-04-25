@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { useBrandOnyxStore } from "@/store/brandflow-store";
+import { useValtrioxStore } from "@/store/brandflow-store";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -64,7 +64,7 @@ const emptyForm = {
 // ── Component ──────────────────────────────────────────────────────────────
 
 export function ExpenseModal({ open, onOpenChange, organizationId, editExpense, onSaved }: ExpenseModalProps) {
-  const { appTheme } = useBrandOnyxStore();
+  const { appTheme } = useValtrioxStore();
   const isGold = appTheme === "premium-dark";
   const isDark = appTheme === "dark" || isGold;
 
@@ -173,13 +173,13 @@ export function ExpenseModal({ open, onOpenChange, organizationId, editExpense, 
   // ── Theme Helpers ────────────────────────────────────────────────────
 
   const inputClass = cn(
-    isDark && "border-white/10 bg-white/[0.03] focus-visible:border-emerald-500/50 placeholder:text-slate-500",
+    isDark && "border-white/10 bg-white/[0.03] focus-visible:border-amber-500/50 placeholder:text-slate-500",
     isGold && "border-white/10 bg-white/[0.03] focus-visible:border-amber-500/50 placeholder:text-slate-500"
   );
 
   const submitBtnClass = isGold
     ? "bg-gradient-to-r from-amber-600 via-yellow-500 to-amber-600 text-black hover:shadow-[0_4px_20px_rgba(212,160,23,0.3)] hover:-translate-y-0.5"
-    : "bg-emerald-600 hover:bg-emerald-700";
+    : "bg-amber-600 hover:bg-amber-700";
 
   return (
     <Dialog open={open} onOpenChange={(v) => { if (!loading) onOpenChange(v); }}>

@@ -15,7 +15,7 @@ import {
 } from "lucide-react";
 import { EmptyState } from "@/components/brandflow/shared/EmptyState";
 import { toast } from "sonner";
-import { useBrandOnyxStore } from "@/store/brandflow-store";
+import { useValtrioxStore } from "@/store/brandflow-store";
 
 interface AdCampaign {
   id: number;
@@ -35,7 +35,7 @@ interface Creative {
 }
 
 export function AdManagerPage() {
-  const { appTheme } = useBrandOnyxStore();
+  const { appTheme } = useValtrioxStore();
   const isDark = appTheme !== "light";
 
   const [campaigns, setCampaigns] = useState<AdCampaign[]>([]);
@@ -73,7 +73,7 @@ export function AdManagerPage() {
           <h1 className={`text-xl sm:text-2xl font-bold ${isDark ? "text-white" : "text-slate-900"}`}>Ad Manager</h1>
           <p className={`text-sm mt-1 ${isDark ? "text-slate-400" : "text-slate-500"}`}>Manage campaigns, creatives, and audience targeting</p>
         </div>
-        <Button className="bg-emerald-600 hover:bg-emerald-700" onClick={() => setCampaignOpen(true)}>
+        <Button className="bg-amber-600 hover:bg-amber-700" onClick={() => setCampaignOpen(true)}>
           <Plus className="mr-2 h-4 w-4" /> New Campaign
         </Button>
       </div>
@@ -93,8 +93,8 @@ export function AdManagerPage() {
                   <p className="text-xs font-medium text-slate-500 uppercase tracking-wider">{stat.title}</p>
                   <p className={`text-2xl font-bold mt-1 ${isDark ? "text-white" : "text-slate-900"}`}>{stat.value}</p>
                 </div>
-                <div className="h-10 w-10 rounded-lg bg-emerald-50 flex items-center justify-center">
-                  <stat.icon className="h-5 w-5 text-emerald-600" />
+                <div className="h-10 w-10 rounded-lg bg-amber-50 flex items-center justify-center">
+                  <stat.icon className="h-5 w-5 text-amber-600" />
                 </div>
               </div>
             </CardContent>
@@ -129,7 +129,7 @@ export function AdManagerPage() {
                         <h4 className={`font-semibold ${isDark ? "text-white" : "text-slate-900"}`}>{c.name}</h4>
                         <p className={`text-xs capitalize ${isDark ? "text-slate-400" : "text-slate-500"}`}>{c.platform} · Budget: ${c.budget}</p>
                       </div>
-                      <span className="text-xs bg-emerald-100 text-emerald-700 px-2 py-1 rounded-full">{c.status}</span>
+                      <span className="text-xs bg-amber-100 text-amber-700 px-2 py-1 rounded-full">{c.status}</span>
                     </div>
                   ))}
                 </div>
@@ -150,9 +150,9 @@ export function AdManagerPage() {
             <CardHeader className="pb-3">
               <div className="flex items-center justify-between">
                 <CardTitle className={`text-lg font-semibold flex items-center gap-2 ${isDark ? "text-white" : ""}`}>
-                  <ImageIcon className="h-5 w-5 text-emerald-600" /> Creative Library
+                  <ImageIcon className="h-5 w-5 text-amber-600" /> Creative Library
                 </CardTitle>
-                <Button size="sm" className="bg-emerald-600 hover:bg-emerald-700" onClick={() => setUploadOpen(true)}>
+                <Button size="sm" className="bg-amber-600 hover:bg-amber-700" onClick={() => setUploadOpen(true)}>
                   <Plus className="mr-1 h-3 w-3" /> Upload Creative
                 </Button>
               </div>
@@ -163,8 +163,8 @@ export function AdManagerPage() {
                   {creatives.map((c) => (
                     <div key={c.id} className={`p-4 rounded-lg border flex items-center justify-between ${isDark ? "border-slate-700 bg-slate-800/50" : "border-slate-200 bg-white"}`}>
                       <div className="flex items-center gap-3">
-                        <div className="h-10 w-10 rounded-lg bg-emerald-50 flex items-center justify-center">
-                          <ImageIcon className="h-5 w-5 text-emerald-600" />
+                        <div className="h-10 w-10 rounded-lg bg-amber-50 flex items-center justify-center">
+                          <ImageIcon className="h-5 w-5 text-amber-600" />
                         </div>
                         <div>
                           <h4 className={`font-semibold ${isDark ? "text-white" : "text-slate-900"}`}>{c.name}</h4>
@@ -191,7 +191,7 @@ export function AdManagerPage() {
             <Card>
               <CardHeader className="pb-2">
                 <CardTitle className={`text-lg font-semibold flex items-center gap-2 ${isDark ? "text-white" : ""}`}>
-                  <Users className="h-5 w-5 text-emerald-600" /> Target Interests
+                  <Users className="h-5 w-5 text-amber-600" /> Target Interests
                 </CardTitle>
               </CardHeader>
               <CardContent>
@@ -205,7 +205,7 @@ export function AdManagerPage() {
             <Card>
               <CardHeader className="pb-2">
                 <CardTitle className={`text-lg font-semibold flex items-center gap-2 ${isDark ? "text-white" : ""}`}>
-                  <ShoppingCart className="h-5 w-5 text-emerald-600" /> Target Behaviors
+                  <ShoppingCart className="h-5 w-5 text-amber-600" /> Target Behaviors
                 </CardTitle>
               </CardHeader>
               <CardContent>
@@ -261,7 +261,7 @@ export function AdManagerPage() {
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setCampaignOpen(false)}>Cancel</Button>
-            <Button className="bg-emerald-600 hover:bg-emerald-700" onClick={handleCreateCampaign}>Create Campaign</Button>
+            <Button className="bg-amber-600 hover:bg-amber-700" onClick={handleCreateCampaign}>Create Campaign</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
@@ -288,7 +288,7 @@ export function AdManagerPage() {
                 </SelectContent>
               </Select>
             </div>
-            <div className={`border-2 border-dashed rounded-lg p-8 text-center transition-colors cursor-pointer ${isDark ? "border-slate-600 hover:border-emerald-500" : "border-slate-200 hover:border-emerald-300"}`}>
+            <div className={`border-2 border-dashed rounded-lg p-8 text-center transition-colors cursor-pointer ${isDark ? "border-slate-600 hover:border-amber-500" : "border-slate-200 hover:border-amber-300"}`}>
               <Upload className="h-8 w-8 text-slate-400 mx-auto mb-2" />
               <p className={`text-sm font-medium ${isDark ? "text-slate-300" : "text-slate-600"}`}>Drop file here or click to browse</p>
               <p className={`text-xs mt-1 ${isDark ? "text-slate-500" : "text-slate-400"}`}>JPG, PNG, MP4, GIF (max 50MB)</p>
@@ -296,7 +296,7 @@ export function AdManagerPage() {
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setUploadOpen(false)}>Cancel</Button>
-            <Button className="bg-emerald-600 hover:bg-emerald-700" onClick={handleUploadCreative}>Upload</Button>
+            <Button className="bg-amber-600 hover:bg-amber-700" onClick={handleUploadCreative}>Upload</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

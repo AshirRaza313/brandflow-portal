@@ -385,7 +385,7 @@ export interface OrganizationInfo {
 // Store Interface
 // ============================================================================
 
-interface BrandOnyxStore {
+interface ValtrioxStore {
   view: AppView;
   setView: (view: AppView) => void;
   activeSection: SidebarSection;
@@ -520,7 +520,7 @@ interface BrandOnyxStore {
 function getSavedLanguage(): "en" | "ur" {
   if (typeof window === "undefined") return "en";
   try {
-    const saved = localStorage.getItem("brandonix-language");
+    const saved = localStorage.getItem("valtriox-language");
     if (saved === "en" || saved === "ur") return saved;
   } catch {}
   return "en";
@@ -529,7 +529,7 @@ function getSavedLanguage(): "en" | "ur" {
 function saveLanguageToStorage(lang: "en" | "ur") {
   try {
     if (typeof window !== "undefined") {
-      localStorage.setItem("brandonix-language", lang);
+      localStorage.setItem("valtriox-language", lang);
     }
   } catch {}
 }
@@ -537,7 +537,7 @@ function saveLanguageToStorage(lang: "en" | "ur") {
 function getSavedTheme(): "light" | "dark" | "premium-dark" {
   if (typeof window === "undefined") return "premium-dark";
   try {
-    const saved = localStorage.getItem("brandonix-theme");
+    const saved = localStorage.getItem("valtriox-theme");
     if (saved === "light" || saved === "dark" || saved === "premium-dark") return saved;
   } catch {}
   return "premium-dark";
@@ -546,7 +546,7 @@ function getSavedTheme(): "light" | "dark" | "premium-dark" {
 function saveThemeToStorage(theme: "light" | "dark" | "premium-dark") {
   try {
     if (typeof window !== "undefined") {
-      localStorage.setItem("brandonix-theme", theme);
+      localStorage.setItem("valtriox-theme", theme);
     }
   } catch {}
 }
@@ -554,13 +554,13 @@ function saveThemeToStorage(theme: "light" | "dark" | "premium-dark") {
 // Persist auth state to localStorage
 function getSavedUser(): any {
   try {
-    const saved = typeof window !== 'undefined' ? localStorage.getItem('brandonix-user') : null;
+    const saved = typeof window !== 'undefined' ? localStorage.getItem('valtriox-user') : null;
     return saved ? JSON.parse(saved) : null;
   } catch { return null; }
 }
 function getSavedOrg(): any {
   try {
-    const saved = typeof window !== 'undefined' ? localStorage.getItem('brandonix-org') : null;
+    const saved = typeof window !== 'undefined' ? localStorage.getItem('valtriox-org') : null;
     return saved ? JSON.parse(saved) : null;
   } catch { return null; }
 }
@@ -575,17 +575,17 @@ function syncAuthCookies() {
   try {
     if (typeof window === 'undefined') return;
     // Only sync if cookies don't already exist (user hasn't logged in via new flow)
-    if (document.cookie.includes('bf-user-id')) return;
+    if (document.cookie.includes('vt-user-id')) return;
     const user = getSavedUser();
     const org = getSavedOrg();
     if (user?.id) {
       const maxAge = 30 * 24 * 60 * 60;
       const base = `path=/; max-age=${maxAge}; SameSite=Lax`;
       const secure = process.env.NODE_ENV === 'production' ? '; Secure' : '';
-      document.cookie = `bf-user-id=${user.id}; ${base}${secure}`;
-      if (user.email) document.cookie = `bf-user-email=${user.email}; ${base}${secure}`;
-      if (user.role) document.cookie = `bf-user-role=${user.role}; ${base}${secure}`;
-      if (org?.id) document.cookie = `bf-org-id=${org.id}; ${base}${secure}`;
+      document.cookie = `vt-user-id=${user.id}; ${base}${secure}`;
+      if (user.email) document.cookie = `vt-user-email=${user.email}; ${base}${secure}`;
+      if (user.role) document.cookie = `vt-user-role=${user.role}; ${base}${secure}`;
+      if (org?.id) document.cookie = `vt-org-id=${org.id}; ${base}${secure}`;
     }
   } catch { /* silent */ }
 }
@@ -593,26 +593,26 @@ function syncAuthCookies() {
 if (typeof window !== 'undefined') syncAuthCookies();
 function getSavedBrandName(): string {
   try {
-    return typeof window !== 'undefined' ? localStorage.getItem('brandonix-brandname') || '' : '';
+    return typeof window !== 'undefined' ? localStorage.getItem('valtriox-brandname') || '' : '';
   } catch { return ''; }
 }
 function getSavedBrandLogo(): string | null {
   try {
-    return typeof window !== 'undefined' ? localStorage.getItem('brandonix-logo') : null;
+    return typeof window !== 'undefined' ? localStorage.getItem('valtriox-logo') : null;
   } catch { return null; }
 }
 function getSavedBrandTagline(): string {
   try {
-    return typeof window !== 'undefined' ? localStorage.getItem('brandonix-tagline') || '' : '';
+    return typeof window !== 'undefined' ? localStorage.getItem('valtriox-tagline') || '' : '';
   } catch { return ''; }
 }
 function getSavedBrandConfigured(): boolean {
   try {
-    return typeof window !== 'undefined' ? localStorage.getItem('brandonix-configured') === 'true' : false;
+    return typeof window !== 'undefined' ? localStorage.getItem('valtriox-configured') === 'true' : false;
   } catch { return false; }
 }
 
-export const useBrandOnyxStore = create<BrandOnyxStore>((set, get) => ({
+export const useValtrioxStore = create<ValtrioxStore>((set, get) => ({
   view: getSavedUser() ? "dashboard" : "landing",
   setView: (view) => set({ view }),
   activeSection: "dashboard",
@@ -621,14 +621,14 @@ export const useBrandOnyxStore = create<BrandOnyxStore>((set, get) => ({
   // Brand Name
   brandName: getSavedBrandName(),
   setBrandName: (name) => {
-    try { localStorage.setItem('brandonix-brandname', name); } catch {}
+    try { localStorage.setItem('valtriox-brandname', name); } catch {}
     set({ brandName: name });
   },
 
   // Brand Tagline
   brandTagline: getSavedBrandTagline(),
   setBrandTagline: (tagline) => {
-    try { localStorage.setItem('brandonix-tagline', tagline); } catch {}
+    try { localStorage.setItem('valtriox-tagline', tagline); } catch {}
     set({ brandTagline: tagline });
   },
 
@@ -688,9 +688,9 @@ export const useBrandOnyxStore = create<BrandOnyxStore>((set, get) => ({
   setEventsSubTab: (tab) => set({ eventsSubTab: tab }),
 
   // Brand Theme
-  brandColor: "#059669",
+  brandColor: "#C9A227",
   setBrandColor: (color) => set({ brandColor: color }),
-  brandGradient: "linear-gradient(135deg, #059669 0%, #D97706 100%)",
+  brandGradient: "linear-gradient(135deg, #C9A227 0%, #B8860B 100%)",
   setBrandGradient: (gradient) => set({ brandGradient: gradient }),
   brandBgColor: "#ffffff",
   setBrandBgColor: (color) => set({ brandBgColor: color }),
@@ -704,12 +704,12 @@ export const useBrandOnyxStore = create<BrandOnyxStore>((set, get) => ({
   // User & Org — persisted to localStorage
   user: getSavedUser(),
   setUser: (user) => {
-    try { localStorage.setItem('brandonix-user', JSON.stringify(user)); } catch {}
+    try { localStorage.setItem('valtriox-user', JSON.stringify(user)); } catch {}
     set({ user, view: user ? 'dashboard' : 'auth' });
   },
   organization: getSavedOrg(),
   setOrganization: (org) => {
-    try { localStorage.setItem('brandonix-org', JSON.stringify(org)); } catch {}
+    try { localStorage.setItem('valtriox-org', JSON.stringify(org)); } catch {}
     set({ organization: org });
   },
 
@@ -733,14 +733,14 @@ export const useBrandOnyxStore = create<BrandOnyxStore>((set, get) => ({
   // Brand Logo — persisted to localStorage
   brandLogo: getSavedBrandLogo(),
   setBrandLogo: (logo) => {
-    try { localStorage.setItem('brandonix-logo', logo || ''); } catch {}
+    try { localStorage.setItem('valtriox-logo', logo || ''); } catch {}
     set({ brandLogo: logo });
   },
 
   // Brand Configured — persisted to localStorage
   brandConfigured: getSavedBrandConfigured(),
   setBrandConfigured: (v) => {
-    try { localStorage.setItem('brandonix-configured', v ? 'true' : 'false'); } catch {}
+    try { localStorage.setItem('valtriox-configured', v ? 'true' : 'false'); } catch {}
     set({ brandConfigured: v });
   },
 
@@ -767,17 +767,17 @@ export const useBrandOnyxStore = create<BrandOnyxStore>((set, get) => ({
   // Logout — clear persisted auth, keep appTheme and sidebarCollapsed
   logout: () => {
     try {
-      localStorage.removeItem('brandonix-user');
-      localStorage.removeItem('brandonix-org');
-      localStorage.removeItem('brandonix-brandname');
-      localStorage.removeItem('brandonix-logo');
-      localStorage.removeItem('brandonix-tagline');
-      localStorage.removeItem('brandonix-configured');
+      localStorage.removeItem('valtriox-user');
+      localStorage.removeItem('valtriox-org');
+      localStorage.removeItem('valtriox-brandname');
+      localStorage.removeItem('valtriox-logo');
+      localStorage.removeItem('valtriox-tagline');
+      localStorage.removeItem('valtriox-configured');
       // Clear auth cookies (set by login API for middleware auth injection)
-      document.cookie = 'bf-user-id=; path=/; max-age=0';
-      document.cookie = 'bf-user-email=; path=/; max-age=0';
-      document.cookie = 'bf-user-role=; path=/; max-age=0';
-      document.cookie = 'bf-org-id=; path=/; max-age=0';
+      document.cookie = 'vt-user-id=; path=/; max-age=0';
+      document.cookie = 'vt-user-email=; path=/; max-age=0';
+      document.cookie = 'vt-user-role=; path=/; max-age=0';
+      document.cookie = 'vt-org-id=; path=/; max-age=0';
     } catch {}
     set({
       view: "landing",
@@ -822,7 +822,7 @@ export const useBrandOnyxStore = create<BrandOnyxStore>((set, get) => ({
 }));
 
 export function useSubTabForSection(section: SidebarSection): string | null {
-  const store = useBrandOnyxStore();
+  const store = useValtrioxStore();
   switch (section) {
     case "orders": return store.ordersSubTab;
     case "tasks": return store.tasksSubTab;

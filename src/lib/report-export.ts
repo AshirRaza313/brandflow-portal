@@ -1,6 +1,6 @@
 // ============================================================================
-// Report Export Utility — Client-branded exports with BrandOnyx credit
-// Enterprise plan reports have NO BrandOnyx branding
+// Report Export Utility — Client-branded exports with Valtriox credit
+// Enterprise plan reports have NO Valtriox branding
 // ============================================================================
 
 export interface ReportExportOptions {
@@ -14,13 +14,13 @@ export interface ReportExportOptions {
 
 /**
  * Generate HTML header and footer for report exports
- * - Starter/Growth plans: Client branding + small BrandOnyx credit at bottom
- * - Enterprise plans: Full client branding, NO BrandOnyx credit
+ * - Starter/Growth plans: Client branding + small Valtriox credit at bottom
+ * - Enterprise plans: Full client branding, NO Valtriox credit
  */
 export function generateReportBranding(options: ReportExportOptions) {
   const isEnterprise = options.plan === "enterprise";
   const showBrandflow = !isEnterprise;
-  const brandName = options.platformName || "BrandOnyx";
+  const brandName = options.platformName || "Valtriox";
 
   const header = `
     <div style="display:flex;justify-content:space-between;align-items:center;padding:24px 32px;border-bottom:2px solid #e5e7eb;background:#ffffff;">
@@ -29,7 +29,7 @@ export function generateReportBranding(options: ReportExportOptions) {
         <p style="font-size:13px;color:#6b7280;margin:4px 0 0 0;">${options.reportTitle}</p>
         <p style="font-size:11px;color:#9ca3af;margin:2px 0 0 0;">${options.dateRange}</p>
       </div>
-      ${options.clientLogo ? `<img src="${options.clientLogo}" style="height:48px;width:auto;border-radius:8px;" alt="${options.clientName}" />` : `<div style="width:48px;height:48px;background:linear-gradient(135deg,#d97706,#b45309);border-radius:8px;display:flex;align-items:center;justify-content:center;color:white;font-weight:700;font-size:18px;">${options.clientName.charAt(0).toUpperCase()}</div>`}
+      ${options.clientLogo ? `<img src="${options.clientLogo}" style="height:48px;width:auto;border-radius:8px;" alt="${options.clientName}" />` : `<div style="width:48px;height:48px;background:linear-gradient(135deg,#C9A227,#b45309);border-radius:8px;display:flex;align-items:center;justify-content:center;color:white;font-weight:700;font-size:18px;">${options.clientName.charAt(0).toUpperCase()}</div>`}
     </div>
   `;
 
@@ -37,7 +37,7 @@ export function generateReportBranding(options: ReportExportOptions) {
     ? `
     <div style="padding:16px 32px;text-align:center;border-top:1px solid #f3f4f6;background:#fafafa;">
       <p style="font-size:10px;color:#d1d5db;margin:0;">
-        Powered by <strong style="color:#d97706;">${brandName}</strong> — Pakistan&apos;s #1 Brand Management Portal
+        Powered by <strong style="color:#C9A227;">${brandName}</strong> — The Universal Brand Management Portal
       </p>
     </div>
   `

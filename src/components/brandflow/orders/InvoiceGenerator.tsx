@@ -10,7 +10,7 @@ import {
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
-import { useBrandOnyxStore } from "@/store/brandflow-store";
+import { useValtrioxStore } from "@/store/brandflow-store";
 import { usePlatformIdentity } from "@/lib/platform-identity";
 import { Printer, Download, X } from "lucide-react";
 import { toast } from "sonner";
@@ -75,7 +75,7 @@ function getStatusLabel(status: string): string {
 function getPaymentStatus(status: string): { label: string; color: string; bgColor: string } {
   switch (status) {
     case "delivered":
-      return { label: "Paid", color: "text-emerald-700", bgColor: "bg-emerald-50" };
+      return { label: "Paid", color: "text-amber-700", bgColor: "bg-amber-50" };
     case "cancelled":
       return { label: "Cancelled", color: "text-red-700", bgColor: "bg-red-50" };
     case "returns":
@@ -88,7 +88,7 @@ function getPaymentStatus(status: string): { label: string; color: string; bgCol
 // ── Component ─────────────────────────────────────────────────────────────────
 
 export function InvoiceGenerator({ order, open, onClose }: InvoiceGeneratorProps) {
-  const { brandName, brandLogo, organization } = useBrandOnyxStore();
+  const { brandName, brandLogo, organization } = useValtrioxStore();
   const { identity } = usePlatformIdentity();
   const companyName = identity.companyName;
   const invoiceRef = useRef<HTMLDivElement>(null);
@@ -149,7 +149,7 @@ export function InvoiceGenerator({ order, open, onClose }: InvoiceGeneratorProps
           .invoice-meta h2 {
             font-size: 28px;
             font-weight: 800;
-            color: #059669;
+            color: #C9A227;
             letter-spacing: -0.5px;
           }
           .invoice-meta p {
@@ -248,10 +248,10 @@ export function InvoiceGenerator({ order, open, onClose }: InvoiceGeneratorProps
             letter-spacing: 0.5px;
             margin-top: 16px;
           }
-          .payment-badge.paid { background: #ecfdf5; color: #059669; }
-          .payment-badge.unpaid { background: #fffbeb; color: #d97706; }
+          .payment-badge.paid { background: #ecfdf5; color: #C9A227; }
+          .payment-badge.unpaid { background: #fffbeb; color: #C9A227; }
           .payment-badge.cancelled { background: #fef2f2; color: #dc2626; }
-          .payment-badge.refunded { background: #fffbeb; color: #d97706; }
+          .payment-badge.refunded { background: #fffbeb; color: #C9A227; }
           .footer {
             margin-top: 48px;
             padding-top: 24px;
@@ -308,7 +308,7 @@ export function InvoiceGenerator({ order, open, onClose }: InvoiceGeneratorProps
           <div className="flex items-center gap-2">
             <Button
               onClick={handlePrint}
-              className="gap-2 bg-emerald-600 hover:bg-emerald-700 text-white"
+              className="gap-2 bg-amber-600 hover:bg-amber-700 text-white"
               size="sm"
             >
               <Printer className="h-4 w-4" />
@@ -325,7 +325,7 @@ export function InvoiceGenerator({ order, open, onClose }: InvoiceGeneratorProps
               {displayLogo ? (
                 <img src={displayLogo} alt={displayBrand} className="h-10 w-10 rounded-lg object-cover" />
               ) : (
-                <div className="h-10 w-10 rounded-lg flex items-center justify-center bg-emerald-600 text-white font-bold text-sm">
+                <div className="h-10 w-10 rounded-lg flex items-center justify-center bg-amber-600 text-white font-bold text-sm">
                   {displayBrand[0]?.toUpperCase() || "B"}
                 </div>
               )}
@@ -340,7 +340,7 @@ export function InvoiceGenerator({ order, open, onClose }: InvoiceGeneratorProps
               </div>
             </div>
             <div className="text-right">
-              <h2 className="text-2xl font-extrabold text-emerald-600 tracking-tight">INVOICE</h2>
+              <h2 className="text-2xl font-extrabold text-amber-600 tracking-tight">INVOICE</h2>
               <p className="text-xs text-muted-foreground mt-1">{formatDate(order.createdAt)}</p>
               <div className={cn(
                 "inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider mt-2",
@@ -429,7 +429,7 @@ export function InvoiceGenerator({ order, open, onClose }: InvoiceGeneratorProps
               <Separator />
               <div className="flex justify-between text-lg font-extrabold pt-1">
                 <span>Total</span>
-                <span className="text-emerald-600">{formatPKR(order.total)}</span>
+                <span className="text-amber-600">{formatPKR(order.total)}</span>
               </div>
             </div>
           </div>

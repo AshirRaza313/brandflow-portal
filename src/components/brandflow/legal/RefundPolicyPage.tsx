@@ -15,7 +15,7 @@ export function RefundPolicyPage({ onBack }: LegalPageProps) {
         {/* Back Button */}
         <button
           onClick={onBack}
-          className="inline-flex items-center gap-2 text-sm font-medium text-slate-600 hover:text-emerald-600 transition-colors mb-8 group"
+          className="inline-flex items-center gap-2 text-sm font-medium text-slate-600 hover:text-amber-600 transition-colors mb-8 group"
         >
           <ArrowLeft className="w-4 h-4 group-hover:-translate-x-1 transition-transform" />
           Back to {identity.companyName}
@@ -29,8 +29,8 @@ export function RefundPolicyPage({ onBack }: LegalPageProps) {
           <p className="text-slate-500 text-sm">
             Last Updated: July 11, 2025
           </p>
-          <div className="mt-4 p-4 bg-emerald-50 border border-emerald-200 rounded-lg">
-            <p className="text-sm text-emerald-800">
+          <div className="mt-4 p-4 bg-amber-50 border border-amber-200 rounded-lg">
+            <p className="text-sm text-amber-800">
               At {identity.companyName}, we are committed to providing a high-quality platform and fair
               transaction practices. This Refund Policy outlines the circumstances under which
               refunds may be issued, the process for requesting a refund, and any applicable
@@ -132,7 +132,7 @@ export function RefundPolicyPage({ onBack }: LegalPageProps) {
             <ol className="list-decimal pl-6 space-y-2 text-slate-600 mt-3">
               <li>
                 <strong className="text-slate-700">Email Request:</strong> Send a refund request to{" "}
-                <a href={`mailto:${identity.companyEmail}`} className="text-emerald-600 hover:underline">{identity.companyEmail}</a>{" "}
+                <a href={`mailto:${identity.companyEmail}`} className="text-amber-600 hover:underline">{identity.companyEmail}</a>{" "}
                 with the subject line &quot;Refund Request - [Your Organization Name]&quot;.
               </li>
               <li>
@@ -216,7 +216,7 @@ export function RefundPolicyPage({ onBack }: LegalPageProps) {
             <ul className="list-disc pl-6 space-y-1.5 text-slate-600 mt-3">
               <li><strong className="text-slate-700">Self-Service:</strong> Navigate to Settings &rarr; Billing &amp; Plans in your {identity.companyName} Portal dashboard and select &quot;Cancel Subscription&quot;</li>
               <li><strong className="text-slate-700">Email:</strong> Send a cancellation request to{" "}
-                <a href={`mailto:${identity.companyEmail}`} className="text-emerald-600 hover:underline">{identity.companyEmail}</a>
+                <a href={`mailto:${identity.companyEmail}`} className="text-amber-600 hover:underline">{identity.companyEmail}</a>
               </li>
               <li><strong className="text-slate-700">WhatsApp:</strong> Contact our support team via WhatsApp at the number provided in your account settings</li>
             </ul>
@@ -257,7 +257,7 @@ export function RefundPolicyPage({ onBack }: LegalPageProps) {
             </p>
             <ol className="list-decimal pl-6 space-y-1.5 text-slate-600 mt-3">
               <li>Submit a written appeal to{" "}
-                <a href={`mailto:${identity.companyEmail}`} className="text-emerald-600 hover:underline">{identity.companyEmail}</a>{" "}
+                <a href={`mailto:${identity.companyEmail}`} className="text-amber-600 hover:underline">{identity.companyEmail}</a>{" "}
                 within 14 days of receiving the denial
               </li>
               <li>Include any additional information or documentation supporting your appeal</li>
@@ -267,7 +267,7 @@ export function RefundPolicyPage({ onBack }: LegalPageProps) {
             <p className="text-slate-600 leading-relaxed mt-3">
               For unresolved disputes, you may refer the matter to arbitration in accordance
               with the Dispute Resolution clause in our{" "}
-              <span className="text-emerald-600 font-medium cursor-pointer hover:underline">Terms of Service</span>.
+              <span className="text-amber-600 font-medium cursor-pointer hover:underline">Terms of Service</span>.
             </p>
           </section>
 
@@ -296,13 +296,13 @@ export function RefundPolicyPage({ onBack }: LegalPageProps) {
                 <p><strong>{identity.companyName} Portal — Billing Department</strong></p>
                 <p>
                   Email:{" "}
-                  <a href={`mailto:${identity.companyEmail}`} className="text-emerald-600 hover:underline">{identity.companyEmail}</a>
+                  <a href={`mailto:${identity.companyEmail}`} className="text-amber-600 hover:underline">{identity.companyEmail}</a>
                 </p>
                 <p>
                   Support:{" "}
-                  <a href={`mailto:${identity.companyEmail}`} className="text-emerald-600 hover:underline">{identity.companyEmail}</a>
+                  <a href={`mailto:${identity.companyEmail}`} className="text-amber-600 hover:underline">{identity.companyEmail}</a>
                 </p>
-                <p>Website: {identity.companyWebsite || "brandflow.pk"}</p>
+                <p>Website: {identity.companyWebsite || "valtriox.com"}</p>
                 <p className="text-sm text-slate-500 mt-3">
                   Business Hours: Monday to Friday, 9:00 AM to 6:00 PM Pakistan Standard Time (PKT).
                   We aim to respond to all billing inquiries within 2 business days.

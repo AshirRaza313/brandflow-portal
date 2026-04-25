@@ -47,7 +47,7 @@ export async function POST(req: NextRequest) {
     if (!org) {
       org = await prisma.organization.create({
         data: {
-          name: "BrandOnyx Admin",
+          name: "Valtriox Admin",
           slug,
           email: adminEmail,
           country: "PK",
@@ -91,11 +91,11 @@ export async function POST(req: NextRequest) {
     if (settingsCount === 0) {
       await prisma.platformSettings.create({
         data: {
-          companyName: "BrandOnyx",
-          companyEmail: "support@brandonix.pk",
+          companyName: "Valtriox",
+          companyEmail: "support@valtriox.com",
           tagline: "Command Your Brand",
-          primaryBrandColor: "#d97706",
-          secondaryBrandColor: "#f59e0b",
+          primaryBrandColor: "#C9A227",
+          secondaryBrandColor: "#B8860B",
           currency: "PKR",
           currencySymbol: "Rs.",
           paymentMethods: JSON.stringify(["bank_transfer", "jazzcash", "easypaisa", "credit_card"]),

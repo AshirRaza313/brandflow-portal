@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { useBrandOnyxStore } from "@/store/brandflow-store";
+import { useValtrioxStore } from "@/store/brandflow-store";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -18,7 +18,7 @@ const weekDays = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 const monthNames = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
 
 export function CalendarPage() {
-  const { appTheme } = useBrandOnyxStore();
+  const { appTheme } = useValtrioxStore();
   const [currentMonth, setCurrentMonth] = useState(new Date().getMonth());
   const [currentYear, setCurrentYear] = useState(new Date().getFullYear());
   const [eventOpen, setEventOpen] = useState(false);
@@ -48,7 +48,7 @@ export function CalendarPage() {
           <h1 className="text-xl sm:text-2xl font-bold text-slate-900">Calendar</h1>
           <p className="text-sm text-slate-500 mt-1">View your schedule and upcoming events</p>
         </div>
-        <Button className="bg-emerald-600 hover:bg-emerald-700" onClick={() => { setEventForm({ title: "", date: "", time: "", description: "" }); setEventOpen(true); }}><Plus className="mr-2 h-4 w-4" /> Add Event</Button>
+        <Button className="bg-amber-600 hover:bg-amber-700" onClick={() => { setEventForm({ title: "", date: "", time: "", description: "" }); setEventOpen(true); }}><Plus className="mr-2 h-4 w-4" /> Add Event</Button>
       </div>
 
       <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}>
@@ -74,8 +74,8 @@ export function CalendarPage() {
                 const day = i + 1;
                 const isToday = day === today.getDate() && currentMonth === today.getMonth() && currentYear === today.getFullYear();
                 return (
-                  <div key={day} className={`bg-white min-h-[40px] sm:min-h-[60px] p-1 hover:bg-slate-50/50 transition-colors ${isToday ? "bg-emerald-50/50" : ""}`}>
-                    <span className={`text-[11px] sm:text-xs font-medium ${isToday ? "bg-emerald-600 text-white rounded-full h-5 w-5 sm:h-6 sm:w-6 flex items-center justify-center" : "text-slate-700"}`}>
+                  <div key={day} className={`bg-white min-h-[40px] sm:min-h-[60px] p-1 hover:bg-slate-50/50 transition-colors ${isToday ? "bg-amber-50/50" : ""}`}>
+                    <span className={`text-[11px] sm:text-xs font-medium ${isToday ? "bg-amber-600 text-white rounded-full h-5 w-5 sm:h-6 sm:w-6 flex items-center justify-center" : "text-slate-700"}`}>
                       {day}
                     </span>
                   </div>
@@ -160,7 +160,7 @@ export function CalendarPage() {
             </div>
             <DialogFooter>
               <Button type="button" variant="outline" onClick={() => setEventOpen(false)}>Cancel</Button>
-              <Button type="submit" className="bg-emerald-600 hover:bg-emerald-700">Create Event</Button>
+              <Button type="submit" className="bg-amber-600 hover:bg-amber-700">Create Event</Button>
             </DialogFooter>
           </form>
         </DialogContent>

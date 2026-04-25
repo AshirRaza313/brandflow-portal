@@ -1,7 +1,7 @@
-// ── BrandFlow Service Worker ──
+// ── Valtriox Service Worker ──
 // Handles push notifications, offline caching, and background sync.
 
-const CACHE_NAME = 'brandflow-v1';
+const CACHE_NAME = 'valtriox-v1';
 const OFFLINE_URLS = ['/'];
 
 // ── Install: pre-cache critical resources ──
@@ -25,9 +25,9 @@ self.addEventListener('activate', (event) => {
 // ── Push: show notification when server sends a push message ──
 self.addEventListener('push', (event) => {
   let data = {
-    title: 'BrandFlow',
+    title: 'Valtriox',
     body: 'You have a new notification',
-    icon: '/brandflow-icon-32.png',
+    icon: '/valtriox-icon-32.png',
     url: '/',
   };
 
@@ -46,7 +46,7 @@ self.addEventListener('push', (event) => {
       badge: data.icon,
       data: { url: data.url || '/' },
       vibrate: [100, 50, 100],
-      tag: 'brandflow-notification',
+      tag: 'valtriox-notification',
       renotify: true,
     })
   );

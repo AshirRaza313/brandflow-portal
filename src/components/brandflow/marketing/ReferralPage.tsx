@@ -9,10 +9,10 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "
 import { Share2, Users, Gift, DollarSign, Copy, Link, QrCode } from "lucide-react";
 import { toast } from "sonner";
 import { motion } from "framer-motion";
-import { useBrandOnyxStore } from "@/store/brandflow-store";
+import { useValtrioxStore } from "@/store/brandflow-store";
 
 export function ReferralPage() {
-  const { appTheme } = useBrandOnyxStore();
+  const { appTheme } = useValtrioxStore();
   const isDark = appTheme !== "light";
 
   const referralCode = "";
@@ -36,17 +36,17 @@ export function ReferralPage() {
       </div>
 
       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
-        <Card><CardContent className="p-3"><div className="flex items-center gap-2 mb-1"><Users className="h-4 w-4 text-emerald-500" /><p className="text-xs text-muted-foreground">Total Referrals</p></div><p className={`text-xl font-bold ${isDark ? "text-white" : ""}`}>0</p></CardContent></Card>
+        <Card><CardContent className="p-3"><div className="flex items-center gap-2 mb-1"><Users className="h-4 w-4 text-amber-500" /><p className="text-xs text-muted-foreground">Total Referrals</p></div><p className={`text-xl font-bold ${isDark ? "text-white" : ""}`}>0</p></CardContent></Card>
         <Card><CardContent className="p-3"><div className="flex items-center gap-2 mb-1"><Gift className="h-4 w-4 text-blue-500" /><p className="text-xs text-muted-foreground">Converted</p></div><p className={`text-xl font-bold ${isDark ? "text-white" : ""}`}>0</p></CardContent></Card>
         <Card><CardContent className="p-3"><div className="flex items-center gap-2 mb-1"><DollarSign className="h-4 w-4 text-amber-500" /><p className="text-xs text-muted-foreground">Rewards Given</p></div><p className={`text-xl font-bold ${isDark ? "text-white" : ""}`}>Rs. 0</p></CardContent></Card>
-        <Card><CardContent className="p-3"><div className="flex items-center gap-2 mb-1"><Share2 className="h-4 w-4 text-purple-500" /><p className="text-xs text-muted-foreground">Conversion Rate</p></div><p className={`text-xl font-bold ${isDark ? "text-white" : ""}`}>0%</p></CardContent></Card>
+        <Card><CardContent className="p-3"><div className="flex items-center gap-2 mb-1"><Share2 className="h-4 w-4 text-amber-500" /><p className="text-xs text-muted-foreground">Conversion Rate</p></div><p className={`text-xl font-bold ${isDark ? "text-white" : ""}`}>0%</p></CardContent></Card>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Referral Settings */}
         <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}>
           <Card>
-            <CardHeader><CardTitle className={`text-base flex items-center gap-2 ${isDark ? "text-white" : ""}`}><Share2 className="h-5 w-5 text-emerald-600" /> Program Settings</CardTitle></CardHeader>
+            <CardHeader><CardTitle className={`text-base flex items-center gap-2 ${isDark ? "text-white" : ""}`}><Share2 className="h-5 w-5 text-amber-600" /> Program Settings</CardTitle></CardHeader>
             <CardContent className="space-y-4">
               <div>
                 <p className={`text-sm font-medium mb-2 ${isDark ? "text-white" : ""}`}>Referral Code</p>
@@ -63,10 +63,10 @@ export function ReferralPage() {
                 </div>
               </div>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div className={`p-3 rounded-lg border text-center ${isDark ? "bg-emerald-900/30 border-emerald-700" : "bg-emerald-50 border-emerald-200"}`}>
-                  <Gift className="h-6 w-6 text-emerald-600 mx-auto mb-1" />
+                <div className={`p-3 rounded-lg border text-center ${isDark ? "bg-amber-900/30 border-amber-700" : "bg-amber-50 border-amber-200"}`}>
+                  <Gift className="h-6 w-6 text-amber-600 mx-auto mb-1" />
                   <p className={`text-sm font-bold ${isDark ? "text-white" : ""}`}>Referrer Gets</p>
-                  <p className="text-2xl font-bold text-emerald-600">—</p>
+                  <p className="text-2xl font-bold text-amber-600">—</p>
                 </div>
                 <div className={`p-3 rounded-lg border text-center ${isDark ? "bg-blue-900/30 border-blue-700" : "bg-blue-50 border-blue-200"}`}>
                   <Gift className="h-6 w-6 text-blue-600 mx-auto mb-1" />
@@ -74,7 +74,7 @@ export function ReferralPage() {
                   <p className="text-2xl font-bold text-blue-600">—</p>
                 </div>
               </div>
-              <Button className="w-full bg-emerald-600 hover:bg-emerald-700" onClick={() => setQrOpen(true)}><QrCode className="mr-2 h-4 w-4" /> Generate QR Code</Button>
+              <Button className="w-full bg-amber-600 hover:bg-amber-700" onClick={() => setQrOpen(true)}><QrCode className="mr-2 h-4 w-4" /> Generate QR Code</Button>
             </CardContent>
           </Card>
         </motion.div>
@@ -133,7 +133,7 @@ export function ReferralPage() {
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setQrOpen(false)}>Cancel</Button>
-            <Button className="bg-emerald-600 hover:bg-emerald-700" onClick={handleGenerateQR}>Generate QR Code</Button>
+            <Button className="bg-amber-600 hover:bg-amber-700" onClick={handleGenerateQR}>Generate QR Code</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

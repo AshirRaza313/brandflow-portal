@@ -15,7 +15,7 @@ import {
 } from "lucide-react";
 import { EmptyState } from "@/components/brandflow/shared/EmptyState";
 import { toast } from "sonner";
-import { useBrandOnyxStore } from "@/store/brandflow-store";
+import { useValtrioxStore } from "@/store/brandflow-store";
 
 interface SocialPost {
   id: number;
@@ -40,7 +40,7 @@ interface CalendarEvent {
 }
 
 export function SocialMediaPage() {
-  const { appTheme } = useBrandOnyxStore();
+  const { appTheme } = useValtrioxStore();
   const isDark = appTheme !== "light";
 
   const [schedulerPlatform, setSchedulerPlatform] = useState("");
@@ -98,7 +98,7 @@ export function SocialMediaPage() {
           <h1 className={`text-xl sm:text-2xl font-bold ${isDark ? "text-white" : "text-slate-900"}`}>Social Media Manager</h1>
           <p className={`text-sm mt-1 ${isDark ? "text-slate-400" : "text-slate-500"}`}>Schedule posts, track engagement, and grow your audience</p>
         </div>
-        <Button className="bg-emerald-600 hover:bg-emerald-700" onClick={() => setPostOpen(true)}>
+        <Button className="bg-amber-600 hover:bg-amber-700" onClick={() => setPostOpen(true)}>
           <Plus className="mr-2 h-4 w-4" /> New Post
         </Button>
       </div>
@@ -118,8 +118,8 @@ export function SocialMediaPage() {
                   <p className="text-xs font-medium text-slate-500 uppercase tracking-wider">{stat.title}</p>
                   <p className={`text-2xl font-bold mt-1 ${isDark ? "text-white" : "text-slate-900"}`}>{stat.value}</p>
                 </div>
-                <div className="h-10 w-10 rounded-lg bg-emerald-50 flex items-center justify-center">
-                  <stat.icon className="h-5 w-5 text-emerald-600" />
+                <div className="h-10 w-10 rounded-lg bg-amber-50 flex items-center justify-center">
+                  <stat.icon className="h-5 w-5 text-amber-600" />
                 </div>
               </div>
             </CardContent>
@@ -140,7 +140,7 @@ export function SocialMediaPage() {
             <CardHeader className="pb-3">
               <div className="flex items-center justify-between">
                 <CardTitle className={`text-lg font-semibold ${isDark ? "text-white" : ""}`}>Connected Accounts</CardTitle>
-                <Button size="sm" className="bg-emerald-600 hover:bg-emerald-700" onClick={() => setConnectOpen(true)}>
+                <Button size="sm" className="bg-amber-600 hover:bg-amber-700" onClick={() => setConnectOpen(true)}>
                   <Plus className="mr-1 h-3 w-3" /> Connect
                 </Button>
               </div>
@@ -151,15 +151,15 @@ export function SocialMediaPage() {
                   {accounts.map((a) => (
                     <div key={a.id} className={`p-4 rounded-lg border flex items-center justify-between ${isDark ? "border-slate-700 bg-slate-800/50" : "border-slate-200 bg-white"}`}>
                       <div className="flex items-center gap-3">
-                        <div className="h-10 w-10 rounded-full bg-emerald-100 flex items-center justify-center">
-                          {a.platform === "instagram" ? <Instagram className="h-5 w-5 text-emerald-600" /> : a.platform === "facebook" ? <Facebook className="h-5 w-5 text-emerald-600" /> : <Youtube className="h-5 w-5 text-emerald-600" />}
+                        <div className="h-10 w-10 rounded-full bg-amber-100 flex items-center justify-center">
+                          {a.platform === "instagram" ? <Instagram className="h-5 w-5 text-amber-600" /> : a.platform === "facebook" ? <Facebook className="h-5 w-5 text-amber-600" /> : <Youtube className="h-5 w-5 text-amber-600" />}
                         </div>
                         <div>
                           <h4 className={`font-semibold ${isDark ? "text-white" : "text-slate-900"}`}>@{a.handle}</h4>
                           <p className={`text-xs capitalize ${isDark ? "text-slate-400" : "text-slate-500"}`}>{a.platform}</p>
                         </div>
                       </div>
-                      <span className="text-xs text-emerald-600">Connected</span>
+                      <span className="text-xs text-amber-600">Connected</span>
                     </div>
                   ))}
                 </div>
@@ -180,7 +180,7 @@ export function SocialMediaPage() {
             <CardHeader className="pb-3">
               <div className="flex items-center justify-between">
                 <CardTitle className={`text-lg font-semibold flex items-center gap-2 ${isDark ? "text-white" : ""}`}>
-                  <Calendar className="h-5 w-5 text-emerald-600" /> Content Calendar
+                  <Calendar className="h-5 w-5 text-amber-600" /> Content Calendar
                 </CardTitle>
                 <Button size="sm" variant="outline" onClick={() => setEventOpen(true)}>
                   <Plus className="mr-1 h-3 w-3" /> Add Event
@@ -282,14 +282,14 @@ export function SocialMediaPage() {
               </div>
               <div className="space-y-2">
                 <Label className={`text-sm font-medium ${labelCls}`}>Media Upload</Label>
-                <div className={`border-2 border-dashed rounded-lg p-8 text-center transition-colors cursor-pointer ${isDark ? "border-slate-600 hover:border-emerald-500 hover:bg-emerald-900/20" : "border-slate-200 hover:border-emerald-300 hover:bg-emerald-50/30"}`}>
+                <div className={`border-2 border-dashed rounded-lg p-8 text-center transition-colors cursor-pointer ${isDark ? "border-slate-600 hover:border-amber-500 hover:bg-amber-900/20" : "border-slate-200 hover:border-amber-300 hover:bg-amber-50/30"}`}>
                   <Upload className="h-8 w-8 text-slate-400 mx-auto mb-2" />
                   <p className={`text-sm font-medium ${isDark ? "text-slate-300" : "text-slate-600"}`}>Drop files here or click to upload</p>
                   <p className={`text-xs mt-1 ${isDark ? "text-slate-500" : "text-slate-400"}`}>Supports: JPG, PNG, MP4, GIF (max 50MB)</p>
                 </div>
               </div>
               <div className="flex flex-wrap gap-3">
-                <Button className="bg-emerald-600 hover:bg-emerald-700" onClick={() => toast.success("Post scheduled!")}>
+                <Button className="bg-amber-600 hover:bg-amber-700" onClick={() => toast.success("Post scheduled!")}>
                   <Send className="mr-2 h-4 w-4" /> Schedule Post
                 </Button>
                 <Button variant="outline" onClick={() => toast.info("Draft saved")}>Save as Draft</Button>
@@ -325,7 +325,7 @@ export function SocialMediaPage() {
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setPostOpen(false)}>Cancel</Button>
-            <Button className="bg-emerald-600 hover:bg-emerald-700" onClick={handleCreatePost}>Create Post</Button>
+            <Button className="bg-amber-600 hover:bg-amber-700" onClick={handleCreatePost}>Create Post</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
@@ -356,7 +356,7 @@ export function SocialMediaPage() {
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setConnectOpen(false)}>Cancel</Button>
-            <Button className="bg-emerald-600 hover:bg-emerald-700" onClick={handleConnectAccount}>Connect Account</Button>
+            <Button className="bg-amber-600 hover:bg-amber-700" onClick={handleConnectAccount}>Connect Account</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
@@ -391,7 +391,7 @@ export function SocialMediaPage() {
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setEventOpen(false)}>Cancel</Button>
-            <Button className="bg-emerald-600 hover:bg-emerald-700" onClick={handleCreateEvent}>Add Event</Button>
+            <Button className="bg-amber-600 hover:bg-amber-700" onClick={handleCreateEvent}>Add Event</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

@@ -58,7 +58,7 @@
   --color-amber-300: #fcd34d;
   --color-amber-400: #fbbf24;
   --color-amber-500: #f59e0b;
-  --color-amber-600: #d97706;
+  --color-amber-600: #C9A227;
   --color-amber-700: #b45309;
   --color-slate-50: #f8fafc;
   --color-slate-100: #f1f5f9;
@@ -81,40 +81,40 @@
   --card-foreground: oklch(0.145 0 0);
   --popover: oklch(1 0 0);
   --popover-foreground: oklch(0.145 0 0);
-  --primary: oklch(0.596 0.145 163.225);
+  --primary: oklch(0.78 0.15 85);
   --primary-foreground: oklch(0.985 0 0);
-  --secondary: oklch(0.97 0.014 166.113);
+  --secondary: oklch(0.97 0.014 85);
   --secondary-foreground: oklch(0.205 0 0);
   --muted: oklch(0.97 0 0);
   --muted-foreground: oklch(0.556 0 0);
-  --accent: oklch(0.97 0.014 166.113);
+  --accent: oklch(0.97 0.014 85);
   --accent-foreground: oklch(0.205 0 0);
   --destructive: oklch(0.577 0.245 27.325);
   --border: oklch(0.922 0 0);
   --input: oklch(0.922 0 0);
-  --ring: oklch(0.596 0.145 163.225);
-  --chart-1: oklch(0.596 0.145 163.225);
+  --ring: oklch(0.78 0.15 85);
+  --chart-1: oklch(0.78 0.15 85);
   --chart-2: oklch(0.696 0.17 162.48);
   --chart-3: oklch(0.769 0.188 70.08);
   --chart-4: oklch(0.627 0.265 303.9);
   --chart-5: oklch(0.645 0.246 16.439);
   --sidebar: oklch(0.985 0 0);
   --sidebar-foreground: oklch(0.145 0 0);
-  --sidebar-primary: oklch(0.596 0.145 163.225);
+  --sidebar-primary: oklch(0.78 0.15 85);
   --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.97 0.014 166.113);
+  --sidebar-accent: oklch(0.97 0.014 85);
   --sidebar-accent-foreground: oklch(0.205 0 0);
   --sidebar-border: oklch(0.922 0 0);
-  --sidebar-ring: oklch(0.596 0.145 163.225);
+  --sidebar-ring: oklch(0.78 0.15 85);
 
-  /* BrandOnyx Dynamic Brand Theme Variables */
-  --brand-accent: #10b981;
-  --brand-accent-light: #34d399;
-  --brand-accent-dark: #059669;
-  --brand-gradient: linear-gradient(135deg, #10b981 0%, #059669 50%, #047857 100%);
-  --brand-glow: rgba(16, 185, 129, 0.4);
-  --brand-bg: #ecfdf5;
-  --brand-surface: linear-gradient(135deg, rgba(16, 185, 129, 0.05) 0%, rgba(5, 150, 105, 0.02) 100%);
+  /* Valtriox Dynamic Brand Theme Variables */
+  --brand-accent: #C9A227;
+  --brand-accent-light: #D4AF37;
+  --brand-accent-dark: #B8860B;
+  --brand-gradient: linear-gradient(135deg, #C9A227 0%, #B8860B 50%, #D4AF37 100%);
+  --brand-glow: rgba(201, 162, 39, 0.4);
+  --brand-bg: #fffbeb;
+  --brand-surface: linear-gradient(135deg, rgba(201, 162, 39, 0.05) 0%, rgba(184, 134, 11, 0.02) 100%);
 }
 
 .dark {
@@ -124,7 +124,7 @@
   --card-foreground: oklch(0.985 0 0);
   --popover: oklch(0.205 0 0);
   --popover-foreground: oklch(0.985 0 0);
-  --primary: oklch(0.596 0.145 163.225);
+  --primary: oklch(0.78 0.15 85);
   --primary-foreground: oklch(0.985 0 0);
   --secondary: oklch(0.269 0 0);
   --secondary-foreground: oklch(0.985 0 0);
@@ -135,29 +135,29 @@
   --destructive: oklch(0.704 0.191 22.216);
   --border: oklch(1 0 0 / 10%);
   --input: oklch(1 0 0 / 15%);
-  --ring: oklch(0.596 0.145 163.225);
-  --chart-1: oklch(0.596 0.145 163.225);
+  --ring: oklch(0.78 0.15 85);
+  --chart-1: oklch(0.78 0.15 85);
   --chart-2: oklch(0.696 0.17 162.48);
   --chart-3: oklch(0.769 0.188 70.08);
   --chart-4: oklch(0.627 0.265 303.9);
   --chart-5: oklch(0.645 0.246 16.439);
   --sidebar: oklch(0.205 0 0);
   --sidebar-foreground: oklch(0.985 0 0);
-  --sidebar-primary: oklch(0.596 0.145 163.225);
+  --sidebar-primary: oklch(0.78 0.15 85);
   --sidebar-primary-foreground: oklch(0.985 0 0);
   --sidebar-accent: oklch(0.269 0 0);
   --sidebar-accent-foreground: oklch(0.985 0 0);
   --sidebar-border: oklch(1 0 0 / 10%);
-  --sidebar-ring: oklch(0.596 0.145 163.225);
+  --sidebar-ring: oklch(0.78 0.15 85);
 
-  /* Dark theme brand variables — emerald/green */
-  --brand-accent: #10b981;
-  --brand-accent-light: #34d399;
-  --brand-accent-dark: #059669;
-  --brand-gradient: linear-gradient(135deg, #10b981 0%, #059669 50%, #047857 100%);
-  --brand-glow: rgba(16, 185, 129, 0.4);
-  --brand-bg: rgba(16, 185, 129, 0.05);
-  --brand-surface: linear-gradient(135deg, rgba(16, 185, 129, 0.05) 0%, rgba(5, 150, 105, 0.02) 100%);
+  /* Dark theme brand variables — gold */
+  --brand-accent: #C9A227;
+  --brand-accent-light: #D4AF37;
+  --brand-accent-dark: #B8860B;
+  --brand-gradient: linear-gradient(135deg, #C9A227 0%, #B8860B 50%, #D4AF37 100%);
+  --brand-glow: rgba(201, 162, 39, 0.4);
+  --brand-bg: rgba(201, 162, 39, 0.05);
+  --brand-surface: linear-gradient(135deg, rgba(201, 162, 39, 0.05) 0%, rgba(184, 134, 11, 0.02) 100%);
 }
 
 /* ============================================================================
@@ -221,7 +221,7 @@
 }
 
 /* ==========================================
-   BrandOnyx Ultra Premium Styles
+   Valtriox Ultra Premium Styles
    ========================================== */
 
 /* Premium Scrollbar */
@@ -257,7 +257,7 @@ html {
 
 @keyframes pulse-glow {
   0%, 100% { box-shadow: 0 0 20px var(--brand-glow); }
-  50% { box-shadow: 0 0 40px var(--brand-glow), 0 0 60px rgba(16, 185, 129, 0.2); }
+  50% { box-shadow: 0 0 40px var(--brand-glow), 0 0 60px rgba(201, 162, 39, 0.2); }
 }
 
 @keyframes scroll-left {
@@ -373,8 +373,8 @@ html {
 /* Gradient mesh backgrounds */
 .hero-gradient {
   background:
-    radial-gradient(ellipse at 20% 50%, rgba(16, 185, 129, 0.15) 0%, transparent 50%),
-    radial-gradient(ellipse at 80% 20%, rgba(5, 150, 105, 0.1) 0%, transparent 50%),
+    radial-gradient(ellipse at 20% 50%, rgba(201, 162, 39, 0.15) 0%, transparent 50%),
+    radial-gradient(ellipse at 80% 20%, rgba(184, 134, 11, 0.1) 0%, transparent 50%),
     radial-gradient(ellipse at 40% 80%, rgba(217, 119, 6, 0.08) 0%, transparent 50%);
 }
 
@@ -437,8 +437,8 @@ html {
 }
 
 .sla-safe {
-  color: #10b981;
-  background: rgba(16, 185, 129, 0.1);
+  color: #C9A227;
+  background: rgba(201, 162, 39, 0.1);
 }
 
 .sla-warning {
@@ -513,7 +513,7 @@ html {
 }
 
 .kanban-column.drag-over {
-  background-color: rgba(16, 185, 129, 0.05);
+  background-color: rgba(201, 162, 39, 0.05);
   border: 2px dashed var(--brand-accent-light);
   border-radius: 12px;
 }
@@ -614,12 +614,12 @@ html {
   box-shadow:
     0 20px 40px rgba(0, 0, 0, 0.08),
     0 8px 16px rgba(0, 0, 0, 0.04),
-    0 0 0 1px rgba(16, 185, 129, 0.1);
+    0 0 0 1px rgba(201, 162, 39, 0.1);
 }
 
 /* Premium input focus */
 .input-premium:focus {
-  box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.15), 0 0 0 1px var(--brand-accent);
+  box-shadow: 0 0 0 3px rgba(201, 162, 39, 0.15), 0 0 0 1px var(--brand-accent);
   border-color: var(--brand-accent);
 }
 
@@ -632,8 +632,8 @@ html {
 }
 
 .status-dot-online {
-  background: #10b981;
-  box-shadow: 0 0 8px rgba(16, 185, 129, 0.5);
+  background: #C9A227;
+  box-shadow: 0 0 8px rgba(201, 162, 39, 0.5);
 }
 
 .status-dot-away {
@@ -680,7 +680,7 @@ html {
 .role-cs { background: linear-gradient(135deg, #fce7f3, #fbcfe8); color: #9d174d; }
 .role-packaging { background: linear-gradient(135deg, #e0e7ff, #c7d2fe); color: #3730a3; }
 .role-inventory { background: linear-gradient(135deg, #fed7aa, #fdba74); color: #9a3412; }
-.role-designer { background: linear-gradient(135deg, #f5d0fe, #e9d5ff); color: #6b21a8; }
+.role-designer { background: linear-gradient(135deg, #f5d0fe, #e9d5ff); color: #92400e; }
 .role-photographer { background: linear-gradient(135deg, #ccfbf1, #99f6e4); color: #115e59; }
 
 /* Tabular numbers for stats */

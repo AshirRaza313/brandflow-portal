@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import { useBrandOnyxStore } from "@/store/brandflow-store";
+import { useValtrioxStore } from "@/store/brandflow-store";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -88,7 +88,7 @@ const pageVariants = {
 // ── Main Component ──
 
 export function PaymentApprovalsPage() {
-  const { user, appTheme } = useBrandOnyxStore();
+  const { user, appTheme } = useValtrioxStore();
   const isDark = appTheme !== "light";
   const isGold = appTheme === "premium-dark";
 
@@ -161,7 +161,7 @@ export function PaymentApprovalsPage() {
       case "pending":
         return <Badge className="bg-yellow-500/20 text-yellow-300 border-yellow-500/30 gap-1"><Clock className="h-3 w-3" /> Pending</Badge>;
       case "approved":
-        return <Badge className="bg-emerald-500/20 text-emerald-300 border-emerald-500/30 gap-1"><CheckCircle2 className="h-3 w-3" /> Approved</Badge>;
+        return <Badge className="bg-amber-500/20 text-amber-300 border-amber-500/30 gap-1"><CheckCircle2 className="h-3 w-3" /> Approved</Badge>;
       case "rejected":
         return <Badge className="bg-red-500/20 text-red-300 border-red-500/30 gap-1"><XCircle className="h-3 w-3" /> Rejected</Badge>;
       default:
@@ -173,7 +173,7 @@ export function PaymentApprovalsPage() {
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-[400px]">
-        <Loader2 className="h-8 w-8 animate-spin text-emerald-400" />
+        <Loader2 className="h-8 w-8 animate-spin text-amber-400" />
       </div>
     );
   }
@@ -217,7 +217,7 @@ export function PaymentApprovalsPage() {
         </Card>
         <Card className={cn(cardBg)}>
           <CardContent className="p-4 text-center">
-            <p className="text-3xl font-bold text-emerald-400">{stats.approved}</p>
+            <p className="text-3xl font-bold text-amber-400">{stats.approved}</p>
             <p className={cn("text-xs mt-1", textSecondary)}>Approved</p>
           </CardContent>
         </Card>
@@ -249,7 +249,7 @@ export function PaymentApprovalsPage() {
       {payments.length === 0 ? (
         <Card className={cn(cardBg)}>
           <CardContent className="p-8 text-center">
-            <CheckCircle2 className="h-12 w-12 mx-auto text-emerald-400/50 mb-3" />
+            <CheckCircle2 className="h-12 w-12 mx-auto text-amber-400/50 mb-3" />
             <h3 className={cn("font-semibold", textPrimary)}>No Payments Found</h3>
             <p className={cn("text-sm mt-1", textSecondary)}>
               {statusFilter === "pending"
@@ -294,7 +294,7 @@ export function PaymentApprovalsPage() {
                             <span className="text-[10px]">🇵🇰</span> {payment.amount.toLocaleString()}
                           </span>
                           <span className="capitalize">{payment.planName}</span>
-                          <Badge className={cn("text-[10px] px-1.5 py-0", payment.billingCycle === "annually" ? "bg-purple-500/20 text-purple-300" : "bg-blue-500/20 text-blue-300")}>
+                          <Badge className={cn("text-[10px] px-1.5 py-0", payment.billingCycle === "annually" ? "bg-amber-500/20 text-amber-300" : "bg-blue-500/20 text-blue-300")}>
                             {payment.billingCycle === "annually" ? "Annual" : "Monthly"}
                           </Badge>
                           <span className="flex items-center gap-1">
@@ -402,7 +402,7 @@ export function PaymentApprovalsPage() {
                                     size="sm"
                                     onClick={() => handleReview(payment.id, "approved")}
                                     disabled={reviewing[payment.id]}
-                                    className="gap-1 bg-emerald-600 hover:bg-emerald-700 text-white"
+                                    className="gap-1 bg-amber-600 hover:bg-amber-700 text-white"
                                   >
                                     {reviewing[payment.id] ? (
                                       <Loader2 className="h-3.5 w-3.5 animate-spin" />
@@ -435,7 +435,7 @@ export function PaymentApprovalsPage() {
                             <div className={cn(
                               "p-3 rounded-lg text-xs",
                               payment.status === "approved"
-                                ? isDark ? "bg-emerald-500/5 text-emerald-300" : "bg-emerald-50 text-emerald-700"
+                                ? isDark ? "bg-amber-500/5 text-amber-300" : "bg-amber-50 text-amber-700"
                                 : isDark ? "bg-red-500/5 text-red-300" : "bg-red-50 text-red-700"
                             )}>
                               <p className="font-medium">

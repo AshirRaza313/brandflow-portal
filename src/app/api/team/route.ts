@@ -97,7 +97,7 @@ export const POST = withAuth(async (req: NextRequest, authCtx) => {
 
     // ── Fetch Platform Identity ──
     const platformSettings = await db.platformSettings.findFirst();
-    const platformName = platformSettings?.companyName || "BrandOnyx";
+    const platformName = platformSettings?.companyName || "Valtriox";
 
     if (!organizationId || !email || !role) {
       return NextResponse.json({ error: "Missing required fields: organizationId, email, role" }, { status: 400 });
@@ -287,7 +287,7 @@ export const POST = withAuth(async (req: NextRequest, authCtx) => {
     const roleLabel = roleDef?.label || targetRole;
     const orgName = org.name || platformName;
     const inviterName = inviter?.name || "Admin";
-    const portalUrl = process.env.NEXTAUTH_URL || "https://brandonix-portal.vercel.app";
+    const portalUrl = process.env.NEXTAUTH_URL || "https://valtriox-portal.vercel.app";
 
     return NextResponse.json({
       member,

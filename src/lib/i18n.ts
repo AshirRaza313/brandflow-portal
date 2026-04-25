@@ -1,7 +1,7 @@
 "use client";
 
 // ============================================================================
-// BrandOnyx Portal — i18n Translation System (English / Roman Urdu)
+// Valtriox Portal — i18n Translation System (English / Roman Urdu)
 // ============================================================================
 
 export type Language = "en" | "ur";
@@ -846,10 +846,10 @@ const translations: Record<Language, Record<string, string>> = {
  *   <h1>{t("dashboard")}</h1>
  */
 export function useTranslation(): (key: string, fallback?: string) => string {
-  // Import useBrandOnyxStore dynamically to avoid circular dependency
+  // Import useValtrioxStore dynamically to avoid circular dependency
   // eslint-disable-next-line @typescript-eslint/no-require-imports
-  const { useBrandOnyxStore } = require("@/store/brandflow-store");
-  const lang = useBrandOnyxStore((s: any) => s.language) || "en";
+  const { useValtrioxStore } = require("@/store/brandflow-store");
+  const lang = useValtrioxStore((s: any) => s.language) || "en";
   return (key: string, fallback?: string) => {
     return translations[lang]?.[key] || translations.en[key] || fallback || key;
   };

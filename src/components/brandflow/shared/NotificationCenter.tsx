@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useCallback, useEffect, useRef, useState } from "react";
-import { useBrandOnyxStore } from "@/store/brandflow-store";
+import { useValtrioxStore } from "@/store/brandflow-store";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Bell,
@@ -57,8 +57,8 @@ const NOTIFICATION_STYLES: Record<
 > = {
   new_order: {
     icon: <ShoppingCart className="h-4 w-4" />,
-    iconBg: "bg-emerald-100 text-emerald-600 dark:bg-emerald-500/15 dark:text-emerald-400",
-    dotColor: "bg-emerald-500",
+    iconBg: "bg-amber-100 text-amber-600 dark:bg-amber-500/15 dark:text-amber-400",
+    dotColor: "bg-amber-500",
   },
   status_change: {
     icon: <Package className="h-4 w-4" />,
@@ -72,8 +72,8 @@ const NOTIFICATION_STYLES: Record<
   },
   task_due: {
     icon: <CalendarClock className="h-4 w-4" />,
-    iconBg: "bg-purple-100 text-purple-600 dark:bg-purple-500/15 dark:text-purple-400",
-    dotColor: "bg-purple-500",
+    iconBg: "bg-amber-100 text-amber-600 dark:bg-amber-500/15 dark:text-amber-400",
+    dotColor: "bg-amber-500",
   },
   payment_received: {
     icon: <Banknote className="h-4 w-4" />,
@@ -127,8 +127,8 @@ function NotificationItem({
           : isGold
             ? "bg-amber-500/[0.06] hover:bg-amber-500/[0.1]"
             : isDark
-              ? "bg-emerald-500/[0.06] hover:bg-emerald-500/[0.1]"
-              : "bg-emerald-50/60 hover:bg-emerald-50"
+              ? "bg-amber-500/[0.06] hover:bg-amber-500/[0.1]"
+              : "bg-amber-50/60 hover:bg-amber-50"
       )}
     >
       <div
@@ -208,7 +208,7 @@ function EmptyNotifications({ isDark }: { isDark: boolean }) {
 // ── Main Component ───────────────────────────────────────────────────────────
 
 export function NotificationCenter() {
-  const { organization, appTheme } = useBrandOnyxStore();
+  const { organization, appTheme } = useValtrioxStore();
   const isGold = appTheme === "premium-dark";
   const isDark = appTheme === "dark" || isGold;
 
@@ -350,7 +350,7 @@ export function NotificationCenter() {
             className={cn(
               "relative h-8 w-8 rounded-lg transition-colors",
               isDark ? "text-slate-400 hover:text-slate-200 hover:bg-white/5" : "text-slate-500 hover:text-slate-900 hover:bg-slate-100",
-              open && (isGold ? "bg-amber-500/10 text-amber-400" : isDark ? "bg-emerald-500/10 text-emerald-400" : "bg-emerald-50 text-emerald-600")
+              open && (isGold ? "bg-amber-500/10 text-amber-400" : isDark ? "bg-amber-500/10 text-amber-400" : "bg-amber-50 text-amber-600")
             )}
           >
             <Bell className="h-4 w-4" />
@@ -416,14 +416,14 @@ export function NotificationCenter() {
                       isGold
                         ? "bg-gradient-to-br from-amber-500/20 to-yellow-500/20"
                         : isDark
-                          ? "bg-emerald-500/15"
-                          : "bg-emerald-50"
+                          ? "bg-amber-500/15"
+                          : "bg-amber-50"
                     )}
                   >
                     <Bell
                       className={cn(
                         "h-4 w-4",
-                        isGold ? "text-amber-400" : isDark ? "text-emerald-400" : "text-emerald-600"
+                        isGold ? "text-amber-400" : isDark ? "text-amber-400" : "text-amber-600"
                       )}
                     />
                   </div>
@@ -508,8 +508,8 @@ export function NotificationCenter() {
                       isGold
                         ? "bg-amber-500/15 text-amber-400 border border-amber-500/20"
                         : isDark
-                          ? "bg-emerald-500/15 text-emerald-400 border border-emerald-500/20"
-                          : "bg-emerald-50 text-emerald-700 border border-emerald-200"
+                          ? "bg-amber-500/15 text-amber-400 border border-amber-500/20"
+                          : "bg-amber-50 text-amber-700 border border-amber-200"
                     )}>
                       <span className="h-1.5 w-1.5 rounded-full bg-current" />
                       {unreadCount} new

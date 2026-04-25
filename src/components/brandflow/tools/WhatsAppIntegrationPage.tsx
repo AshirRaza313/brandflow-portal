@@ -42,7 +42,7 @@ export function WhatsAppIntegrationPage() {
           <h1 className="text-2xl font-bold text-slate-900">WhatsApp Integration</h1>
           <p className="text-sm text-slate-500 mt-1">Configure WhatsApp Business API</p>
         </div>
-        <Badge className={`text-xs ${connected ? "bg-emerald-100 text-emerald-700" : "bg-red-100 text-red-700"} border-0`}>
+        <Badge className={`text-xs ${connected ? "bg-amber-100 text-amber-700" : "bg-red-100 text-red-700"} border-0`}>
           {connected ? <><CheckCircle2 className="h-3 w-3 mr-1" /> Connected</> : <><XCircle className="h-3 w-3 mr-1" /> Disconnected</>}
         </Badge>
       </div>
@@ -53,7 +53,7 @@ export function WhatsAppIntegrationPage() {
           { id: "templates", label: "Templates" },
           { id: "analytics", label: "Analytics" },
         ].map((tab) => (
-          <button key={tab.id} onClick={() => setActiveTab(tab.id)} className={`px-4 py-2.5 text-sm font-medium border-b-2 transition-colors ${activeTab === tab.id ? "border-emerald-600 text-emerald-600" : "border-transparent text-slate-500 hover:text-slate-700"}`}>
+          <button key={tab.id} onClick={() => setActiveTab(tab.id)} className={`px-4 py-2.5 text-sm font-medium border-b-2 transition-colors ${activeTab === tab.id ? "border-amber-600 text-amber-600" : "border-transparent text-slate-500 hover:text-slate-700"}`}>
             {tab.label}
           </button>
         ))}
@@ -71,7 +71,7 @@ export function WhatsAppIntegrationPage() {
                 <div><Label className="mb-1 block">Webhook URL</Label><Input value={apiSettings.webhookUrl} onChange={(e) => setApiSettings({ ...apiSettings, webhookUrl: e.target.value })} className="font-mono" placeholder="Enter Webhook URL" /></div>
                 <div><Label className="mb-1 block">Verify Token</Label><Input value={apiSettings.verifyToken} onChange={(e) => setApiSettings({ ...apiSettings, verifyToken: e.target.value })} className="font-mono" placeholder="Enter Verify Token" /></div>
                 <div className="flex gap-3 pt-2">
-                  <Button className="bg-emerald-600 hover:bg-emerald-700" onClick={() => toast.success("Settings saved!")}><Save className="mr-2 h-4 w-4" /> Save Settings</Button>
+                  <Button className="bg-amber-600 hover:bg-amber-700" onClick={() => toast.success("Settings saved!")}><Save className="mr-2 h-4 w-4" /> Save Settings</Button>
                   <Button variant="outline" onClick={() => { setConnected(!connected); toast.success(connected ? "Disconnected" : "Connect"); }}>
                     {connected ? "Disconnect" : "Connect"}
                   </Button>
@@ -84,7 +84,7 @@ export function WhatsAppIntegrationPage() {
         {activeTab === "templates" && (
           <motion.div key="templates" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}>
             <div className="flex justify-end">
-              <Button className="bg-emerald-600 hover:bg-emerald-700" onClick={() => setTemplateOpen(true)}><Plus className="mr-2 h-4 w-4" /> Add Template</Button>
+              <Button className="bg-amber-600 hover:bg-amber-700" onClick={() => setTemplateOpen(true)}><Plus className="mr-2 h-4 w-4" /> Add Template</Button>
             </div>
             <Card className="mt-4">
               <CardContent className="p-8">
@@ -155,7 +155,7 @@ export function WhatsAppIntegrationPage() {
             </div>
             <div className="flex justify-end gap-2 pt-2">
               <Button variant="outline" onClick={() => setTemplateOpen(false)}>Cancel</Button>
-              <Button className="bg-emerald-600 hover:bg-emerald-700" onClick={handleCreateTemplate}>Create Template</Button>
+              <Button className="bg-amber-600 hover:bg-amber-700" onClick={handleCreateTemplate}>Create Template</Button>
             </div>
           </div>
         </DialogContent>

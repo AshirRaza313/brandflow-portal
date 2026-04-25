@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import { useBrandOnyxStore } from "@/store/brandflow-store";
+import { useValtrioxStore } from "@/store/brandflow-store";
 import { fetchWithAuth } from "@/lib/fetch-with-auth";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -43,19 +43,19 @@ interface SalesReportData {
 const STATUS_LABELS: Record<string, { label: string; color: string }> = {
   pending: { label: "Pending", color: "bg-yellow-500/20 text-yellow-300" },
   confirmed: { label: "Confirmed", color: "bg-blue-500/20 text-blue-300" },
-  packing: { label: "Packing", color: "bg-purple-500/20 text-purple-300" },
+  packing: { label: "Packing", color: "bg-amber-500/20 text-amber-300" },
   dispatched: { label: "Dispatched", color: "bg-orange-500/20 text-orange-300" },
-  delivered: { label: "Delivered", color: "bg-emerald-500/20 text-emerald-300" },
+  delivered: { label: "Delivered", color: "bg-amber-500/20 text-amber-300" },
   cancelled: { label: "Cancelled", color: "bg-red-500/20 text-red-300" },
   returns: { label: "Returns", color: "bg-amber-500/20 text-amber-300" },
 };
 
-const PIE_COLORS = ["#10b981", "#f59e0b", "#ef4444", "#8b5cf6", "#f97316", "#06b6d4", "#ec4899"];
+const PIE_COLORS = ["#D4AF37", "#f59e0b", "#ef4444", "#8b5cf6", "#f97316", "#06b6d4", "#ec4899"];
 
 const TABS = ["daily", "weekly", "monthly"] as const;
 
 export function SalesReportsPage() {
-  const { organization, appTheme } = useBrandOnyxStore();
+  const { organization, appTheme } = useValtrioxStore();
   const isDark = appTheme !== "light";
   const isGold = appTheme === "premium-dark";
   const accentColor = isGold ? "amber" : "emerald";
@@ -159,10 +159,10 @@ export function SalesReportsPage() {
   const cardBg = isDark ? "bg-white/[0.03] border-white/[0.06]" : "bg-white border-slate-200";
   const textPrimary = isDark ? "text-white" : "text-slate-900";
   const textSecondary = isDark ? "text-slate-400" : "text-slate-500";
-  const accent = isGold ? "text-amber-400" : "text-emerald-400";
-  const accentBg = isGold ? "bg-amber-500/10" : "bg-emerald-500/10";
-  const accentBorder = isGold ? "border-amber-500/20" : "border-emerald-500/20";
-  const accentTab = isGold ? "border-amber-500 text-amber-400" : "border-emerald-500 text-emerald-400";
+  const accent = isGold ? "text-amber-400" : "text-amber-400";
+  const accentBg = isGold ? "bg-amber-500/10" : "bg-amber-500/10";
+  const accentBorder = isGold ? "border-amber-500/20" : "border-amber-500/20";
+  const accentTab = isGold ? "border-amber-500 text-amber-400" : "border-amber-500 text-amber-400";
 
   return (
     <div className="space-y-6">
@@ -382,8 +382,8 @@ export function SalesReportsPage() {
                 <AreaChart data={data.dailyBreakdown} margin={{ top: 5, right: 10, left: 10, bottom: 0 }}>
                   <defs>
                     <linearGradient id="revenueGradient" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor={isGold ? "#f59e0b" : "#10b981"} stopOpacity={0.3} />
-                      <stop offset="95%" stopColor={isGold ? "#f59e0b" : "#10b981"} stopOpacity={0} />
+                      <stop offset="5%" stopColor={isGold ? "#f59e0b" : "#D4AF37"} stopOpacity={0.3} />
+                      <stop offset="95%" stopColor={isGold ? "#f59e0b" : "#D4AF37"} stopOpacity={0} />
                     </linearGradient>
                   </defs>
                   <CartesianGrid strokeDasharray="3 3" stroke={isDark ? "rgba(255,255,255,0.06)" : "#f1f5f9"} />
@@ -414,11 +414,11 @@ export function SalesReportsPage() {
                   <Area
                     type="monotone"
                     dataKey="revenue"
-                    stroke={isGold ? "#f59e0b" : "#10b981"}
+                    stroke={isGold ? "#f59e0b" : "#D4AF37"}
                     strokeWidth={2}
                     fill="url(#revenueGradient)"
                     dot={data.dailyBreakdown.length <= 31}
-                    activeDot={{ r: 5, fill: isGold ? "#f59e0b" : "#10b981", strokeWidth: 0 }}
+                    activeDot={{ r: 5, fill: isGold ? "#f59e0b" : "#D4AF37", strokeWidth: 0 }}
                   />
                 </AreaChart>
               </ResponsiveContainer>

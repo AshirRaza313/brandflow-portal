@@ -17,24 +17,24 @@ const geistMono = Geist_Mono({
 });
 
 export const viewport: Viewport = {
-  themeColor: "#d97706",
+  themeColor: "#C9A227",
   width: "device-width",
   initialScale: 1,
 };
 
 export const metadata: Metadata = {
-  title: "BrandOnyx — Command Your Brand",
-  description: "Premium all-in-one brand operations management portal for modern businesses",
+  title: "Valtriox — Command Your Brand Universe",
+  description: "The universal brand management portal for modern businesses — command every aspect of your brand from a single, powerful platform",
 
-  keywords: ["BrandOnyx", "brand management", "order management", "inventory", "team collaboration", "business operations", "SaaS"],
-  authors: [{ name: "BrandOnyx" }],
+  keywords: ["Valtriox", "brand management", "universal brand management portal", "order management", "inventory", "team collaboration", "business operations", "SaaS"],
+  authors: [{ name: "Valtriox" }],
   icons: {
-    icon: "/brandonix-logo.png",
+    icon: "/valtriox-logo.png",
   },
   manifest: "/manifest.json",
   openGraph: {
-    title: "BrandOnyx — Command Your Brand",
-    description: "Premium all-in-one brand operations management portal for modern businesses",
+    title: "Valtriox — Command Your Brand Universe",
+    description: "The universal brand management portal for modern businesses — command every aspect of your brand from a single, powerful platform",
     type: "website",
   },
 };

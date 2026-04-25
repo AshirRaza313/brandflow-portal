@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState, useCallback } from "react";
-import { useBrandOnyxStore } from "@/store/brandflow-store";
+import { useValtrioxStore } from "@/store/brandflow-store";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -98,7 +98,7 @@ const urgencyConfig: Record<UrgencyLevel, {
 // ── Component ──
 
 export function StockAlertsPanel() {
-  const { organization, appTheme } = useBrandOnyxStore();
+  const { organization, appTheme } = useValtrioxStore();
   const isGold = appTheme === "premium-dark";
   const isDark = appTheme === "dark" || isGold;
 
@@ -165,7 +165,7 @@ export function StockAlertsPanel() {
   const textPrimary = isDark ? "text-white" : "text-slate-900";
   const textSecondary = isDark ? "text-slate-400" : "text-slate-500";
   const textMuted = isDark ? "text-slate-500" : "text-muted-foreground";
-  const accentColor = isGold ? "text-amber-400" : "text-emerald-500";
+  const accentColor = isGold ? "text-amber-400" : "text-amber-500";
 
   return (
     <div className="space-y-4">
@@ -186,7 +186,7 @@ export function StockAlertsPanel() {
                 <Card className={cn(
                   "cursor-pointer transition-all hover:shadow-md border",
                   cardClass,
-                  urgencyFilter === level && (isGold ? "border-amber-500/30" : "border-emerald-500/30")
+                  urgencyFilter === level && (isGold ? "border-amber-500/30" : "border-amber-500/30")
                 )} onClick={() => setUrgencyFilter(urgencyFilter === level ? null : level)}>
                   <CardContent className="p-3">
                     <div className="flex items-center justify-between">

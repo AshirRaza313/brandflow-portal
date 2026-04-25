@@ -52,7 +52,7 @@ const channelData = [
   { name: "Phone", value: 10 },
 ];
 
-const pieColors = ["#059669", "#8b5cf6", "#3b82f6", "#f59e0b"];
+const pieColors = ["#C9A227", "#8b5cf6", "#3b82f6", "#f59e0b"];
 
 export function AnalyticsPage() {
   const [activeTab, setActiveTab] = useState("sales");
@@ -67,7 +67,7 @@ export function AnalyticsPage() {
       {/* Sub-tabs */}
       <div className="flex gap-1 border-b border-slate-200 overflow-x-auto tab-bar-scroll">
         {subTabs.map((tab) => (
-          <button key={tab.id} onClick={() => setActiveTab(tab.id)} className={`px-3 sm:px-4 py-2.5 text-xs sm:text-sm font-medium border-b-2 transition-colors whitespace-nowrap ${activeTab === tab.id ? "border-emerald-600 text-emerald-600" : "border-transparent text-slate-500 hover:text-slate-700"}`}>
+          <button key={tab.id} onClick={() => setActiveTab(tab.id)} className={`px-3 sm:px-4 py-2.5 text-xs sm:text-sm font-medium border-b-2 transition-colors whitespace-nowrap ${activeTab === tab.id ? "border-amber-600 text-amber-600" : "border-transparent text-slate-500 hover:text-slate-700"}`}>
             {tab.label}
           </button>
         ))}
@@ -77,9 +77,9 @@ export function AnalyticsPage() {
       {activeTab === "sales" && (
         <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="space-y-6">
           <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-            <Card><CardContent className="p-3"><div className="flex items-center gap-2 mb-1"><DollarSign className="h-4 w-4 text-emerald-500" /><p className="text-xs text-muted-foreground">Revenue</p></div><p className="text-xl font-bold">Rs. 48,750</p><p className="text-xs text-emerald-600 flex items-center gap-1"><ArrowUpRight className="h-3 w-3" />12.5%</p></CardContent></Card>
-            <Card><CardContent className="p-3"><div className="flex items-center gap-2 mb-1"><ShoppingBag className="h-4 w-4 text-blue-500" /><p className="text-xs text-muted-foreground">Orders</p></div><p className="text-xl font-bold">290</p><p className="text-xs text-emerald-600 flex items-center gap-1"><ArrowUpRight className="h-3 w-3" />8.3%</p></CardContent></Card>
-            <Card><CardContent className="p-3"><div className="flex items-center gap-2 mb-1"><TrendingUp className="h-4 w-4 text-amber-500" /><p className="text-xs text-muted-foreground">Avg Order</p></div><p className="text-xl font-bold">Rs. 168</p><p className="text-xs text-emerald-600 flex items-center gap-1"><ArrowUpRight className="h-3 w-3" />5.1%</p></CardContent></Card>
+            <Card><CardContent className="p-3"><div className="flex items-center gap-2 mb-1"><DollarSign className="h-4 w-4 text-amber-500" /><p className="text-xs text-muted-foreground">Revenue</p></div><p className="text-xl font-bold">Rs. 48,750</p><p className="text-xs text-amber-600 flex items-center gap-1"><ArrowUpRight className="h-3 w-3" />12.5%</p></CardContent></Card>
+            <Card><CardContent className="p-3"><div className="flex items-center gap-2 mb-1"><ShoppingBag className="h-4 w-4 text-blue-500" /><p className="text-xs text-muted-foreground">Orders</p></div><p className="text-xl font-bold">290</p><p className="text-xs text-amber-600 flex items-center gap-1"><ArrowUpRight className="h-3 w-3" />8.3%</p></CardContent></Card>
+            <Card><CardContent className="p-3"><div className="flex items-center gap-2 mb-1"><TrendingUp className="h-4 w-4 text-amber-500" /><p className="text-xs text-muted-foreground">Avg Order</p></div><p className="text-xl font-bold">Rs. 168</p><p className="text-xs text-amber-600 flex items-center gap-1"><ArrowUpRight className="h-3 w-3" />5.1%</p></CardContent></Card>
             <Card><CardContent className="p-3"><div className="flex items-center gap-2 mb-1"><TrendingDown className="h-4 w-4 text-red-500" /><p className="text-xs text-muted-foreground">Refund Rate</p></div><p className="text-xl font-bold">2.3%</p><p className="text-xs text-red-600 flex items-center gap-1"><TrendingDown className="h-3 w-3" />0.5%</p></CardContent></Card>
           </div>
 
@@ -90,12 +90,12 @@ export function AnalyticsPage() {
                 <div className="h-[200px] sm:h-[250px] lg:h-72">
                   <ResponsiveContainer width="100%" height="100%">
                     <AreaChart data={monthlyRevenue}>
-                      <defs><linearGradient id="revGrad" x1="0" y1="0" x2="0" y2="1"><stop offset="5%" stopColor="#059669" stopOpacity={0.2} /><stop offset="95%" stopColor="#059669" stopOpacity={0} /></linearGradient></defs>
+                      <defs><linearGradient id="revGrad" x1="0" y1="0" x2="0" y2="1"><stop offset="5%" stopColor="#C9A227" stopOpacity={0.2} /><stop offset="95%" stopColor="#C9A227" stopOpacity={0} /></linearGradient></defs>
                       <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
                       <XAxis dataKey="month" tick={{ fontSize: 12 }} stroke="#94a3b8" />
                       <YAxis tick={{ fontSize: 12 }} stroke="#94a3b8" />
                       <Tooltip contentStyle={{ borderRadius: "8px", border: "1px solid #e2e8f0", fontSize: "12px" }} formatter={(v: number) => [`Rs. ${v.toLocaleString()}`, ""]} />
-                      <Area type="monotone" dataKey="revenue" stroke="#059669" strokeWidth={2} fill="url(#revGrad)" />
+                      <Area type="monotone" dataKey="revenue" stroke="#C9A227" strokeWidth={2} fill="url(#revGrad)" />
                     </AreaChart>
                   </ResponsiveContainer>
                 </div>
@@ -137,7 +137,7 @@ export function AnalyticsPage() {
                     <XAxis dataKey="month" tick={{ fontSize: 12 }} stroke="#94a3b8" />
                     <YAxis tick={{ fontSize: 12 }} stroke="#94a3b8" />
                     <Tooltip contentStyle={{ borderRadius: "8px", fontSize: "12px" }} />
-                    <Bar dataKey="new" fill="#059669" radius={[4, 4, 0, 0]} name="New" />
+                    <Bar dataKey="new" fill="#C9A227" radius={[4, 4, 0, 0]} name="New" />
                     <Bar dataKey="returning" fill="#3b82f6" radius={[4, 4, 0, 0]} name="Returning" />
                   </BarChart>
                 </ResponsiveContainer>
@@ -166,7 +166,7 @@ export function AnalyticsPage() {
                       <td className="py-3 px-4 text-muted-foreground">{i + 1}</td>
                       <td className="py-3 px-4 font-medium">{p.name}</td>
                       <td className="py-3 px-4 text-right">{p.sold.toLocaleString()}</td>
-                      <td className="py-3 px-4 text-right font-bold text-emerald-600">Rs. {p.revenue.toLocaleString()}</td>
+                      <td className="py-3 px-4 text-right font-bold text-amber-600">Rs. {p.revenue.toLocaleString()}</td>
                     </tr>
                   ))}
                 </tbody>

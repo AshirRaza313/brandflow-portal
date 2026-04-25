@@ -242,9 +242,9 @@ export function UserGuidePage() {
 
   if (!initDone && typeof window !== "undefined") {
     try {
-      const stored = localStorage.getItem("brandonix-appTheme");
+      const stored = localStorage.getItem("valtriox-appTheme");
       if (stored) setAppTheme(stored);
-      const userData = localStorage.getItem("brandonix-user");
+      const userData = localStorage.getItem("valtriox-user");
       if (userData) {
         const u = JSON.parse(userData);
         setUserRole(u.role || null);
@@ -284,7 +284,7 @@ export function UserGuidePage() {
   const saveGuide = async () => {
     setSaving(true);
     try {
-      const userData = localStorage.getItem("brandonix-user");
+      const userData = localStorage.getItem("valtriox-user");
       const userId = userData ? JSON.parse(userData)?.id : null;
       const r = await fetch("/api/admin/guide", {
         method: "PUT",
@@ -366,12 +366,12 @@ export function UserGuidePage() {
     ? "data-[state=active]:bg-amber-500/20 data-[state=active]:text-amber-400"
     : isDark
     ? "data-[state=active]:bg-slate-700 data-[state=active]:text-white"
-    : "data-[state=active]:bg-emerald-600 data-[state=active]:text-white";
+    : "data-[state=active]:bg-amber-600 data-[state=active]:text-white";
   const badgeCls = isDark ? "border-white/10 text-slate-400" : "border-slate-200 text-slate-500";
-  const accent = isGold ? "text-amber-400" : isDark ? "text-emerald-400" : "text-emerald-600";
-  const accentBg = isGold ? "bg-amber-500/15" : isDark ? "bg-emerald-500/15" : "bg-emerald-100";
-  const accentBtn = isGold ? "bg-amber-500 hover:bg-amber-600 text-black" : "bg-emerald-600 hover:bg-emerald-700 text-white";
-  const accentOut = isGold ? "border-amber-500/25 text-amber-400 hover:bg-amber-500/10" : "border-emerald-300 text-emerald-600 hover:bg-emerald-50";
+  const accent = isGold ? "text-amber-400" : isDark ? "text-amber-400" : "text-amber-600";
+  const accentBg = isGold ? "bg-amber-500/15" : isDark ? "bg-amber-500/15" : "bg-amber-100";
+  const accentBtn = isGold ? "bg-amber-500 hover:bg-amber-600 text-black" : "bg-amber-600 hover:bg-amber-700 text-white";
+  const accentOut = isGold ? "border-amber-500/25 text-amber-400 hover:bg-amber-500/10" : "border-amber-300 text-amber-600 hover:bg-amber-50";
 
   // Role-based tab filtering
   const visibleTabs = guideData.tabs.filter(tab => {
@@ -492,7 +492,7 @@ export function UserGuidePage() {
                             </div>
                             {editMode && isAdmin && (
                               <div className="flex items-center gap-0.5 sm:gap-1 shrink-0" onClick={e => e.stopPropagation()}>
-                                <Button size="sm" variant="ghost" className={cn("h-6 w-6 sm:h-7 sm:w-7 p-0", isDark ? "text-slate-400 hover:text-amber-400 hover:bg-amber-500/10" : "text-slate-500 hover:text-emerald-600 hover:bg-emerald-50")} onClick={() => openEdit(tab.id, item.id)}>
+                                <Button size="sm" variant="ghost" className={cn("h-6 w-6 sm:h-7 sm:w-7 p-0", isDark ? "text-slate-400 hover:text-amber-400 hover:bg-amber-500/10" : "text-slate-500 hover:text-amber-600 hover:bg-amber-50")} onClick={() => openEdit(tab.id, item.id)}>
                                   <Pencil className="h-2.5 w-2.5 sm:h-3 sm:w-3" />
                                 </Button>
                                 <Button size="sm" variant="ghost" className={cn("h-6 w-6 sm:h-7 sm:w-7 p-0", isDark ? "text-slate-400 hover:text-red-400 hover:bg-red-500/10" : "text-slate-500 hover:text-red-600 hover:bg-red-50")} onClick={() => deleteItem(tab.id, item.id)}>

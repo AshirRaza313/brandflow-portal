@@ -10,7 +10,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Building2, ShoppingCart, DollarSign, Truck, Star } from "lucide-react";
 import { EmptyState } from "@/components/brandflow/shared/EmptyState";
 import { toast } from "sonner";
-import { useBrandOnyxStore } from "@/store/brandflow-store";
+import { useValtrioxStore } from "@/store/brandflow-store";
 
 interface Supplier {
   id: number;
@@ -26,7 +26,7 @@ export function SuppliersPage() {
   const [createOpen, setCreateOpen] = useState(false);
   const [suppliers, setSuppliers] = useState<Supplier[]>([]);
   const [formData, setFormData] = useState({ name: "", contactEmail: "", phone: "", category: "", address: "" });
-  const { appTheme } = useBrandOnyxStore();
+  const { appTheme } = useValtrioxStore();
   const isDark = appTheme !== "light";
   const isGold = appTheme === "premium-dark";
 
@@ -49,7 +49,7 @@ export function SuppliersPage() {
           <h1 className="text-2xl font-bold text-slate-900">Supplier Management</h1>
           <p className="text-sm text-slate-500 mt-1">Manage vendors, track orders, and monitor supplier performance</p>
         </div>
-        <Button className="bg-emerald-600 hover:bg-emerald-700 text-white" onClick={() => setCreateOpen(true)}>
+        <Button className="bg-amber-600 hover:bg-amber-700 text-white" onClick={() => setCreateOpen(true)}>
           <Building2 className="mr-2 h-4 w-4" /> Add Supplier
         </Button>
       </div>
@@ -73,7 +73,7 @@ export function SuppliersPage() {
 
       {/* Toggle */}
       <div className="flex flex-wrap gap-1 border-b border-slate-200">
-        <button className="px-4 py-2.5 text-sm font-medium border-b-2 border-emerald-600 text-emerald-600">Supplier Directory</button>
+        <button className="px-4 py-2.5 text-sm font-medium border-b-2 border-amber-600 text-amber-600">Supplier Directory</button>
         <button className="px-4 py-2.5 text-sm font-medium border-b-2 border-transparent text-slate-500 hover:text-slate-700">Performance Ratings</button>
       </div>
 
@@ -88,7 +88,7 @@ export function SuppliersPage() {
                     <p className="text-sm font-medium text-slate-900">{supplier.name}</p>
                     <p className="text-xs text-slate-500">{supplier.contactEmail} · {supplier.category || "No category"}</p>
                   </div>
-                  <span className="px-2 py-1 text-xs font-medium bg-emerald-100 text-emerald-700 rounded-full">Active</span>
+                  <span className="px-2 py-1 text-xs font-medium bg-amber-100 text-amber-700 rounded-full">Active</span>
                 </div>
               ))}
             </div>
@@ -106,7 +106,7 @@ export function SuppliersPage() {
 
       <Card className="border-slate-200">
         <CardContent className="p-4">
-          <p className="text-base font-semibold text-slate-900 mb-4 flex items-center gap-2"><ShoppingCart className="h-4 w-4 text-emerald-600" /> Order History</p>
+          <p className="text-base font-semibold text-slate-900 mb-4 flex items-center gap-2"><ShoppingCart className="h-4 w-4 text-amber-600" /> Order History</p>
           <EmptyState icon={ShoppingCart} title="No orders placed yet" description="Purchase orders will appear here once you place orders with suppliers." />
         </CardContent>
       </Card>
@@ -171,7 +171,7 @@ export function SuppliersPage() {
               <Button variant="outline" onClick={() => setCreateOpen(false)} className={isDark ? "border-slate-600 text-slate-300 hover:bg-slate-700" : ""}>
                 Cancel
               </Button>
-              <Button onClick={handleSubmit} className="bg-emerald-600 hover:bg-emerald-700 text-white">
+              <Button onClick={handleSubmit} className="bg-amber-600 hover:bg-amber-700 text-white">
                 Add Supplier
               </Button>
             </div>

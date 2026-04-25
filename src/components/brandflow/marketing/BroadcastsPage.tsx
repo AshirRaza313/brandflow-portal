@@ -12,7 +12,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "
 import { Megaphone, Search, Plus } from "lucide-react";
 import { toast } from "sonner";
 import { motion, AnimatePresence } from "framer-motion";
-import { useBrandOnyxStore } from "@/store/brandflow-store";
+import { useValtrioxStore } from "@/store/brandflow-store";
 
 const subTabs = [
   { id: "whatsapp", label: "WhatsApp" },
@@ -30,7 +30,7 @@ interface Campaign {
 }
 
 export function BroadcastsPage() {
-  const { appTheme } = useBrandOnyxStore();
+  const { appTheme } = useValtrioxStore();
   const isDark = appTheme !== "light";
   const isGold = appTheme === "premium-dark";
   const [activeTab, setActiveTab] = useState("whatsapp");
@@ -55,7 +55,7 @@ export function BroadcastsPage() {
           <h1 className={`text-xl sm:text-2xl font-bold ${isDark ? "text-white" : "text-slate-900"}`}>Broadcasts & Campaigns</h1>
           <p className={`text-sm mt-1 ${isDark ? "text-slate-400" : "text-slate-500"}`}>Create and manage marketing campaigns</p>
         </div>
-        <Button className="bg-emerald-600 hover:bg-emerald-700" onClick={() => { setFormData({ name: "", channel: activeTab, message: "", target: "" }); setCreateOpen(true); }}>
+        <Button className="bg-amber-600 hover:bg-amber-700" onClick={() => { setFormData({ name: "", channel: activeTab, message: "", target: "" }); setCreateOpen(true); }}>
           <Plus className="mr-2 h-4 w-4" /> New Campaign
         </Button>
       </div>
@@ -69,7 +69,7 @@ export function BroadcastsPage() {
 
       <div className="flex flex-wrap gap-1 border-b border-slate-200">
         {subTabs.map((tab) => (
-          <button key={tab.id} onClick={() => setActiveTab(tab.id)} className={`flex items-center gap-2 px-4 py-2.5 text-sm font-medium border-b-2 transition-colors ${activeTab === tab.id ? "border-emerald-600 text-emerald-600" : "border-transparent text-slate-500 hover:text-slate-700"}`}>
+          <button key={tab.id} onClick={() => setActiveTab(tab.id)} className={`flex items-center gap-2 px-4 py-2.5 text-sm font-medium border-b-2 transition-colors ${activeTab === tab.id ? "border-amber-600 text-amber-600" : "border-transparent text-slate-500 hover:text-slate-700"}`}>
             {tab.label}
           </button>
         ))}
@@ -104,7 +104,7 @@ export function BroadcastsPage() {
             </div>
             <h3 className={`text-lg font-semibold mb-1 ${isDark ? "text-white" : "text-foreground"}`}>No campaigns yet</h3>
             <p className="text-sm text-muted-foreground max-w-sm mb-4">Create your first campaign to reach your customers!</p>
-            <Button className="bg-emerald-600 hover:bg-emerald-700" onClick={() => { setFormData({ name: "", channel: activeTab, message: "", target: "" }); setCreateOpen(true); }}>
+            <Button className="bg-amber-600 hover:bg-amber-700" onClick={() => { setFormData({ name: "", channel: activeTab, message: "", target: "" }); setCreateOpen(true); }}>
               <Plus className="mr-2 h-4 w-4" /> New Campaign
             </Button>
           </CardContent>
@@ -143,7 +143,7 @@ export function BroadcastsPage() {
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setCreateOpen(false)}>Cancel</Button>
-            <Button className="bg-emerald-600 hover:bg-emerald-700" onClick={handleSubmit}>Create Campaign</Button>
+            <Button className="bg-amber-600 hover:bg-amber-700" onClick={handleSubmit}>Create Campaign</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

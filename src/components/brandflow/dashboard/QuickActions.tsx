@@ -4,18 +4,18 @@ import { motion } from "framer-motion";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { ShoppingCart, Plus, FileBarChart, Brain } from "lucide-react";
-import { useBrandOnyxStore } from "@/store/brandflow-store";
+import { useValtrioxStore } from "@/store/brandflow-store";
 import { toast } from "sonner";
 
 const actions = [
-  { label: "New Order", icon: ShoppingCart, section: "orders", color: "bg-emerald-100 text-emerald-600 hover:bg-emerald-600 hover:text-white" },
+  { label: "New Order", icon: ShoppingCart, section: "orders", color: "bg-amber-100 text-amber-600 hover:bg-amber-600 hover:text-white" },
   { label: "Add Product", icon: Plus, section: "add-product", color: "bg-amber-100 text-amber-600 hover:bg-amber-600 hover:text-white" },
   { label: "View Reports", icon: FileBarChart, section: "sales-reports", color: "bg-blue-100 text-blue-600 hover:bg-blue-600 hover:text-white" },
-  { label: "AI Chat", icon: Brain, section: "ai-assistant", color: "bg-purple-100 text-purple-600 hover:bg-purple-600 hover:text-white" },
+  { label: "AI Chat", icon: Brain, section: "ai-assistant", color: "bg-amber-100 text-amber-600 hover:bg-amber-600 hover:text-white" },
 ];
 
 export function QuickActions() {
-  const { setActiveSection } = useBrandOnyxStore();
+  const { setActiveSection } = useValtrioxStore();
 
   return (
     <motion.div

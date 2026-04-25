@@ -11,7 +11,7 @@ const ALLOWED_ORIGINS = [
   // "https://yourdomain.com",
   // "https://app.yourdomain.com",
   // Vercel preview deployments
-  /^https:\/\/brandonix-portal.*\.vercel\.app$/,
+  /^https:\/\/valtriox-portal.*\.vercel\.app$/,
   /^https:\/\/.*-ashirraza313.*\.vercel\.app$/,
 ];
 
@@ -93,11 +93,11 @@ export function middleware(request: NextRequest) {
   // to forward modified request headers.
   let requestHeaders: Headers | undefined;
   if (pathname.startsWith("/api/") && !pathname.startsWith("/api/auth/") && !pathname.startsWith("/api/legal/")) {
-    const userId = request.cookies.get("bf-user-id")?.value;
+    const userId = request.cookies.get("vt-user-id")?.value;
     if (userId) {
-      const userEmail = request.cookies.get("bf-user-email")?.value;
-      const userRole = request.cookies.get("bf-user-role")?.value;
-      const orgId = request.cookies.get("bf-org-id")?.value;
+      const userEmail = request.cookies.get("vt-user-email")?.value;
+      const userRole = request.cookies.get("vt-user-role")?.value;
+      const orgId = request.cookies.get("vt-org-id")?.value;
 
       requestHeaders = new Headers(request.headers);
       requestHeaders.set("x-user-id", userId);

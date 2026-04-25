@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState, useCallback } from "react";
-import { useBrandOnyxStore } from "@/store/brandflow-store";
+import { useValtrioxStore } from "@/store/brandflow-store";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -45,8 +45,8 @@ const iconMap: Record<string, any> = {
 
 const typeColorMap: Record<string, { bg: string; text: string; border: string }> = {
   order: { bg: "bg-blue-500/10", text: "text-blue-400", border: "border-blue-500/20" },
-  product: { bg: "bg-emerald-500/10", text: "text-emerald-400", border: "border-emerald-500/20" },
-  customer: { bg: "bg-violet-500/10", text: "text-violet-400", border: "border-violet-500/20" },
+  product: { bg: "bg-amber-500/10", text: "text-amber-400", border: "border-amber-500/20" },
+  customer: { bg: "bg-yellow-500/10", text: "text-yellow-400", border: "border-yellow-500/20" },
   team: { bg: "bg-cyan-500/10", text: "text-cyan-400", border: "border-cyan-500/20" },
   payment: { bg: "bg-amber-500/10", text: "text-amber-400", border: "border-amber-500/20" },
   coupon: { bg: "bg-pink-500/10", text: "text-pink-400", border: "border-pink-500/20" },
@@ -73,7 +73,7 @@ function getRelativeTime(dateStr: string): string {
 // ── Component ──
 
 export function ActivityFeed() {
-  const { organization, appTheme, setActiveSection } = useBrandOnyxStore();
+  const { organization, appTheme, setActiveSection } = useValtrioxStore();
   const isGold = appTheme === "premium-dark";
   const isDark = appTheme === "dark" || isGold;
 
@@ -119,7 +119,7 @@ export function ActivityFeed() {
     <Card className={cn("transition-all duration-300", cardClass)}>
       <CardHeader className="flex flex-row items-center justify-between pb-2">
         <CardTitle className={cn("text-base font-semibold flex items-center gap-2", textPrimary)}>
-          <Activity className={cn("h-4 w-4", isGold ? "text-amber-400" : "text-emerald-500")} />
+          <Activity className={cn("h-4 w-4", isGold ? "text-amber-400" : "text-amber-500")} />
           Activity Feed
         </CardTitle>
         <Button
@@ -127,7 +127,7 @@ export function ActivityFeed() {
           size="sm"
           className={cn(
             "text-xs",
-            isGold ? "text-amber-400 hover:text-amber-300 hover:bg-amber-500/10" : "text-emerald-600 hover:text-emerald-700"
+            isGold ? "text-amber-400 hover:text-amber-300 hover:bg-amber-500/10" : "text-amber-600 hover:text-amber-700"
           )}
           onClick={() => setActiveSection("audit-log")}
         >
@@ -137,7 +137,7 @@ export function ActivityFeed() {
       <CardContent>
         {loading ? (
           <div className="flex items-center justify-center py-8">
-            <Loader2 className={cn("h-6 w-6 animate-spin", isGold ? "text-amber-400" : "text-emerald-500")} />
+            <Loader2 className={cn("h-6 w-6 animate-spin", isGold ? "text-amber-400" : "text-amber-500")} />
           </div>
         ) : activities.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-8 text-center">

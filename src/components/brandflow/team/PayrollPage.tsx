@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { useBrandOnyxStore } from "@/store/brandflow-store";
+import { useValtrioxStore } from "@/store/brandflow-store";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -47,9 +47,9 @@ const subTabs = [
 ];
 
 const categoryConfig: Record<string, { label: string; color: string; darkColor: string }> = {
-  marketing: { label: "Marketing", color: "bg-purple-100 text-purple-700", darkColor: "bg-purple-500/15 text-purple-400" },
+  marketing: { label: "Marketing", color: "bg-amber-100 text-amber-700", darkColor: "bg-amber-500/15 text-amber-400" },
   operations: { label: "Operations", color: "bg-blue-100 text-blue-700", darkColor: "bg-blue-500/15 text-blue-400" },
-  salaries: { label: "Salaries", color: "bg-emerald-100 text-emerald-700", darkColor: "bg-emerald-500/15 text-emerald-400" },
+  salaries: { label: "Salaries", color: "bg-amber-100 text-amber-700", darkColor: "bg-amber-500/15 text-amber-400" },
   rent: { label: "Rent", color: "bg-amber-100 text-amber-700", darkColor: "bg-amber-500/15 text-amber-400" },
   utilities: { label: "Utilities", color: "bg-cyan-100 text-cyan-700", darkColor: "bg-cyan-500/15 text-cyan-400" },
   shipping: { label: "Shipping", color: "bg-orange-100 text-orange-700", darkColor: "bg-orange-500/15 text-orange-400" },
@@ -59,7 +59,7 @@ const categoryConfig: Record<string, { label: string; color: string; darkColor: 
 // ── Component ──────────────────────────────────────────────────────────────
 
 export function PayrollPage() {
-  const { organization, appTheme } = useBrandOnyxStore();
+  const { organization, appTheme } = useValtrioxStore();
   const isGold = appTheme === "premium-dark";
   const isDark = appTheme === "dark" || isGold;
 
@@ -227,7 +227,7 @@ export function PayrollPage() {
             <Download className="mr-2 h-4 w-4" /> Export
           </Button>
           <Button
-            className={isGold ? "bg-gradient-to-r from-amber-600 via-yellow-500 to-amber-600 text-black hover:shadow-[0_4px_20px_rgba(212,160,23,0.3)] hover:-translate-y-0.5" : "bg-emerald-600 hover:bg-emerald-700"}
+            className={isGold ? "bg-gradient-to-r from-amber-600 via-yellow-500 to-amber-600 text-black hover:shadow-[0_4px_20px_rgba(212,160,23,0.3)] hover:-translate-y-0.5" : "bg-amber-600 hover:bg-amber-700"}
             onClick={() => {
               if (activeTab === "expenses") { setEditingExpense(null); setExpenseModalOpen(true); }
               else setEntryOpen(true);
@@ -258,8 +258,8 @@ export function PayrollPage() {
                 ? isGold
                   ? "border-amber-500 text-amber-400"
                   : isDark
-                    ? "border-emerald-500 text-emerald-400"
-                    : "border-emerald-600 text-emerald-600"
+                    ? "border-amber-500 text-amber-400"
+                    : "border-amber-600 text-amber-600"
                 : isDark
                   ? "border-transparent text-slate-500 hover:text-slate-300"
                   : "border-transparent text-slate-500 hover:text-slate-700"
@@ -329,7 +329,7 @@ export function PayrollPage() {
                 placeholder="Search expenses..."
                 value={expenseSearchInput}
                 onChange={(e) => handleExpenseSearchChange(e.target.value)}
-                className={cn("pl-9", isDark && "border-white/10 bg-white/[0.03] focus-visible:border-emerald-500/50 placeholder:text-slate-500")}
+                className={cn("pl-9", isDark && "border-white/10 bg-white/[0.03] focus-visible:border-amber-500/50 placeholder:text-slate-500")}
               />
             </div>
 
@@ -436,7 +436,7 @@ export function PayrollPage() {
                 <p className={cn("text-sm mb-4", textMuted)}>Generate comprehensive payroll and expense reports.</p>
                 <div className="flex flex-wrap gap-3 justify-center">
                   <Button
-                    className={isGold ? "bg-gradient-to-r from-amber-600 via-yellow-500 to-amber-600 text-black" : "bg-emerald-600 hover:bg-emerald-700"}
+                    className={isGold ? "bg-gradient-to-r from-amber-600 via-yellow-500 to-amber-600 text-black" : "bg-amber-600 hover:bg-amber-700"}
                     onClick={() => toast.success("PDF report downloaded successfully!")}
                   >
                     <Download className="mr-2 h-4 w-4" /> Download PDF
@@ -500,7 +500,7 @@ export function PayrollPage() {
             </div>
             <div className="flex justify-end gap-2 pt-2">
               <Button variant="outline" onClick={() => setEntryOpen(false)} className={cn(isGold && "border-white/10 text-slate-300 hover:bg-white/5")}>Cancel</Button>
-              <Button className={isGold ? "bg-gradient-to-r from-amber-600 via-yellow-500 to-amber-600 text-black" : "bg-emerald-600 hover:bg-emerald-700"} onClick={handleAddEntry}>Add Entry</Button>
+              <Button className={isGold ? "bg-gradient-to-r from-amber-600 via-yellow-500 to-amber-600 text-black" : "bg-amber-600 hover:bg-amber-700"} onClick={handleAddEntry}>Add Entry</Button>
             </div>
           </div>
         </DialogContent>

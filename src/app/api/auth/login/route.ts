@@ -21,12 +21,12 @@ function createLoginResponse(userData: any, orgData: any) {
     sameSite: "lax" as const,
   };
   if (userData) {
-    response.cookies.set("bf-user-id", userData.id, cookieOptions);
-    response.cookies.set("bf-user-email", userData.email || "", cookieOptions);
-    response.cookies.set("bf-user-role", userData.role || "member", cookieOptions);
+    response.cookies.set("vt-user-id", userData.id, cookieOptions);
+    response.cookies.set("vt-user-email", userData.email || "", cookieOptions);
+    response.cookies.set("vt-user-role", userData.role || "member", cookieOptions);
   }
   if (orgData) {
-    response.cookies.set("bf-org-id", orgData.id, cookieOptions);
+    response.cookies.set("vt-org-id", orgData.id, cookieOptions);
   }
   return response;
 }

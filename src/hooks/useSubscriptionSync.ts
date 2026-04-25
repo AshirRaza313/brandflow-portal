@@ -16,7 +16,7 @@
 "use client";
 
 import { useEffect, useRef, useCallback, useState } from "react";
-import { useBrandOnyxStore } from "@/store/brandflow-store";
+import { useValtrioxStore } from "@/store/brandflow-store";
 import { fetchWithAuth } from "@/lib/fetch-with-auth";
 import { PLAN_LEVELS } from "@/lib/feature-lock";
 
@@ -33,7 +33,7 @@ interface SubscriptionSyncState {
 }
 
 export function useSubscriptionSync() {
-  const { user, organization, setOrganization } = useBrandOnyxStore();
+  const { user, organization, setOrganization } = useValtrioxStore();
   const [state, setState] = useState<SubscriptionSyncState>({
     subscriptionPlan: "trial",
     subscriptionStatus: null,

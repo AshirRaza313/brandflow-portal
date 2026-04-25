@@ -16,20 +16,20 @@ export default function GlobalError({
   const companyName = identity.companyName;
 
   useEffect(() => {
-    console.error("BrandOnyx Application Error:", error);
+    console.error("Valtriox Application Error:", error);
   }, [error]);
 
   // Clear broken state and redirect to landing page
   const handleReset = () => {
     try {
-      localStorage.removeItem("brandonix-user");
-      localStorage.removeItem("brandonix-org");
-      localStorage.removeItem("brandonix-brandname");
-      localStorage.removeItem("brandonix-logo");
-      localStorage.removeItem("brandonix-tagline");
-      localStorage.removeItem("brandonix-configured");
-      localStorage.removeItem("brandonix-theme");
-      localStorage.removeItem("brandonix-language");
+      localStorage.removeItem("valtriox-user");
+      localStorage.removeItem("valtriox-org");
+      localStorage.removeItem("valtriox-brandname");
+      localStorage.removeItem("valtriox-logo");
+      localStorage.removeItem("valtriox-tagline");
+      localStorage.removeItem("valtriox-configured");
+      localStorage.removeItem("valtriox-theme");
+      localStorage.removeItem("valtriox-language");
     } catch {}
     // Full page reload to clear any broken React state
     window.location.href = "/";

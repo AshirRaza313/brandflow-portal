@@ -3,7 +3,7 @@
 import { motion } from "framer-motion";
 import { Lock, Crown, ArrowRight, Check } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { useBrandOnyxStore } from "@/store/brandflow-store";
+import { useValtrioxStore } from "@/store/brandflow-store";
 import { getFeatureLock, getLockedFeatures, FEATURE_LOCKS } from "@/lib/feature-lock";
 import { useMemo } from "react";
 
@@ -44,7 +44,7 @@ export function FeatureLockedOverlay({
   requiredPlan,
   currentPlan,
 }: FeatureLockedOverlayProps) {
-  const { setActiveSection, appTheme } = useBrandOnyxStore();
+  const { setActiveSection, appTheme } = useValtrioxStore();
   const isGold = appTheme === "premium-dark";
 
   const planLabel = requiredPlan === "growth" ? "Growth" : "Enterprise";
@@ -86,7 +86,7 @@ export function FeatureLockedOverlay({
         {/* Lock Icon */}
         <div
           className={`mx-auto w-16 h-16 rounded-2xl flex items-center justify-center mb-6 ${
-            isGold ? "bg-amber-500/10" : "bg-emerald-500/10"
+            isGold ? "bg-amber-500/10" : "bg-amber-500/10"
           }`}
           style={{
             boxShadow: isGold
@@ -95,7 +95,7 @@ export function FeatureLockedOverlay({
           }}
         >
           <Lock
-            className={`w-8 h-8 ${isGold ? "text-amber-400" : "text-emerald-400"}`}
+            className={`w-8 h-8 ${isGold ? "text-amber-400" : "text-amber-400"}`}
           />
         </div>
 
@@ -105,7 +105,7 @@ export function FeatureLockedOverlay({
         {/* Requirement Text */}
         <p
           className={`text-sm mb-1 ${
-            isGold ? "text-amber-200/80" : "text-emerald-200/80"
+            isGold ? "text-amber-200/80" : "text-amber-200/80"
           }`}
         >
           This feature requires the{" "}
@@ -125,7 +125,7 @@ export function FeatureLockedOverlay({
         }}>
           <p
             className={`text-[11px] font-semibold uppercase tracking-wider mb-3 ${
-              isGold ? "text-amber-500/70" : "text-emerald-500/70"
+              isGold ? "text-amber-500/70" : "text-amber-500/70"
             }`}
           >
             {planLabel} plan includes
@@ -135,7 +135,7 @@ export function FeatureLockedOverlay({
               <li key={i} className="flex items-start gap-2 text-xs text-slate-300">
                 <Check
                   className={`w-3.5 h-3.5 mt-0.5 flex-shrink-0 ${
-                    isGold ? "text-amber-400" : "text-emerald-400"
+                    isGold ? "text-amber-400" : "text-amber-400"
                   }`}
                 />
                 <span>{benefit}</span>
@@ -150,7 +150,7 @@ export function FeatureLockedOverlay({
           className={`w-full h-12 rounded-xl font-semibold text-sm transition-all ${
             isGold
               ? "bg-gradient-to-r from-amber-600 to-amber-500 hover:from-amber-500 hover:to-amber-400 text-black shadow-lg shadow-amber-500/20 hover:shadow-amber-500/30"
-              : "bg-gradient-to-r from-emerald-600 to-emerald-500 hover:from-emerald-500 hover:to-emerald-400 text-white shadow-lg shadow-emerald-500/20 hover:shadow-emerald-500/30"
+              : "bg-gradient-to-r from-amber-600 to-amber-500 hover:from-amber-500 hover:to-amber-400 text-white shadow-lg shadow-amber-500/20 hover:shadow-amber-500/30"
           }`}
         >
           <Crown className="w-4 h-4 mr-2" />

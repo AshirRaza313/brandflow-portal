@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { useBrandOnyxStore } from "@/store/brandflow-store";
+import { useValtrioxStore } from "@/store/brandflow-store";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -44,7 +44,7 @@ const subTabs = [
 // ── Component ──────────────────────────────────────────────────────────────
 
 export function CouponsPage() {
-  const { organization, appTheme } = useBrandOnyxStore();
+  const { organization, appTheme } = useValtrioxStore();
   const isGold = appTheme === "premium-dark";
   const isDark = appTheme === "dark" || isGold;
 
@@ -200,7 +200,7 @@ export function CouponsPage() {
 
   const getCouponCardBg = () => {
     if (isGold) return "bg-white/[0.03] border-white/[0.06] hover:border-amber-500/20";
-    if (isDark) return "bg-white/[0.03] border-white/[0.06] hover:border-emerald-500/20";
+    if (isDark) return "bg-white/[0.03] border-white/[0.06] hover:border-amber-500/20";
     return "bg-white border-slate-200 hover:border-slate-300 hover:shadow-sm";
   };
 
@@ -224,7 +224,7 @@ export function CouponsPage() {
             Refresh
           </Button>
           <Button
-            className={isGold ? "bg-gradient-to-r from-amber-600 via-yellow-500 to-amber-600 text-black hover:shadow-[0_4px_20px_rgba(212,160,23,0.3)] hover:-translate-y-0.5" : "bg-emerald-600 hover:bg-emerald-700"}
+            className={isGold ? "bg-gradient-to-r from-amber-600 via-yellow-500 to-amber-600 text-black hover:shadow-[0_4px_20px_rgba(212,160,23,0.3)] hover:-translate-y-0.5" : "bg-amber-600 hover:bg-amber-700"}
             onClick={openCreate}
           >
             <Plus className="mr-2 h-4 w-4" /> Create Coupon
@@ -254,8 +254,8 @@ export function CouponsPage() {
                   ? isGold
                     ? "border-amber-500 text-amber-400"
                     : isDark
-                      ? "border-emerald-500 text-emerald-400"
-                      : "border-emerald-600 text-emerald-600"
+                      ? "border-amber-500 text-amber-400"
+                      : "border-amber-600 text-amber-600"
                   : isDark
                     ? "border-transparent text-slate-500 hover:text-slate-300"
                     : "border-transparent text-slate-500 hover:text-slate-700"
@@ -268,8 +268,8 @@ export function CouponsPage() {
                   ? isGold
                     ? "bg-amber-500/20 text-amber-300"
                     : isDark
-                      ? "bg-emerald-500/20 text-emerald-300"
-                      : "bg-emerald-50 text-emerald-700"
+                      ? "bg-amber-500/20 text-amber-300"
+                      : "bg-amber-50 text-amber-700"
                   : isDark
                     ? "bg-white/5 text-slate-500"
                     : "bg-slate-100 text-slate-500"
@@ -288,7 +288,7 @@ export function CouponsPage() {
           placeholder="Search by coupon code..."
           value={searchInput}
           onChange={(e) => handleSearchChange(e.target.value)}
-          className={cn("pl-9", isDark && "border-white/10 bg-white/[0.03] focus-visible:border-emerald-500/50 placeholder:text-slate-500")}
+          className={cn("pl-9", isDark && "border-white/10 bg-white/[0.03] focus-visible:border-amber-500/50 placeholder:text-slate-500")}
         />
       </div>
 
@@ -371,12 +371,12 @@ export function CouponsPage() {
                     <div className="flex items-center gap-2">
                       <div className={cn(
                         "h-10 w-10 rounded-lg flex items-center justify-center",
-                        isGold ? "bg-amber-500/10" : isDark ? "bg-emerald-500/10" : "bg-emerald-100"
+                        isGold ? "bg-amber-500/10" : isDark ? "bg-amber-500/10" : "bg-amber-100"
                       )}>
                         {coupon.type === "percentage" ? (
-                          <Percent className={cn("h-5 w-5", isDark ? "text-amber-400" : "text-emerald-600")} />
+                          <Percent className={cn("h-5 w-5", isDark ? "text-amber-400" : "text-amber-600")} />
                         ) : (
-                          <Banknote className={cn("h-5 w-5", isDark ? "text-amber-400" : "text-emerald-600")} />
+                          <Banknote className={cn("h-5 w-5", isDark ? "text-amber-400" : "text-amber-600")} />
                         )}
                       </div>
                       <div>
@@ -407,7 +407,7 @@ export function CouponsPage() {
                   {/* Discount Value */}
                   <div className={cn(
                     "text-2xl font-bold mb-3",
-                    isGold ? "text-amber-400" : "text-emerald-600"
+                    isGold ? "text-amber-400" : "text-amber-600"
                   )}>
                     {coupon.type === "percentage"
                       ? `${coupon.value}%`
@@ -446,7 +446,7 @@ export function CouponsPage() {
                         <div
                           className={cn(
                             "h-full rounded-full transition-all",
-                            isUsedUp ? "bg-red-500" : isGold ? "bg-amber-500" : "bg-emerald-500"
+                            isUsedUp ? "bg-red-500" : isGold ? "bg-amber-500" : "bg-amber-500"
                           )}
                           style={{ width: `${Math.min((coupon.usageCount / coupon.usageLimit) * 100, 100)}%` }}
                         />
@@ -475,8 +475,8 @@ export function CouponsPage() {
                             ? isGold
                               ? "bg-amber-500/15 text-amber-400 border-amber-500/20"
                               : isDark
-                                ? "bg-emerald-500/15 text-emerald-400 border-emerald-500/20"
-                                : "bg-emerald-50 text-emerald-700 border-emerald-200"
+                                ? "bg-amber-500/15 text-amber-400 border-amber-500/20"
+                                : "bg-amber-50 text-amber-700 border-amber-200"
                             : isDark
                               ? "bg-white/5 text-slate-500 border-white/10"
                               : "bg-slate-50 text-slate-500 border-slate-200"

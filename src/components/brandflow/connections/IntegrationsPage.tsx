@@ -48,7 +48,7 @@ export function IntegrationsPage() {
           <h1 className="text-2xl font-bold text-slate-800">Integrations Hub</h1>
           <p className="text-sm text-slate-500 mt-1">Connect and manage third-party services for your {companyName} portal</p>
         </div>
-        <Button className="bg-emerald-600 hover:bg-emerald-700" onClick={() => setMarketplaceOpen(true)}>
+        <Button className="bg-amber-600 hover:bg-amber-700" onClick={() => setMarketplaceOpen(true)}>
           <Plus className="h-4 w-4 mr-2" /> Browse Marketplace
         </Button>
       </div>
@@ -69,8 +69,8 @@ export function IntegrationsPage() {
                   <p className="text-2xl font-bold text-slate-800 mt-1">{stat.value}</p>
                   {stat.sub && <p className="text-xs text-slate-500 mt-1">{stat.sub}</p>}
                 </div>
-                <div className="h-10 w-10 rounded-lg bg-emerald-100 flex items-center justify-center">
-                  <stat.icon className="h-5 w-5 text-emerald-600" />
+                <div className="h-10 w-10 rounded-lg bg-amber-100 flex items-center justify-center">
+                  <stat.icon className="h-5 w-5 text-amber-600" />
                 </div>
               </div>
             </CardContent>
@@ -148,8 +148,8 @@ export function IntegrationsPage() {
                 <div key={integration.id} className="flex flex-col sm:flex-row sm:items-center justify-between p-3 border rounded-lg hover:bg-muted/50 transition-colors gap-2">
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2">
-                      <div className="h-8 w-8 rounded-lg bg-emerald-100 flex items-center justify-center flex-shrink-0">
-                        <Zap className="h-4 w-4 text-emerald-600" />
+                      <div className="h-8 w-8 rounded-lg bg-amber-100 flex items-center justify-center flex-shrink-0">
+                        <Zap className="h-4 w-4 text-amber-600" />
                       </div>
                       <div className="min-w-0">
                         <p className="font-medium text-sm truncate">{integration.name}</p>

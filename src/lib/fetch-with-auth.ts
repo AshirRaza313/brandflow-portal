@@ -13,15 +13,15 @@
 // ============================================================================
 
 /**
- * Read auth data from localStorage (same keys as brandflow-store.ts).
+ * Read auth data from localStorage (same keys as valtriox-store.ts).
  * Returns null if not logged in.
- * Includes auto-migration from legacy keys (brandflow-*, brandforge-*) → brandonix-*
+ * Includes auto-migration from legacy keys (brandflow-*, brandforge-*) → valtriox-*
  */
 function migrateLegacyKeys() {
   try {
     if (typeof window === "undefined") return;
     const legacyPrefixes = ["brandforge", "brandflow"];
-    const newPrefix = "brandonix";
+    const newPrefix = "valtriox";
     const keySuffixes = ["-user", "-org", "-brandname", "-logo", "-tagline", "-configured", "-theme", "-language", "-appTheme"];
     for (const oldPrefix of legacyPrefixes) {
       for (const suffix of keySuffixes) {
@@ -49,8 +49,8 @@ function getAuthFromStorage(): { userId: string; email: string; role: string; or
   try {
     if (typeof window === "undefined") return null;
     migrateLegacyKeys();
-    const userStr = localStorage.getItem("brandonix-user");
-    const orgStr = localStorage.getItem("brandonix-org");
+    const userStr = localStorage.getItem("valtriox-user");
+    const orgStr = localStorage.getItem("valtriox-org");
     if (!userStr) return null;
 
     const user = JSON.parse(userStr);

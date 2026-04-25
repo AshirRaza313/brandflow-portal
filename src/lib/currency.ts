@@ -1,6 +1,6 @@
 // ============================================================================
 // Currency System — Country-to-Currency Mapping
-// BrandOnyx uses PKR as default (Pakistani portal), but supports multi-currency
+// Valtriox uses PKR as default (Pakistani portal), but supports multi-currency
 // ============================================================================
 
 export interface CurrencyInfo {

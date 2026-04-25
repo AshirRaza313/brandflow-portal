@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useRef, useCallback, useEffect } from "react";
-import { useBrandOnyxStore } from "@/store/brandflow-store";
+import { useValtrioxStore } from "@/store/brandflow-store";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -457,12 +457,12 @@ for (const tz of TIMEZONES) {
 // ============================================================================
 
 const SAMPLE_ACTIVE_EVENTS = [
-  { id: 1, name: "Eid al-Fitr", type: "Islamic", color: "#059669", icon: "🌙", status: "active" },
+  { id: 1, name: "Eid al-Fitr", type: "Islamic", color: "#C9A227", icon: "🌙", status: "active" },
   { id: 2, name: "Diwali Festival of Lights", type: "Hindu", color: "#D97706", icon: "🪔", status: "active" },
 ];
 
 const SAMPLE_UPCOMING_EVENTS = [
-  { id: 3, name: "Eid al-Adha", type: "Islamic", color: "#059669", icon: "🐑", date: "Jul 07, 2025", daysAway: 42 },
+  { id: 3, name: "Eid al-Adha", type: "Islamic", color: "#C9A227", icon: "🐑", date: "Jul 07, 2025", daysAway: 42 },
   { id: 4, name: "Christmas", type: "Christian", color: "#DC2626", icon: "🎄", date: "Dec 25, 2025", daysAway: 203 },
   { id: 5, name: "Holi", type: "Hindu", color: "#E11D48", icon: "🎨", date: "Mar 14, 2026", daysAway: 282 },
   { id: 6, name: "Vesak", type: "Buddhist", color: "#7C3AED", icon: "🪷", date: "May 12, 2025", daysAway: 15 },
@@ -476,11 +476,11 @@ const SAMPLE_UPCOMING_EVENTS = [
 // ============================================================================
 
 const presetColors = [
-  { name: "Emerald", value: "#059669" },
+  { name: "Emerald", value: "#C9A227" },
   { name: "Blue", value: "#2563eb" },
   { name: "Purple", value: "#7c3aed" },
   { name: "Rose", value: "#e11d48" },
-  { name: "Amber", value: "#d97706" },
+  { name: "Amber", value: "#C9A227" },
   { name: "Cyan", value: "#0891b2" },
   { name: "Slate", value: "#475569" },
   { name: "Pink", value: "#db2777" },
@@ -520,7 +520,7 @@ export function SettingsPage() {
     brandColor, setBrandColor, brandGradient, setBrandGradient, organization,
     setBrandName, setBrandLogo, setSelectedCountry, setSelectedReligion, setOrganization,
     appTheme, setAppTheme, brandName, setBrandTagline, setBrandConfigured,
-  } = useBrandOnyxStore();
+  } = useValtrioxStore();
   const [activeTab, setActiveTab] = useState("general");
 
   const isDark = appTheme !== "light";
@@ -1034,8 +1034,8 @@ export function SettingsPage() {
                 ? isGold
                   ? "border-amber-400 text-amber-400"
                   : isDark
-                    ? "border-emerald-400 text-emerald-400"
-                    : "border-emerald-600 text-emerald-600"
+                    ? "border-amber-400 text-amber-400"
+                    : "border-amber-600 text-amber-600"
                 : isDark
                   ? "border-transparent text-slate-500 hover:text-slate-300"
                   : "border-transparent text-slate-500 hover:text-slate-700"
@@ -1377,7 +1377,7 @@ export function SettingsPage() {
                     className={cn(
                       isGold
                         ? "bg-gradient-to-r from-amber-600 via-yellow-500 to-amber-600 text-black hover:shadow-[0_4px_20px_rgba(212,160,23,0.3)]"
-                        : "bg-emerald-600 hover:bg-emerald-700 text-white"
+                        : "bg-amber-600 hover:bg-amber-700 text-white"
                     )}
                   >
                     {saving ? (
@@ -1463,7 +1463,7 @@ export function SettingsPage() {
                             updateGradient();
                           }}
                           className="w-28 font-mono text-sm"
-                          placeholder="#059669"
+                          placeholder="#C9A227"
                         />
                         <div
                           className="h-9 px-3 rounded-lg text-white font-medium text-sm flex items-center"
@@ -1579,7 +1579,7 @@ export function SettingsPage() {
                                 appTheme === t.value
                                   ? t.value === "premium-dark"
                                     ? "border-amber-500 bg-amber-50 text-amber-700"
-                                    : "border-emerald-600 bg-emerald-50 text-emerald-700"
+                                    : "border-amber-600 bg-amber-50 text-amber-700"
                                   : "border-slate-200 hover:border-slate-300 text-slate-600"
                               }`}
                             >
@@ -1603,7 +1603,7 @@ export function SettingsPage() {
                             onClick={() => setFontSize(size)}
                             className={`flex items-center gap-2 px-4 py-2 rounded-lg border-2 text-sm font-medium transition-all ${
                               fontSize === size
-                                ? "border-emerald-600 bg-emerald-50 text-emerald-700"
+                                ? "border-amber-600 bg-amber-50 text-amber-700"
                                 : "border-slate-200 hover:border-slate-300 text-slate-600"
                             }`}
                           >
@@ -1631,10 +1631,10 @@ export function SettingsPage() {
                             className={`flex items-center gap-2 px-4 py-2 rounded-lg border-2 text-sm font-medium transition-all ${
                               borderRadius === style
                                 ? style === "sharp"
-                                  ? "border-emerald-600 bg-emerald-50 text-emerald-700"
+                                  ? "border-amber-600 bg-amber-50 text-amber-700"
                                   : style === "pill"
-                                    ? "border-emerald-600 bg-emerald-50 text-emerald-700 rounded-full"
-                                    : "border-emerald-600 bg-emerald-50 text-emerald-700 rounded-lg"
+                                    ? "border-amber-600 bg-amber-50 text-amber-700 rounded-full"
+                                    : "border-amber-600 bg-amber-50 text-amber-700 rounded-lg"
                                 : "border-slate-200 hover:border-slate-300 text-slate-600"
                             }`}
                             style={
@@ -1662,7 +1662,7 @@ export function SettingsPage() {
                     className={cn(
                       isGold
                         ? "bg-gradient-to-r from-amber-600 via-yellow-500 to-amber-600 text-black hover:shadow-[0_4px_20px_rgba(212,160,23,0.3)]"
-                        : "bg-emerald-600 hover:bg-emerald-700 text-white"
+                        : "bg-amber-600 hover:bg-amber-700 text-white"
                     )}
                   >
                     {saving ? (
@@ -1875,10 +1875,10 @@ export function SettingsPage() {
                       onClick={() => logoInputRef.current?.click()}
                       className={`border-2 border-dashed rounded-xl p-8 text-center cursor-pointer transition-all ${
                         logoDragOver
-                          ? "border-emerald-500 bg-emerald-50/50"
+                          ? "border-amber-500 bg-amber-50/50"
                           : logoPreview
-                            ? "border-slate-200 hover:border-emerald-300"
-                            : "border-slate-200 hover:border-emerald-300"
+                            ? "border-slate-200 hover:border-amber-300"
+                            : "border-slate-200 hover:border-amber-300"
                       }`}
                     >
                       {logoPreview ? (
@@ -1959,10 +1959,10 @@ export function SettingsPage() {
                       onClick={() => faviconInputRef.current?.click()}
                       className={`border-2 border-dashed rounded-xl p-6 text-center cursor-pointer transition-all ${
                         faviconDragOver
-                          ? "border-emerald-500 bg-emerald-50/50"
+                          ? "border-amber-500 bg-amber-50/50"
                           : faviconPreview
-                            ? "border-slate-200 hover:border-emerald-300"
-                            : "border-slate-200 hover:border-emerald-300"
+                            ? "border-slate-200 hover:border-amber-300"
+                            : "border-slate-200 hover:border-amber-300"
                       }`}
                     >
                       {faviconPreview ? (
@@ -2015,7 +2015,7 @@ export function SettingsPage() {
                   className={cn(
                     isGold
                       ? "bg-gradient-to-r from-amber-600 via-yellow-500 to-amber-600 text-black hover:shadow-[0_4px_20px_rgba(212,160,23,0.3)]"
-                      : "bg-emerald-600 hover:bg-emerald-700 text-white"
+                      : "bg-amber-600 hover:bg-amber-700 text-white"
                   )}
                 >
                   {saving ? (
@@ -2213,7 +2213,7 @@ export function SettingsPage() {
                 <Card className={cn(isDark ? "bg-white/[0.03] border-white/[0.06]" : "")}>
                   <CardHeader className="pb-3">
                     <CardTitle className={cn("text-base flex items-center gap-2", isDark ? "text-white" : "")}>
-                      <Calendar className="h-4 w-4 text-emerald-600" />
+                      <Calendar className="h-4 w-4 text-amber-600" />
                       Active Events Today
                       <Badge variant="secondary" className="ml-auto text-xs">
                         {SAMPLE_ACTIVE_EVENTS.length}

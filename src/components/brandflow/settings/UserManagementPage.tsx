@@ -17,7 +17,7 @@ import {
 import { toast } from "sonner";
 import { motion, AnimatePresence } from "framer-motion";
 import { EmptyState } from "@/components/brandflow/shared/EmptyState";
-import { useBrandOnyxStore } from "@/store/brandflow-store";
+import { useValtrioxStore } from "@/store/brandflow-store";
 import { usePlatformIdentity } from "@/lib/platform-identity";
 import {
   ROLES,
@@ -66,7 +66,7 @@ const subTabs = [
 // ── Component ──────────────────────────────────────────────────────────────
 
 export function UserManagementPage() {
-  const { organization, user, appTheme } = useBrandOnyxStore();
+  const { organization, user, appTheme } = useValtrioxStore();
   const { identity } = usePlatformIdentity();
   const companyName = identity.companyName;
   const isGold = appTheme === "premium-dark";
@@ -251,7 +251,7 @@ export function UserManagementPage() {
         </div>
         {activeTab === "users" && (
           <Button
-            className={isGold ? "bg-gradient-to-r from-amber-600 via-yellow-500 to-amber-600 text-black" : "bg-emerald-600 hover:bg-emerald-700"}
+            className={isGold ? "bg-gradient-to-r from-amber-600 via-yellow-500 to-amber-600 text-black" : "bg-amber-600 hover:bg-amber-700"}
             onClick={() => setInviteOpen(true)}
           >
             <Plus className="mr-2 h-4 w-4" /> Invite User
@@ -271,8 +271,8 @@ export function UserManagementPage() {
                 ? isGold
                   ? "border-amber-500 text-amber-400"
                   : isDark
-                    ? "border-emerald-500 text-emerald-400"
-                    : "border-emerald-600 text-emerald-600"
+                    ? "border-amber-500 text-amber-400"
+                    : "border-amber-600 text-amber-600"
                 : isDark
                   ? "border-transparent text-slate-500 hover:text-slate-300"
                   : "border-transparent text-slate-500 hover:text-slate-700"
@@ -331,14 +331,14 @@ export function UserManagementPage() {
                       className={cn(
                         "group flex items-center justify-between gap-3 rounded-xl border p-3 sm:p-4 transition-all",
                         getCardBg(),
-                        isDark && "hover:border-emerald-500/20",
+                        isDark && "hover:border-amber-500/20",
                         !isDark && "hover:border-slate-300 hover:shadow-sm"
                       )}
                     >
                       <div className="flex items-center gap-3 min-w-0">
                         <div className={cn(
                           "flex h-9 w-9 items-center justify-center rounded-full text-xs font-bold text-white flex-shrink-0",
-                          isPlatform ? "bg-gradient-to-br from-amber-500 to-orange-600" : "bg-gradient-to-br from-emerald-500 to-teal-600"
+                          isPlatform ? "bg-gradient-to-br from-amber-500 to-orange-600" : "bg-gradient-to-br from-amber-500 to-teal-600"
                         )}>
                           {member.user.name.split(" ").map((n) => n[0]).join("").toUpperCase().slice(0, 2)}
                         </div>
@@ -402,7 +402,7 @@ export function UserManagementPage() {
                   className={cn(
                     "group rounded-xl border p-4 transition-all cursor-pointer",
                     getCardBg(),
-                    isDark && "hover:border-emerald-500/20",
+                    isDark && "hover:border-amber-500/20",
                     !isDark && "hover:border-slate-300 hover:shadow-sm"
                   )}
                   onClick={() => {
@@ -480,7 +480,7 @@ export function UserManagementPage() {
                             return (
                               <td key={key} className="text-center py-3 px-2">
                                 {hasAccess ? (
-                                  <Check className={cn("h-4 w-4 mx-auto", isGold ? "text-amber-400" : "text-emerald-500")} />
+                                  <Check className={cn("h-4 w-4 mx-auto", isGold ? "text-amber-400" : "text-amber-500")} />
                                 ) : (
                                   <X className={cn("h-4 w-4 mx-auto opacity-30", isDark ? "text-slate-600" : "text-slate-300")} />
                                 )}
@@ -549,7 +549,7 @@ export function UserManagementPage() {
             <div className="flex justify-end gap-2 pt-2">
               <Button variant="outline" onClick={() => setInviteOpen(false)} className={cn(isGold && "border-white/10 text-slate-300 hover:bg-white/5")}>Cancel</Button>
               <Button
-                className={isGold ? "bg-gradient-to-r from-amber-600 via-yellow-500 to-amber-600 text-black" : "bg-emerald-600 hover:bg-emerald-700"}
+                className={isGold ? "bg-gradient-to-r from-amber-600 via-yellow-500 to-amber-600 text-black" : "bg-amber-600 hover:bg-amber-700"}
                 onClick={handleInvite}
                 disabled={inviteLoading}
               >
@@ -572,7 +572,7 @@ export function UserManagementPage() {
           {editingMember && (
             <div className="space-y-4">
               <div className="flex items-center gap-3">
-                <div className="flex h-9 w-9 items-center justify-center rounded-full bg-gradient-to-br from-emerald-500 to-teal-600 text-xs font-bold text-white">
+                <div className="flex h-9 w-9 items-center justify-center rounded-full bg-gradient-to-br from-amber-500 to-teal-600 text-xs font-bold text-white">
                   {editingMember.user.name.split(" ").map((n) => n[0]).join("").toUpperCase().slice(0, 2)}
                 </div>
                 <div className="min-w-0">
@@ -634,14 +634,14 @@ export function UserManagementPage() {
                           <p className={cn("text-xs mb-2", textMuted)}>{role.description}</p>
                           <div className="flex flex-wrap gap-1">
                             {role.permissions.all ? (
-                              <Badge variant="outline" className="text-[10px] bg-emerald-500/10 text-emerald-600 border-emerald-200">
+                              <Badge variant="outline" className="text-[10px] bg-amber-500/10 text-amber-600 border-amber-200">
                                 <Check className="h-2.5 w-2.5 mr-1" /> Full Access
                               </Badge>
                             ) : (
                               Object.entries(role.permissions)
                                 .filter(([, v]) => v === true)
                                 .map(([key]) => (
-                                  <Badge key={key} variant="outline" className="text-[10px] bg-emerald-500/10 text-emerald-600 border-emerald-200">
+                                  <Badge key={key} variant="outline" className="text-[10px] bg-amber-500/10 text-amber-600 border-amber-200">
                                     {PERMISSION_LABELS[key] || key}
                                   </Badge>
                                 ))
@@ -657,7 +657,7 @@ export function UserManagementPage() {
               <div className="flex justify-end gap-2 pt-2">
                 <Button variant="outline" onClick={() => setEditRoleOpen(false)} className={cn(isGold && "border-white/10 text-slate-300 hover:bg-white/5")}>Cancel</Button>
                 <Button
-                  className={isGold ? "bg-gradient-to-r from-amber-600 via-yellow-500 to-amber-600 text-black" : "bg-emerald-600 hover:bg-emerald-700"}
+                  className={isGold ? "bg-gradient-to-r from-amber-600 via-yellow-500 to-amber-600 text-black" : "bg-amber-600 hover:bg-amber-700"}
                   onClick={handleRoleUpdate}
                   disabled={roleLoading || !newRoleId}
                 >
@@ -705,8 +705,8 @@ export function UserManagementPage() {
                           "flex items-center gap-2 rounded-lg px-3 py-2 text-xs border",
                           hasAccess
                             ? isDark
-                              ? "bg-emerald-500/10 border-emerald-500/20 text-emerald-400"
-                              : "bg-emerald-50 border-emerald-200 text-emerald-700"
+                              ? "bg-amber-500/10 border-amber-500/20 text-amber-400"
+                              : "bg-amber-50 border-amber-200 text-amber-700"
                             : isDark
                               ? "bg-white/[0.02] border-white/[0.06] text-slate-600"
                               : "bg-slate-50 border-slate-200 text-slate-400"

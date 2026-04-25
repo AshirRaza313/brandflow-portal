@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useRef, useMemo } from "react";
-import { useBrandOnyxStore, type SidebarSection } from "@/store/brandflow-store";
+import { useValtrioxStore, type SidebarSection } from "@/store/brandflow-store";
 import {
   Search,
   Menu,
@@ -91,14 +91,14 @@ function getRoleBadgeColor(role: string, isDark: boolean): string {
   const map: Record<string, { light: string; dark: string }> = {
     platform_owner: { light: "bg-amber-100 text-amber-800 border-amber-200", dark: "bg-amber-500/15 text-amber-400 border-amber-500/25" },
     platform_admin: { light: "bg-orange-100 text-orange-800 border-orange-200", dark: "bg-orange-500/15 text-orange-400 border-orange-500/25" },
-    brand_owner: { light: "bg-purple-100 text-purple-800 border-purple-200", dark: "bg-purple-500/15 text-purple-400 border-purple-500/25" },
-    brand_admin: { light: "bg-violet-100 text-violet-800 border-violet-200", dark: "bg-violet-500/15 text-violet-400 border-violet-500/25" },
-    ceo: { light: "bg-emerald-100 text-emerald-800 border-emerald-200", dark: "bg-emerald-500/15 text-emerald-400 border-emerald-500/25" },
+    brand_owner: { light: "bg-amber-100 text-amber-800 border-amber-200", dark: "bg-amber-500/15 text-amber-400 border-amber-500/25" },
+    brand_admin: { light: "bg-yellow-100 text-yellow-800 border-yellow-200", dark: "bg-yellow-500/15 text-yellow-400 border-yellow-500/25" },
+    ceo: { light: "bg-amber-100 text-amber-800 border-amber-200", dark: "bg-amber-500/15 text-amber-400 border-amber-500/25" },
     owner: { light: "bg-amber-100 text-amber-800 border-amber-200", dark: "bg-amber-500/15 text-amber-400 border-amber-500/25" },
     admin: { light: "bg-rose-100 text-rose-800 border-rose-200", dark: "bg-rose-500/15 text-rose-400 border-rose-500/25" },
     manager: { light: "bg-sky-100 text-sky-800 border-sky-200", dark: "bg-sky-500/15 text-sky-400 border-sky-500/25" },
     member: { light: "bg-slate-100 text-slate-600 border-slate-200", dark: "bg-white/10 text-slate-400 border-white/10" },
-    editor: { light: "bg-violet-100 text-violet-800 border-violet-200", dark: "bg-violet-500/15 text-violet-400 border-violet-500/25" },
+    editor: { light: "bg-yellow-100 text-yellow-800 border-yellow-200", dark: "bg-yellow-500/15 text-yellow-400 border-yellow-500/25" },
   };
   const entry = map[role?.toLowerCase()] || map.member;
   return isDark ? entry.dark : entry.light;
@@ -185,7 +185,7 @@ function MonthCalendar({
                   ? "bg-amber-500 text-white font-bold"
                   : appTheme === "dark"
                   ? "bg-blue-500 text-white font-bold"
-                  : "bg-emerald-500 text-white font-bold"
+                  : "bg-amber-500 text-white font-bold"
                 : appTheme === "light"
                 ? "text-slate-700 hover:bg-slate-100"
                 : "text-slate-300 hover:bg-white/8"
@@ -201,7 +201,7 @@ function MonthCalendar({
         <button
           onClick={() => setViewDate(new Date())}
           className={cn("text-[11px] font-medium transition-colors",
-            appTheme === "premium-dark" ? "text-amber-400 hover:text-amber-300" : "text-emerald-600 hover:text-emerald-500"
+            appTheme === "premium-dark" ? "text-amber-400 hover:text-amber-300" : "text-amber-600 hover:text-amber-500"
           )}
         >
           Go to Today
@@ -403,7 +403,7 @@ export function Header() {
     language,
     setLanguage,
     selectedCountry,
-  } = useBrandOnyxStore();
+  } = useValtrioxStore();
 
   // ── Auto-notifications: poll for new DB notifications and show Sonner toasts ──
   useAutoNotifications({
@@ -584,8 +584,8 @@ export function Header() {
                       appTheme === "premium-dark"
                         ? "linear-gradient(135deg, #d4a017, #b8860b)"
                         : appTheme === "dark"
-                        ? "#10b981"
-                        : "#059669",
+                        ? "#D4AF37"
+                        : "#C9A227",
                   }}
                 >
                   <span className="text-white font-bold text-[9px] leading-none">
@@ -680,7 +680,7 @@ export function Header() {
                 searchFocused
                   ? appTheme === "premium-dark"
                     ? "border-amber-500/50 ring-2 ring-amber-500/20 bg-[#111118] shadow-sm"
-                    : "border-emerald-300 ring-2 ring-emerald-100 bg-white shadow-sm"
+                    : "border-amber-300 ring-2 ring-amber-100 bg-white shadow-sm"
                   : appTheme === "premium-dark"
                   ? "border-white/10 bg-white/5 hover:border-white/20 hover:bg-white/[0.07]"
                   : "border-slate-200 bg-slate-50/80 hover:border-slate-300 hover:bg-white"
@@ -779,7 +779,7 @@ export function Header() {
                               "h-6 w-6 rounded-md flex items-center justify-center transition-colors",
                               appTheme === "premium-dark"
                                 ? "bg-white/[0.06] group-hover:bg-amber-500/10"
-                                : "bg-slate-100 group-hover:bg-emerald-50"
+                                : "bg-slate-100 group-hover:bg-amber-50"
                             )}
                           >
                             {meta.icon || (
@@ -864,7 +864,7 @@ export function Header() {
                         ? "text-amber-400"
                         : appTheme === "dark"
                         ? "text-blue-400"
-                        : "text-emerald-600"
+                        : "text-amber-600"
                     )}
                   />
                   <span className="text-[12px] font-mono font-medium tabular-nums whitespace-nowrap">
@@ -903,7 +903,7 @@ export function Header() {
                             ? "bg-amber-500/20 text-amber-400"
                             : appTheme === "dark"
                             ? "bg-blue-500/20 text-blue-400"
-                            : "bg-emerald-500/20 text-emerald-600"
+                            : "bg-amber-500/20 text-amber-600"
                         )}
                       >
                         {currentTime.getDate()}
@@ -985,14 +985,14 @@ export function Header() {
                         background:
                           appTheme === "premium-dark"
                             ? "linear-gradient(135deg, #d4a017, #b8860b)"
-                            : "linear-gradient(135deg, #10b981, #059669)",
+                            : "linear-gradient(135deg, #D4AF37, #C9A227)",
                       }}
                     >
                       {initials}
                     </AvatarFallback>
                   </Avatar>
                   {/* Online status indicator */}
-                  <span className="absolute -bottom-0.5 -right-0.5 h-2.5 w-2.5 rounded-full bg-emerald-500 ring-[1.5px] ring-white" />
+                  <span className="absolute -bottom-0.5 -right-0.5 h-2.5 w-2.5 rounded-full bg-amber-500 ring-[1.5px] ring-white" />
                 </div>
 
                 {/* Name + Role — visible on 2xl+ only to avoid pushing icons off-screen */}
@@ -1058,13 +1058,13 @@ export function Header() {
                           background:
                             appTheme === "premium-dark"
                               ? "linear-gradient(135deg, #d4a017, #b8860b)"
-                              : "linear-gradient(135deg, #10b981, #059669)",
+                              : "linear-gradient(135deg, #D4AF37, #C9A227)",
                         }}
                       >
                         {initials}
                       </AvatarFallback>
                     </Avatar>
-                    <span className="absolute -bottom-0.5 -right-0.5 h-3 w-3 rounded-full bg-emerald-500 ring-2 ring-white" />
+                    <span className="absolute -bottom-0.5 -right-0.5 h-3 w-3 rounded-full bg-amber-500 ring-2 ring-white" />
                   </div>
                   <div className="min-w-0">
                     <p className={cn("text-sm font-semibold truncate", textPrimary)}>
@@ -1171,7 +1171,7 @@ export function Header() {
                   className={cn(
                     "pl-9 h-10 text-sm border-0 focus-visible:ring-2",
                     appTheme === "light"
-                      ? "bg-slate-50 focus-visible:ring-emerald-300 text-slate-800"
+                      ? "bg-slate-50 focus-visible:ring-amber-300 text-slate-800"
                       : "bg-white/5 focus-visible:ring-amber-500/50 text-white placeholder:text-slate-500"
                   )}
                   autoFocus

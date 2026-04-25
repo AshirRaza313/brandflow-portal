@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState, useCallback } from "react";
-import { useBrandOnyxStore } from "@/store/brandflow-store";
+import { useValtrioxStore } from "@/store/brandflow-store";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   ShoppingBag,
@@ -58,7 +58,7 @@ interface DailySummary {
 // ── Component ──
 
 export function DailySummaryWidget() {
-  const { organization, appTheme } = useBrandOnyxStore();
+  const { organization, appTheme } = useValtrioxStore();
   const isGold = appTheme === "premium-dark";
   const isDark = appTheme === "dark" || isGold;
 
@@ -100,8 +100,8 @@ export function DailySummaryWidget() {
   const textSecondary = isDark ? "text-slate-400" : "text-slate-500";
   const textMuted = isDark ? "text-slate-500" : "text-muted-foreground";
 
-  const accentColor = isGold ? "text-amber-400" : "text-emerald-500";
-  const accentBg = isGold ? "bg-amber-500/10" : "bg-emerald-500/10";
+  const accentColor = isGold ? "text-amber-400" : "text-amber-500";
+  const accentBg = isGold ? "bg-amber-500/10" : "bg-amber-500/10";
 
   const ChangeIndicator = ({ value }: { value: number }) => {
     if (value === 0) return null;
@@ -109,7 +109,7 @@ export function DailySummaryWidget() {
     return (
       <span className={cn(
         "flex items-center text-[10px] font-medium",
-        isPositive ? (isGold ? "text-amber-400" : "text-emerald-500") : "text-red-400"
+        isPositive ? (isGold ? "text-amber-400" : "text-amber-500") : "text-red-400"
       )}>
         {isPositive ? <ArrowUpRight className="h-2.5 w-2.5" /> : <ArrowDownRight className="h-2.5 w-2.5" />}
         {Math.abs(value)}%

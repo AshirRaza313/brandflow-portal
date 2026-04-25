@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useMemo, useEffect } from "react";
-import { useBrandOnyxStore } from "@/store/brandflow-store";
+import { useValtrioxStore } from "@/store/brandflow-store";
 import { usePlatformIdentity } from "@/lib/platform-identity";
 import {
   Dialog,
@@ -33,7 +33,7 @@ export function AuthModal() {
     brandLogo,
     brandName,
     brandTagline,
-  } = useBrandOnyxStore();
+  } = useValtrioxStore();
 
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
@@ -55,7 +55,7 @@ export function AuthModal() {
 
   // Use brand identity if configured, otherwise default to platform identity
   const showBrandIdentity = brandConfigured && brandName;
-  const displayLogo = showBrandIdentity ? brandLogo : "/brandonix-logo.png";
+  const displayLogo = showBrandIdentity ? brandLogo : "/valtriox-logo.png";
   const displayName = showBrandIdentity ? brandName : platformIdentity.companyName;
 
   // Sync tab with authModalMode

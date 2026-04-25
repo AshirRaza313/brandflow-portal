@@ -2,7 +2,7 @@
 
 import { useState, useMemo, useCallback, useRef, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { useBrandOnyxStore } from "@/store/brandflow-store";
+import { useValtrioxStore } from "@/store/brandflow-store";
 import {
   Card,
   CardContent,
@@ -121,7 +121,7 @@ function getRoleColor(role: string, isDark: boolean): string {
     return isDark ? "text-amber-400" : "text-amber-600";
   }
   if (role === "brand_admin") {
-    return isDark ? "text-violet-400" : "text-violet-600";
+    return isDark ? "text-yellow-400" : "text-yellow-600";
   }
   if (role === "operations_manager" || role === "manager") {
     return isDark ? "text-blue-400" : "text-blue-600";
@@ -140,8 +140,8 @@ function getInitials(name: string): string {
 
 function getAvatarColor(name: string): string {
   const colors = [
-    "bg-blue-500", "bg-emerald-500", "bg-violet-500", "bg-rose-500",
-    "bg-amber-500", "bg-cyan-500", "bg-pink-500", "bg-indigo-500",
+    "bg-blue-500", "bg-amber-500", "bg-yellow-500", "bg-rose-500",
+    "bg-amber-500", "bg-cyan-500", "bg-pink-500", "bg-amber-500",
   ];
   let hash = 0;
   for (let i = 0; i < name.length; i++) hash = name.charCodeAt(i) + ((hash << 5) - hash);
@@ -205,8 +205,8 @@ function ChannelListItem({
   isGold: boolean;
   onClick: () => void;
 }) {
-  const accentBg = isGold ? "bg-amber-500/15" : "bg-emerald-500/15";
-  const accentText = isGold ? "text-amber-400" : "text-emerald-400";
+  const accentBg = isGold ? "bg-amber-500/15" : "bg-amber-500/15";
+  const accentText = isGold ? "text-amber-400" : "text-amber-400";
 
   return (
     <button
@@ -228,7 +228,7 @@ function ChannelListItem({
             {channel.name}
           </span>
           {channel.unreadCount > 0 && (
-            <Badge className={`h-4 min-w-[16px] text-[9px] px-1 ${isGold ? "bg-amber-500/20 text-amber-400" : "bg-emerald-500/20 text-emerald-500"}`}>
+            <Badge className={`h-4 min-w-[16px] text-[9px] px-1 ${isGold ? "bg-amber-500/20 text-amber-400" : "bg-amber-500/20 text-amber-500"}`}>
               {channel.unreadCount}
             </Badge>
           )}
@@ -260,7 +260,7 @@ function VoiceNotePlayer({
   const [playbackTime, setPlaybackTime] = useState(0);
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
-  const accentClass = isGold ? "text-amber-400" : "text-emerald-400";
+  const accentClass = isGold ? "text-amber-400" : "text-amber-400";
 
   const handlePlay = useCallback(() => {
     if (!audioRef.current) {
@@ -304,7 +304,7 @@ function VoiceNotePlayer({
       <div className="flex-1 min-w-0">
         <div className={`h-1 rounded-full overflow-hidden ${isDark ? "bg-white/[0.1]" : "bg-slate-200"}`}>
           <motion.div
-            className={`h-full rounded-full ${isGold ? "bg-amber-400" : "bg-emerald-400"}`}
+            className={`h-full rounded-full ${isGold ? "bg-amber-400" : "bg-amber-400"}`}
             initial={{ width: 0 }}
             animate={{ width: `${progress}%` }}
             transition={{ duration: 0.1 }}
@@ -496,7 +496,7 @@ function MessageBubble({
                 isOwn
                   ? isGold
                     ? "bg-amber-500/15 text-amber-100 rounded-tr-md"
-                    : "bg-emerald-500/15 text-emerald-100 rounded-tr-md"
+                    : "bg-amber-500/15 text-amber-100 rounded-tr-md"
                   : isDark
                     ? "bg-white/[0.06] text-slate-200 rounded-tl-md"
                     : "bg-white text-slate-700 rounded-tl-md border border-slate-100 shadow-sm"
@@ -515,7 +515,7 @@ function MessageBubble({
                 isOwn
                   ? isGold
                     ? "bg-amber-500/15 text-amber-100 rounded-tr-md"
-                    : "bg-emerald-500/15 text-emerald-100 rounded-tr-md"
+                    : "bg-amber-500/15 text-amber-100 rounded-tr-md"
                   : isDark
                     ? "bg-white/[0.06] text-slate-200 rounded-tl-md"
                     : "bg-white text-slate-700 rounded-tl-md border border-slate-100 shadow-sm"
@@ -532,7 +532,7 @@ function MessageBubble({
             isOwn
               ? isGold
                 ? "bg-amber-500/15 text-amber-100 rounded-tr-md"
-                : "bg-emerald-500/15 text-emerald-100 rounded-tr-md"
+                : "bg-amber-500/15 text-amber-100 rounded-tr-md"
               : isDark
                 ? "bg-white/[0.06] text-slate-200 rounded-tl-md"
                 : "bg-white text-slate-700 rounded-tl-md border border-slate-100 shadow-sm"
@@ -606,7 +606,7 @@ function VoiceRecordingBar({
   const [time, setTime] = useState(0);
   const onStopRef = useRef(onStop);
   onStopRef.current = onStop;
-  const accentClass = isGold ? "text-amber-500" : "text-emerald-500";
+  const accentClass = isGold ? "text-amber-500" : "text-amber-500";
 
   // Start recording when component mounts
   useEffect(() => {
@@ -744,7 +744,7 @@ function VoiceRecordingBar({
           {Array.from({ length: 20 }).map((_, i) => (
             <motion.div
               key={i}
-              className={`w-0.5 rounded-full ${isGold ? "bg-amber-500/40" : "bg-emerald-500/40"}`}
+              className={`w-0.5 rounded-full ${isGold ? "bg-amber-500/40" : "bg-amber-500/40"}`}
               animate={{
                 height: [4, 8 + Math.random() * 12, 4],
               }}
@@ -768,7 +768,7 @@ function VoiceRecordingBar({
       </Button>
       <Button
         size="sm"
-        className={`h-7 w-7 p-0 ${isGold ? "bg-amber-600 hover:bg-amber-700 text-white" : "bg-emerald-600 hover:bg-emerald-700 text-white"}`}
+        className={`h-7 w-7 p-0 ${isGold ? "bg-amber-600 hover:bg-amber-700 text-white" : "bg-amber-600 hover:bg-amber-700 text-white"}`}
         onClick={stopRecording}
         title="Send"
       >
@@ -791,7 +791,7 @@ function TeamInfoPanel({
   isGold: boolean;
   accentClass: string;
 }) {
-  const { user, brandName } = useBrandOnyxStore();
+  const { user, brandName } = useValtrioxStore();
   const members = useMemo(() => {
     const names = user ? [user.name] : [];
     if (brandName) names.push(`${brandName} Team`);
@@ -821,7 +821,7 @@ function TeamInfoPanel({
                 {name === user?.name ? "You" : "Member"}
               </p>
             </div>
-            <div className="ml-auto h-2 w-2 rounded-full bg-emerald-500" title="Online" />
+            <div className="ml-auto h-2 w-2 rounded-full bg-amber-500" title="Online" />
           </div>
         ))}
       </CardContent>
@@ -884,12 +884,12 @@ function AttachmentPreview({
 // ============================================================================
 
 export function TeamChatPage() {
-  const { user, brandName, appTheme, organization } = useBrandOnyxStore();
+  const { user, brandName, appTheme, organization } = useValtrioxStore();
 
   const isDark = appTheme === "premium-dark" || appTheme === "dark";
   const isGold = appTheme === "premium-dark";
-  const accentClass = isGold ? "text-amber-500" : "text-emerald-500";
-  const accentBg = isGold ? "bg-amber-500/15" : "bg-emerald-500/15";
+  const accentClass = isGold ? "text-amber-500" : "text-amber-500";
+  const accentBg = isGold ? "bg-amber-500/15" : "bg-amber-500/15";
 
   // Platform role check — admin cannot access Team Chat
   const userRole = user?.role || "viewer";
@@ -913,7 +913,7 @@ export function TeamChatPage() {
 
   // Load messages from localStorage (brand-isolated by organization)
   const orgId = organization?.id || "default";
-  const storageKey = `brandonix-chat-${orgId}-${activeChannelId}`;
+  const storageKey = `valtriox-chat-${orgId}-${activeChannelId}`;
   const [messages, setMessages] = useState<ChatMessage[]>(() => {
     try {
       if (typeof window === "undefined") return [];
@@ -1129,9 +1129,9 @@ export function TeamChatPage() {
           }`}
         >
           <div className={`mx-auto w-16 h-16 rounded-2xl flex items-center justify-center mb-5 ${
-            isGold ? "bg-amber-500/10" : "bg-emerald-500/10"
+            isGold ? "bg-amber-500/10" : "bg-amber-500/10"
           }`}>
-            <MessageCircle className={`w-8 h-8 ${isGold ? "text-amber-400" : "text-emerald-400"}`} />
+            <MessageCircle className={`w-8 h-8 ${isGold ? "text-amber-400" : "text-amber-400"}`} />
           </div>
           <h2 className={`text-lg font-bold mb-2 ${isDark ? "text-white" : "text-slate-900"}`}>
             Team Chat
@@ -1143,7 +1143,7 @@ export function TeamChatPage() {
             As the platform administrator, you manage the system through the Admin Panel. Team Chat is designed for your clients to communicate internally within their own brand teams.
           </p>
           <div className={`inline-flex items-center gap-2 px-3 py-2 rounded-xl text-xs ${
-            isGold ? "bg-amber-500/10 text-amber-400" : "bg-emerald-500/10 text-emerald-400"
+            isGold ? "bg-amber-500/10 text-amber-400" : "bg-amber-500/10 text-amber-400"
           }`}>
             <Shield className="w-3.5 h-3.5" />
             Admin Access Only — Admin Panel
@@ -1403,7 +1403,7 @@ export function TeamChatPage() {
                   messageInput.trim() || pendingAttachment
                     ? isGold
                       ? "bg-amber-600 hover:bg-amber-700 text-white"
-                      : "bg-emerald-600 hover:bg-emerald-700 text-white"
+                      : "bg-amber-600 hover:bg-amber-700 text-white"
                     : isDark
                       ? "bg-white/[0.06] text-slate-600"
                       : "bg-slate-100 text-slate-400"

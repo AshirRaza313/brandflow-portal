@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useMemo } from "react";
-import { useBrandOnyxStore } from "@/store/brandflow-store";
+import { useValtrioxStore } from "@/store/brandflow-store";
 import { usePlatformIdentity } from "@/lib/platform-identity";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -12,7 +12,7 @@ import { toast } from "sonner";
 import { Loader2, Eye, EyeOff } from "lucide-react";
 
 export function AuthScreen() {
-  const { setView, setUser, setOrganization, setBrandName, setBrandConfigured, brandConfigured, brandLogo, brandName, brandTagline } = useBrandOnyxStore();
+  const { setView, setUser, setOrganization, setBrandName, setBrandConfigured, brandConfigured, brandLogo, brandName, brandTagline } = useValtrioxStore();
   const { identity } = usePlatformIdentity();
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
@@ -27,9 +27,9 @@ export function AuthScreen() {
     confirmPassword: "",
   });
 
-  // Use brand identity if configured, otherwise default BrandOnyx
+  // Use brand identity if configured, otherwise default Valtriox
   const showBrandIdentity = brandConfigured && brandName;
-  const displayLogo = showBrandIdentity ? brandLogo : "/brandonix-logo.png";
+  const displayLogo = showBrandIdentity ? brandLogo : "/valtriox-logo.png";
   const displayName = showBrandIdentity ? brandName : identity.companyName;
   const displayTagline = showBrandIdentity && brandTagline ? brandTagline : "Command Your Brand";
 

@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import { useBrandOnyxStore } from "@/store/brandflow-store";
+import { useValtrioxStore } from "@/store/brandflow-store";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
@@ -91,12 +91,12 @@ interface SummaryData {
 
 // ─── Colors ─────────────────────────────────────────────────────────────
 
-const PIE_COLORS = ["#059669", "#d97706", "#8b5cf6", "#ec4899", "#06b6d4", "#f59e0b"];
+const PIE_COLORS = ["#C9A227", "#C9A227", "#8b5cf6", "#ec4899", "#06b6d4", "#f59e0b"];
 
 // ─── Access Denied Component ────────────────────────────────────────────
 
 function AccessDenied() {
-  const { appTheme } = useBrandOnyxStore();
+  const { appTheme } = useValtrioxStore();
   const isDark = appTheme !== "light";
 
   return (
@@ -121,7 +121,7 @@ function AccessDenied() {
 // ─── Main Component ────────────────────────────────────────────────────
 
 export function AdminDashboard() {
-  const { user, appTheme, setActiveSection } = useBrandOnyxStore();
+  const { user, appTheme, setActiveSection } = useValtrioxStore();
   const isDark = appTheme !== "light";
   const isGold = appTheme === "premium-dark";
 
@@ -331,8 +331,8 @@ export function AdminDashboard() {
                 <Card className={cn(cardBg)}>
                   <CardContent className="p-5">
                     <div className="flex items-center gap-2 mb-2">
-                      <div className={cn("h-9 w-9 rounded-lg flex items-center justify-center", isGold ? "bg-amber-500/10" : "bg-emerald-100")}>
-                        <Building2 className={cn("h-4.5 w-4.5", isGold ? "text-amber-400" : "text-emerald-600")} />
+                      <div className={cn("h-9 w-9 rounded-lg flex items-center justify-center", isGold ? "bg-amber-500/10" : "bg-amber-100")}>
+                        <Building2 className={cn("h-4.5 w-4.5", isGold ? "text-amber-400" : "text-amber-600")} />
                       </div>
                       <p className={cn("text-xs font-medium uppercase tracking-wider", textSecondary)}>Total Clients</p>
                     </div>
@@ -370,8 +370,8 @@ export function AdminDashboard() {
                 <Card className={cn(cardBg)}>
                   <CardContent className="p-5">
                     <div className="flex items-center gap-2 mb-2">
-                      <div className={cn("h-9 w-9 rounded-lg flex items-center justify-center", isGold ? "bg-amber-500/10" : "bg-purple-100")}>
-                        <ShoppingBag className={cn("h-4.5 w-4.5", isGold ? "text-amber-400" : "text-purple-600")} />
+                      <div className={cn("h-9 w-9 rounded-lg flex items-center justify-center", isGold ? "bg-amber-500/10" : "bg-amber-100")}>
+                        <ShoppingBag className={cn("h-4.5 w-4.5", isGold ? "text-amber-400" : "text-amber-600")} />
                       </div>
                       <p className={cn("text-xs font-medium uppercase tracking-wider", textSecondary)}>Total Orders</p>
                     </div>
@@ -396,9 +396,9 @@ export function AdminDashboard() {
               >
                 <div className={cn(
                   "h-9 w-9 rounded-lg flex items-center justify-center mb-3",
-                  isGold ? "bg-amber-500/10" : "bg-emerald-500/10"
+                  isGold ? "bg-amber-500/10" : "bg-amber-500/10"
                 )}>
-                  <Settings className={cn("h-4.5 w-4.5", isGold ? "text-amber-400" : "text-emerald-500")} />
+                  <Settings className={cn("h-4.5 w-4.5", isGold ? "text-amber-400" : "text-amber-500")} />
                 </div>
                 <p className={cn("text-sm font-semibold", textPrimary)}>Platform Settings</p>
                 <p className={cn("text-[11px] mt-0.5", textSecondary)}>Brand, payments & more</p>
@@ -459,9 +459,9 @@ export function AdminDashboard() {
               >
                 <div className={cn(
                   "h-9 w-9 rounded-lg flex items-center justify-center mb-3",
-                  isGold ? "bg-amber-500/10" : "bg-purple-100"
+                  isGold ? "bg-amber-500/10" : "bg-amber-100"
                 )}>
-                  <Activity className={cn("h-4.5 w-4.5", isGold ? "text-amber-400" : "text-purple-600")} />
+                  <Activity className={cn("h-4.5 w-4.5", isGold ? "text-amber-400" : "text-amber-600")} />
                 </div>
                 <p className={cn("text-sm font-semibold", textPrimary)}>Audit Log</p>
                 <p className={cn("text-[11px] mt-0.5", textSecondary)}>Activity tracking</p>
@@ -476,7 +476,7 @@ export function AdminDashboard() {
             <Card className={cn("lg:col-span-2", cardBg)}>
               <CardHeader className="pb-2">
                 <CardTitle className={cn("text-base font-semibold flex items-center gap-2", textPrimary)}>
-                  <TrendingUp className="h-4 w-4 text-emerald-500" />
+                  <TrendingUp className="h-4 w-4 text-amber-500" />
                   Revenue by Client
                 </CardTitle>
                 <CardDescription className={textSecondary}>Top 10 clients by revenue</CardDescription>
@@ -499,7 +499,7 @@ export function AdminDashboard() {
                           }}
                           formatter={(v: number) => [`Rs. ${v.toLocaleString()}`, "Revenue"]}
                         />
-                        <Bar dataKey="revenue" fill={isGold ? "#d4a017" : "#059669"} radius={[4, 4, 0, 0]} />
+                        <Bar dataKey="revenue" fill={isGold ? "#d4a017" : "#C9A227"} radius={[4, 4, 0, 0]} />
                       </BarChart>
                     </ResponsiveContainer>
                   </div>
@@ -565,7 +565,7 @@ export function AdminDashboard() {
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                 <div>
                   <CardTitle className={cn("text-base font-semibold flex items-center gap-2", textPrimary)}>
-                    <ToggleRight className={cn("h-4 w-4", isGold ? "text-amber-400" : "text-emerald-500")} />
+                    <ToggleRight className={cn("h-4 w-4", isGold ? "text-amber-400" : "text-amber-500")} />
                     Feature Toggles
                   </CardTitle>
                   <CardDescription className={textSecondary}>
@@ -580,7 +580,7 @@ export function AdminDashboard() {
                     "gap-2",
                     isGold
                       ? "bg-gradient-to-r from-amber-600 via-yellow-500 to-amber-600 text-black"
-                      : "bg-emerald-600 hover:bg-emerald-700 text-white"
+                      : "bg-amber-600 hover:bg-amber-700 text-white"
                   )}
                 >
                   <Save className="h-3.5 w-3.5" />
@@ -592,7 +592,7 @@ export function AdminDashboard() {
               {/* Growth Plan Features */}
               <div>
                 <div className="flex items-center gap-2 mb-3">
-                  <Badge variant="outline" className={cn("text-xs font-semibold bg-emerald-500/10 text-emerald-600 border-emerald-200")}>
+                  <Badge variant="outline" className={cn("text-xs font-semibold bg-amber-500/10 text-amber-600 border-amber-200")}>
                     Growth Plan
                   </Badge>
                   <span className={cn("text-[11px]", textSecondary)}>
@@ -613,14 +613,14 @@ export function AdminDashboard() {
                               ? "border-red-500/20 bg-red-500/5 hover:border-red-500/30"
                               : "border-red-200 bg-red-50 hover:border-red-300"
                             : isDark
-                              ? "border-white/[0.06] bg-white/[0.02] hover:border-emerald-500/30 hover:bg-emerald-500/5"
-                              : "border-slate-200 bg-white hover:border-emerald-300 hover:bg-emerald-50"
+                              ? "border-white/[0.06] bg-white/[0.02] hover:border-amber-500/30 hover:bg-amber-500/5"
+                              : "border-slate-200 bg-white hover:border-amber-300 hover:bg-amber-50"
                         )}
                       >
                         <div className="flex items-center gap-2 min-w-0">
                           {isLocked
                             ? <Lock className="h-3.5 w-3.5 text-red-400 flex-shrink-0" />
-                            : <Unlock className="h-3.5 w-3.5 text-emerald-500 flex-shrink-0" />
+                            : <Unlock className="h-3.5 w-3.5 text-amber-500 flex-shrink-0" />
                           }
                           <span className={cn("text-xs font-medium truncate", isLocked ? "text-slate-500" : textPrimary)}>
                             {feature.label}
@@ -628,7 +628,7 @@ export function AdminDashboard() {
                         </div>
                         <div className={cn(
                           "h-5 w-9 rounded-full transition-colors flex-shrink-0 relative",
-                          isLocked ? "bg-red-500/30" : isGold ? "bg-amber-500" : "bg-emerald-500"
+                          isLocked ? "bg-red-500/30" : isGold ? "bg-amber-500" : "bg-amber-500"
                         )}>
                           <div className={cn(
                             "absolute top-0.5 h-4 w-4 rounded-full bg-white shadow-sm transition-transform",
@@ -784,7 +784,7 @@ export function AdminDashboard() {
                           <TableCell className="font-medium py-3">
                             <div className="flex items-center gap-2">
                               <div className={cn("h-8 w-8 rounded-lg flex items-center justify-center text-xs font-bold text-white",
-                                isGold ? "bg-gradient-to-br from-amber-500 to-amber-700" : "bg-gradient-to-br from-emerald-500 to-emerald-700"
+                                isGold ? "bg-gradient-to-br from-amber-500 to-amber-700" : "bg-gradient-to-br from-amber-500 to-amber-700"
                               )}>
                                 {client.name.charAt(0).toUpperCase()}
                               </div>
@@ -801,7 +801,7 @@ export function AdminDashboard() {
                                 client.plan === "enterprise"
                                   ? "bg-amber-100 text-amber-700 border-amber-200"
                                   : client.plan === "growth"
-                                  ? "bg-emerald-100 text-emerald-700 border-emerald-200"
+                                  ? "bg-amber-100 text-amber-700 border-amber-200"
                                   : "bg-slate-100 text-slate-600 border-slate-200"
                               )}
                             >
@@ -813,14 +813,14 @@ export function AdminDashboard() {
                             <p className="text-xs text-slate-400">{client.owner?.email || ""}</p>
                           </TableCell>
                           <TableCell className="py-3 text-right">
-                            <p className={cn("text-sm font-semibold", isGold ? "text-amber-400" : "text-emerald-600")}>
+                            <p className={cn("text-sm font-semibold", isGold ? "text-amber-400" : "text-amber-600")}>
                               {formatPKR(client.revenueTotal)}
                             </p>
                           </TableCell>
                           <TableCell className="py-3 text-right">
                             <p className={cn("text-sm", textPrimary)}>{client.orderCount}</p>
                             {client.ordersThisMonth > 0 && (
-                              <p className="text-[10px] text-emerald-500">+{client.ordersThisMonth} this month</p>
+                              <p className="text-[10px] text-amber-500">+{client.ordersThisMonth} this month</p>
                             )}
                           </TableCell>
                           <TableCell className="py-3 text-right">
@@ -855,7 +855,7 @@ export function AdminDashboard() {
                     <div className="flex items-center justify-between mb-3">
                       <div className="flex items-center gap-2">
                         <div className={cn("h-8 w-8 rounded-lg flex items-center justify-center text-xs font-bold text-white",
-                          isGold ? "bg-gradient-to-br from-amber-500 to-amber-700" : "bg-gradient-to-br from-emerald-500 to-emerald-700"
+                          isGold ? "bg-gradient-to-br from-amber-500 to-amber-700" : "bg-gradient-to-br from-amber-500 to-amber-700"
                         )}>
                           {client.name.charAt(0).toUpperCase()}
                         </div>
@@ -870,7 +870,7 @@ export function AdminDashboard() {
                           client.plan === "enterprise"
                             ? "bg-amber-100 text-amber-700 border-amber-200"
                             : client.plan === "growth"
-                            ? "bg-emerald-100 text-emerald-700 border-emerald-200"
+                            ? "bg-amber-100 text-amber-700 border-amber-200"
                             : "bg-slate-100 text-slate-600 border-slate-200"
                         )}
                       >
@@ -880,7 +880,7 @@ export function AdminDashboard() {
                     <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 text-center">
                       <div>
                         <p className={cn("text-xs", textSecondary)}>Revenue</p>
-                        <p className={cn("text-sm font-bold", isGold ? "text-amber-400" : "text-emerald-600")}>{formatPKR(client.revenueTotal)}</p>
+                        <p className={cn("text-sm font-bold", isGold ? "text-amber-400" : "text-amber-600")}>{formatPKR(client.revenueTotal)}</p>
                       </div>
                       <div>
                         <p className={cn("text-xs", textSecondary)}>Orders</p>

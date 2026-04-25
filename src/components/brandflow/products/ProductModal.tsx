@@ -19,7 +19,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { toast } from "sonner";
-import { useBrandOnyxStore } from "@/store/brandflow-store";
+import { useValtrioxStore } from "@/store/brandflow-store";
 import { cn } from "@/lib/utils";
 
 interface Product {
@@ -51,7 +51,7 @@ interface FormErrors {
 }
 
 export function ProductModal({ open, onClose, onSaved, organizationId, product }: ProductModalProps) {
-  const { appTheme } = useBrandOnyxStore();
+  const { appTheme } = useValtrioxStore();
   const isGold = appTheme === "premium-dark";
   const isDark = appTheme === "dark" || isGold;
 
@@ -368,7 +368,7 @@ export function ProductModal({ open, onClose, onSaved, organizationId, product }
                 "flex-1",
                 isGold
                   ? "bg-gradient-to-r from-amber-600 via-yellow-500 to-amber-600 text-black font-bold hover:shadow-[0_4px_20px_rgba(212,160,23,0.3)]"
-                  : "bg-emerald-600 hover:bg-emerald-700 text-white"
+                  : "bg-amber-600 hover:bg-amber-700 text-white"
               )}
             >
               {loading ? (

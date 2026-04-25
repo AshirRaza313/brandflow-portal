@@ -15,7 +15,7 @@ import {
 } from "lucide-react";
 import { EmptyState } from "@/components/brandflow/shared/EmptyState";
 import { toast } from "sonner";
-import { useBrandOnyxStore } from "@/store/brandflow-store";
+import { useValtrioxStore } from "@/store/brandflow-store";
 
 const platformFilters = [
   { id: "all", label: "All Platforms", icon: Users },
@@ -44,7 +44,7 @@ interface Collaboration {
 }
 
 export function InfluencersPage() {
-  const { appTheme } = useBrandOnyxStore();
+  const { appTheme } = useValtrioxStore();
   const isDark = appTheme !== "light";
 
   const [searchQuery, setSearchQuery] = useState("");
@@ -142,12 +142,12 @@ export function InfluencersPage() {
                     <Label className={`text-xs ${labelCls}`}>Location</Label>
                     <Input placeholder="e.g., Dubai" value={filterState.location} onChange={(e) => setFilterState({ ...filterState, location: e.target.value })} className={inputCls} />
                   </div>
-                  <Button size="sm" className="w-full bg-emerald-600 hover:bg-emerald-700" onClick={() => { setFiltersOpen(false); toast.success("Filters applied!"); }}>Apply Filters</Button>
+                  <Button size="sm" className="w-full bg-amber-600 hover:bg-amber-700" onClick={() => { setFiltersOpen(false); toast.success("Filters applied!"); }}>Apply Filters</Button>
                 </div>
               </div>
             )}
           </div>
-          <Button className="bg-emerald-600 hover:bg-emerald-700" onClick={() => setAddInfluencerOpen(true)}><Plus className="mr-2 h-4 w-4" /> Add Influencer</Button>
+          <Button className="bg-amber-600 hover:bg-amber-700" onClick={() => setAddInfluencerOpen(true)}><Plus className="mr-2 h-4 w-4" /> Add Influencer</Button>
         </div>
       </div>
 
@@ -166,8 +166,8 @@ export function InfluencersPage() {
                   <p className="text-xs font-medium text-slate-500 uppercase tracking-wider">{stat.title}</p>
                   <p className={`text-2xl font-bold mt-1 ${isDark ? "text-white" : "text-slate-900"}`}>{stat.value}</p>
                 </div>
-                <div className="h-10 w-10 rounded-lg bg-emerald-50 flex items-center justify-center">
-                  <stat.icon className="h-5 w-5 text-emerald-600" />
+                <div className="h-10 w-10 rounded-lg bg-amber-50 flex items-center justify-center">
+                  <stat.icon className="h-5 w-5 text-amber-600" />
                 </div>
               </div>
             </CardContent>
@@ -197,7 +197,7 @@ export function InfluencersPage() {
                       key={pf.id}
                       size="sm"
                       variant={platformFilter === pf.id ? "default" : "outline"}
-                      className={platformFilter === pf.id ? "bg-emerald-600 hover:bg-emerald-700" : ""}
+                      className={platformFilter === pf.id ? "bg-amber-600 hover:bg-amber-700" : ""}
                       onClick={() => setPlatformFilter(pf.id)}
                     >
                       <pf.icon className="mr-1.5 h-3.5 w-3.5" />
@@ -218,8 +218,8 @@ export function InfluencersPage() {
                   <Card key={i.id} className={isDark ? "border-slate-700" : "border-slate-200"}>
                     <CardContent className="p-4">
                       <div className="flex items-center gap-3">
-                        <div className="h-12 w-12 rounded-full bg-emerald-100 flex items-center justify-center">
-                          <Users className="h-6 w-6 text-emerald-600" />
+                        <div className="h-12 w-12 rounded-full bg-amber-100 flex items-center justify-center">
+                          <Users className="h-6 w-6 text-amber-600" />
                         </div>
                         <div>
                           <h4 className={`font-semibold ${isDark ? "text-white" : "text-slate-900"}`}>{i.name}</h4>
@@ -249,9 +249,9 @@ export function InfluencersPage() {
             <CardHeader className="pb-3">
               <div className="flex items-center justify-between">
                 <CardTitle className={`text-lg font-semibold flex items-center gap-2 ${isDark ? "text-white" : ""}`}>
-                  <Handshake className="h-5 w-5 text-emerald-600" /> Active Collaborations
+                  <Handshake className="h-5 w-5 text-amber-600" /> Active Collaborations
                 </CardTitle>
-                <Button size="sm" className="bg-emerald-600 hover:bg-emerald-700" onClick={() => setCollabOpen(true)}>
+                <Button size="sm" className="bg-amber-600 hover:bg-amber-700" onClick={() => setCollabOpen(true)}>
                   <Plus className="mr-1 h-3 w-3" /> New Collaboration
                 </Button>
               </div>
@@ -265,7 +265,7 @@ export function InfluencersPage() {
                         <h4 className={`font-semibold ${isDark ? "text-white" : "text-slate-900"}`}>{c.influencerName}</h4>
                         <p className={`text-xs ${isDark ? "text-slate-400" : "text-slate-500"}`}>{c.type} · ${c.budget}</p>
                       </div>
-                      <span className="text-xs bg-emerald-100 text-emerald-700 px-2 py-1 rounded-full">{c.status}</span>
+                      <span className="text-xs bg-amber-100 text-amber-700 px-2 py-1 rounded-full">{c.status}</span>
                     </div>
                   ))}
                 </div>
@@ -345,7 +345,7 @@ export function InfluencersPage() {
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setAddInfluencerOpen(false)}>Cancel</Button>
-            <Button className="bg-emerald-600 hover:bg-emerald-700" onClick={handleAddInfluencer}>Add Influencer</Button>
+            <Button className="bg-amber-600 hover:bg-amber-700" onClick={handleAddInfluencer}>Add Influencer</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
@@ -380,7 +380,7 @@ export function InfluencersPage() {
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setDiscoverOpen(false)}>Cancel</Button>
-            <Button className="bg-emerald-600 hover:bg-emerald-700" onClick={handleDiscover}>Discover</Button>
+            <Button className="bg-amber-600 hover:bg-amber-700" onClick={handleDiscover}>Discover</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
@@ -420,7 +420,7 @@ export function InfluencersPage() {
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setCollabOpen(false)}>Cancel</Button>
-            <Button className="bg-emerald-600 hover:bg-emerald-700" onClick={handleCreateCollaboration}>Create Collaboration</Button>
+            <Button className="bg-amber-600 hover:bg-amber-700" onClick={handleCreateCollaboration}>Create Collaboration</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

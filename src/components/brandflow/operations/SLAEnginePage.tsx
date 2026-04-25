@@ -22,7 +22,7 @@ export function SLAEnginePage() {
           <h1 className="text-2xl font-bold text-slate-900">SLA Engine</h1>
           <p className="text-sm text-slate-500 mt-1">Configure and monitor service level agreements</p>
         </div>
-        <Button className="bg-emerald-600 hover:bg-emerald-700 text-white" onClick={() => setShowRuleForm(!showRuleForm)}>
+        <Button className="bg-amber-600 hover:bg-amber-700 text-white" onClick={() => setShowRuleForm(!showRuleForm)}>
           <Plus className="mr-2 h-4 w-4" /> New SLA Rule
         </Button>
       </div>
@@ -62,9 +62,9 @@ export function SLAEnginePage() {
 
       {/* Rule Builder Form */}
       {showRuleForm && (
-        <Card className="border-emerald-200 bg-emerald-50/30">
+        <Card className="border-amber-200 bg-amber-50/30">
           <CardContent className="p-6">
-            <h3 className="text-base font-semibold text-slate-900 mb-4 flex items-center gap-2"><Plus className="h-4 w-4 text-emerald-600" />New SLA Rule</h3>
+            <h3 className="text-base font-semibold text-slate-900 mb-4 flex items-center gap-2"><Plus className="h-4 w-4 text-amber-600" />New SLA Rule</h3>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
               <div className="space-y-2">
                 <Label className="text-xs font-medium text-slate-700">Rule Name</Label>
@@ -117,7 +117,7 @@ export function SLAEnginePage() {
               </div>
             </div>
             <div className="flex flex-wrap gap-2 mt-4">
-              <Button className="bg-emerald-600 hover:bg-emerald-700 text-white text-xs" onClick={() => { setShowRuleForm(false); toast.success("SLA rule created!"); }}>Create Rule</Button>
+              <Button className="bg-amber-600 hover:bg-amber-700 text-white text-xs" onClick={() => { setShowRuleForm(false); toast.success("SLA rule created!"); }}>Create Rule</Button>
               <Button variant="outline" className="text-xs" onClick={() => setShowRuleForm(false)}>Cancel</Button>
             </div>
           </CardContent>
@@ -136,7 +136,7 @@ export function SLAEnginePage() {
         <Card className="border-slate-200">
           <CardContent className="p-4">
             <p className="text-base font-semibold text-slate-900 mb-4 flex items-center gap-2">
-              <Shield className="h-5 w-5 text-emerald-600" /> Compliance Dashboard
+              <Shield className="h-5 w-5 text-amber-600" /> Compliance Dashboard
             </p>
             <EmptyState icon={Gauge} title="No compliance data" description="Compliance metrics will appear once SLA rules are active." />
           </CardContent>

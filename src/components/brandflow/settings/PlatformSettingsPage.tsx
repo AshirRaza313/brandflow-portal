@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback, useRef } from "react";
-import { useBrandOnyxStore } from "@/store/brandflow-store";
+import { useValtrioxStore } from "@/store/brandflow-store";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -118,7 +118,7 @@ const pageVariants = {
 };
 
 const presetColors = [
-  "#059669", "#d97706", "#dc2626", "#7c3aed", "#ec4899",
+  "#C9A227", "#C9A227", "#dc2626", "#7c3aed", "#ec4899",
   "#0891b2", "#475569", "#ea580c", "#0d9488", "#2563eb",
   "#db2777", "#65a30d",
 ];
@@ -128,7 +128,7 @@ const presetColors = [
 // ============================================================================
 
 function AccessDenied() {
-  const { appTheme } = useBrandOnyxStore();
+  const { appTheme } = useValtrioxStore();
   const isDark = appTheme !== "light";
 
   return (
@@ -155,7 +155,7 @@ function AccessDenied() {
 // ============================================================================
 
 export function PlatformSettingsPage() {
-  const { user, appTheme, setActiveSection } = useBrandOnyxStore();
+  const { user, appTheme, setActiveSection } = useValtrioxStore();
   const isDark = appTheme !== "light";
   const isGold = appTheme === "premium-dark";
 
@@ -181,8 +181,8 @@ export function PlatformSettingsPage() {
     currency: "PKR",
     logoUrl: "",
     faviconUrl: "",
-    primaryBrandColor: "#059669",
-    secondaryBrandColor: "#d97706",
+    primaryBrandColor: "#C9A227",
+    secondaryBrandColor: "#C9A227",
     currencySymbol: "Rs.",
     customCss: "",
     emailFooterText: "",
@@ -238,14 +238,14 @@ export function PlatformSettingsPage() {
   const inputBg = isDark ? "border-white/10 bg-white/[0.03]" : "border-slate-200";
   const accentClass = isGold
     ? "text-amber-400 bg-amber-500/10"
-    : "text-emerald-400 bg-emerald-500/10";
+    : "text-amber-400 bg-amber-500/10";
   const accentBtn = isGold
     ? "bg-gradient-to-r from-amber-600 via-yellow-500 to-amber-600 text-black hover:opacity-90"
-    : "bg-emerald-600 text-white hover:bg-emerald-700";
+    : "bg-amber-600 text-white hover:bg-amber-700";
   const accentBorder = isGold
     ? "border-amber-500"
-    : "border-emerald-500";
-  const accentText = isGold ? "text-amber-400" : "text-emerald-400";
+    : "border-amber-500";
+  const accentText = isGold ? "text-amber-400" : "text-amber-400";
 
   // ============================================================================
   // Fetch Settings
@@ -278,8 +278,8 @@ export function PlatformSettingsPage() {
         currency: s.currency || "PKR",
         logoUrl: s.logoUrl || "",
         faviconUrl: s.faviconUrl || "",
-        primaryBrandColor: s.primaryBrandColor || "#059669",
-        secondaryBrandColor: s.secondaryBrandColor || "#d97706",
+        primaryBrandColor: s.primaryBrandColor || "#C9A227",
+        secondaryBrandColor: s.secondaryBrandColor || "#C9A227",
         currencySymbol: s.currencySymbol || "Rs.",
         customCss: s.customCss || "",
         emailFooterText: s.emailFooterText || "",
@@ -597,8 +597,8 @@ export function PlatformSettingsPage() {
                 ? isGold
                   ? "border-amber-400 text-amber-400"
                   : isDark
-                    ? "border-emerald-400 text-emerald-400"
-                    : "border-emerald-600 text-emerald-600"
+                    ? "border-amber-400 text-amber-400"
+                    : "border-amber-600 text-amber-600"
                 : isDark
                   ? "border-transparent text-slate-500 hover:text-slate-300"
                   : "border-transparent text-slate-500 hover:text-slate-700"
@@ -644,7 +644,7 @@ export function PlatformSettingsPage() {
                         ? "bg-gradient-to-br from-amber-500 to-amber-700"
                         : isGold
                           ? "bg-gradient-to-br from-amber-500 to-amber-700"
-                          : "bg-gradient-to-br from-emerald-500 to-emerald-700"
+                          : "bg-gradient-to-br from-amber-500 to-amber-700"
                     )}>
                       {personalDetails.profilePicture ? (
                         <img
@@ -708,7 +708,7 @@ export function PlatformSettingsPage() {
                   </Label>
                   <Input
                     type="email"
-                    placeholder="owner@brandonix.pk"
+                    placeholder="owner@valtriox.pk"
                     value={personalDetails.email}
                     onChange={(e) => setPersonalDetails((p) => ({ ...p, email: e.target.value }))}
                     className={inputBg}
@@ -798,7 +798,7 @@ export function PlatformSettingsPage() {
                     Company Name
                   </Label>
                   <Input
-                    placeholder="BrandOnyx"
+                    placeholder="Valtriox"
                     value={settings.companyName}
                     onChange={(e) => setSettings((p) => ({ ...p, companyName: e.target.value }))}
                     className={inputBg}
@@ -814,7 +814,7 @@ export function PlatformSettingsPage() {
                     </Label>
                     <Input
                       type="email"
-                      placeholder="support@brandonix.pk"
+                      placeholder="support@valtriox.pk"
                       value={settings.companyEmail}
                       onChange={(e) => setSettings((p) => ({ ...p, companyEmail: e.target.value }))}
                       className={inputBg}
@@ -841,7 +841,7 @@ export function PlatformSettingsPage() {
                     Company Website
                   </Label>
                   <Input
-                    placeholder="https://brandonix.pk"
+                    placeholder="https://valtriox.pk"
                     value={settings.companyWebsite}
                     onChange={(e) => setSettings((p) => ({ ...p, companyWebsite: e.target.value }))}
                     className={inputBg}
@@ -1018,7 +1018,7 @@ export function PlatformSettingsPage() {
                     Instagram URL
                   </Label>
                   <Input
-                    placeholder="https://instagram.com/brandonix"
+                    placeholder="https://instagram.com/valtriox"
                     value={settings.instagramUrl}
                     onChange={(e) => setSettings((p) => ({ ...p, instagramUrl: e.target.value }))}
                     className={inputBg}
@@ -1032,7 +1032,7 @@ export function PlatformSettingsPage() {
                     Facebook URL
                   </Label>
                   <Input
-                    placeholder="https://facebook.com/brandonix"
+                    placeholder="https://facebook.com/valtriox"
                     value={settings.facebookUrl}
                     onChange={(e) => setSettings((p) => ({ ...p, facebookUrl: e.target.value }))}
                     className={inputBg}
@@ -1046,7 +1046,7 @@ export function PlatformSettingsPage() {
                     Twitter / X URL
                   </Label>
                   <Input
-                    placeholder="https://x.com/brandonix"
+                    placeholder="https://x.com/valtriox"
                     value={settings.twitterUrl}
                     onChange={(e) => setSettings((p) => ({ ...p, twitterUrl: e.target.value }))}
                     className={inputBg}
@@ -1084,9 +1084,9 @@ export function PlatformSettingsPage() {
                 <div className="space-y-4">
                   {plans.map((plan: any) => {
                     const colors: Record<string, { bg: string; text: string; border: string }> = {
-                      starter: { bg: "bg-emerald-500/10", text: "text-emerald-400", border: "border-emerald-500/20" },
+                      starter: { bg: "bg-amber-500/10", text: "text-amber-400", border: "border-amber-500/20" },
                       growth: { bg: "bg-amber-500/10", text: "text-amber-400", border: "border-amber-500/20" },
-                      enterprise: { bg: "bg-purple-500/10", text: "text-purple-400", border: "border-purple-500/20" },
+                      enterprise: { bg: "bg-amber-500/10", text: "text-amber-400", border: "border-amber-500/20" },
                     };
                     const c = colors[plan.name] || colors.starter;
                     const features = typeof plan.features === "string" ? JSON.parse(plan.features) : (plan.features || []);
@@ -1260,13 +1260,13 @@ export function PlatformSettingsPage() {
                               method.isActive
                                 ? isGold
                                   ? "bg-amber-500/10"
-                                  : "bg-emerald-500/10"
+                                  : "bg-amber-500/10"
                                 : "bg-slate-100 dark:bg-white/[0.03]"
                             )}>
                               <CreditCard className={cn(
                                 "h-5 w-5",
                                 method.isActive
-                                  ? isGold ? "text-amber-400" : "text-emerald-500"
+                                  ? isGold ? "text-amber-400" : "text-amber-500"
                                   : "text-slate-400"
                               )} />
                             </div>
@@ -1281,8 +1281,8 @@ export function PlatformSettingsPage() {
                                     "text-[10px] px-2 py-0",
                                     method.isActive
                                       ? isDark
-                                        ? "bg-emerald-500/10 text-emerald-400 border-emerald-500/20"
-                                        : "bg-emerald-50 text-emerald-700 border-emerald-200"
+                                        ? "bg-amber-500/10 text-amber-400 border-amber-500/20"
+                                        : "bg-amber-50 text-amber-700 border-amber-200"
                                       : isDark
                                         ? "bg-slate-500/10 text-slate-500 border-slate-500/20"
                                         : "bg-slate-100 text-slate-500 border-slate-200"
@@ -1322,7 +1322,7 @@ export function PlatformSettingsPage() {
                               title={method.isActive ? "Deactivate" : "Activate"}
                             >
                               {method.isActive ? (
-                                <Check className={cn("h-4 w-4", isGold ? "text-amber-400" : "text-emerald-500")} />
+                                <Check className={cn("h-4 w-4", isGold ? "text-amber-400" : "text-amber-500")} />
                               ) : (
                                 <X className="h-4 w-4 text-slate-400" />
                               )}
@@ -1415,7 +1415,7 @@ export function PlatformSettingsPage() {
                       value={settings.primaryBrandColor}
                       onChange={(e) => setSettings((p) => ({ ...p, primaryBrandColor: e.target.value }))}
                       className={cn("w-32 font-mono text-sm", inputBg)}
-                      placeholder="#059669"
+                      placeholder="#C9A227"
                     />
                     <input
                       type="color"
@@ -1461,7 +1461,7 @@ export function PlatformSettingsPage() {
                       value={settings.secondaryBrandColor}
                       onChange={(e) => setSettings((p) => ({ ...p, secondaryBrandColor: e.target.value }))}
                       className={cn("w-32 font-mono text-sm", inputBg)}
-                      placeholder="#d97706"
+                      placeholder="#C9A227"
                     />
                     <input
                       type="color"
@@ -1497,7 +1497,7 @@ export function PlatformSettingsPage() {
                       background: `linear-gradient(135deg, ${settings.primaryBrandColor} 0%, ${settings.secondaryBrandColor} 100%)`,
                     }}
                   >
-                    BrandOnyx Portal
+                    Valtriox Portal
                   </div>
                 </div>
 
@@ -1543,7 +1543,7 @@ export function PlatformSettingsPage() {
                     Email Footer Text
                   </Label>
                   <Textarea
-                    placeholder="Powered by BrandOnyx | https://brandonix.pk"
+                    placeholder="Powered by Valtriox | https://valtriox.pk"
                     rows={2}
                     value={settings.emailFooterText}
                     onChange={(e) => setSettings((p) => ({ ...p, emailFooterText: e.target.value }))}

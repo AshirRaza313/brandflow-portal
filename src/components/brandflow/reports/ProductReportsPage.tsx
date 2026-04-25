@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import { useBrandOnyxStore } from "@/store/brandflow-store";
+import { useValtrioxStore } from "@/store/brandflow-store";
 import { fetchWithAuth } from "@/lib/fetch-with-auth";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -43,7 +43,7 @@ interface ProductReportData {
 const TABS = ["best-sellers", "low-stock", "categories"] as const;
 
 export function ProductReportsPage() {
-  const { organization, appTheme } = useBrandOnyxStore();
+  const { organization, appTheme } = useValtrioxStore();
   const isDark = appTheme !== "light";
   const isGold = appTheme === "premium-dark";
   const accent = isGold ? "amber" : "emerald";
@@ -145,9 +145,9 @@ export function ProductReportsPage() {
   const cardBg = isDark ? "bg-white/[0.03] border-white/[0.06]" : "bg-white border-slate-200";
   const textPrimary = isDark ? "text-white" : "text-slate-900";
   const textSecondary = isDark ? "text-slate-400" : "text-slate-500";
-  const accentColor = isGold ? "text-amber-400" : "text-emerald-400";
-  const accentBg = isGold ? "bg-amber-500/10" : "bg-emerald-500/10";
-  const accentTab = isGold ? "border-amber-500 text-amber-400" : "border-emerald-500 text-emerald-400";
+  const accentColor = isGold ? "text-amber-400" : "text-amber-400";
+  const accentBg = isGold ? "bg-amber-500/10" : "bg-amber-500/10";
+  const accentTab = isGold ? "border-amber-500 text-amber-400" : "border-amber-500 text-amber-400";
 
   return (
     <div className="space-y-6">
@@ -300,8 +300,8 @@ export function ProductReportsPage() {
                         <div className="flex items-center gap-3">
                           <span className={cn(
                             "text-xs font-bold w-6 h-6 rounded-full flex items-center justify-center",
-                            i === 0 ? (isGold ? "bg-amber-500/20 text-amber-300" : "bg-emerald-500/20 text-emerald-300") :
-                            i === 1 ? (isGold ? "bg-amber-500/10 text-amber-400" : "bg-emerald-500/10 text-emerald-400") :
+                            i === 0 ? (isGold ? "bg-amber-500/20 text-amber-300" : "bg-amber-500/20 text-amber-300") :
+                            i === 1 ? (isGold ? "bg-amber-500/10 text-amber-400" : "bg-amber-500/10 text-amber-400") :
                             "bg-slate-500/10 text-slate-400"
                           )}>
                             {i + 1}
@@ -393,7 +393,7 @@ export function ProductReportsPage() {
                                 initial={{ width: 0 }}
                                 animate={{ width: `${pct}%` }}
                                 transition={{ duration: 0.6 }}
-                                className={cn("h-full rounded-full", isGold ? "bg-amber-500" : "bg-emerald-500")}
+                                className={cn("h-full rounded-full", isGold ? "bg-amber-500" : "bg-amber-500")}
                               />
                             </div>
                             <p className={cn("text-[10px]", textSecondary)}>{info.count} products · {info.sold} sold</p>
@@ -424,7 +424,7 @@ export function ProductReportsPage() {
                                 initial={{ width: 0 }}
                                 animate={{ width: `${pct}%` }}
                                 transition={{ duration: 0.6 }}
-                                className={cn("h-full rounded-full", isGold ? "bg-amber-500/70" : "bg-emerald-500/70")}
+                                className={cn("h-full rounded-full", isGold ? "bg-amber-500/70" : "bg-amber-500/70")}
                               />
                             </div>
                             <p className={cn("text-[10px]", textSecondary)}>{info.count} products · {sym} {info.revenue.toLocaleString()}</p>

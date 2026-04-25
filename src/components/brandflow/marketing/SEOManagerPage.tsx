@@ -14,7 +14,7 @@ import {
 } from "lucide-react";
 import { EmptyState } from "@/components/brandflow/shared/EmptyState";
 import { toast } from "sonner";
-import { useBrandOnyxStore } from "@/store/brandflow-store";
+import { useValtrioxStore } from "@/store/brandflow-store";
 
 interface Keyword {
   id: number;
@@ -26,7 +26,7 @@ interface Keyword {
 }
 
 export function SEOManagerPage() {
-  const { appTheme } = useBrandOnyxStore();
+  const { appTheme } = useValtrioxStore();
   const isDark = appTheme !== "light";
 
   const [keywords, setKeywords] = useState<Keyword[]>([]);
@@ -51,7 +51,7 @@ export function SEOManagerPage() {
           <h1 className={`text-xl sm:text-2xl font-bold ${isDark ? "text-white" : "text-slate-900"}`}>SEO Manager</h1>
           <p className={`text-sm mt-1 ${isDark ? "text-slate-400" : "text-slate-500"}`}>Monitor rankings, optimize meta tags, and run SEO audits</p>
         </div>
-        <Button className="bg-emerald-600 hover:bg-emerald-700" onClick={() => toast.success("SEO audit queued! Results will appear shortly.")}>
+        <Button className="bg-amber-600 hover:bg-amber-700" onClick={() => toast.success("SEO audit queued! Results will appear shortly.")}>
           <RefreshCw className="mr-2 h-4 w-4" /> Run Full Audit
         </Button>
       </div>
@@ -71,8 +71,8 @@ export function SEOManagerPage() {
                   <p className="text-xs font-medium text-slate-500 uppercase tracking-wider">{stat.title}</p>
                   <p className={`text-2xl font-bold mt-1 ${isDark ? "text-white" : "text-slate-900"}`}>{stat.value}</p>
                 </div>
-                <div className="h-10 w-10 rounded-lg bg-emerald-50 flex items-center justify-center">
-                  <stat.icon className="h-5 w-5 text-emerald-600" />
+                <div className="h-10 w-10 rounded-lg bg-amber-50 flex items-center justify-center">
+                  <stat.icon className="h-5 w-5 text-amber-600" />
                 </div>
               </div>
             </CardContent>
@@ -93,10 +93,10 @@ export function SEOManagerPage() {
             <CardHeader className="pb-3">
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                 <CardTitle className={`text-lg font-semibold flex items-center gap-2 ${isDark ? "text-white" : ""}`}>
-                  <Search className="h-5 w-5 text-emerald-600" /> Keyword Tracker
+                  <Search className="h-5 w-5 text-amber-600" /> Keyword Tracker
                 </CardTitle>
                 <div className="flex flex-wrap gap-2">
-                  <Button size="sm" className="bg-emerald-600 hover:bg-emerald-700" onClick={() => setKeywordOpen(true)}>
+                  <Button size="sm" className="bg-amber-600 hover:bg-amber-700" onClick={() => setKeywordOpen(true)}>
                     <Plus className="mr-1 h-3 w-3" /> Add Keyword
                   </Button>
                   <div className="relative w-full sm:w-72">
@@ -115,7 +115,7 @@ export function SEOManagerPage() {
                         <h4 className={`font-semibold ${isDark ? "text-white" : "text-slate-900"}`}>{kw.keyword}</h4>
                         <p className={`text-xs capitalize ${isDark ? "text-slate-400" : "text-slate-500"}`}>{kw.location} · Position: {kw.position || "—"} · Volume: {kw.volume || "—"}</p>
                       </div>
-                      <span className="text-xs text-emerald-600">Tracking</span>
+                      <span className="text-xs text-amber-600">Tracking</span>
                     </div>
                   ))}
                 </div>
@@ -135,7 +135,7 @@ export function SEOManagerPage() {
           <Card>
             <CardHeader>
               <CardTitle className={`text-lg font-semibold flex items-center gap-2 ${isDark ? "text-white" : ""}`}>
-                <FileText className="h-5 w-5 text-emerald-600" /> Meta Tag Editor
+                <FileText className="h-5 w-5 text-amber-600" /> Meta Tag Editor
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-5">
@@ -168,7 +168,7 @@ export function SEOManagerPage() {
                   <p className={`text-sm line-clamp-2 ${isDark ? "text-slate-400" : "text-slate-500"}`}>Your meta description will appear here...</p>
                 </div>
               </div>
-              <Button className="bg-emerald-600 hover:bg-emerald-700" onClick={() => toast.success("Meta tags saved!")}>Save Meta Tags</Button>
+              <Button className="bg-amber-600 hover:bg-amber-700" onClick={() => toast.success("Meta tags saved!")}>Save Meta Tags</Button>
             </CardContent>
           </Card>
         </TabsContent>
@@ -177,7 +177,7 @@ export function SEOManagerPage() {
           <Card>
             <CardHeader>
               <CardTitle className={`text-lg font-semibold flex items-center gap-2 ${isDark ? "text-white" : ""}`}>
-                <Shield className="h-5 w-5 text-emerald-600" /> SEO Audit Checklist
+                <Shield className="h-5 w-5 text-amber-600" /> SEO Audit Checklist
               </CardTitle>
             </CardHeader>
             <CardContent>
@@ -195,7 +195,7 @@ export function SEOManagerPage() {
           <Card>
             <CardHeader className="pb-3">
               <CardTitle className={`text-lg font-semibold flex items-center gap-2 ${isDark ? "text-white" : ""}`}>
-                <Zap className="h-5 w-5 text-emerald-600" /> Page Speed Scores
+                <Zap className="h-5 w-5 text-amber-600" /> Page Speed Scores
               </CardTitle>
             </CardHeader>
             <CardContent>
@@ -237,7 +237,7 @@ export function SEOManagerPage() {
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setKeywordOpen(false)}>Cancel</Button>
-            <Button className="bg-emerald-600 hover:bg-emerald-700" onClick={handleAddKeyword}>Add Keyword</Button>
+            <Button className="bg-amber-600 hover:bg-amber-700" onClick={handleAddKeyword}>Add Keyword</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

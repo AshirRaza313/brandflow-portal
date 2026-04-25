@@ -168,7 +168,7 @@ export const POST = withAuth(async (req: NextRequest, authCtx) => {
 
       const order = await db.order.create({
         data: {
-          orderNumber: `BFR-${String(orderCounter++).padStart(4, "0")}`,
+          orderNumber: `VTX-${String(orderCounter++).padStart(4, "0")}`,
           organizationId: org.id,
           customerId: customer.id,
           status,

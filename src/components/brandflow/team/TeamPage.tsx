@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { useBrandOnyxStore } from "@/store/brandflow-store";
+import { useValtrioxStore } from "@/store/brandflow-store";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -72,7 +72,7 @@ const EXCLUDED_ROLES = ["platform_owner", "platform_admin", "owner", "custom"];
 // ── Component ──────────────────────────────────────────────────────────────
 
 export function TeamPage() {
-  const { organization, appTheme, user } = useBrandOnyxStore();
+  const { organization, appTheme, user } = useValtrioxStore();
   const isGold = appTheme === "premium-dark";
   const isDark = appTheme === "dark" || isGold;
 
@@ -85,10 +85,10 @@ export function TeamPage() {
   const cardBg = isGold ? "bg-[#111118] border-white/8" : isDark ? "bg-slate-800/50 border-slate-700/50" : "bg-white border-slate-200";
   const hoverBg = isDark ? "hover:bg-white/5" : "hover:bg-slate-50";
   const inputBg = isDark ? "bg-white/5 border-white/10 text-white" : "";
-  const accentClass = isGold ? "text-amber-400" : isDark ? "text-emerald-400" : "text-emerald-600";
-  const accentBg = isGold ? "bg-amber-500/15" : isDark ? "bg-emerald-500/15" : "bg-emerald-100";
-  const accentBtn = isGold ? "bg-amber-500 hover:bg-amber-600 text-black" : "bg-emerald-600 hover:bg-emerald-700 text-white";
-  const accentOutline = isGold ? "border-amber-500/25 text-amber-400 hover:bg-amber-500/10" : "border-emerald-300 text-emerald-600 hover:bg-emerald-50";
+  const accentClass = isGold ? "text-amber-400" : isDark ? "text-amber-400" : "text-amber-600";
+  const accentBg = isGold ? "bg-amber-500/15" : isDark ? "bg-amber-500/15" : "bg-amber-100";
+  const accentBtn = isGold ? "bg-amber-500 hover:bg-amber-600 text-black" : "bg-amber-600 hover:bg-amber-700 text-white";
+  const accentOutline = isGold ? "border-amber-500/25 text-amber-400 hover:bg-amber-500/10" : "border-amber-300 text-amber-600 hover:bg-amber-50";
   const dangerOutline = isDark ? "border-red-500/25 text-red-400 hover:bg-red-500/10" : "border-red-300 text-red-600 hover:bg-red-50";
 
   // State
@@ -397,7 +397,7 @@ export function TeamPage() {
                 <div className={cn("w-32 h-2 rounded-full overflow-hidden", isDark ? "bg-white/10" : "bg-slate-200")}>
                   <div
                     className={cn("h-full rounded-full transition-all duration-500",
-                      currentCount >= teamLimit ? "bg-red-500" : isGold ? "bg-amber-500" : "bg-emerald-500"
+                      currentCount >= teamLimit ? "bg-red-500" : isGold ? "bg-amber-500" : "bg-amber-500"
                     )}
                     style={{ width: `${Math.min(100, (currentCount / teamLimit) * 100)}%` }}
                   />
@@ -491,7 +491,7 @@ export function TeamPage() {
                   <div className="flex items-center gap-3 min-w-0">
                     <Avatar className="h-10 w-10 shrink-0">
                       <AvatarFallback className={cn("text-xs font-bold",
-                        isGold ? "bg-amber-500/20 text-amber-400" : isDark ? "bg-emerald-500/20 text-emerald-400" : "bg-emerald-100 text-emerald-700"
+                        isGold ? "bg-amber-500/20 text-amber-400" : isDark ? "bg-amber-500/20 text-amber-400" : "bg-amber-100 text-amber-700"
                       )}>
                         {member.user.name.split(" ").map((n) => n[0]).join("").toUpperCase().slice(0, 2)}
                       </AvatarFallback>
@@ -523,7 +523,7 @@ export function TeamPage() {
                         <Button
                           size="sm"
                           variant="ghost"
-                          className={cn("h-7 w-7 p-0", isDark ? "text-slate-400 hover:text-amber-400 hover:bg-amber-500/10" : "text-slate-500 hover:text-emerald-600 hover:bg-emerald-50")}
+                          className={cn("h-7 w-7 p-0", isDark ? "text-slate-400 hover:text-amber-400 hover:bg-amber-500/10" : "text-slate-500 hover:text-amber-600 hover:bg-amber-50")}
                           onClick={() => { setEditMember(member); setNewRole(member.role); setEditRoleOpen(true); }}
                           title="Change role"
                         >
@@ -577,7 +577,7 @@ export function TeamPage() {
                 </p>
                 <div className="flex items-center justify-between gap-2">
                   <div className={cn("flex items-center gap-2 px-4 py-2.5 rounded-lg font-mono text-lg tracking-[0.3em] font-bold",
-                    isGold ? "bg-amber-500/10 text-amber-400" : isDark ? "bg-emerald-500/10 text-emerald-400" : "bg-emerald-50 text-emerald-700"
+                    isGold ? "bg-amber-500/10 text-amber-400" : isDark ? "bg-amber-500/10 text-amber-400" : "bg-amber-50 text-amber-700"
                   )}>
                     {showPin ? inviteResult.pin : "******"}
                     <button onClick={() => setShowPin(!showPin)} className="ml-2 opacity-50 hover:opacity-100">

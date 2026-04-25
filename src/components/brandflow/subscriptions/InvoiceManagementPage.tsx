@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback, useRef, useMemo } from "react";
-import { useBrandOnyxStore } from "@/store/brandflow-store";
+import { useValtrioxStore } from "@/store/brandflow-store";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -90,7 +90,7 @@ function getStatusBadge(status: string) {
       return <Badge className="bg-yellow-500/20 text-yellow-300 border-yellow-500/30 gap-1"><Clock className="h-3 w-3" /> Pending</Badge>;
     case "paid":
     case "approved":
-      return <Badge className="bg-emerald-500/20 text-emerald-300 border-emerald-500/30 gap-1"><CheckCircle2 className="h-3 w-3" /> {status.charAt(0).toUpperCase() + status.slice(1)}</Badge>;
+      return <Badge className="bg-amber-500/20 text-amber-300 border-amber-500/30 gap-1"><CheckCircle2 className="h-3 w-3" /> {status.charAt(0).toUpperCase() + status.slice(1)}</Badge>;
     case "cancelled":
       return <Badge className="bg-red-500/20 text-red-300 border-red-500/30 gap-1"><AlertCircle className="h-3 w-3" /> Cancelled</Badge>;
     case "refunded":
@@ -102,7 +102,7 @@ function getStatusBadge(status: string) {
 
 // ── Main Component ──
 export function InvoiceManagementPage() {
-  const { appTheme } = useBrandOnyxStore();
+  const { appTheme } = useValtrioxStore();
   const isDark = appTheme !== "light";
   const isGold = appTheme === "premium-dark";
 
@@ -123,8 +123,8 @@ export function InvoiceManagementPage() {
   const cardBg = isDark ? "bg-white/[0.03] border-white/[0.06]" : "bg-white border-slate-200";
   const textPrimary = isDark ? "text-white" : "text-slate-900";
   const textSecondary = isDark ? "text-slate-400" : "text-slate-500";
-  const accentColor = isGold ? "text-amber-400" : "text-emerald-400";
-  const accentBg = isGold ? "bg-amber-500/10" : "bg-emerald-500/10";
+  const accentColor = isGold ? "text-amber-400" : "text-amber-400";
+  const accentBg = isGold ? "bg-amber-500/10" : "bg-amber-500/10";
   const inputBg = isDark ? "border-white/[0.1] bg-white/[0.03]" : "";
 
   // ── Debounced search (300ms) ──
@@ -287,7 +287,7 @@ export function InvoiceManagementPage() {
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-[400px]">
-        <Loader2 className="h-8 w-8 animate-spin text-emerald-400" />
+        <Loader2 className="h-8 w-8 animate-spin text-amber-400" />
       </div>
     );
   }
@@ -320,10 +320,10 @@ export function InvoiceManagementPage() {
           <Card className={cn(cardBg)}>
             <CardContent className="p-4">
               <div className="flex items-center gap-2 mb-1">
-                <DollarSign className="h-4 w-4 text-emerald-400" />
+                <DollarSign className="h-4 w-4 text-amber-400" />
                 <p className={cn("text-xs", textSecondary)}>Total Revenue</p>
               </div>
-              <p className="text-xl font-bold text-emerald-400">Rs. {totalRevenue.toLocaleString()}</p>
+              <p className="text-xl font-bold text-amber-400">Rs. {totalRevenue.toLocaleString()}</p>
             </CardContent>
           </Card>
           <Card className={cn(cardBg)}>
@@ -338,10 +338,10 @@ export function InvoiceManagementPage() {
           <Card className={cn(cardBg)}>
             <CardContent className="p-4">
               <div className="flex items-center gap-2 mb-1">
-                <CheckCircle2 className="h-4 w-4 text-emerald-400" />
+                <CheckCircle2 className="h-4 w-4 text-amber-400" />
                 <p className={cn("text-xs", textSecondary)}>Paid</p>
               </div>
-              <p className="text-xl font-bold text-emerald-400">{stats.paid}</p>
+              <p className="text-xl font-bold text-amber-400">{stats.paid}</p>
             </CardContent>
           </Card>
         </div>
@@ -391,7 +391,7 @@ export function InvoiceManagementPage() {
               className={cn(
                 "w-auto gap-2 justify-start text-left font-normal",
                 inputBg,
-                dateRange?.from && (isDark ? "text-emerald-400 border-emerald-500/30" : "text-emerald-600 border-emerald-300")
+                dateRange?.from && (isDark ? "text-amber-400 border-amber-500/30" : "text-amber-600 border-amber-300")
               )}
             >
               <CalendarIcon className="h-4 w-4" />
@@ -552,7 +552,7 @@ export function InvoiceManagementPage() {
                         <span className={cn("text-sm capitalize", textSecondary)}>{inv.planName}</span>
                       </td>
                       <td className="px-4 py-3 text-right">
-                        <span className="text-sm font-semibold text-emerald-400">
+                        <span className="text-sm font-semibold text-amber-400">
                           {inv.currencySymbol || "Rs."} {inv.amount.toLocaleString()}
                         </span>
                       </td>
@@ -563,7 +563,7 @@ export function InvoiceManagementPage() {
                         <Badge className={cn(
                           "text-[10px] px-1.5 py-0",
                           inv.billingCycle === "annually"
-                            ? "bg-purple-500/20 text-purple-300"
+                            ? "bg-amber-500/20 text-amber-300"
                             : "bg-blue-500/20 text-blue-300"
                         )}>
                           {inv.billingCycle === "annually" ? "Annual" : "Monthly"}
@@ -644,7 +644,7 @@ export function InvoiceManagementPage() {
                       </div>
                       <div className={cn("p-3 rounded-lg", isDark ? "bg-white/[0.02]" : "bg-slate-50")}>
                         <p className={cn("text-[10px]", textSecondary)}>Amount</p>
-                        <p className="text-sm font-semibold text-emerald-400">
+                        <p className="text-sm font-semibold text-amber-400">
                           {selectedInvoice.currencySymbol || "Rs."} {selectedInvoice.amount.toLocaleString()}
                         </p>
                         <p className={cn("text-[10px]", textSecondary)}>{selectedInvoice.currencyCode || "PKR"}</p>
@@ -672,7 +672,7 @@ export function InvoiceManagementPage() {
                       {selectedInvoice.paidAt && (
                         <div className={cn("p-3 rounded-lg", isDark ? "bg-white/[0.02]" : "bg-slate-50")}>
                           <p className={cn("text-[10px]", textSecondary)}>Paid At</p>
-                          <p className={cn("text-xs font-medium text-emerald-400")}>
+                          <p className={cn("text-xs font-medium text-amber-400")}>
                             {new Date(selectedInvoice.paidAt).toLocaleDateString("en-PK", { month: "short", day: "numeric", year: "numeric" })}
                           </p>
                         </div>

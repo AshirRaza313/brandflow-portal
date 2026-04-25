@@ -3,7 +3,7 @@
 import { LucideIcon, TrendingUp, TrendingDown } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
-import { useBrandOnyxStore } from "@/store/brandflow-store";
+import { useValtrioxStore } from "@/store/brandflow-store";
 import { cn } from "@/lib/utils";
 
 interface StatsCardProps {
@@ -17,7 +17,7 @@ interface StatsCardProps {
 }
 
 export function StatsCard({ title, value, icon: Icon, change, changeLabel, variant = "default", loading }: StatsCardProps) {
-  const { appTheme } = useBrandOnyxStore();
+  const { appTheme } = useValtrioxStore();
   const isGold = appTheme === "premium-dark";
   const isDark = appTheme === "dark" || isGold;
 
@@ -26,11 +26,11 @@ export function StatsCard({ title, value, icon: Icon, change, changeLabel, varia
     isGold
       ? "bg-white/[0.03] border-white/[0.06] hover:border-amber-500/20"
       : isDark
-        ? "bg-white/[0.03] border-white/[0.06] hover:border-emerald-500/20"
+        ? "bg-white/[0.03] border-white/[0.06] hover:border-amber-500/20"
         : variant === "danger"
           ? "bg-red-50 border-red-200"
           : variant === "success"
-            ? "bg-emerald-50 border-emerald-200"
+            ? "bg-amber-50 border-amber-200"
             : variant === "warning"
               ? "bg-amber-50 border-amber-200"
               : "bg-white"
@@ -45,14 +45,14 @@ export function StatsCard({ title, value, icon: Icon, change, changeLabel, varia
           ? "bg-red-500/10 text-red-400"
           : variant === "warning"
             ? "bg-amber-500/10 text-amber-400"
-            : "bg-emerald-500/10 text-emerald-400"
+            : "bg-amber-500/10 text-amber-400"
         : variant === "danger"
           ? "bg-red-100 text-red-600"
           : variant === "success"
-            ? "bg-emerald-100 text-emerald-600"
+            ? "bg-amber-100 text-amber-600"
             : variant === "warning"
               ? "bg-amber-100 text-amber-600"
-              : "bg-emerald-100 text-emerald-600"
+              : "bg-amber-100 text-amber-600"
   );
 
   if (loading) {
@@ -88,14 +88,14 @@ export function StatsCard({ title, value, icon: Icon, change, changeLabel, varia
             {change !== undefined && (
               <div className="flex items-center gap-1 mt-1">
                 {change >= 0 ? (
-                  <TrendingUp className={cn("h-3 w-3", isDark ? "text-emerald-400" : "text-emerald-500")} />
+                  <TrendingUp className={cn("h-3 w-3", isDark ? "text-amber-400" : "text-amber-500")} />
                 ) : (
                   <TrendingDown className={cn("h-3 w-3", isDark ? "text-red-400" : "text-red-500")} />
                 )}
                 <span className={cn(
                   "text-xs font-medium",
                   change >= 0
-                    ? isDark ? "text-emerald-400" : "text-emerald-600"
+                    ? isDark ? "text-amber-400" : "text-amber-600"
                     : isDark ? "text-red-400" : "text-red-600"
                 )}>
                   {change >= 0 ? "+" : ""}{change}%

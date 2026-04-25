@@ -29,13 +29,13 @@ interface PlatformIdentityContextType {
 // ============================================================================
 
 const DEFAULT_IDENTITY: PlatformIdentity = {
-  companyName: "BrandOnyx",
-  tagline: "Command Your Brand",
+  companyName: "Valtriox",
+  tagline: "Command Your Brand Universe",
   logoUrl: null,
   faviconUrl: null,
-  primaryColor: "#d97706",
-  secondaryColor: "#059669",
-  companyEmail: "support@brandonix.pk",
+  primaryColor: "#C9A227",
+  secondaryColor: "#C9A227",
+  companyEmail: "support@valtriox.com",
   companyPhone: null,
   companyWebsite: null,
   loaded: false,
@@ -61,13 +61,13 @@ export function PlatformIdentityProvider({ children }: { children: ReactNode }) 
       const data = await res.json();
       if (data) {
         const mapped: PlatformIdentity = {
-          companyName: data.companyName || "BrandOnyx",
-          tagline: "Command Your Brand",
+          companyName: data.companyName || "Valtriox",
+          tagline: "Command Your Brand Universe",
           logoUrl: data.logoUrl || null,
           faviconUrl: data.faviconUrl || null,
-          primaryColor: data.primaryBrandColor || "#d97706",
-          secondaryColor: data.secondaryBrandColor || "#059669",
-          companyEmail: data.companyEmail || "support@brandonix.pk",
+          primaryColor: data.primaryBrandColor || "#C9A227",
+          secondaryColor: data.secondaryBrandColor || "#C9A227",
+          companyEmail: data.companyEmail || "support@valtriox.com",
           companyPhone: data.companyPhone || null,
           companyWebsite: data.companyWebsite || null,
           loaded: true,
@@ -76,7 +76,7 @@ export function PlatformIdentityProvider({ children }: { children: ReactNode }) 
 
         // Update page title dynamically
         if (typeof document !== "undefined" && data.companyName) {
-          document.title = `${data.companyName} — Command Your Brand`;
+          document.title = `${data.companyName} — Command Your Brand Universe`;
         }
 
         // Update favicon if custom
@@ -99,7 +99,7 @@ export function PlatformIdentityProvider({ children }: { children: ReactNode }) 
   // Also refresh when user logs in (check localStorage periodically)
   useEffect(() => {
     const interval = setInterval(() => {
-      const user = localStorage.getItem("brandonix-user");
+      const user = localStorage.getItem("valtriox-user");
       if (user && !loaded) {
         fetchIdentity();
       }

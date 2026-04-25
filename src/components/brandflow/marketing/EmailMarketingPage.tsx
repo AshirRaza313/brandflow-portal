@@ -15,7 +15,7 @@ import {
 } from "lucide-react";
 import { EmptyState } from "@/components/brandflow/shared/EmptyState";
 import { toast } from "sonner";
-import { useBrandOnyxStore } from "@/store/brandflow-store";
+import { useValtrioxStore } from "@/store/brandflow-store";
 
 interface EmailCampaign {
   id: number;
@@ -42,7 +42,7 @@ interface EmailTemplate {
 }
 
 export function EmailMarketingPage() {
-  const { appTheme } = useBrandOnyxStore();
+  const { appTheme } = useValtrioxStore();
   const isDark = appTheme !== "light";
   const isGold = appTheme === "premium-dark";
 
@@ -126,7 +126,7 @@ export function EmailMarketingPage() {
         </div>
         <div className="flex flex-wrap gap-2">
           <Button variant="outline" onClick={() => setTemplateOpen(true)}><FileEdit className="mr-2 h-4 w-4" /> Templates</Button>
-          <Button className="bg-emerald-600 hover:bg-emerald-700" onClick={() => setCampaignOpen(true)}><Plus className="mr-2 h-4 w-4" /> New Campaign</Button>
+          <Button className="bg-amber-600 hover:bg-amber-700" onClick={() => setCampaignOpen(true)}><Plus className="mr-2 h-4 w-4" /> New Campaign</Button>
         </div>
       </div>
 
@@ -145,8 +145,8 @@ export function EmailMarketingPage() {
                   <p className="text-xs font-medium text-slate-500 uppercase tracking-wider">{stat.title}</p>
                   <p className={`text-2xl font-bold mt-1 ${isDark ? "text-white" : "text-slate-900"}`}>{stat.value}</p>
                 </div>
-                <div className="h-10 w-10 rounded-lg bg-emerald-50 flex items-center justify-center">
-                  <stat.icon className="h-5 w-5 text-emerald-600" />
+                <div className="h-10 w-10 rounded-lg bg-amber-50 flex items-center justify-center">
+                  <stat.icon className="h-5 w-5 text-amber-600" />
                 </div>
               </div>
             </CardContent>
@@ -165,7 +165,7 @@ export function EmailMarketingPage() {
           <Card>
             <CardHeader className="pb-3">
               <CardTitle className={`text-lg font-semibold flex items-center gap-2 ${isDark ? "text-white" : ""}`}>
-                <Mail className="h-5 w-5 text-emerald-600" /> Campaign Overview
+                <Mail className="h-5 w-5 text-amber-600" /> Campaign Overview
               </CardTitle>
             </CardHeader>
             <CardContent>
@@ -177,7 +177,7 @@ export function EmailMarketingPage() {
                         <h3 className={`font-semibold ${isDark ? "text-white" : "text-slate-900"}`}>{c.name}</h3>
                         <p className={`text-sm ${isDark ? "text-slate-400" : "text-slate-500"}`}>{c.subject}</p>
                       </div>
-                      <span className="text-xs bg-emerald-100 text-emerald-700 px-2 py-1 rounded-full">{c.status}</span>
+                      <span className="text-xs bg-amber-100 text-amber-700 px-2 py-1 rounded-full">{c.status}</span>
                     </div>
                   ))}
                 </div>
@@ -198,9 +198,9 @@ export function EmailMarketingPage() {
             <CardHeader className="pb-3">
               <div className="flex items-center justify-between">
                 <CardTitle className={`text-lg font-semibold flex items-center gap-2 ${isDark ? "text-white" : ""}`}>
-                  <Users className="h-5 w-5 text-emerald-600" /> Subscriber Lists
+                  <Users className="h-5 w-5 text-amber-600" /> Subscriber Lists
                 </CardTitle>
-                <Button size="sm" className="bg-emerald-600 hover:bg-emerald-700" onClick={() => setListOpen(true)}>
+                <Button size="sm" className="bg-amber-600 hover:bg-amber-700" onClick={() => setListOpen(true)}>
                   <Plus className="mr-1 h-3 w-3" /> New List
                 </Button>
               </div>
@@ -233,7 +233,7 @@ export function EmailMarketingPage() {
           <Card>
             <CardHeader>
               <CardTitle className={`text-lg font-semibold flex items-center gap-2 ${isDark ? "text-white" : ""}`}>
-                <MailCheck className="h-5 w-5 text-emerald-600" /> Compose Email
+                <MailCheck className="h-5 w-5 text-amber-600" /> Compose Email
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-5">
@@ -262,7 +262,7 @@ export function EmailMarketingPage() {
                 <Label className={`text-sm font-medium ${labelCls}`}>Subject Line</Label>
                 <Input value={composeSubject} onChange={(e) => setComposeSubject(e.target.value)} placeholder="Enter email subject..." className={`text-sm ${inputCls}`} />
                 <div className="flex items-center gap-3">
-                  <Button size="sm" variant="ghost" className="text-xs text-emerald-600 h-7" onClick={handleAiSuggest}>
+                  <Button size="sm" variant="ghost" className="text-xs text-amber-600 h-7" onClick={handleAiSuggest}>
                     <Sparkles className="mr-1 h-3 w-3" /> AI Suggest Subject
                   </Button>
                 </div>
@@ -282,7 +282,7 @@ export function EmailMarketingPage() {
                 <Input value={composeCta} onChange={(e) => setComposeCta(e.target.value)} placeholder="e.g., Shop Now" className={`text-sm ${inputCls}`} />
               </div>
               <div className="flex flex-wrap gap-3 pt-2">
-                <Button className="bg-emerald-600 hover:bg-emerald-700" onClick={() => toast.success("Email sent!")}>
+                <Button className="bg-amber-600 hover:bg-amber-700" onClick={() => toast.success("Email sent!")}>
                   <Send className="mr-2 h-4 w-4" /> Send Now
                 </Button>
                 <Button variant="outline" onClick={() => setScheduleOpen(true)}><Clock className="mr-2 h-4 w-4" /> Schedule</Button>
@@ -319,7 +319,7 @@ export function EmailMarketingPage() {
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setCampaignOpen(false)}>Cancel</Button>
-            <Button className="bg-emerald-600 hover:bg-emerald-700" onClick={handleCreateCampaign}>Create Campaign</Button>
+            <Button className="bg-amber-600 hover:bg-amber-700" onClick={handleCreateCampaign}>Create Campaign</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
@@ -342,7 +342,7 @@ export function EmailMarketingPage() {
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setListOpen(false)}>Cancel</Button>
-            <Button className="bg-emerald-600 hover:bg-emerald-700" onClick={handleCreateList}>Create List</Button>
+            <Button className="bg-amber-600 hover:bg-amber-700" onClick={handleCreateList}>Create List</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
@@ -355,13 +355,13 @@ export function EmailMarketingPage() {
           </DialogHeader>
           <div className="space-y-3">
             {templates.map((t) => (
-              <div key={t.id} className={`p-4 rounded-lg border cursor-pointer hover:border-emerald-500 transition-colors ${isDark ? "border-slate-700 bg-slate-800/50" : "border-slate-200"}`} onClick={() => { setComposeSubject(t.subject); setTemplateOpen(false); toast.success(`Template "${t.name}" applied!`); }}>
+              <div key={t.id} className={`p-4 rounded-lg border cursor-pointer hover:border-amber-500 transition-colors ${isDark ? "border-slate-700 bg-slate-800/50" : "border-slate-200"}`} onClick={() => { setComposeSubject(t.subject); setTemplateOpen(false); toast.success(`Template "${t.name}" applied!`); }}>
                 <div className="flex items-center justify-between">
                   <div>
                     <h4 className={`font-semibold text-sm ${isDark ? "text-white" : "text-slate-900"}`}>{t.name}</h4>
                     <p className={`text-xs ${isDark ? "text-slate-400" : "text-slate-500"}`}>{t.subject}</p>
                   </div>
-                  <span className="text-xs bg-emerald-100 text-emerald-700 px-2 py-1 rounded-full">{t.category}</span>
+                  <span className="text-xs bg-amber-100 text-amber-700 px-2 py-1 rounded-full">{t.category}</span>
                 </div>
               </div>
             ))}
@@ -383,7 +383,7 @@ export function EmailMarketingPage() {
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setScheduleOpen(false)}>Cancel</Button>
-            <Button className="bg-emerald-600 hover:bg-emerald-700" onClick={handleSchedule}>Schedule</Button>
+            <Button className="bg-amber-600 hover:bg-amber-700" onClick={handleSchedule}>Schedule</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

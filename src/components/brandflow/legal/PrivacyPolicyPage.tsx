@@ -15,7 +15,7 @@ export function PrivacyPolicyPage({ onBack }: LegalPageProps) {
         {/* Back Button */}
         <button
           onClick={onBack}
-          className="inline-flex items-center gap-2 text-sm font-medium text-slate-600 hover:text-emerald-600 transition-colors mb-8 group"
+          className="inline-flex items-center gap-2 text-sm font-medium text-slate-600 hover:text-amber-600 transition-colors mb-8 group"
         >
           <ArrowLeft className="w-4 h-4 group-hover:-translate-x-1 transition-transform" />
           Back to {identity.companyName}
@@ -29,8 +29,8 @@ export function PrivacyPolicyPage({ onBack }: LegalPageProps) {
           <p className="text-slate-500 text-sm">
             Last Updated: July 11, 2025
           </p>
-          <div className="mt-4 p-4 bg-emerald-50 border border-emerald-200 rounded-lg">
-            <p className="text-sm text-emerald-800">
+          <div className="mt-4 p-4 bg-amber-50 border border-amber-200 rounded-lg">
+            <p className="text-sm text-amber-800">
               {identity.companyName} (&quot;we,&quot; &quot;our,&quot; or &quot;us&quot;) is committed to protecting your privacy.
               This Privacy Policy explains how we collect, use, disclose, and safeguard your
               information when you visit our website and use the {identity.companyName} Portal platform.
@@ -86,7 +86,7 @@ export function PrivacyPolicyPage({ onBack }: LegalPageProps) {
               We use cookies, web beacons, pixel tags, and similar tracking technologies to
               collect and store information about your interactions with our platform. For a
               detailed explanation, please refer to our{" "}
-              <span className="text-emerald-600 font-medium cursor-pointer hover:underline">Cookie Policy</span>.
+              <span className="text-amber-600 font-medium cursor-pointer hover:underline">Cookie Policy</span>.
             </p>
           </section>
 
@@ -169,7 +169,7 @@ export function PrivacyPolicyPage({ onBack }: LegalPageProps) {
             </ul>
             <p className="text-slate-600 leading-relaxed mt-3">
               To exercise any of these rights, please contact us at{" "}
-              <a href={`mailto:${identity.companyEmail}`} className="text-emerald-600 hover:underline">{identity.companyEmail}</a>. We will respond to your request within 30 days.
+              <a href={`mailto:${identity.companyEmail}`} className="text-amber-600 hover:underline">{identity.companyEmail}</a>. We will respond to your request within 30 days.
             </p>
           </section>
 
@@ -192,7 +192,7 @@ export function PrivacyPolicyPage({ onBack }: LegalPageProps) {
               You can manage your cookie preferences through your browser settings. Please note
               that disabling certain cookies may affect the functionality of our platform.
               For detailed information, see our{" "}
-              <span className="text-emerald-600 font-medium cursor-pointer hover:underline">Cookie Policy</span>.
+              <span className="text-amber-600 font-medium cursor-pointer hover:underline">Cookie Policy</span>.
             </p>
           </section>
 
@@ -229,7 +229,7 @@ export function PrivacyPolicyPage({ onBack }: LegalPageProps) {
               under 18, we will take steps to delete that information as promptly as possible.
               If you believe that a child under 18 has provided us with personal information,
               please contact us at{" "}
-              <a href={`mailto:${identity.companyEmail}`} className="text-emerald-600 hover:underline">{identity.companyEmail}</a>.
+              <a href={`mailto:${identity.companyEmail}`} className="text-amber-600 hover:underline">{identity.companyEmail}</a>.
             </p>
           </section>
 
@@ -279,13 +279,13 @@ export function PrivacyPolicyPage({ onBack }: LegalPageProps) {
                 <p><strong>{identity.companyName} Portal</strong></p>
                 <p>
                   Email:{" "}
-                  <a href={`mailto:${identity.companyEmail}`} className="text-emerald-600 hover:underline">{identity.companyEmail}</a>
+                  <a href={`mailto:${identity.companyEmail}`} className="text-amber-600 hover:underline">{identity.companyEmail}</a>
                 </p>
                 <p>
                   Support:{" "}
-                  <a href={`mailto:${identity.companyEmail}`} className="text-emerald-600 hover:underline">{identity.companyEmail}</a>
+                  <a href={`mailto:${identity.companyEmail}`} className="text-amber-600 hover:underline">{identity.companyEmail}</a>
                 </p>
-                <p>Website: {identity.companyWebsite || "brandflow.pk"}</p>
+                <p>Website: {identity.companyWebsite || "valtriox.com"}</p>
                 <p className="text-sm text-slate-500 mt-3">
                   For data protection inquiries, we aim to respond within 30 working days as
                   required under applicable Pakistani regulations.

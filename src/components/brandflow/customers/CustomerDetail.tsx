@@ -23,9 +23,9 @@ interface CustomerDetailProps {
 const statusColors: Record<string, string> = {
   pending: "bg-amber-100 text-amber-700",
   confirmed: "bg-blue-100 text-blue-700",
-  packed: "bg-purple-100 text-purple-700",
+  packed: "bg-amber-100 text-amber-700",
   dispatched: "bg-cyan-100 text-cyan-700",
-  delivered: "bg-emerald-100 text-emerald-700",
+  delivered: "bg-amber-100 text-amber-700",
   cancelled: "bg-red-100 text-red-700",
 };
 
@@ -84,8 +84,8 @@ export function CustomerDetail({ open, onClose, customerId }: CustomerDetailProp
             {/* Header */}
             <div>
               <div className="flex items-center gap-3">
-                <div className="h-12 w-12 rounded-full bg-emerald-100 flex items-center justify-center">
-                  <span className="text-emerald-700 font-bold text-lg">
+                <div className="h-12 w-12 rounded-full bg-amber-100 flex items-center justify-center">
+                  <span className="text-amber-700 font-bold text-lg">
                     {customer.name.split(" ").map((n: string) => n[0]).join("").slice(0, 2)}
                   </span>
                 </div>
@@ -129,12 +129,12 @@ export function CustomerDetail({ open, onClose, customerId }: CustomerDetailProp
 
             {/* Stats */}
             <div className="grid grid-cols-2 gap-3">
-              <div className="p-3 bg-emerald-50 rounded-lg">
-                <div className="flex items-center gap-1.5 text-emerald-600">
+              <div className="p-3 bg-amber-50 rounded-lg">
+                <div className="flex items-center gap-1.5 text-amber-600">
                   <DollarSign className="h-3.5 w-3.5" />
                   <span className="text-xs font-medium">Total Spent</span>
                 </div>
-                <p className="text-xl font-bold text-emerald-700 mt-1">${customer.totalSpent.toFixed(2)}</p>
+                <p className="text-xl font-bold text-amber-700 mt-1">${customer.totalSpent.toFixed(2)}</p>
               </div>
               <div className="p-3 bg-slate-50 rounded-lg">
                 <div className="flex items-center gap-1.5 text-slate-600">

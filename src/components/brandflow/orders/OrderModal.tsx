@@ -203,7 +203,7 @@ export function OrderModal({ open, onClose, onCreated, organizationId }: OrderMo
             <span className="font-semibold text-lg">Total: ${total.toFixed(2)}</span>
             <div className="flex gap-2 w-full sm:w-auto">
               <Button type="button" variant="outline" onClick={onClose} className="flex-1 sm:flex-initial">Cancel</Button>
-              <Button type="submit" className="bg-emerald-600 hover:bg-emerald-700 flex-1 sm:flex-initial" disabled={loading}>
+              <Button type="submit" className="bg-amber-600 hover:bg-amber-700 flex-1 sm:flex-initial" disabled={loading}>
                 Create Order
               </Button>
             </div>

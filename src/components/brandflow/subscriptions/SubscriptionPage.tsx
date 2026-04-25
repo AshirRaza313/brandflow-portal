@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import { useBrandOnyxStore } from "@/store/brandflow-store";
+import { useValtrioxStore } from "@/store/brandflow-store";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -127,10 +127,10 @@ const PLAN_ICONS: Record<string, any> = {
 
 const PLAN_COLORS: Record<string, { bg: string; border: string; text: string; badge: string }> = {
   starter: {
-    bg: "bg-emerald-500/10",
-    border: "border-emerald-500/20",
-    text: "text-emerald-400",
-    badge: "bg-emerald-500/20 text-emerald-300",
+    bg: "bg-amber-500/10",
+    border: "border-amber-500/20",
+    text: "text-amber-400",
+    badge: "bg-amber-500/20 text-amber-300",
   },
   growth: {
     bg: "bg-amber-500/10",
@@ -139,10 +139,10 @@ const PLAN_COLORS: Record<string, { bg: string; border: string; text: string; ba
     badge: "bg-amber-500/20 text-amber-300",
   },
   enterprise: {
-    bg: "bg-purple-500/10",
-    border: "border-purple-500/20",
-    text: "text-purple-400",
-    badge: "bg-purple-500/20 text-purple-300",
+    bg: "bg-amber-500/10",
+    border: "border-amber-500/20",
+    text: "text-amber-400",
+    badge: "bg-amber-500/20 text-amber-300",
   },
 };
 
@@ -156,7 +156,7 @@ const pageVariants = {
 // ── Main Component ──
 
 export function SubscriptionPage() {
-  const { user, organization, appTheme } = useBrandOnyxStore();
+  const { user, organization, appTheme } = useValtrioxStore();
   const isDark = appTheme !== "light";
   const isGold = appTheme === "premium-dark";
   const isPlatform = isPlatformRole(user?.role || "");
@@ -327,7 +327,7 @@ export function SubscriptionPage() {
       case "trial":
         return <Badge className="bg-amber-500/20 text-amber-300 border-amber-500/30">Trial</Badge>;
       case "active":
-        return <Badge className="bg-emerald-500/20 text-emerald-300 border-emerald-500/30">Active</Badge>;
+        return <Badge className="bg-amber-500/20 text-amber-300 border-amber-500/30">Active</Badge>;
       case "pending_payment":
         return <Badge className="bg-yellow-500/20 text-yellow-300 border-yellow-500/30">Pending Payment</Badge>;
       case "expired":
@@ -344,7 +344,7 @@ export function SubscriptionPage() {
       case "pending":
         return <Badge className="bg-yellow-500/20 text-yellow-300">Pending</Badge>;
       case "approved":
-        return <Badge className="bg-emerald-500/20 text-emerald-300">Approved</Badge>;
+        return <Badge className="bg-amber-500/20 text-amber-300">Approved</Badge>;
       case "rejected":
         return <Badge className="bg-red-500/20 text-red-300">Rejected</Badge>;
       default:
@@ -358,7 +358,7 @@ export function SubscriptionPage() {
         return <Badge className="bg-yellow-500/20 text-yellow-300">Pending</Badge>;
       case "paid":
       case "approved":
-        return <Badge className="bg-emerald-500/20 text-emerald-300">Paid</Badge>;
+        return <Badge className="bg-amber-500/20 text-amber-300">Paid</Badge>;
       case "cancelled":
         return <Badge className="bg-red-500/20 text-red-300">Cancelled</Badge>;
       case "refunded":
@@ -372,7 +372,7 @@ export function SubscriptionPage() {
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-[400px]">
-        <Loader2 className="h-8 w-8 animate-spin text-emerald-400" />
+        <Loader2 className="h-8 w-8 animate-spin text-amber-400" />
       </div>
     );
   }
@@ -398,7 +398,7 @@ export function SubscriptionPage() {
               "gap-2",
               isGold
                 ? "bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-black font-semibold"
-                : "bg-emerald-600 hover:bg-emerald-700 text-white"
+                : "bg-amber-600 hover:bg-amber-700 text-white"
             )}
           >
             <ArrowRight className="h-4 w-4" /> Upgrade Plan
@@ -452,7 +452,7 @@ export function SubscriptionPage() {
                       <span className="text-[10px]">🇵🇰</span>
                       {currentPlan.price === 0 ? "Free forever" : (() => { const c = getCurrencyForCountry(organization?.country || "PK"); const cycle = subscription?.billingCycle || "monthly"; const price = cycle === "annually" && currentPlan.annualPrice > 0 ? currentPlan.annualPrice : currentPlan.price; return `${c.flag} ${c.symbol} ${price.toLocaleString()}/${cycle === "annually" ? "year" : "month"}`; })()}
                       {subscription?.billingCycle === "annually" && (
-                        <Badge className="text-[9px] px-1 py-0 bg-purple-500/20 text-purple-300">Annual</Badge>
+                        <Badge className="text-[9px] px-1 py-0 bg-amber-500/20 text-amber-300">Annual</Badge>
                       )}
                     </div>
                   </div>
@@ -477,11 +477,11 @@ export function SubscriptionPage() {
                 {subscription!.status === "active" && subscription!.currentPeriodEnd && (
                   <div className={cn(
                     "px-4 py-2 rounded-xl border",
-                    isDark ? "bg-emerald-500/5 border-emerald-500/20" : "bg-emerald-50 border-emerald-200"
+                    isDark ? "bg-amber-500/5 border-amber-500/20" : "bg-amber-50 border-amber-200"
                   )}>
                     <div className="flex items-center gap-2 text-sm">
-                      <CheckCircle2 className="h-4 w-4 text-emerald-400" />
-                      <span className={isDark ? "text-emerald-300" : "text-emerald-700"}>
+                      <CheckCircle2 className="h-4 w-4 text-amber-400" />
+                      <span className={isDark ? "text-amber-300" : "text-amber-700"}>
                         Renews {new Date(subscription!.currentPeriodEnd).toLocaleDateString("en-PK", { month: "short", day: "numeric" })}
                       </span>
                     </div>
@@ -496,7 +496,7 @@ export function SubscriptionPage() {
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
                 <div className={cn("p-3 rounded-lg", isDark ? "bg-white/[0.03]" : "bg-slate-50")}>
                   <div className="flex items-center gap-2 mb-1">
-                    <Users className="h-4 w-4 text-emerald-400" />
+                    <Users className="h-4 w-4 text-amber-400" />
                     <span className={cn("text-xs", textSecondary)}>Team Members</span>
                   </div>
                   <p className={cn("text-lg font-bold", textPrimary)}>
@@ -505,7 +505,7 @@ export function SubscriptionPage() {
                 </div>
                 <div className={cn("p-3 rounded-lg", isDark ? "bg-white/[0.03]" : "bg-slate-50")}>
                   <div className="flex items-center gap-2 mb-1">
-                    <ShoppingCart className="h-4 w-4 text-emerald-400" />
+                    <ShoppingCart className="h-4 w-4 text-amber-400" />
                     <span className={cn("text-xs", textSecondary)}>Orders/Month</span>
                   </div>
                   <p className={cn("text-lg font-bold", textPrimary)}>
@@ -514,7 +514,7 @@ export function SubscriptionPage() {
                 </div>
                 <div className={cn("p-3 rounded-lg", isDark ? "bg-white/[0.03]" : "bg-slate-50")}>
                   <div className="flex items-center gap-2 mb-1">
-                    <Package className="h-4 w-4 text-emerald-400" />
+                    <Package className="h-4 w-4 text-amber-400" />
                     <span className={cn("text-xs", textSecondary)}>Products</span>
                   </div>
                   <p className={cn("text-lg font-bold", textPrimary)}>
@@ -523,7 +523,7 @@ export function SubscriptionPage() {
                 </div>
                 <div className={cn("p-3 rounded-lg", isDark ? "bg-white/[0.03]" : "bg-slate-50")}>
                   <div className="flex items-center gap-2 mb-1">
-                    <Shield className="h-4 w-4 text-emerald-400" />
+                    <Shield className="h-4 w-4 text-amber-400" />
                     <span className={cn("text-xs", textSecondary)}>Features</span>
                   </div>
                   <p className={cn("text-lg font-bold", textPrimary)}>{currentPlan.features.length}</p>
@@ -536,7 +536,7 @@ export function SubscriptionPage() {
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                   {currentPlan.features.map((feature, i) => (
                     <div key={i} className="flex items-center gap-2">
-                      <Check className="h-4 w-4 text-emerald-400 shrink-0" />
+                      <Check className="h-4 w-4 text-amber-400 shrink-0" />
                       <span className={cn("text-sm", textSecondary)}>{feature}</span>
                     </div>
                   ))}
@@ -575,7 +575,7 @@ export function SubscriptionPage() {
                         billingToggle === "monthly"
                           ? isGold
                             ? "bg-gradient-to-r from-amber-500 to-amber-600 text-black"
-                            : "bg-emerald-600 text-white"
+                            : "bg-amber-600 text-white"
                           : textSecondary
                       )}
                     >
@@ -588,7 +588,7 @@ export function SubscriptionPage() {
                         billingToggle === "annually"
                           ? isGold
                             ? "bg-gradient-to-r from-amber-500 to-amber-600 text-black"
-                            : "bg-emerald-600 text-white"
+                            : "bg-amber-600 text-white"
                           : textSecondary
                       )}
                     >
@@ -636,11 +636,11 @@ export function SubscriptionPage() {
                               ) : billingToggle === "annually" && plan.annualPrice > 0 ? (
                                 <>
                                   <span className="text-[10px]">🇵🇰</span>
-                                  <span className="text-sm font-bold text-purple-400">{plan.annualPrice.toLocaleString()}</span>
+                                  <span className="text-sm font-bold text-amber-400">{plan.annualPrice.toLocaleString()}</span>
                                   <span className={cn("text-xs", textSecondary)}>/year</span>
                                   <span className="text-[10px] line-through text-slate-500 ml-1">{(plan.price * 12).toLocaleString()}</span>
                                   {plan.annualSavings > 0 && (
-                                    <Badge className="text-[9px] px-1 py-0 bg-emerald-500/20 text-emerald-300 ml-1">
+                                    <Badge className="text-[9px] px-1 py-0 bg-amber-500/20 text-amber-300 ml-1">
                                       Save {plan.annualSavings}%
                                     </Badge>
                                   )}
@@ -648,7 +648,7 @@ export function SubscriptionPage() {
                               ) : (
                                 <>
                                   <span className="text-[10px]">🇵🇰</span>
-                                  <span className="text-sm font-bold text-emerald-400">{plan.price.toLocaleString()}</span>
+                                  <span className="text-sm font-bold text-amber-400">{plan.price.toLocaleString()}</span>
                                   <span className={cn("text-xs", textSecondary)}>/month</span>
                                 </>
                               )}
@@ -659,7 +659,7 @@ export function SubscriptionPage() {
                         <div className="space-y-2 mb-4">
                           {plan.features.slice(0, 5).map((f, i) => (
                             <div key={i} className="flex items-start gap-2">
-                              <Check className="h-3.5 w-3.5 text-emerald-400 shrink-0 mt-0.5" />
+                              <Check className="h-3.5 w-3.5 text-amber-400 shrink-0 mt-0.5" />
                               <span className={cn("text-xs", textSecondary)}>{f}</span>
                             </div>
                           ))}
@@ -677,7 +677,7 @@ export function SubscriptionPage() {
                                 ? "bg-slate-600 text-slate-300 cursor-not-allowed opacity-50"
                                 : isGold
                                   ? "bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-black"
-                                  : "bg-emerald-600 hover:bg-emerald-700 text-white"
+                                  : "bg-amber-600 hover:bg-amber-700 text-white"
                             )}
                             disabled={subscription?.status === "pending_payment"}
                             onClick={() => {
@@ -725,7 +725,7 @@ export function SubscriptionPage() {
             <Card className={cn("mb-6", cardBg)}>
               <CardHeader>
                 <CardTitle className={cn("flex items-center gap-2 text-base", textPrimary)}>
-                  <CreditCard className="h-5 w-5 text-emerald-400" />
+                  <CreditCard className="h-5 w-5 text-amber-400" />
                   Submit Payment Proof
                 </CardTitle>
                 <CardDescription className={textSecondary}>
@@ -785,9 +785,9 @@ export function SubscriptionPage() {
 
                         {/* Contact info */}
                         {(platformSettings.companyPhone || platformSettings.whatsappNumber) && (
-                          <div className={cn("p-3 rounded-lg border flex items-center gap-3", isDark ? "bg-emerald-500/5 border-emerald-500/20" : "bg-emerald-50 border-emerald-200")}>
-                            <AlertCircle className="h-4 w-4 text-emerald-400 shrink-0" />
-                            <span className={cn("text-xs", isDark ? "text-emerald-300" : "text-emerald-700")}>
+                          <div className={cn("p-3 rounded-lg border flex items-center gap-3", isDark ? "bg-amber-500/5 border-amber-500/20" : "bg-amber-50 border-amber-200")}>
+                            <AlertCircle className="h-4 w-4 text-amber-400 shrink-0" />
+                            <span className={cn("text-xs", isDark ? "text-amber-300" : "text-amber-700")}>
                               After payment, share the screenshot via WhatsApp at {platformSettings.whatsappNumber || platformSettings.companyPhone} or upload below.
                             </span>
                           </div>
@@ -877,8 +877,8 @@ export function SubscriptionPage() {
                       className={cn(
                         "border-2 border-dashed rounded-lg p-6 text-center cursor-pointer transition-colors",
                         isDark
-                          ? "border-white/[0.1] hover:border-emerald-500/40 bg-white/[0.02]"
-                          : "border-slate-300 hover:border-emerald-500/40 bg-slate-50"
+                          ? "border-white/[0.1] hover:border-amber-500/40 bg-white/[0.02]"
+                          : "border-slate-300 hover:border-amber-500/40 bg-slate-50"
                       )}
                       onClick={() => document.getElementById("screenshot-input")?.click()}
                     >
@@ -919,7 +919,7 @@ export function SubscriptionPage() {
                       "gap-2",
                       isGold
                         ? "bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-black font-semibold"
-                        : "bg-emerald-600 hover:bg-emerald-700 text-white"
+                        : "bg-amber-600 hover:bg-amber-700 text-white"
                     )}
                   >
                     {submittingPayment ? (
@@ -980,7 +980,7 @@ export function SubscriptionPage() {
                       </span>
                       {payment.billingCycle && (
                         <Badge className={cn("text-[10px] px-1 py-0",
-                          payment.billingCycle === "annually" ? "bg-purple-500/20 text-purple-300" : "bg-blue-500/20 text-blue-300"
+                          payment.billingCycle === "annually" ? "bg-amber-500/20 text-amber-300" : "bg-blue-500/20 text-blue-300"
                         )}>
                           {payment.billingCycle}
                         </Badge>
@@ -999,7 +999,7 @@ export function SubscriptionPage() {
                       "text-xs px-3 py-1.5 rounded-lg max-w-xs",
                       payment.status === "rejected"
                         ? isDark ? "bg-red-500/10 text-red-300" : "bg-red-50 text-red-600"
-                        : isDark ? "bg-emerald-500/10 text-emerald-300" : "bg-emerald-50 text-emerald-600"
+                        : isDark ? "bg-amber-500/10 text-amber-300" : "bg-amber-50 text-amber-600"
                     )}>
                       <span className="font-medium">{payment.status === "rejected" ? "Reason" : "Note"}:</span>{" "}
                       {payment.adminNote}
@@ -1019,7 +1019,7 @@ export function SubscriptionPage() {
             <div className="flex items-center justify-between">
               <div>
                 <CardTitle className={cn("flex items-center gap-2 text-base", textPrimary)}>
-                  <FileText className="h-5 w-5" style={{ color: isGold ? "#d97706" : "#10b981" }} />
+                  <FileText className="h-5 w-5" style={{ color: isGold ? "#C9A227" : "#D4AF37" }} />
                   Invoices
                 </CardTitle>
                 <CardDescription className={textSecondary}>
@@ -1040,7 +1040,7 @@ export function SubscriptionPage() {
                 >
                   <div className="space-y-1">
                     <div className="flex items-center gap-2">
-                      <span className={cn("font-mono text-xs font-bold", isGold ? "text-amber-400" : "text-emerald-400")}>
+                      <span className={cn("font-mono text-xs font-bold", isGold ? "text-amber-400" : "text-amber-400")}>
                         {invoice.invoiceNumber}
                       </span>
                       {getInvoiceStatusBadge(invoice.status)}
@@ -1069,7 +1069,7 @@ export function SubscriptionPage() {
                       "gap-1.5 text-xs shrink-0",
                       isGold
                         ? "border-amber-500/20 text-amber-400 hover:bg-amber-500/10 hover:text-amber-300"
-                        : "border-emerald-500/20 text-emerald-400 hover:bg-emerald-500/10 hover:text-emerald-300"
+                        : "border-amber-500/20 text-amber-400 hover:bg-amber-500/10 hover:text-amber-300"
                     )}
                     onClick={() => downloadInvoice(invoice.id, invoice.invoiceNumber)}
                   >
@@ -1115,7 +1115,7 @@ export function SubscriptionPage() {
                 <Button
                   size="sm"
                   onClick={() => setShowAllPlans(true)}
-                  className="mt-3 bg-emerald-600 hover:bg-emerald-700 text-white gap-1"
+                  className="mt-3 bg-amber-600 hover:bg-amber-700 text-white gap-1"
                 >
                   Upgrade Now <ArrowRight className="h-3.5 w-3.5" />
                 </Button>

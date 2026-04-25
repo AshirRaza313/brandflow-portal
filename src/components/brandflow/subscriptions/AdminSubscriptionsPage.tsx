@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import { useBrandOnyxStore } from "@/store/brandflow-store";
+import { useValtrioxStore } from "@/store/brandflow-store";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -73,7 +73,7 @@ interface SubStats {
 
 // ── Main Component ──
 export function AdminSubscriptionsPage() {
-  const { user, appTheme } = useBrandOnyxStore();
+  const { user, appTheme } = useValtrioxStore();
   const isDark = appTheme !== "light";
   const isGold = appTheme === "premium-dark";
 
@@ -217,7 +217,7 @@ export function AdminSubscriptionsPage() {
     if (isBanned) return <Badge className="bg-red-500/20 text-red-300 border-red-500/30 gap-1"><Ban className="h-3 w-3" /> Banned</Badge>;
     switch (status) {
       case "trial": return <Badge className="bg-amber-500/20 text-amber-300 border-amber-500/30 gap-1"><Clock className="h-3 w-3" /> Trial</Badge>;
-      case "active": return <Badge className="bg-emerald-500/20 text-emerald-300 border-emerald-500/30 gap-1"><CheckCircle2 className="h-3 w-3" /> Active</Badge>;
+      case "active": return <Badge className="bg-amber-500/20 text-amber-300 border-amber-500/30 gap-1"><CheckCircle2 className="h-3 w-3" /> Active</Badge>;
       case "pending_payment": return <Badge className="bg-yellow-500/20 text-yellow-300 border-yellow-500/30 gap-1"><Clock className="h-3 w-3" /> Pending</Badge>;
       case "expired": return <Badge className="bg-slate-500/20 text-slate-300 border-slate-500/30 gap-1"><XCircle className="h-3 w-3" /> Expired</Badge>;
       case "cancelled": return <Badge className="bg-red-500/20 text-red-300 border-red-500/30 gap-1"><XCircle className="h-3 w-3" /> Cancelled</Badge>;
@@ -227,7 +227,7 @@ export function AdminSubscriptionsPage() {
 
   // ── Loading ──
   if (loading) {
-    return <div className="flex items-center justify-center min-h-[400px]"><Loader2 className="h-8 w-8 animate-spin text-emerald-400" /></div>;
+    return <div className="flex items-center justify-center min-h-[400px]"><Loader2 className="h-8 w-8 animate-spin text-amber-400" /></div>;
   }
 
   const cardBg = isDark ? "bg-white/[0.03] border-white/[0.06]" : "bg-white border-slate-200";
@@ -267,10 +267,10 @@ export function AdminSubscriptionsPage() {
         <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-6 gap-3">
           {[
             { label: "Total", value: stats.total, color: textPrimary, icon: Users },
-            { label: "Active", value: stats.active, color: "text-emerald-400", icon: CheckCircle2 },
+            { label: "Active", value: stats.active, color: "text-amber-400", icon: CheckCircle2 },
             { label: "Trial", value: stats.trial, color: "text-amber-400", icon: Clock },
             { label: "Monthly", value: stats.monthly_active, color: "text-blue-400", icon: Calendar },
-            { label: "Annual", value: stats.annual_active, color: "text-purple-400", icon: Calendar },
+            { label: "Annual", value: stats.annual_active, color: "text-amber-400", icon: Calendar },
             { label: "Banned", value: stats.banned, color: "text-red-400", icon: Ban },
           ].map((stat) => (
             <Card key={stat.label} className={cn(cardBg)}>
@@ -287,25 +287,25 @@ export function AdminSubscriptionsPage() {
       {/* Revenue Summary */}
       {stats && (stats.monthly_revenue > 0 || stats.annual_revenue > 0) && (
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <Card className={cn(cardBg, "border-emerald-500/20")}>
+          <Card className={cn(cardBg, "border-amber-500/20")}>
             <CardContent className="p-4">
               <div className="flex items-center justify-between">
                 <div>
                   <p className={cn("text-xs", textSecondary)}>Monthly Recurring Revenue</p>
-                  <p className="text-2xl font-bold text-emerald-400">Rs. {stats.monthly_revenue.toLocaleString()}</p>
+                  <p className="text-2xl font-bold text-amber-400">Rs. {stats.monthly_revenue.toLocaleString()}</p>
                 </div>
-                <ArrowUpRight className="h-8 w-8 text-emerald-400/30" />
+                <ArrowUpRight className="h-8 w-8 text-amber-400/30" />
               </div>
             </CardContent>
           </Card>
-          <Card className={cn(cardBg, "border-purple-500/20")}>
+          <Card className={cn(cardBg, "border-amber-500/20")}>
             <CardContent className="p-4">
               <div className="flex items-center justify-between">
                 <div>
                   <p className={cn("text-xs", textSecondary)}>Annual Revenue</p>
-                  <p className="text-2xl font-bold text-purple-400">Rs. {stats.annual_revenue.toLocaleString()}</p>
+                  <p className="text-2xl font-bold text-amber-400">Rs. {stats.annual_revenue.toLocaleString()}</p>
                 </div>
-                <TrendingUp className="h-8 w-8 text-purple-400/30" />
+                <TrendingUp className="h-8 w-8 text-amber-400/30" />
               </div>
             </CardContent>
           </Card>
@@ -341,7 +341,7 @@ export function AdminSubscriptionsPage() {
                         <div className="flex items-center gap-2 flex-wrap">
                           <span className={cn("font-semibold text-sm truncate", textPrimary)}>{sub.organization.name}</span>
                           {getStatusBadge(sub.status, sub.organization.isBanned)}
-                          <Badge className={cn("text-[10px] px-1.5 py-0", sub.billingCycle === "annually" ? "bg-purple-500/20 text-purple-300" : "bg-blue-500/20 text-blue-300")}>
+                          <Badge className={cn("text-[10px] px-1.5 py-0", sub.billingCycle === "annually" ? "bg-amber-500/20 text-amber-300" : "bg-blue-500/20 text-blue-300")}>
                             {sub.billingCycle === "annually" ? "Annual" : "Monthly"}
                           </Badge>
                         </div>
@@ -415,7 +415,7 @@ export function AdminSubscriptionsPage() {
                                     <div className="flex items-center gap-2">
                                       <span className="capitalize">{p.planName}</span>
                                       <span className={cn("px-1.5 py-0.5 rounded text-[10px]",
-                                        p.status === "approved" ? "bg-emerald-500/20 text-emerald-300" :
+                                        p.status === "approved" ? "bg-amber-500/20 text-amber-300" :
                                         p.status === "rejected" ? "bg-red-500/20 text-red-300" : "bg-yellow-500/20 text-yellow-300"
                                       )}>{p.status}</span>
                                     </div>
@@ -453,7 +453,7 @@ export function AdminSubscriptionsPage() {
                                 <RefreshCw className="h-3 w-3" /> Reset to Starter
                               </Button>
                               {sub.organization.isBanned ? (
-                                <Button size="sm" className="gap-1 text-xs bg-emerald-600 hover:bg-emerald-700 text-white"
+                                <Button size="sm" className="gap-1 text-xs bg-amber-600 hover:bg-amber-700 text-white"
                                   onClick={() => executeAction(sub.id, "unban")}>
                                   <Unlock className="h-3 w-3" /> Unban
                                 </Button>
@@ -553,7 +553,7 @@ export function AdminSubscriptionsPage() {
                     executeAction(actionModalSub.id, actionType, actionForm);
                   }}
                   disabled={actionLoading[actionModalSub.id]}
-                  className={actionType === "ban" ? "bg-red-600 hover:bg-red-700 text-white gap-2" : "bg-emerald-600 hover:bg-emerald-700 text-white gap-2"}>
+                  className={actionType === "ban" ? "bg-red-600 hover:bg-red-700 text-white gap-2" : "bg-amber-600 hover:bg-amber-700 text-white gap-2"}>
                   {actionLoading[actionModalSub.id] ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
                   {actionType === "change_plan" && "Change Plan"}
                   {actionType === "extend" && "Extend"}

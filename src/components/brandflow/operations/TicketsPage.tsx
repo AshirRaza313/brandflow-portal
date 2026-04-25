@@ -10,7 +10,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Ticket, Clock, Star, TrendingUp, Filter, Zap } from "lucide-react";
 import { EmptyState } from "@/components/brandflow/shared/EmptyState";
 import { toast } from "sonner";
-import { useBrandOnyxStore } from "@/store/brandflow-store";
+import { useValtrioxStore } from "@/store/brandflow-store";
 
 interface TicketItem {
   id: number;
@@ -26,7 +26,7 @@ export function TicketsPage() {
   const [createOpen, setCreateOpen] = useState(false);
   const [tickets, setTickets] = useState<TicketItem[]>([]);
   const [formData, setFormData] = useState({ subject: "", description: "", priority: "Medium", customerName: "" });
-  const { appTheme } = useBrandOnyxStore();
+  const { appTheme } = useValtrioxStore();
   const isDark = appTheme !== "light";
   const isGold = appTheme === "premium-dark";
 
@@ -49,7 +49,7 @@ export function TicketsPage() {
           <h1 className="text-2xl font-bold text-slate-900">Support Tickets</h1>
           <p className="text-sm text-slate-500 mt-1">Manage customer support requests and track resolutions</p>
         </div>
-        <Button className="bg-emerald-600 hover:bg-emerald-700 text-white" onClick={() => setCreateOpen(true)}>
+        <Button className="bg-amber-600 hover:bg-amber-700 text-white" onClick={() => setCreateOpen(true)}>
           <Ticket className="mr-2 h-4 w-4" /> New Ticket
         </Button>
       </div>
@@ -93,7 +93,7 @@ export function TicketsPage() {
                     <p className="text-sm font-medium text-slate-900">{ticket.subject}</p>
                     <p className="text-xs text-slate-500">{ticket.customerName} · {ticket.priority} priority</p>
                   </div>
-                  <span className="px-2 py-1 text-xs font-medium bg-emerald-100 text-emerald-700 rounded-full">{ticket.status}</span>
+                  <span className="px-2 py-1 text-xs font-medium bg-amber-100 text-amber-700 rounded-full">{ticket.status}</span>
                 </div>
               ))}
             </div>
@@ -186,7 +186,7 @@ export function TicketsPage() {
               <Button variant="outline" onClick={() => setCreateOpen(false)} className={isDark ? "border-slate-600 text-slate-300 hover:bg-slate-700" : ""}>
                 Cancel
               </Button>
-              <Button onClick={handleSubmit} className="bg-emerald-600 hover:bg-emerald-700 text-white">
+              <Button onClick={handleSubmit} className="bg-amber-600 hover:bg-amber-700 text-white">
                 Create Ticket
               </Button>
             </div>

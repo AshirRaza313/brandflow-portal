@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import { useBrandOnyxStore } from "@/store/brandflow-store";
+import { useValtrioxStore } from "@/store/brandflow-store";
 import { fetchWithAuth } from "@/lib/fetch-with-auth";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -48,12 +48,12 @@ const TIER_COLORS: Record<string, string> = {
   bronze: "bg-orange-500/20 text-orange-300",
   silver: "bg-slate-400/20 text-slate-200",
   gold: "bg-amber-500/20 text-amber-300",
-  platinum: "bg-purple-500/20 text-purple-300",
-  vip: "bg-emerald-500/20 text-emerald-300",
+  platinum: "bg-amber-500/20 text-amber-300",
+  vip: "bg-amber-500/20 text-amber-300",
 };
 
 export function CustomerReportsPage() {
-  const { organization, appTheme } = useBrandOnyxStore();
+  const { organization, appTheme } = useValtrioxStore();
   const isDark = appTheme !== "light";
   const isGold = appTheme === "premium-dark";
   const accent = isGold ? "amber" : "emerald";
@@ -154,8 +154,8 @@ export function CustomerReportsPage() {
   const cardBg = isDark ? "bg-white/[0.03] border-white/[0.06]" : "bg-white border-slate-200";
   const textPrimary = isDark ? "text-white" : "text-slate-900";
   const textSecondary = isDark ? "text-slate-400" : "text-slate-500";
-  const accentColor = isGold ? "text-amber-400" : "text-emerald-400";
-  const accentBg = isGold ? "bg-amber-500/10" : "bg-emerald-500/10";
+  const accentColor = isGold ? "text-amber-400" : "text-amber-400";
+  const accentBg = isGold ? "bg-amber-500/10" : "bg-amber-500/10";
 
   return (
     <div className="space-y-6">
@@ -320,11 +320,11 @@ export function CustomerReportsPage() {
                             className={cn(
                               "h-full rounded-full",
                               tier === "gold" ? "bg-amber-500" :
-                              tier === "platinum" ? "bg-purple-500" :
+                              tier === "platinum" ? "bg-amber-500" :
                               tier === "silver" ? "bg-slate-400" :
                               tier === "bronze" ? "bg-orange-500" :
-                              tier === "vip" ? "bg-emerald-500" :
-                              isGold ? "bg-amber-500/40" : "bg-emerald-500/40"
+                              tier === "vip" ? "bg-amber-500" :
+                              isGold ? "bg-amber-500/40" : "bg-amber-500/40"
                             )}
                           />
                         </div>

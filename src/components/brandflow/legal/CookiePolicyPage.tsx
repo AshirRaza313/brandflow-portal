@@ -15,7 +15,7 @@ export function CookiePolicyPage({ onBack }: LegalPageProps) {
         {/* Back Button */}
         <button
           onClick={onBack}
-          className="inline-flex items-center gap-2 text-sm font-medium text-slate-600 hover:text-emerald-600 transition-colors mb-8 group"
+          className="inline-flex items-center gap-2 text-sm font-medium text-slate-600 hover:text-amber-600 transition-colors mb-8 group"
         >
           <ArrowLeft className="w-4 h-4 group-hover:-translate-x-1 transition-transform" />
           Back to {identity.companyName}
@@ -29,12 +29,12 @@ export function CookiePolicyPage({ onBack }: LegalPageProps) {
           <p className="text-slate-500 text-sm">
             Last Updated: July 11, 2025
           </p>
-          <div className="mt-4 p-4 bg-emerald-50 border border-emerald-200 rounded-lg">
-            <p className="text-sm text-emerald-800">
+          <div className="mt-4 p-4 bg-amber-50 border border-amber-200 rounded-lg">
+            <p className="text-sm text-amber-800">
               This Cookie Policy explains how {identity.companyName} (&quot;we,&quot; &quot;our,&quot; or &quot;us&quot;) uses cookies
               and similar tracking technologies when you visit our website and use the {identity.companyName}
               Portal platform. This policy should be read alongside our{" "}
-              <span className="text-emerald-600 font-medium cursor-pointer hover:underline">Privacy Policy</span>,
+              <span className="text-amber-600 font-medium cursor-pointer hover:underline">Privacy Policy</span>,
               which provides more general information about how we handle your personal data.
             </p>
           </div>
@@ -78,8 +78,8 @@ export function CookiePolicyPage({ onBack }: LegalPageProps) {
 
             <div className="mt-4 space-y-4">
               <div className="flex items-start gap-4 p-4 bg-slate-50 rounded-lg border border-slate-200">
-                <div className="w-10 h-10 rounded-lg bg-emerald-100 flex items-center justify-center shrink-0">
-                  <Shield className="w-5 h-5 text-emerald-600" />
+                <div className="w-10 h-10 rounded-lg bg-amber-100 flex items-center justify-center shrink-0">
+                  <Shield className="w-5 h-5 text-amber-600" />
                 </div>
                 <div>
                   <h3 className="text-sm font-semibold text-slate-900">Authentication & Security</h3>
@@ -90,8 +90,8 @@ export function CookiePolicyPage({ onBack }: LegalPageProps) {
               </div>
 
               <div className="flex items-start gap-4 p-4 bg-slate-50 rounded-lg border border-slate-200">
-                <div className="w-10 h-10 rounded-lg bg-emerald-100 flex items-center justify-center shrink-0">
-                  <Settings className="w-5 h-5 text-emerald-600" />
+                <div className="w-10 h-10 rounded-lg bg-amber-100 flex items-center justify-center shrink-0">
+                  <Settings className="w-5 h-5 text-amber-600" />
                 </div>
                 <div>
                   <h3 className="text-sm font-semibold text-slate-900">Preferences & Settings</h3>
@@ -102,8 +102,8 @@ export function CookiePolicyPage({ onBack }: LegalPageProps) {
               </div>
 
               <div className="flex items-start gap-4 p-4 bg-slate-50 rounded-lg border border-slate-200">
-                <div className="w-10 h-10 rounded-lg bg-emerald-100 flex items-center justify-center shrink-0">
-                  <BarChart3 className="w-5 h-5 text-emerald-600" />
+                <div className="w-10 h-10 rounded-lg bg-amber-100 flex items-center justify-center shrink-0">
+                  <BarChart3 className="w-5 h-5 text-amber-600" />
                 </div>
                 <div>
                   <h3 className="text-sm font-semibold text-slate-900">Analytics & Performance</h3>
@@ -114,8 +114,8 @@ export function CookiePolicyPage({ onBack }: LegalPageProps) {
               </div>
 
               <div className="flex items-start gap-4 p-4 bg-slate-50 rounded-lg border border-slate-200">
-                <div className="w-10 h-10 rounded-lg bg-emerald-100 flex items-center justify-center shrink-0">
-                  <Mail className="w-5 h-5 text-emerald-600" />
+                <div className="w-10 h-10 rounded-lg bg-amber-100 flex items-center justify-center shrink-0">
+                  <Mail className="w-5 h-5 text-amber-600" />
                 </div>
                 <div>
                   <h3 className="text-sm font-semibold text-slate-900">Marketing & Communication</h3>
@@ -126,8 +126,8 @@ export function CookiePolicyPage({ onBack }: LegalPageProps) {
               </div>
 
               <div className="flex items-start gap-4 p-4 bg-slate-50 rounded-lg border border-slate-200">
-                <div className="w-10 h-10 rounded-lg bg-emerald-100 flex items-center justify-center shrink-0">
-                  <Database className="w-5 h-5 text-emerald-600" />
+                <div className="w-10 h-10 rounded-lg bg-amber-100 flex items-center justify-center shrink-0">
+                  <Database className="w-5 h-5 text-amber-600" />
                 </div>
                 <div>
                   <h3 className="text-sm font-semibold text-slate-900">Functionality</h3>
@@ -165,19 +165,19 @@ export function CookiePolicyPage({ onBack }: LegalPageProps) {
                     <td className="p-3 font-medium text-slate-800 border border-slate-200">Performance / Analytics</td>
                     <td className="p-3 text-slate-600 border border-slate-200">Page views, feature usage, error tracking, load times</td>
                     <td className="p-3 text-slate-600 border border-slate-200">Up to 2 years</td>
-                    <td className="p-3 text-slate-600 border border-slate-200"><span className="text-emerald-600 font-medium">Yes</span></td>
+                    <td className="p-3 text-slate-600 border border-slate-200"><span className="text-amber-600 font-medium">Yes</span></td>
                   </tr>
                   <tr>
                     <td className="p-3 font-medium text-slate-800 border border-slate-200">Functionality</td>
                     <td className="p-3 text-slate-600 border border-slate-200">Language, theme, preferences, recently viewed items</td>
                     <td className="p-3 text-slate-600 border border-slate-200">Up to 1 year</td>
-                    <td className="p-3 text-slate-600 border border-slate-200"><span className="text-emerald-600 font-medium">Yes</span></td>
+                    <td className="p-3 text-slate-600 border border-slate-200"><span className="text-amber-600 font-medium">Yes</span></td>
                   </tr>
                   <tr>
                     <td className="p-3 font-medium text-slate-800 border border-slate-200">Marketing / Advertising</td>
                     <td className="p-3 text-slate-600 border border-slate-200">Ad targeting, campaign tracking, remarketing</td>
                     <td className="p-3 text-slate-600 border border-slate-200">Up to 2 years</td>
-                    <td className="p-3 text-slate-600 border border-slate-200"><span className="text-emerald-600 font-medium">Yes</span> — Only set with your consent</td>
+                    <td className="p-3 text-slate-600 border border-slate-200"><span className="text-amber-600 font-medium">Yes</span> — Only set with your consent</td>
                   </tr>
                 </tbody>
               </table>
@@ -247,7 +247,7 @@ export function CookiePolicyPage({ onBack }: LegalPageProps) {
               uses cookies to collect information about how visitors interact with our site, such as
               pages visited, time spent, and navigation patterns. This data is aggregated and
               anonymized. For more information, visit{" "}
-              <a href="https://policies.google.com/privacy" target="_blank" rel="noopener noreferrer" className="text-emerald-600 hover:underline">
+              <a href="https://policies.google.com/privacy" target="_blank" rel="noopener noreferrer" className="text-amber-600 hover:underline">
                 Google&apos;s Privacy Policy
               </a>.
             </p>
@@ -259,7 +259,7 @@ export function CookiePolicyPage({ onBack }: LegalPageProps) {
               Our database and authentication services are powered by Supabase, which may set
               cookies for session management and authentication purposes. For more information,
               visit{" "}
-              <a href="https://supabase.com/privacy" target="_blank" rel="noopener noreferrer" className="text-emerald-600 hover:underline">
+              <a href="https://supabase.com/privacy" target="_blank" rel="noopener noreferrer" className="text-amber-600 hover:underline">
                 Supabase&apos;s Privacy Policy
               </a>.
             </p>
@@ -342,12 +342,12 @@ export function CookiePolicyPage({ onBack }: LegalPageProps) {
             </p>
             <ul className="list-disc pl-6 space-y-1.5 text-slate-600 mt-3">
               <li>Google Analytics:{" "}
-                <a href="https://tools.google.com/dlpage/gaoptout" target="_blank" rel="noopener noreferrer" className="text-emerald-600 hover:underline">
+                <a href="https://tools.google.com/dlpage/gaoptout" target="_blank" rel="noopener noreferrer" className="text-amber-600 hover:underline">
                   Google Analytics Opt-out Browser Add-on
                 </a>
               </li>
               <li>Google Ads (if applicable):{" "}
-                <a href="https://adssettings.google.com" target="_blank" rel="noopener noreferrer" className="text-emerald-600 hover:underline">
+                <a href="https://adssettings.google.com" target="_blank" rel="noopener noreferrer" className="text-amber-600 hover:underline">
                   Google Ads Settings
                 </a>
               </li>
@@ -428,13 +428,13 @@ export function CookiePolicyPage({ onBack }: LegalPageProps) {
                 <p><strong>{identity.companyName} Portal</strong></p>
                 <p>
                   Privacy Inquiries:{" "}
-                  <a href={`mailto:${identity.companyEmail}`} className="text-emerald-600 hover:underline">{identity.companyEmail}</a>
+                  <a href={`mailto:${identity.companyEmail}`} className="text-amber-600 hover:underline">{identity.companyEmail}</a>
                 </p>
                 <p>
                   Support:{" "}
-                  <a href={`mailto:${identity.companyEmail}`} className="text-emerald-600 hover:underline">{identity.companyEmail}</a>
+                  <a href={`mailto:${identity.companyEmail}`} className="text-amber-600 hover:underline">{identity.companyEmail}</a>
                 </p>
-                <p>Website: {identity.companyWebsite || "brandflow.pk"}</p>
+                <p>Website: {identity.companyWebsite || "valtriox.com"}</p>
               </div>
             </div>
           </section>

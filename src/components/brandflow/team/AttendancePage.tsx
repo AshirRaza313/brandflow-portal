@@ -52,20 +52,20 @@ export function AttendancePage() {
           <p className="text-sm text-slate-500 mt-1">Track team attendance and working hours</p>
         </div>
         <div className="flex flex-wrap gap-2"><Button variant="outline"><Download className="mr-2 h-4 w-4" /> Export</Button>
-          <Button className="bg-emerald-600 hover:bg-emerald-700" onClick={() => setMarkOpen(true)}>Mark Attendance</Button>
+          <Button className="bg-amber-600 hover:bg-amber-700" onClick={() => setMarkOpen(true)}>Mark Attendance</Button>
         </div>
       </div>
 
       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
         <Card><CardContent className="p-3"><p className="text-xs text-muted-foreground">Total</p><p className="text-xl font-bold">0</p></CardContent></Card>
-        <Card className="bg-emerald-50 border-emerald-200"><CardContent className="p-3"><p className="text-xs text-emerald-600">Present</p><p className="text-xl font-bold text-emerald-700">0</p></CardContent></Card>
+        <Card className="bg-amber-50 border-amber-200"><CardContent className="p-3"><p className="text-xs text-amber-600">Present</p><p className="text-xl font-bold text-amber-700">0</p></CardContent></Card>
         <Card className="bg-red-50 border-red-200"><CardContent className="p-3"><p className="text-xs text-red-600">Absent</p><p className="text-xl font-bold text-red-700">0</p></CardContent></Card>
         <Card className="bg-amber-50 border-amber-200"><CardContent className="p-3"><p className="text-xs text-amber-600">Late</p><p className="text-xl font-bold text-amber-700">0</p></CardContent></Card>
       </div>
 
       <div className="flex gap-1 border-b border-slate-200 overflow-x-auto">
         {subTabs.map((tab) => (
-          <button key={tab.id} onClick={() => setActiveTab(tab.id)} className={`px-4 py-2.5 text-sm font-medium border-b-2 transition-colors ${activeTab === tab.id ? "border-emerald-600 text-emerald-600" : "border-transparent text-slate-500 hover:text-slate-700"}`}>
+          <button key={tab.id} onClick={() => setActiveTab(tab.id)} className={`px-4 py-2.5 text-sm font-medium border-b-2 transition-colors ${activeTab === tab.id ? "border-amber-600 text-amber-600" : "border-transparent text-slate-500 hover:text-slate-700"}`}>
             {tab.label}
           </button>
         ))}
@@ -117,7 +117,7 @@ export function AttendancePage() {
                 <ClipboardCheck className="h-12 w-12 text-muted-foreground mx-auto mb-3" />
                 <h3 className="font-semibold mb-1">Attendance Reports</h3>
                 <p className="text-sm text-muted-foreground mb-4">Generate detailed attendance reports for payroll processing.</p>
-                <Button className="bg-emerald-600 hover:bg-emerald-700" onClick={() => setReportOpen(true)}><Download className="mr-2 h-4 w-4" /> Generate Report</Button>
+                <Button className="bg-amber-600 hover:bg-amber-700" onClick={() => setReportOpen(true)}><Download className="mr-2 h-4 w-4" /> Generate Report</Button>
               </CardContent>
             </Card>
           </motion.div>
@@ -149,7 +149,7 @@ export function AttendancePage() {
             </div>
             <div className="flex justify-end gap-2 pt-2">
               <Button variant="outline" onClick={() => setMarkOpen(false)}>Cancel</Button>
-              <Button className="bg-emerald-600 hover:bg-emerald-700" onClick={handleMarkAttendance}>Mark Attendance</Button>
+              <Button className="bg-amber-600 hover:bg-amber-700" onClick={handleMarkAttendance}>Mark Attendance</Button>
             </div>
           </div>
         </DialogContent>
@@ -182,7 +182,7 @@ export function AttendancePage() {
             </div>
             <div className="flex justify-end gap-2 pt-2">
               <Button variant="outline" onClick={() => setReportOpen(false)}>Cancel</Button>
-              <Button className="bg-emerald-600 hover:bg-emerald-700" onClick={handleGenerateReport}><Download className="mr-2 h-4 w-4" /> Generate</Button>
+              <Button className="bg-amber-600 hover:bg-amber-700" onClick={handleGenerateReport}><Download className="mr-2 h-4 w-4" /> Generate</Button>
             </div>
           </div>
         </DialogContent>

@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useCallback, Component, ReactNode } from "react";
 import dynamic from "next/dynamic";
-import { useBrandOnyxStore } from "@/store/brandflow-store";
+import { useValtrioxStore } from "@/store/brandflow-store";
 import { fetchWithAuth } from "@/lib/fetch-with-auth";
 import { useSubscriptionSync } from "@/hooks/useSubscriptionSync";
 
@@ -151,7 +151,7 @@ function SafeRender({ children, name }: { children: ReactNode; name: string }) {
 }
 
 export default function Home() {
-  const { view, activeSection, appTheme, setAppTheme, sidebarCollapsed, setAuthModalOpen, setAuthModalMode, user, organization } = useBrandOnyxStore();
+  const { view, activeSection, appTheme, setAppTheme, sidebarCollapsed, setAuthModalOpen, setAuthModalMode, user, organization } = useValtrioxStore();
   const [legalPage, setLegalPage] = useState<string | null>(null);
   const [adminLockedFeatures, setAdminLockedFeatures] = useState<Set<string>>(new Set());
   const [dbNotConfigured, setDbNotConfigured] = useState(false);
@@ -199,7 +199,7 @@ export default function Home() {
   // Hydrate theme from localStorage on mount (handles SSR mismatch)
   useEffect(() => {
     try {
-      const saved = localStorage.getItem("brandonix-theme");
+      const saved = localStorage.getItem("valtriox-theme");
       if (saved === "light" || saved === "dark" || saved === "premium-dark") {
         setAppTheme(saved);
       }

@@ -2,7 +2,7 @@
 
 import { useState, useMemo, useCallback, useRef, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { useBrandOnyxStore } from "@/store/brandflow-store";
+import { useValtrioxStore } from "@/store/brandflow-store";
 import { usePlatformIdentity } from "@/lib/platform-identity";
 import {
   Card,
@@ -84,7 +84,7 @@ interface ClientConversation {
 
 const MAX_ATTACHMENT_SIZE = 20 * 1024 * 1024; // 20MB
 const MAX_VOICE_DURATION = 300; // 5 minutes
-const ADMIN_ID = "admin-brandonix";
+const ADMIN_ID = "admin-valtriox";
 
 // ============================================================================
 // Helpers
@@ -124,7 +124,7 @@ function getRoleColor(role: string, isDark: boolean): string {
     return isDark ? "text-amber-400" : "text-amber-600";
   }
   if (role === "brand_admin") {
-    return isDark ? "text-violet-400" : "text-violet-600";
+    return isDark ? "text-yellow-400" : "text-yellow-600";
   }
   if (role === "operations_manager" || role === "manager") {
     return isDark ? "text-blue-400" : "text-blue-600";
@@ -143,8 +143,8 @@ function getInitials(name: string): string {
 
 function getAvatarColor(name: string): string {
   const colors = [
-    "bg-blue-500", "bg-emerald-500", "bg-violet-500", "bg-rose-500",
-    "bg-amber-500", "bg-cyan-500", "bg-pink-500", "bg-indigo-500",
+    "bg-blue-500", "bg-amber-500", "bg-yellow-500", "bg-rose-500",
+    "bg-amber-500", "bg-cyan-500", "bg-pink-500", "bg-amber-500",
   ];
   let hash = 0;
   for (let i = 0; i < name.length; i++) hash = name.charCodeAt(i) + ((hash << 5) - hash);
@@ -210,7 +210,7 @@ function VoiceNotePlayer({
       <button
         onClick={handlePlay}
         className={`h-7 w-7 rounded-full flex items-center justify-center shrink-0 transition-colors ${
-          isGold ? "text-amber-400" : "text-emerald-400"
+          isGold ? "text-amber-400" : "text-amber-400"
         } ${
           isDark ? "bg-white/[0.1] hover:bg-white/[0.15]" : "bg-white hover:bg-slate-50 shadow-sm"
         }`}
@@ -220,7 +220,7 @@ function VoiceNotePlayer({
       <div className="flex-1 min-w-0">
         <div className={`h-1 rounded-full overflow-hidden ${isDark ? "bg-white/[0.1]" : "bg-slate-200"}`}>
           <motion.div
-            className={`h-full rounded-full ${isGold ? "bg-amber-400" : "bg-emerald-400"}`}
+            className={`h-full rounded-full ${isGold ? "bg-amber-400" : "bg-amber-400"}`}
             initial={{ width: 0 }}
             animate={{ width: `${progress}%` }}
             transition={{ duration: 0.1 }}
@@ -436,7 +436,7 @@ function SupportMessageBubble({
                 isOwn
                   ? isGold
                     ? "bg-amber-500/15 text-amber-100 rounded-tr-md"
-                    : "bg-emerald-500/15 text-emerald-100 rounded-tr-md"
+                    : "bg-amber-500/15 text-amber-100 rounded-tr-md"
                   : isDark
                     ? "bg-white/[0.06] text-slate-200 rounded-tl-md"
                     : "bg-white text-slate-700 rounded-tl-md border border-slate-100 shadow-sm"
@@ -456,7 +456,7 @@ function SupportMessageBubble({
                 isOwn
                   ? isGold
                     ? "bg-amber-500/15 text-amber-100 rounded-tr-md"
-                    : "bg-emerald-500/15 text-emerald-100 rounded-tr-md"
+                    : "bg-amber-500/15 text-amber-100 rounded-tr-md"
                   : isDark
                     ? "bg-white/[0.06] text-slate-200 rounded-tl-md"
                     : "bg-white text-slate-700 rounded-tl-md border border-slate-100 shadow-sm"
@@ -474,7 +474,7 @@ function SupportMessageBubble({
             isOwn
               ? isGold
                 ? "bg-amber-500/15 text-amber-100 rounded-tr-md"
-                : "bg-emerald-500/15 text-emerald-100 rounded-tr-md"
+                : "bg-amber-500/15 text-amber-100 rounded-tr-md"
               : isDark
                 ? "bg-white/[0.06] text-slate-200 rounded-tl-md"
                 : "bg-white text-slate-700 rounded-tl-md border border-slate-100 shadow-sm"
@@ -673,7 +673,7 @@ function VoiceRecordingBar({
           {Array.from({ length: 20 }).map((_, i) => (
             <motion.div
               key={i}
-              className={`w-0.5 rounded-full ${isGold ? "bg-amber-500/40" : "bg-emerald-500/40"}`}
+              className={`w-0.5 rounded-full ${isGold ? "bg-amber-500/40" : "bg-amber-500/40"}`}
               animate={{
                 height: [4, 8 + Math.random() * 12, 4],
               }}
@@ -697,7 +697,7 @@ function VoiceRecordingBar({
       </Button>
       <Button
         size="sm"
-        className={`h-7 w-7 p-0 ${isGold ? "bg-amber-600 hover:bg-amber-700 text-white" : "bg-emerald-600 hover:bg-emerald-700 text-white"}`}
+        className={`h-7 w-7 p-0 ${isGold ? "bg-amber-600 hover:bg-amber-700 text-white" : "bg-amber-600 hover:bg-amber-700 text-white"}`}
         onClick={stopRecording}
         title="Send"
       >
@@ -811,8 +811,8 @@ function CallOverlay({
     onEnd(dur);
   }, [callPhase, callDuration, onEnd]);
 
-  const accentClass = isGold ? "text-amber-400" : "text-emerald-400";
-  const accentBg = isGold ? "bg-amber-500/15" : "bg-emerald-500/15";
+  const accentClass = isGold ? "text-amber-400" : "text-amber-400";
+  const accentBg = isGold ? "bg-amber-500/15" : "bg-amber-500/15";
 
   if (!isActive) return null;
 
@@ -827,19 +827,19 @@ function CallOverlay({
       {/* Decorative background circles */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
         <motion.div
-          className={`absolute rounded-full ${isGold ? "bg-amber-500/5" : "bg-emerald-500/5"}`}
+          className={`absolute rounded-full ${isGold ? "bg-amber-500/5" : "bg-amber-500/5"}`}
           style={{ width: 400, height: 400, top: "50%", left: "50%", transform: "translate(-50%, -50%)" }}
           animate={{ scale: [1, 1.3, 1], opacity: [0.3, 0.6, 0.3] }}
           transition={{ duration: 3, repeat: Infinity }}
         />
         <motion.div
-          className={`absolute rounded-full ${isGold ? "bg-amber-500/5" : "bg-emerald-500/5"}`}
+          className={`absolute rounded-full ${isGold ? "bg-amber-500/5" : "bg-amber-500/5"}`}
           style={{ width: 550, height: 550, top: "50%", left: "50%", transform: "translate(-50%, -50%)" }}
           animate={{ scale: [1, 1.2, 1], opacity: [0.2, 0.4, 0.2] }}
           transition={{ duration: 4, repeat: Infinity, delay: 0.5 }}
         />
         <motion.div
-          className={`absolute rounded-full ${isGold ? "bg-amber-500/3" : "bg-emerald-500/3"}`}
+          className={`absolute rounded-full ${isGold ? "bg-amber-500/3" : "bg-amber-500/3"}`}
           style={{ width: 700, height: 700, top: "50%", left: "50%", transform: "translate(-50%, -50%)" }}
           animate={{ scale: [1, 1.15, 1], opacity: [0.1, 0.25, 0.1] }}
           transition={{ duration: 5, repeat: Infinity, delay: 1 }}
@@ -850,17 +850,17 @@ function CallOverlay({
         {/* Avatar with pulsing ring */}
         <div className="relative">
           <motion.div
-            className={`absolute -inset-3 rounded-full border-2 ${isGold ? "border-amber-500/30" : "border-emerald-500/30"}`}
+            className={`absolute -inset-3 rounded-full border-2 ${isGold ? "border-amber-500/30" : "border-amber-500/30"}`}
             animate={{ scale: [1, 1.15, 1], opacity: [0.4, 0.8, 0.4] }}
             transition={{ duration: 2, repeat: Infinity }}
           />
           <motion.div
-            className={`absolute -inset-6 rounded-full border ${isGold ? "border-amber-500/15" : "border-emerald-500/15"}`}
+            className={`absolute -inset-6 rounded-full border ${isGold ? "border-amber-500/15" : "border-amber-500/15"}`}
             animate={{ scale: [1, 1.1, 1], opacity: [0.2, 0.5, 0.2] }}
             transition={{ duration: 2.5, repeat: Infinity, delay: 0.3 }}
           />
           <motion.div
-            className={`absolute -inset-10 rounded-full border ${isGold ? "border-amber-500/8" : "border-emerald-500/8"}`}
+            className={`absolute -inset-10 rounded-full border ${isGold ? "border-amber-500/8" : "border-amber-500/8"}`}
             animate={{ scale: [1, 1.08, 1], opacity: [0.1, 0.3, 0.1] }}
             transition={{ duration: 3, repeat: Infinity, delay: 0.6 }}
           />
@@ -970,8 +970,8 @@ function ClientListItem({
   isGold: boolean;
   onClick: () => void;
 }) {
-  const accentBg = isGold ? "bg-amber-500/15" : "bg-emerald-500/15";
-  const accentText = isGold ? "text-amber-400" : "text-emerald-400";
+  const accentBg = isGold ? "bg-amber-500/15" : "bg-amber-500/15";
+  const accentText = isGold ? "text-amber-400" : "text-amber-400";
 
   return (
     <button
@@ -995,7 +995,7 @@ function ClientListItem({
             {client.orgName}
           </span>
           {client.unreadCount > 0 && (
-            <Badge className={`h-4 min-w-[16px] text-[9px] px-1 ${isGold ? "bg-amber-500/20 text-amber-400" : "bg-emerald-500/20 text-emerald-500"}`}>
+            <Badge className={`h-4 min-w-[16px] text-[9px] px-1 ${isGold ? "bg-amber-500/20 text-amber-400" : "bg-amber-500/20 text-amber-500"}`}>
               {client.unreadCount}
             </Badge>
           )}
@@ -1020,14 +1020,14 @@ function ClientListItem({
 // ============================================================================
 
 export function SupportChatPage() {
-  const { user, appTheme, organization } = useBrandOnyxStore();
+  const { user, appTheme, organization } = useValtrioxStore();
   const { identity } = usePlatformIdentity();
   const companyName = identity.companyName;
 
   const isDark = appTheme === "premium-dark" || appTheme === "dark";
   const isGold = appTheme === "premium-dark";
-  const accentClass = isGold ? "text-amber-500" : "text-emerald-500";
-  const accentBg = isGold ? "bg-amber-500/15" : "bg-emerald-500/15";
+  const accentClass = isGold ? "text-amber-500" : "text-amber-500";
+  const accentBg = isGold ? "bg-amber-500/15" : "bg-amber-500/15";
 
   // Admin vs Client detection
   const userRole = user?.role || "viewer";
@@ -1037,7 +1037,7 @@ export function SupportChatPage() {
   const orgName = organization?.name || "My Brand";
 
   // Fetch company email for client view (hide personal email)
-  const [companyEmail, setCompanyEmail] = useState("support@brandonix.pk");
+  const [companyEmail, setCompanyEmail] = useState("support@valtriox.pk");
   useEffect(() => {
     if (!isAdmin) {
       fetch("/api/admin/settings")
@@ -1078,10 +1078,10 @@ export function SupportChatPage() {
   // ---------------------------------------------------------------------------
 
   // Get the storage key for a given org's support chat
-  const getStorageKey = useCallback((oid: string) => `brandonix-support-${oid}`, []);
+  const getStorageKey = useCallback((oid: string) => `valtriox-support-${oid}`, []);
 
   // Get the admin index storage key
-  const adminIndexKey = "brandonix-support-admin-index";
+  const adminIndexKey = "valtriox-support-admin-index";
 
   // ---------------------------------------------------------------------------
   // Load messages for the active conversation
@@ -1119,7 +1119,7 @@ export function SupportChatPage() {
   const [clientList, setClientList] = useState<ClientConversation[]>(() => {
     try {
       if (typeof window === "undefined") return [];
-      const raw = localStorage.getItem("brandonix-support-clients");
+      const raw = localStorage.getItem("valtriox-support-clients");
       return raw ? JSON.parse(raw) : [];
     } catch {
       return [];
@@ -1202,7 +1202,7 @@ export function SupportChatPage() {
         );
         try {
           if (typeof window !== "undefined") {
-            localStorage.setItem("brandonix-support-clients", JSON.stringify(updated));
+            localStorage.setItem("valtriox-support-clients", JSON.stringify(updated));
           }
         } catch {}
         return updated;
@@ -1211,7 +1211,7 @@ export function SupportChatPage() {
         const newList = [...prev, { orgId: clientOrgId, orgName: name, lastMessage: lastMsg, lastMessageTime: time, unreadCount: 0 }];
         try {
           if (typeof window !== "undefined") {
-            localStorage.setItem("brandonix-support-clients", JSON.stringify(newList));
+            localStorage.setItem("valtriox-support-clients", JSON.stringify(newList));
           }
         } catch {}
         return newList;
@@ -1398,7 +1398,7 @@ export function SupportChatPage() {
       // Save call history
       try {
         if (typeof window !== "undefined") {
-          const historyRaw = localStorage.getItem("brandonix-call-history") || "[]";
+          const historyRaw = localStorage.getItem("valtriox-call-history") || "[]";
           const history = JSON.parse(historyRaw);
           history.push({
             id: generateId(),
@@ -1410,7 +1410,7 @@ export function SupportChatPage() {
             type: "outgoing",
             timestamp: Date.now(),
           });
-          localStorage.setItem("brandonix-call-history", JSON.stringify(history.slice(-50)));
+          localStorage.setItem("valtriox-call-history", JSON.stringify(history.slice(-50)));
         }
       } catch {}
     }
@@ -1718,7 +1718,7 @@ export function SupportChatPage() {
                           messageInput.trim() || pendingAttachment
                             ? isGold
                               ? "bg-amber-600 hover:bg-amber-700 text-white"
-                              : "bg-emerald-600 hover:bg-emerald-700 text-white"
+                              : "bg-amber-600 hover:bg-amber-700 text-white"
                             : isDark
                               ? "bg-white/[0.06] text-slate-600"
                               : "bg-slate-100 text-slate-400"
@@ -1798,7 +1798,7 @@ export function SupportChatPage() {
         {/* Chat header */}
         <div className={`px-3 sm:px-4 py-3 border-b flex items-center justify-between ${isDark ? "border-white/[0.06]" : "border-slate-200"}`}>
           <div className="flex items-center gap-2.5 min-w-0">
-            <div className={`h-9 w-9 sm:h-10 sm:w-10 rounded-full flex items-center justify-center shrink-0 ${isGold ? "bg-amber-500/20" : "bg-emerald-500/20"}`}>
+            <div className={`h-9 w-9 sm:h-10 sm:w-10 rounded-full flex items-center justify-center shrink-0 ${isGold ? "bg-amber-500/20" : "bg-amber-500/20"}`}>
               <Shield className={`h-4.5 w-4.5 sm:h-5 sm:w-5 ${accentClass}`} />
             </div>
             <div className="min-w-0">
@@ -1806,7 +1806,7 @@ export function SupportChatPage() {
                 {`${companyName} Support`}
               </h3>
               <div className="flex items-center gap-1.5">
-                <div className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
+                <div className="h-1.5 w-1.5 rounded-full bg-amber-500" />
                 <p className={`text-[9px] sm:text-[10px] ${isDark ? "text-slate-500" : "text-slate-400"}`}>
                   Online &middot; {companyEmail}
                 </p>
@@ -1971,7 +1971,7 @@ export function SupportChatPage() {
                   messageInput.trim() || pendingAttachment
                     ? isGold
                       ? "bg-amber-600 hover:bg-amber-700 text-white"
-                      : "bg-emerald-600 hover:bg-emerald-700 text-white"
+                      : "bg-amber-600 hover:bg-amber-700 text-white"
                     : isDark
                       ? "bg-white/[0.06] text-slate-600"
                       : "bg-slate-100 text-slate-400"
@@ -1986,7 +1986,7 @@ export function SupportChatPage() {
             <div className="flex items-center gap-2">
               <Lock className={`h-3 w-3 ${isDark ? "text-slate-700" : "text-slate-300"}`} />
               <span className={`text-[9px] ${isDark ? "text-slate-700" : "text-slate-300"}`}>
-                Private support channel &mdash; BrandOnyx team only
+                Private support channel &mdash; Valtriox team only
               </span>
             </div>
             <div className="flex items-center gap-2">

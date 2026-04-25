@@ -25,10 +25,10 @@ const pricingRules = [
 ];
 
 const typeColors: Record<string, string> = {
-  "Percentage Markup": "bg-emerald-100 text-emerald-700",
+  "Percentage Markup": "bg-amber-100 text-amber-700",
   "Bulk Discount": "bg-blue-100 text-blue-700",
   "Flash Sale": "bg-orange-100 text-orange-700",
-  "Tier Pricing": "bg-purple-100 text-purple-700",
+  "Tier Pricing": "bg-amber-100 text-amber-700",
   "Bundle Pricing": "bg-pink-100 text-pink-700",
 };
 
@@ -72,7 +72,7 @@ export function PricingRulesPage() {
           <h1 className="text-2xl font-bold text-slate-800">Pricing Rules</h1>
           <p className="text-sm text-slate-500 mt-1">Manage dynamic pricing engine for your cosmetics & skincare catalog</p>
         </div>
-        <Button onClick={() => setShowBuilder(!showBuilder)} className="bg-emerald-600 hover:bg-emerald-700">
+        <Button onClick={() => setShowBuilder(!showBuilder)} className="bg-amber-600 hover:bg-amber-700">
           <Plus className="h-4 w-4 mr-2" /> New Rule
         </Button>
       </div>
@@ -85,10 +85,10 @@ export function PricingRulesPage() {
               <div>
                 <p className="text-xs font-medium text-slate-500 uppercase tracking-wider">Active Rules</p>
                 <p className="text-2xl font-bold text-slate-800 mt-1">{activeRules}</p>
-                <p className="text-xs text-emerald-600 mt-1">of {rules.length} total</p>
+                <p className="text-xs text-amber-600 mt-1">of {rules.length} total</p>
               </div>
-              <div className="h-10 w-10 rounded-lg bg-emerald-100 flex items-center justify-center">
-                <BarChart3 className="h-5 w-5 text-emerald-600" />
+              <div className="h-10 w-10 rounded-lg bg-amber-100 flex items-center justify-center">
+                <BarChart3 className="h-5 w-5 text-amber-600" />
               </div>
             </div>
           </CardContent>
@@ -98,11 +98,11 @@ export function PricingRulesPage() {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-xs font-medium text-slate-500 uppercase tracking-wider">Revenue Impact</p>
-                <p className="text-2xl font-bold text-emerald-600 mt-1">{revenueImpact}</p>
+                <p className="text-2xl font-bold text-amber-600 mt-1">{revenueImpact}</p>
                 <p className="text-xs text-slate-500 mt-1">this month</p>
               </div>
-              <div className="h-10 w-10 rounded-lg bg-emerald-100 flex items-center justify-center">
-                <TrendingUp className="h-5 w-5 text-emerald-600" />
+              <div className="h-10 w-10 rounded-lg bg-amber-100 flex items-center justify-center">
+                <TrendingUp className="h-5 w-5 text-amber-600" />
               </div>
             </div>
           </CardContent>
@@ -115,8 +115,8 @@ export function PricingRulesPage() {
                 <p className="text-2xl font-bold text-slate-800 mt-1">{rules.reduce((s, r) => s + r.products, 0)}</p>
                 <p className="text-xs text-slate-500 mt-1">across all rules</p>
               </div>
-              <div className="h-10 w-10 rounded-lg bg-emerald-100 flex items-center justify-center">
-                <Package className="h-5 w-5 text-emerald-600" />
+              <div className="h-10 w-10 rounded-lg bg-amber-100 flex items-center justify-center">
+                <Package className="h-5 w-5 text-amber-600" />
               </div>
             </div>
           </CardContent>
@@ -127,10 +127,10 @@ export function PricingRulesPage() {
               <div>
                 <p className="text-xs font-medium text-slate-500 uppercase tracking-wider">Avg Margin</p>
                 <p className="text-2xl font-bold text-slate-800 mt-1">{avgMargin}%</p>
-                <p className="text-xs text-emerald-600 mt-1">+2.4% vs last month</p>
+                <p className="text-xs text-amber-600 mt-1">+2.4% vs last month</p>
               </div>
-              <div className="h-10 w-10 rounded-lg bg-emerald-100 flex items-center justify-center">
-                <Percent className="h-5 w-5 text-emerald-600" />
+              <div className="h-10 w-10 rounded-lg bg-amber-100 flex items-center justify-center">
+                <Percent className="h-5 w-5 text-amber-600" />
               </div>
             </div>
           </CardContent>
@@ -139,10 +139,10 @@ export function PricingRulesPage() {
 
       <Tabs defaultValue="rules" className="space-y-4">
         <TabsList className="bg-slate-100 overflow-x-auto flex-wrap">
-          <TabsTrigger value="rules" className="data-[state=active]:bg-emerald-600 data-[state=active]:text-white">Pricing Rules</TabsTrigger>
-          <TabsTrigger value="builder" className="data-[state=active]:bg-emerald-600 data-[state=active]:text-white">Rule Builder</TabsTrigger>
-          <TabsTrigger value="history" className="data-[state=active]:bg-emerald-600 data-[state=active]:text-white">Price History</TabsTrigger>
-          <TabsTrigger value="margins" className="data-[state=active]:bg-emerald-600 data-[state=active]:text-white">Margin Analysis</TabsTrigger>
+          <TabsTrigger value="rules" className="data-[state=active]:bg-amber-600 data-[state=active]:text-white">Pricing Rules</TabsTrigger>
+          <TabsTrigger value="builder" className="data-[state=active]:bg-amber-600 data-[state=active]:text-white">Rule Builder</TabsTrigger>
+          <TabsTrigger value="history" className="data-[state=active]:bg-amber-600 data-[state=active]:text-white">Price History</TabsTrigger>
+          <TabsTrigger value="margins" className="data-[state=active]:bg-amber-600 data-[state=active]:text-white">Margin Analysis</TabsTrigger>
         </TabsList>
 
         {/* Pricing Rules Table */}
@@ -174,12 +174,12 @@ export function PricingRulesPage() {
                         </TableCell>
                         <TableCell className="text-sm text-slate-600">{rule.condition}</TableCell>
                         <TableCell>
-                          <span className={`font-semibold ${rule.value.startsWith("+") ? "text-emerald-600" : "text-orange-600"}`}>
+                          <span className={`font-semibold ${rule.value.startsWith("+") ? "text-amber-600" : "text-orange-600"}`}>
                             {rule.value}
                           </span>
                         </TableCell>
                         <TableCell className="text-center">
-                          <Switch checked={rule.status} onCheckedChange={() => toggleRule(rule.id)} className="data-[state=checked]:bg-emerald-600" />
+                          <Switch checked={rule.status} onCheckedChange={() => toggleRule(rule.id)} className="data-[state=checked]:bg-amber-600" />
                         </TableCell>
                         <TableCell className="text-center">
                           <span className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-slate-100 text-xs font-bold text-slate-700">
@@ -206,7 +206,7 @@ export function PricingRulesPage() {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label className="text-sm font-medium text-slate-700">Rule Name</Label>
-                  <Input placeholder="e.g., Eid Collection Markup" className="border-slate-300 focus:border-emerald-500" />
+                  <Input placeholder="e.g., Eid Collection Markup" className="border-slate-300 focus:border-amber-500" />
                 </div>
                 <div className="space-y-2">
                   <Label className="text-sm font-medium text-slate-700">Rule Type</Label>
@@ -223,11 +223,11 @@ export function PricingRulesPage() {
                 </div>
                 <div className="space-y-2">
                   <Label className="text-sm font-medium text-slate-700">Condition</Label>
-                  <Input placeholder="e.g., Category = Skincare" className="border-slate-300 focus:border-emerald-500" />
+                  <Input placeholder="e.g., Category = Skincare" className="border-slate-300 focus:border-amber-500" />
                 </div>
                 <div className="space-y-2">
                   <Label className="text-sm font-medium text-slate-700">Value (%)</Label>
-                  <Input placeholder="e.g., -15 or +10" className="border-slate-300 focus:border-emerald-500" />
+                  <Input placeholder="e.g., -15 or +10" className="border-slate-300 focus:border-amber-500" />
                 </div>
                 <div className="space-y-2">
                   <Label className="text-sm font-medium text-slate-700">Priority</Label>
@@ -254,12 +254,12 @@ export function PricingRulesPage() {
               </div>
               <div className="flex flex-wrap items-center gap-3 pt-2">
                 <div className="flex items-center gap-2">
-                  <Switch defaultChecked className="data-[state=checked]:bg-emerald-600" />
+                  <Switch defaultChecked className="data-[state=checked]:bg-amber-600" />
                   <Label className="text-sm text-slate-600">Enable rule immediately</Label>
                 </div>
               </div>
               <div className="flex flex-wrap gap-3">
-                <Button className="bg-emerald-600 hover:bg-emerald-700"><DollarSign className="h-4 w-4 mr-2" /> Create Rule</Button>
+                <Button className="bg-amber-600 hover:bg-amber-700"><DollarSign className="h-4 w-4 mr-2" /> Create Rule</Button>
                 <Button variant="outline" className="border-slate-300">Save as Draft</Button>
               </div>
             </CardContent>
@@ -281,7 +281,7 @@ export function PricingRulesPage() {
                     <YAxis tick={{ fill: "#64748b", fontSize: 12 }} tickFormatter={(v) => `PKR ${v}`} />
                     <Tooltip contentStyle={{ borderRadius: 8, border: "1px solid #e2e8f0" }} formatter={(v: number) => [`PKR ${v}`, ""]} />
                     <Legend />
-                    <Line type="monotone" dataKey="Glow Serum" stroke="#10b981" strokeWidth={2} dot={{ r: 4 }} />
+                    <Line type="monotone" dataKey="Glow Serum" stroke="#D4AF37" strokeWidth={2} dot={{ r: 4 }} />
                     <Line type="monotone" dataKey="Vitamin C Cream" stroke="#6366f1" strokeWidth={2} dot={{ r: 4 }} />
                     <Line type="monotone" dataKey="Hydra Moisturizer" stroke="#f59e0b" strokeWidth={2} dot={{ r: 4 }} />
                     <Line type="monotone" dataKey="Retinol Night Oil" stroke="#ec4899" strokeWidth={2} dot={{ r: 4 }} />
@@ -318,7 +318,7 @@ export function PricingRulesPage() {
                         <TableCell className="text-right font-medium text-slate-800">PKR {item.retailPrice}</TableCell>
                         <TableCell className="text-right text-slate-600">PKR {item.wholesalePrice}</TableCell>
                         <TableCell className="text-right">
-                          <Badge variant="secondary" className={item.margin >= 60 ? "bg-emerald-100 text-emerald-700" : "bg-amber-100 text-amber-700"}>
+                          <Badge variant="secondary" className={item.margin >= 60 ? "bg-amber-100 text-amber-700" : "bg-amber-100 text-amber-700"}>
                             {item.margin}%
                           </Badge>
                         </TableCell>

@@ -40,7 +40,7 @@ export function Footer({ onLegalClick }: FooterProps) {
           {/* Brand */}
           <div className="col-span-2 md:col-span-1">
             <div className="flex items-center gap-2 mb-4">
-              <img src="/brandonix-logo.png" alt={companyName} className="h-8 w-8 object-contain" />
+              <img src="/valtriox-logo.png" alt={companyName} className="h-8 w-8 object-contain" />
               <span className="text-xl font-bold text-white">
                 {splitBrandName(companyName)}
               </span>

@@ -10,7 +10,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Warehouse, Package, BarChart3, AlertTriangle, Boxes, Move, ClipboardList, ShoppingCart, ArrowRightLeft } from "lucide-react";
 import { EmptyState } from "@/components/brandflow/shared/EmptyState";
 import { toast } from "sonner";
-import { useBrandOnyxStore } from "@/store/brandflow-store";
+import { useValtrioxStore } from "@/store/brandflow-store";
 
 interface StockMovement {
   id: number;
@@ -25,7 +25,7 @@ interface StockMovement {
 }
 
 export function WarehousePage() {
-  const { appTheme } = useBrandOnyxStore();
+  const { appTheme } = useValtrioxStore();
   const isDark = appTheme !== "light";
   const isGold = appTheme === "premium-dark";
 
@@ -74,7 +74,7 @@ export function WarehousePage() {
           <Button variant="outline" className="text-xs" onClick={() => setTransferOpen(true)}>
             <ArrowRightLeft className="mr-2 h-4 w-4" /> Stock Transfer
           </Button>
-          <Button className="bg-emerald-600 hover:bg-emerald-700 text-white" onClick={() => setReceiveOpen(true)}>
+          <Button className="bg-amber-600 hover:bg-amber-700 text-white" onClick={() => setReceiveOpen(true)}>
             <Package className="mr-2 h-4 w-4" /> Receive Stock
           </Button>
         </div>
@@ -116,7 +116,7 @@ export function WarehousePage() {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <Card className="border-slate-200">
           <CardContent className="p-4">
-            <p className="text-base font-semibold text-slate-900 mb-4 flex items-center gap-2"><Move className="h-4 w-4 text-emerald-600" /> Stock Movement Log</p>
+            <p className="text-base font-semibold text-slate-900 mb-4 flex items-center gap-2"><Move className="h-4 w-4 text-amber-600" /> Stock Movement Log</p>
             {movements.length > 0 ? (
               <div className="space-y-2">
                 {movements.map((m) => (
@@ -127,7 +127,7 @@ export function WarehousePage() {
                         {m.type === "transfer" ? `${m.fromZone} → ${m.toZone}` : `Received into ${m.toZone}`} · Qty: {m.quantity}
                       </p>
                     </div>
-                    <span className={`px-2 py-1 text-xs font-medium rounded-full ${m.type === "transfer" ? "bg-blue-100 text-blue-700" : "bg-emerald-100 text-emerald-700"}`}>
+                    <span className={`px-2 py-1 text-xs font-medium rounded-full ${m.type === "transfer" ? "bg-blue-100 text-blue-700" : "bg-amber-100 text-amber-700"}`}>
                       {m.type === "transfer" ? "Transfer" : "Received"}
                     </span>
                   </div>
@@ -140,7 +140,7 @@ export function WarehousePage() {
         </Card>
         <Card className="border-slate-200">
           <CardContent className="p-4">
-            <p className="text-base font-semibold text-slate-900 mb-4 flex items-center gap-2"><ShoppingCart className="h-4 w-4 text-emerald-600" /> Picking Queue</p>
+            <p className="text-base font-semibold text-slate-900 mb-4 flex items-center gap-2"><ShoppingCart className="h-4 w-4 text-amber-600" /> Picking Queue</p>
             <EmptyState icon={ShoppingCart} title="No picking orders" description="Orders will appear here once they are ready for warehouse picking." />
           </CardContent>
         </Card>
@@ -237,7 +237,7 @@ export function WarehousePage() {
               <Button variant="outline" onClick={() => setTransferOpen(false)} className={isDark ? "border-slate-600 text-slate-300 hover:bg-slate-700" : ""}>
                 Cancel
               </Button>
-              <Button onClick={handleTransferSubmit} className="bg-emerald-600 hover:bg-emerald-700 text-white">
+              <Button onClick={handleTransferSubmit} className="bg-amber-600 hover:bg-amber-700 text-white">
                 Create Transfer
               </Button>
             </div>
@@ -312,7 +312,7 @@ export function WarehousePage() {
               <Button variant="outline" onClick={() => setReceiveOpen(false)} className={isDark ? "border-slate-600 text-slate-300 hover:bg-slate-700" : ""}>
                 Cancel
               </Button>
-              <Button onClick={handleReceiveSubmit} className="bg-emerald-600 hover:bg-emerald-700 text-white">
+              <Button onClick={handleReceiveSubmit} className="bg-amber-600 hover:bg-amber-700 text-white">
                 Receive Stock
               </Button>
             </div>

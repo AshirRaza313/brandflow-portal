@@ -15,7 +15,7 @@ export function TermsOfServicePage({ onBack }: LegalPageProps) {
         {/* Back Button */}
         <button
           onClick={onBack}
-          className="inline-flex items-center gap-2 text-sm font-medium text-slate-600 hover:text-emerald-600 transition-colors mb-8 group"
+          className="inline-flex items-center gap-2 text-sm font-medium text-slate-600 hover:text-amber-600 transition-colors mb-8 group"
         >
           <ArrowLeft className="w-4 h-4 group-hover:-translate-x-1 transition-transform" />
           Back to {identity.companyName}
@@ -29,8 +29,8 @@ export function TermsOfServicePage({ onBack }: LegalPageProps) {
           <p className="text-slate-500 text-sm">
             Last Updated: July 11, 2025 &nbsp;|&nbsp; Effective Date: July 11, 2025
           </p>
-          <div className="mt-4 p-4 bg-emerald-50 border border-emerald-200 rounded-lg">
-            <p className="text-sm text-emerald-800">
+          <div className="mt-4 p-4 bg-amber-50 border border-amber-200 rounded-lg">
+            <p className="text-sm text-amber-800">
               Welcome to {identity.companyName} Portal. These Terms of Service (&quot;Terms&quot;) govern your access
               to and use of the {identity.companyName} Portal platform, website, and related services
               (collectively, the &quot;Services&quot;) operated by {identity.companyName} (&quot;Company,&quot; &quot;we,&quot; &quot;our,&quot;
@@ -50,7 +50,7 @@ export function TermsOfServicePage({ onBack }: LegalPageProps) {
               By creating an account, accessing, or using the {identity.companyName} Portal, you acknowledge
               that you have read, understood, and agree to be bound by these Terms of Service
               and our{" "}
-              <span className="text-emerald-600 font-medium cursor-pointer hover:underline">Privacy Policy</span>.
+              <span className="text-amber-600 font-medium cursor-pointer hover:underline">Privacy Policy</span>.
               These Terms constitute a legally binding agreement between you and {identity.companyName}.
             </p>
             <p className="text-slate-600 leading-relaxed mt-3">
@@ -306,7 +306,7 @@ export function TermsOfServicePage({ onBack }: LegalPageProps) {
               continue until the end of the current billing period. No prorated refunds will be
               provided for unused time in the current billing cycle, unless otherwise required
               by applicable law or our{" "}
-              <span className="text-emerald-600 font-medium cursor-pointer hover:underline">Refund Policy</span>.
+              <span className="text-amber-600 font-medium cursor-pointer hover:underline">Refund Policy</span>.
             </p>
 
             <h3 className="text-lg font-medium text-slate-800 mt-6 mb-2">
@@ -415,13 +415,13 @@ export function TermsOfServicePage({ onBack }: LegalPageProps) {
                 <p><strong>{identity.companyName} Portal</strong></p>
                 <p>
                   Legal Inquiries:{" "}
-                  <a href={`mailto:${identity.companyEmail}`} className="text-emerald-600 hover:underline">{identity.companyEmail}</a>
+                  <a href={`mailto:${identity.companyEmail}`} className="text-amber-600 hover:underline">{identity.companyEmail}</a>
                 </p>
                 <p>
                   Support:{" "}
-                  <a href={`mailto:${identity.companyEmail}`} className="text-emerald-600 hover:underline">{identity.companyEmail}</a>
+                  <a href={`mailto:${identity.companyEmail}`} className="text-amber-600 hover:underline">{identity.companyEmail}</a>
                 </p>
-                <p>Website: {identity.companyWebsite || "brandflow.pk"}</p>
+                <p>Website: {identity.companyWebsite || "valtriox.com"}</p>
               </div>
             </div>
           </section>

@@ -1,5 +1,5 @@
 // ============================================================================
-// 16-Role RBAC System for BrandOnyx Portal
+// 16-Role RBAC System for Valtriox Portal
 // ============================================================================
 
 export interface RolePermission {
@@ -18,7 +18,7 @@ export const ROLES: RoleDefinition[] = [
   {
     name: "platform_owner",
     label: "Platform Owner",
-    description: "Full access to everything — the BrandOnyx portal owner",
+    description: "Full access to everything — the Valtriox portal owner",
     level: 100,
     permissions: { all: true },
   },
@@ -303,7 +303,7 @@ export function canAssignRole(
   // Platform roles: only ADMIN_EMAIL holder
   if (PLATFORM_ROLES.includes(target)) {
     if (!isPlatformOwner) {
-      return { allowed: false, reason: "Platform roles can only be assigned by the BrandOnyx owner.", code: "PLATFORM_ROLE_BLOCKED" };
+      return { allowed: false, reason: "Platform roles can only be assigned by the Valtriox owner.", code: "PLATFORM_ROLE_BLOCKED" };
     }
     return { allowed: true };
   }
@@ -393,20 +393,20 @@ export function getRoleBadgeStyle(roleName: string): {
       dark: "bg-orange-500/15 text-orange-400 border border-orange-500/25",
     },
     brand_owner: {
-      light: "bg-purple-100 text-purple-800 border-purple-200",
-      dark: "bg-purple-500/15 text-purple-400 border border-purple-500/25",
+      light: "bg-amber-100 text-amber-800 border-amber-200",
+      dark: "bg-amber-500/15 text-amber-400 border border-amber-500/25",
     },
     brand_admin: {
-      light: "bg-violet-100 text-violet-800 border-violet-200",
-      dark: "bg-violet-500/15 text-violet-400 border border-violet-500/25",
+      light: "bg-yellow-100 text-yellow-800 border-yellow-200",
+      dark: "bg-yellow-500/15 text-yellow-400 border border-yellow-500/25",
     },
     operations_manager: {
       light: "bg-sky-100 text-sky-800 border-sky-200",
       dark: "bg-sky-500/15 text-sky-400 border border-sky-500/25",
     },
     sales_manager: {
-      light: "bg-emerald-100 text-emerald-800 border-emerald-200",
-      dark: "bg-emerald-500/15 text-emerald-400 border border-emerald-500/25",
+      light: "bg-amber-100 text-amber-800 border-amber-200",
+      dark: "bg-amber-500/15 text-amber-400 border border-amber-500/25",
     },
     marketing_manager: {
       light: "bg-pink-100 text-pink-800 border-pink-200",
@@ -425,8 +425,8 @@ export function getRoleBadgeStyle(roleName: string): {
       dark: "bg-rose-500/15 text-rose-400 border border-rose-500/25",
     },
     accountant: {
-      light: "bg-indigo-100 text-indigo-800 border-indigo-200",
-      dark: "bg-indigo-500/15 text-indigo-400 border border-indigo-500/25",
+      light: "bg-amber-100 text-amber-800 border-amber-200",
+      dark: "bg-amber-500/15 text-amber-400 border border-amber-500/25",
     },
     team_lead: {
       light: "bg-blue-100 text-blue-800 border-blue-200",
@@ -449,8 +449,8 @@ export function getRoleBadgeStyle(roleName: string): {
       dark: "bg-white/5 text-slate-500 border border-white/10",
     },
     owner: {
-      light: "bg-purple-100 text-purple-800 border-purple-200",
-      dark: "bg-purple-500/15 text-purple-400 border border-purple-500/25",
+      light: "bg-amber-100 text-amber-800 border-amber-200",
+      dark: "bg-amber-500/15 text-amber-400 border border-amber-500/25",
     },
     manager: {
       light: "bg-blue-100 text-blue-800 border-blue-200",

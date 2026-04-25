@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState, useCallback, useRef } from "react";
-import { useBrandOnyxStore } from "@/store/brandflow-store";
+import { useValtrioxStore } from "@/store/brandflow-store";
 import { fetchWithAuth } from "@/lib/fetch-with-auth";
 import { LoadingSkeleton } from "@/components/brandflow/shared/LoadingSkeleton";
 import { Button } from "@/components/ui/button";
@@ -44,7 +44,7 @@ import { useTranslation } from "@/lib/i18n";
 import { ActivityFeed } from "./ActivityFeed";
 import { DailySummaryWidget } from "./DailySummaryWidget";
 
-const defaultPieColors = ["#059669", "#3b82f6", "#f59e0b", "#ef4444", "#8b5cf6", "#06b6d4", "#f97316"];
+const defaultPieColors = ["#C9A227", "#3b82f6", "#f59e0b", "#ef4444", "#8b5cf6", "#06b6d4", "#f97316"];
 const goldPieColors = ["#d4a017", "#f5d060", "#b8860b", "#8b6914", "#e8c547", "#c9a227", "#a67c00"];
 
 interface DashboardStats {
@@ -86,8 +86,8 @@ const statusBadgeClass = (status: string, isGold: boolean) => {
   switch (status.toLowerCase()) {
     case "delivered":
       return isGold
-        ? "bg-emerald-500/15 text-emerald-400 border-emerald-500/30"
-        : "bg-emerald-100 text-emerald-700 border-emerald-200";
+        ? "bg-amber-500/15 text-amber-400 border-amber-500/30"
+        : "bg-amber-100 text-amber-700 border-amber-200";
     case "cancelled":
       return isGold
         ? "bg-red-500/15 text-red-400 border-red-500/30"
@@ -98,8 +98,8 @@ const statusBadgeClass = (status: string, isGold: boolean) => {
         : "bg-blue-100 text-blue-700 border-blue-200";
     case "packing":
       return isGold
-        ? "bg-violet-500/15 text-violet-400 border-violet-500/30"
-        : "bg-violet-100 text-violet-700 border-violet-200";
+        ? "bg-yellow-500/15 text-yellow-400 border-yellow-500/30"
+        : "bg-yellow-100 text-yellow-700 border-yellow-200";
     case "dispatched":
       return isGold
         ? "bg-cyan-500/15 text-cyan-400 border-cyan-500/30"
@@ -152,7 +152,7 @@ function AnimatedCounter({ value, prefix = "", suffix = "" }: { value: number; p
 }
 
 export function DashboardHome() {
-  const { setActiveSection, appTheme, brandName, organization } = useBrandOnyxStore();
+  const { setActiveSection, appTheme, brandName, organization } = useValtrioxStore();
   const t = useTranslation();
   const [stats, setStats] = useState<DashboardStats | null>(null);
   const [loading, setLoading] = useState(true);
@@ -246,7 +246,7 @@ export function DashboardHome() {
                 </p>
                 <Button
                   onClick={handleRetry}
-                  className={`rounded-xl ${isGold ? "btn-gold shadow-[0_0_20px_rgba(212,160,23,0.3)]" : "bg-emerald-600 hover:bg-emerald-700"}`}
+                  className={`rounded-xl ${isGold ? "btn-gold shadow-[0_0_20px_rgba(212,160,23,0.3)]" : "bg-amber-600 hover:bg-amber-700"}`}
                 >
                   <RefreshCw className="mr-2 h-4 w-4" /> {t("retry")}
                 </Button>
@@ -280,7 +280,7 @@ export function DashboardHome() {
   const pieData = stats?.orderStatusData?.length
     ? stats.orderStatusData
     : [
-        { name: "Delivered", value: 1, fill: "#059669" },
+        { name: "Delivered", value: 1, fill: "#C9A227" },
         { name: "Pending", value: 1, fill: "#f59e0b" },
         { name: "Confirmed", value: 1, fill: "#3b82f6" },
         { name: "Dispatched", value: 1, fill: "#06b6d4" },
@@ -288,8 +288,8 @@ export function DashboardHome() {
       ];
 
   const pieColors = isGold ? goldPieColors : defaultPieColors;
-  const chartStroke = isGold ? "#d4a017" : "#059669";
-  const chartStopColor = isGold ? "#d4a017" : "#059669";
+  const chartStroke = isGold ? "#d4a017" : "#C9A227";
+  const chartStopColor = isGold ? "#d4a017" : "#C9A227";
   const gridStroke = isDark ? "rgba(255,255,255,0.05)" : "#e2e8f0";
   const tickStroke = isDark ? "#64748b" : "#94a3b8";
   const tooltipBg = isDark ? "#1a1a25" : "#ffffff";
@@ -333,11 +333,11 @@ export function DashboardHome() {
           >
             <CardContent className="p-4">
               <div className="flex items-center justify-between mb-2">
-                <div className={`p-2 rounded-lg ${isGold ? "bg-amber-500/10" : "bg-emerald-100"}`}>
-                  <kpi.icon className={`h-4 w-4 ${isGold ? "text-amber-400" : "text-emerald-600"}`} />
+                <div className={`p-2 rounded-lg ${isGold ? "bg-amber-500/10" : "bg-amber-100"}`}>
+                  <kpi.icon className={`h-4 w-4 ${isGold ? "text-amber-400" : "text-amber-600"}`} />
                 </div>
                 {kpi.change !== 0 && (
-                  <div className={`flex items-center text-xs font-medium ${kpi.change >= 0 ? (isGold ? "text-amber-400" : "text-emerald-600") : "text-red-500"}`}>
+                  <div className={`flex items-center text-xs font-medium ${kpi.change >= 0 ? (isGold ? "text-amber-400" : "text-amber-600") : "text-red-500"}`}>
                     {kpi.change >= 0 ? "+" : ""}{kpi.change}%
                   </div>
                 )}
@@ -484,7 +484,7 @@ export function DashboardHome() {
                       ? "bg-white/[0.05] border-white/[0.08] text-slate-300 hover:bg-amber-500/10 hover:border-amber-500/30 hover:text-amber-400 hover:shadow-[0_0_15px_rgba(212,160,23,0.1)]"
                       : isDark
                       ? "bg-slate-800 border-slate-700 text-slate-300 hover:bg-slate-700 hover:border-slate-600 hover:text-white"
-                      : "border-slate-200 hover:border-transparent bg-emerald-600 hover:bg-emerald-700 text-white hover:text-white"
+                      : "border-slate-200 hover:border-transparent bg-amber-600 hover:bg-amber-700 text-white hover:text-white"
                   }`}
                   onClick={() => setActiveSection(action.section)}
                 >
@@ -510,7 +510,7 @@ export function DashboardHome() {
               <Button
                 variant="ghost"
                 size="sm"
-                className={isGold ? "text-amber-400 hover:text-amber-300 hover:bg-amber-500/10" : "text-emerald-600 hover:text-emerald-700"}
+                className={isGold ? "text-amber-400 hover:text-amber-300 hover:bg-amber-500/10" : "text-amber-600 hover:text-amber-700"}
                 onClick={() => setActiveSection("orders")}
               >
                 {t("viewAll")} <ArrowRight className="ml-1 h-3.5 w-3.5" />
@@ -532,9 +532,9 @@ export function DashboardHome() {
                       >
                         <div className="flex items-center gap-3 min-w-0">
                           <div className={`h-9 w-9 rounded-lg flex items-center justify-center flex-shrink-0 ${
-                            isGold ? "bg-amber-500/10" : "bg-emerald-50"
+                            isGold ? "bg-amber-500/10" : "bg-amber-50"
                           }`}>
-                            <ShoppingBag className={`h-4 w-4 ${isGold ? "text-amber-400" : "text-emerald-600"}`} />
+                            <ShoppingBag className={`h-4 w-4 ${isGold ? "text-amber-400" : "text-amber-600"}`} />
                           </div>
                           <div className="min-w-0">
                             <p className={`text-sm font-medium truncate ${isDark ? "text-white" : "text-slate-900"}`}>
@@ -569,7 +569,7 @@ export function DashboardHome() {
                     </p>
                     <Button
                       size="sm"
-                      className={`rounded-xl ${isGold ? "btn-gold shadow-[0_0_20px_rgba(212,160,23,0.3)]" : "bg-emerald-600 hover:bg-emerald-700"}`}
+                      className={`rounded-xl ${isGold ? "btn-gold shadow-[0_0_20px_rgba(212,160,23,0.3)]" : "bg-amber-600 hover:bg-amber-700"}`}
                       onClick={() => setActiveSection("orders")}
                     >
                       <Plus className="mr-1 h-3.5 w-3.5" /> {t("newOrder")}
@@ -605,7 +605,7 @@ export function DashboardHome() {
                 <div className="space-y-3">
                   <div className={`p-3 rounded-xl ${isGold ? "bg-white/[0.03] border border-white/[0.06]" : isDark ? "bg-slate-700/30" : "bg-slate-50"}`}>
                     <div className="flex items-center gap-2 mb-1">
-                      <Clock className={`h-3.5 w-3.5 ${isGold ? "text-amber-400" : "text-emerald-600"}`} />
+                      <Clock className={`h-3.5 w-3.5 ${isGold ? "text-amber-400" : "text-amber-600"}`} />
                       <span className={`text-[10px] font-medium uppercase tracking-wider ${isDark ? "text-slate-400" : "text-muted-foreground"}`}>{t("thisMonth")}</span>
                     </div>
                     <p className={`text-lg font-bold ${isDark ? "text-white" : "text-slate-900"}`}>{stats.orderCount} {t("ordersLabel")}</p>
@@ -615,7 +615,7 @@ export function DashboardHome() {
                   </div>
                   <div className={`p-3 rounded-xl ${isGold ? "bg-white/[0.03] border border-white/[0.06]" : isDark ? "bg-slate-700/30" : "bg-slate-50"}`}>
                     <div className="flex items-center gap-2 mb-1">
-                      <Users className={`h-3.5 w-3.5 ${isGold ? "text-amber-400" : "text-emerald-600"}`} />
+                      <Users className={`h-3.5 w-3.5 ${isGold ? "text-amber-400" : "text-amber-600"}`} />
                       <span className={`text-[10px] font-medium uppercase tracking-wider ${isDark ? "text-slate-400" : "text-muted-foreground"}`}>{t("customerGrowth")}</span>
                     </div>
                     <p className={`text-lg font-bold ${isDark ? "text-white" : "text-slate-900"}`}>+{stats.newCustomers} {t("newLabel")}</p>
@@ -625,7 +625,7 @@ export function DashboardHome() {
                   </div>
                   <div className={`p-3 rounded-xl ${isGold ? "bg-white/[0.03] border border-white/[0.06]" : isDark ? "bg-slate-700/30" : "bg-slate-50"}`}>
                     <div className="flex items-center gap-2 mb-1">
-                      <TrendingUp className={`h-3.5 w-3.5 ${isGold ? "text-amber-400" : "text-emerald-600"}`} />
+                      <TrendingUp className={`h-3.5 w-3.5 ${isGold ? "text-amber-400" : "text-amber-600"}`} />
                       <span className={`text-[10px] font-medium uppercase tracking-wider ${isDark ? "text-slate-400" : "text-muted-foreground"}`}>{t("performance")}</span>
                     </div>
                     <p className={`text-lg font-bold ${isDark ? "text-white" : "text-slate-900"}`}>{stats.conversionRate}% {t("conversion")}</p>

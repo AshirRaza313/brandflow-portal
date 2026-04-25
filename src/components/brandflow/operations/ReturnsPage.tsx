@@ -9,7 +9,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { RotateCcw, Clock, CheckCircle2, DollarSign, PackageCheck, ShieldCheck } from "lucide-react";
 import { EmptyState } from "@/components/brandflow/shared/EmptyState";
 import { toast } from "sonner";
-import { useBrandOnyxStore } from "@/store/brandflow-store";
+import { useValtrioxStore } from "@/store/brandflow-store";
 
 interface ReturnPolicy {
   id: number;
@@ -20,7 +20,7 @@ interface ReturnPolicy {
 
 export function ReturnsPage() {
   const [filterStatus, setFilterStatus] = useState("all");
-  const { appTheme } = useBrandOnyxStore();
+  const { appTheme } = useValtrioxStore();
   const isDark = appTheme !== "light";
   const isGold = appTheme === "premium-dark";
 
@@ -51,7 +51,7 @@ export function ReturnsPage() {
           <h1 className="text-2xl font-bold text-slate-900">Returns Management</h1>
           <p className="text-sm text-slate-500 mt-1">Track, process and manage product returns</p>
         </div>
-        <Button className="bg-emerald-600 hover:bg-emerald-700 text-white" onClick={() => toast.info("Return processing queue is empty")}>
+        <Button className="bg-amber-600 hover:bg-amber-700 text-white" onClick={() => toast.info("Return processing queue is empty")}>
           <RotateCcw className="mr-2 h-4 w-4" /> Process Returns
         </Button>
       </div>
@@ -82,7 +82,7 @@ export function ReturnsPage() {
                 <div className="flex gap-1 flex-wrap">
                   {["all", "pending", "processing", "approved", "completed", "rejected"].map((s) => (
                     <button key={s} onClick={() => setFilterStatus(s)}
-                      className={`px-3 py-1 rounded-full text-xs font-medium capitalize transition-colors ${filterStatus === s ? "bg-emerald-600 text-white" : "bg-slate-100 text-slate-600 hover:bg-slate-200"}`}>
+                      className={`px-3 py-1 rounded-full text-xs font-medium capitalize transition-colors ${filterStatus === s ? "bg-amber-600 text-white" : "bg-slate-100 text-slate-600 hover:bg-slate-200"}`}>
                       {s}
                     </button>
                   ))}
@@ -114,7 +114,7 @@ export function ReturnsPage() {
         <Card className="border-slate-200">
           <CardContent className="p-4">
             <p className="text-base font-semibold text-slate-900 mb-4 flex items-center gap-2">
-              <PackageCheck className="h-5 w-5 text-emerald-600" /> Quality Check
+              <PackageCheck className="h-5 w-5 text-amber-600" /> Quality Check
             </p>
             <EmptyState icon={PackageCheck} title="No QC data" description="Quality check data will appear after returns are processed." />
           </CardContent>
@@ -123,7 +123,7 @@ export function ReturnsPage() {
           <CardContent className="p-4">
             <div className="flex items-center justify-between mb-4">
               <p className="text-base font-semibold text-slate-900 flex items-center gap-2">
-                <ShieldCheck className="h-5 w-5 text-emerald-600" /> Return Policy Settings
+                <ShieldCheck className="h-5 w-5 text-amber-600" /> Return Policy Settings
               </p>
             </div>
             <div className="space-y-3">
@@ -140,7 +140,7 @@ export function ReturnsPage() {
                 <span className="text-xs font-semibold text-slate-900">{currentPolicy?.restockingFee || "Not configured"}</span>
               </div>
             </div>
-            <Button variant="outline" size="sm" className="mt-4 w-full border-emerald-200 text-emerald-700 hover:bg-emerald-50 text-xs" onClick={() => setPolicyOpen(true)}>
+            <Button variant="outline" size="sm" className="mt-4 w-full border-amber-200 text-amber-700 hover:bg-amber-50 text-xs" onClick={() => setPolicyOpen(true)}>
               Edit Return Policy
             </Button>
           </CardContent>
@@ -185,7 +185,7 @@ export function ReturnsPage() {
               <Button variant="outline" onClick={() => setPolicyOpen(false)} className={isDark ? "border-slate-600 text-slate-300 hover:bg-slate-700" : ""}>
                 Cancel
               </Button>
-              <Button onClick={handlePolicySubmit} className="bg-emerald-600 hover:bg-emerald-700 text-white">
+              <Button onClick={handlePolicySubmit} className="bg-amber-600 hover:bg-amber-700 text-white">
                 Save Policy
               </Button>
             </div>

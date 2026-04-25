@@ -1,6 +1,6 @@
 "use client";
 
-import { useBrandOnyxStore } from "@/store/brandflow-store";
+import { useValtrioxStore } from "@/store/brandflow-store";
 import { cn } from "@/lib/utils";
 import {
   AlertDialog,
@@ -34,7 +34,7 @@ export function ConfirmDialog({
   variant = "default",
   onConfirm,
 }: ConfirmDialogProps) {
-  const { appTheme } = useBrandOnyxStore();
+  const { appTheme } = useValtrioxStore();
   const isGold = appTheme === "premium-dark";
   const isDark = appTheme === "dark" || isGold;
 
@@ -70,7 +70,7 @@ export function ConfirmDialog({
                   : "bg-gradient-to-r from-amber-600 via-yellow-500 to-amber-600 text-black hover:shadow-[0_4px_20px_rgba(212,160,23,0.3)]"
                 : variant === "destructive"
                   ? "bg-red-600 hover:bg-red-700"
-                  : "bg-emerald-600 hover:bg-emerald-700"
+                  : "bg-amber-600 hover:bg-amber-700"
             )}
           >
             {confirmLabel}

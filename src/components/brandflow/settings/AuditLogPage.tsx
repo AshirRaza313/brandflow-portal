@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState, useCallback, useMemo } from "react";
-import { useBrandOnyxStore } from "@/store/brandflow-store";
+import { useValtrioxStore } from "@/store/brandflow-store";
 import { useTranslation } from "@/lib/i18n";
 import { LoadingSkeleton } from "@/components/brandflow/shared/LoadingSkeleton";
 import { isPlatformRole } from "@/lib/roles";
@@ -80,8 +80,8 @@ const ACTIVITY_CONFIG: Record<
 > = {
   "order.created": {
     icon: <ShoppingCart className="h-4 w-4" />,
-    colorClass: "text-emerald-600 bg-emerald-50 border-emerald-200",
-    dotColor: "bg-emerald-500",
+    colorClass: "text-amber-600 bg-amber-50 border-amber-200",
+    dotColor: "bg-amber-500",
   },
   "order.status_changed": {
     icon: <RefreshCw className="h-4 w-4" />,
@@ -90,8 +90,8 @@ const ACTIVITY_CONFIG: Record<
   },
   "product.created": {
     icon: <Package className="h-4 w-4" />,
-    colorClass: "text-purple-600 bg-purple-50 border-purple-200",
-    dotColor: "bg-purple-500",
+    colorClass: "text-amber-600 bg-amber-50 border-amber-200",
+    dotColor: "bg-amber-500",
   },
   "product.updated": {
     icon: <Edit3 className="h-4 w-4" />,
@@ -110,8 +110,8 @@ const ACTIVITY_CONFIG: Record<
   },
   "team.invited": {
     icon: <Mail className="h-4 w-4" />,
-    colorClass: "text-indigo-600 bg-indigo-50 border-indigo-200",
-    dotColor: "bg-indigo-500",
+    colorClass: "text-amber-600 bg-amber-50 border-amber-200",
+    dotColor: "bg-amber-500",
   },
   "settings.updated": {
     icon: <Settings className="h-4 w-4" />,
@@ -127,8 +127,8 @@ const DARK_ACTIVITY_CONFIG: Record<
 > = {
   "order.created": {
     icon: <ShoppingCart className="h-4 w-4" />,
-    colorClass: "text-emerald-400 bg-emerald-500/10 border-emerald-500/20",
-    dotColor: "bg-emerald-500",
+    colorClass: "text-amber-400 bg-amber-500/10 border-amber-500/20",
+    dotColor: "bg-amber-500",
   },
   "order.status_changed": {
     icon: <RefreshCw className="h-4 w-4" />,
@@ -137,8 +137,8 @@ const DARK_ACTIVITY_CONFIG: Record<
   },
   "product.created": {
     icon: <Package className="h-4 w-4" />,
-    colorClass: "text-purple-400 bg-purple-500/10 border-purple-500/20",
-    dotColor: "bg-purple-500",
+    colorClass: "text-amber-400 bg-amber-500/10 border-amber-500/20",
+    dotColor: "bg-amber-500",
   },
   "product.updated": {
     icon: <Edit3 className="h-4 w-4" />,
@@ -157,8 +157,8 @@ const DARK_ACTIVITY_CONFIG: Record<
   },
   "team.invited": {
     icon: <Mail className="h-4 w-4" />,
-    colorClass: "text-indigo-400 bg-indigo-500/10 border-indigo-500/20",
-    dotColor: "bg-indigo-500",
+    colorClass: "text-amber-400 bg-amber-500/10 border-amber-500/20",
+    dotColor: "bg-amber-500",
   },
   "settings.updated": {
     icon: <Settings className="h-4 w-4" />,
@@ -248,7 +248,7 @@ function exportToCSV(activities: AuditEntry[]) {
 // ============================================================================
 
 function AccessDenied() {
-  const { appTheme } = useBrandOnyxStore();
+  const { appTheme } = useValtrioxStore();
   const t = useTranslation();
   const isGold = appTheme === "premium-dark";
   const isDark = appTheme === "dark" || isGold;
@@ -290,7 +290,7 @@ function AccessDenied() {
           "px-4 py-1.5 text-xs font-semibold",
           isGold
             ? "bg-amber-500/10 text-amber-400 border-amber-500/30"
-            : "bg-emerald-100 text-emerald-700 border-emerald-200"
+            : "bg-amber-100 text-amber-700 border-amber-200"
         )}
       >
         <Shield className="h-3 w-3 mr-1.5" />
@@ -305,7 +305,7 @@ function AccessDenied() {
 // ============================================================================
 
 export function AuditLogPage() {
-  const { user, organization, appTheme } = useBrandOnyxStore();
+  const { user, organization, appTheme } = useValtrioxStore();
   const t = useTranslation();
 
   const isGold = appTheme === "premium-dark";
@@ -437,7 +437,7 @@ export function AuditLogPage() {
                 "rounded-xl",
                 isGold
                   ? "btn-gold shadow-[0_0_20px_rgba(212,160,23,0.3)]"
-                  : "bg-emerald-600 hover:bg-emerald-700"
+                  : "bg-amber-600 hover:bg-amber-700"
               )}
             >
               <RefreshCcw className="mr-2 h-4 w-4" /> {t("retry")}
@@ -503,7 +503,7 @@ export function AuditLogPage() {
               "rounded-lg",
               isGold
                 ? "btn-gold shadow-[0_0_15px_rgba(212,160,23,0.2)]"
-                : "bg-emerald-600 hover:bg-emerald-700"
+                : "bg-amber-600 hover:bg-amber-700"
             )}
           >
             <Download className="h-3.5 w-3.5 mr-1.5" />
@@ -622,7 +622,7 @@ export function AuditLogPage() {
                     viewMode === "timeline"
                       ? isGold
                         ? "bg-amber-500/20 text-amber-400"
-                        : "bg-emerald-600 text-white"
+                        : "bg-amber-600 text-white"
                       : isDark
                       ? "text-slate-400 hover:bg-slate-700"
                       : "text-slate-500 hover:bg-slate-50"
@@ -638,7 +638,7 @@ export function AuditLogPage() {
                     viewMode === "table"
                       ? isGold
                         ? "bg-amber-500/20 text-amber-400"
-                        : "bg-emerald-600 text-white"
+                        : "bg-amber-600 text-white"
                       : isDark
                       ? "text-slate-400 hover:bg-slate-700"
                       : "text-slate-500 hover:bg-slate-50"
@@ -859,7 +859,7 @@ export function AuditLogPage() {
                   p === page
                     ? isGold
                       ? "bg-amber-500/20 text-amber-400 border border-amber-500/30"
-                      : "bg-emerald-600 text-white"
+                      : "bg-amber-600 text-white"
                     : isGold
                     ? "text-slate-400 hover:bg-white/[0.04]"
                     : isDark

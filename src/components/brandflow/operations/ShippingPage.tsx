@@ -11,7 +11,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Package, Truck, CheckCircle2, Clock, Calculator, Printer, Globe, BarChart3, MapPin } from "lucide-react";
 import { EmptyState } from "@/components/brandflow/shared/EmptyState";
 import { toast } from "sonner";
-import { useBrandOnyxStore } from "@/store/brandflow-store";
+import { useValtrioxStore } from "@/store/brandflow-store";
 
 interface Shipment {
   id: number;
@@ -34,7 +34,7 @@ interface Carrier {
 
 export function ShippingPage() {
   const [calculatedRate, setCalculatedRate] = useState<string | null>(null);
-  const { appTheme } = useBrandOnyxStore();
+  const { appTheme } = useValtrioxStore();
   const isDark = appTheme !== "light";
   const isGold = appTheme === "premium-dark";
 
@@ -78,7 +78,7 @@ export function ShippingPage() {
           <h1 className="text-2xl font-bold text-slate-900">Shipping Management</h1>
           <p className="text-sm text-slate-500 mt-1">Track shipments, manage carriers, and calculate rates</p>
         </div>
-        <Button className="bg-emerald-600 hover:bg-emerald-700 text-white" onClick={() => setShipmentOpen(true)}>
+        <Button className="bg-amber-600 hover:bg-amber-700 text-white" onClick={() => setShipmentOpen(true)}>
           <Truck className="mr-2 h-4 w-4" /> Create Shipment
         </Button>
       </div>
@@ -102,7 +102,7 @@ export function ShippingPage() {
 
       <Card className="border-slate-200">
         <CardContent className="p-4">
-          <p className="text-base font-semibold text-slate-900 mb-4 flex items-center gap-2"><BarChart3 className="h-4 w-4 text-emerald-600" />Carrier Comparison</p>
+          <p className="text-base font-semibold text-slate-900 mb-4 flex items-center gap-2"><BarChart3 className="h-4 w-4 text-amber-600" />Carrier Comparison</p>
           {carriers.length > 0 ? (
             <div className="space-y-2">
               {carriers.map((carrier) => (
@@ -111,7 +111,7 @@ export function ShippingPage() {
                     <p className="text-sm font-medium text-slate-900">{carrier.name}</p>
                     <p className="text-xs text-slate-500">{carrier.serviceType} · {carrier.apiKey ? "Connected" : "No API key"}</p>
                   </div>
-                  <span className={`px-2 py-1 text-xs font-medium rounded-full ${carrier.active ? "bg-emerald-100 text-emerald-700" : "bg-slate-100 text-slate-600"}`}>
+                  <span className={`px-2 py-1 text-xs font-medium rounded-full ${carrier.active ? "bg-amber-100 text-amber-700" : "bg-slate-100 text-slate-600"}`}>
                     {carrier.active ? "Active" : "Inactive"}
                   </span>
                 </div>
@@ -134,7 +134,7 @@ export function ShippingPage() {
           <Card className="border-slate-200">
             <CardContent className="p-4">
               <div className="flex items-center justify-between mb-4">
-                <p className="text-base font-semibold text-slate-900 flex items-center gap-2"><MapPin className="h-4 w-4 text-emerald-600" /> Tracking Dashboard</p>
+                <p className="text-base font-semibold text-slate-900 flex items-center gap-2"><MapPin className="h-4 w-4 text-amber-600" /> Tracking Dashboard</p>
                 <span className="text-xs text-slate-400">{shipments.filter(s => s.status === "in_transit").length} in transit</span>
               </div>
               {shipments.length > 0 ? (
@@ -145,7 +145,7 @@ export function ShippingPage() {
                         <p className="text-sm font-medium text-slate-900">{shipment.recipientName}</p>
                         <p className="text-xs text-slate-500">{shipment.destination} · {shipment.weight} kg</p>
                       </div>
-                      <span className={`px-2 py-1 text-xs font-medium rounded-full capitalize ${shipment.status === "delivered" ? "bg-emerald-100 text-emerald-700" : shipment.status === "in_transit" ? "bg-blue-100 text-blue-700" : "bg-amber-100 text-amber-700"}`}>
+                      <span className={`px-2 py-1 text-xs font-medium rounded-full capitalize ${shipment.status === "delivered" ? "bg-amber-100 text-amber-700" : shipment.status === "in_transit" ? "bg-blue-100 text-blue-700" : "bg-amber-100 text-amber-700"}`}>
                         {shipment.status.replace("_", " ")}
                       </span>
                     </div>
@@ -160,7 +160,7 @@ export function ShippingPage() {
         <div>
           <Card className="border-slate-200">
             <CardContent className="p-4">
-              <p className="text-base font-semibold text-slate-900 flex items-center gap-2"><Calculator className="h-4 w-4 text-emerald-600" /> Rate Calculator</p>
+              <p className="text-base font-semibold text-slate-900 flex items-center gap-2"><Calculator className="h-4 w-4 text-amber-600" /> Rate Calculator</p>
               <div className="space-y-4 mt-4">
                 <div className="space-y-2">
                   <Label className="text-xs font-medium text-slate-700">Origin</Label>
@@ -176,11 +176,11 @@ export function ShippingPage() {
                   <div className="space-y-2"><Label className="text-xs font-medium text-slate-700">Weight (kg)</Label><Input type="number" placeholder="0.5" className="text-xs h-9" /></div>
                   <div className="space-y-2"><Label className="text-xs font-medium text-slate-700">Dimensions (cm)</Label><Input placeholder="20x15x10" className="text-xs h-9" /></div>
                 </div>
-                <Button onClick={() => setCalculatedRate("Select origin and destination")} className="w-full bg-emerald-600 hover:bg-emerald-700 text-white text-xs">
+                <Button onClick={() => setCalculatedRate("Select origin and destination")} className="w-full bg-amber-600 hover:bg-amber-700 text-white text-xs">
                   Calculate Rate
                 </Button>
                 {calculatedRate && (
-                  <div className="p-3 bg-emerald-50 border border-emerald-200 rounded-lg text-center mt-4">
+                  <div className="p-3 bg-amber-50 border border-amber-200 rounded-lg text-center mt-4">
                     <p className="text-xs text-slate-500 uppercase tracking-wider">Note</p>
                     <p className="text-sm font-medium text-slate-700">{calculatedRate}</p>
                   </div>
@@ -241,7 +241,7 @@ export function ShippingPage() {
               <Button variant="outline" onClick={() => setShipmentOpen(false)} className={isDark ? "border-slate-600 text-slate-300 hover:bg-slate-700" : ""}>
                 Cancel
               </Button>
-              <Button onClick={handleShipmentSubmit} className="bg-emerald-600 hover:bg-emerald-700 text-white">
+              <Button onClick={handleShipmentSubmit} className="bg-amber-600 hover:bg-amber-700 text-white">
                 Create Shipment
               </Button>
             </div>
@@ -288,7 +288,7 @@ export function ShippingPage() {
               <Button variant="outline" onClick={() => setCarrierOpen(false)} className={isDark ? "border-slate-600 text-slate-300 hover:bg-slate-700" : ""}>
                 Cancel
               </Button>
-              <Button onClick={handleCarrierSubmit} className="bg-emerald-600 hover:bg-emerald-700 text-white">
+              <Button onClick={handleCarrierSubmit} className="bg-amber-600 hover:bg-amber-700 text-white">
                 Save Carrier
               </Button>
             </div>

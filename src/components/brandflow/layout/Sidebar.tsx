@@ -1,6 +1,6 @@
 "use client";
 
-import { useBrandOnyxStore, SIDEBAR_GROUP_ORDER, SIDEBAR_STRUCTURE, SidebarSection, SidebarGroup } from "@/store/brandflow-store";
+import { useValtrioxStore, SIDEBAR_GROUP_ORDER, SIDEBAR_STRUCTURE, SidebarSection, SidebarGroup } from "@/store/brandflow-store";
 import { motion, AnimatePresence } from "framer-motion";
 import { cn } from "@/lib/utils";
 import { useState, useCallback, useMemo, useEffect } from "react";
@@ -85,7 +85,7 @@ export function Sidebar() {
     activeSection, setActiveSection, sidebarOpen, setSidebarOpen,
     user, logout, brandLogo, brandName, appTheme, sidebarCollapsed, toggleSidebarCollapsed,
     brandTagline, brandConfigured, organization,
-  } = useBrandOnyxStore();
+  } = useValtrioxStore();
   const [expandedGroups, setExpandedGroups] = useState<Set<SidebarGroup>>(() => new Set(["main", "guide"]));
   const [adminLockedFeatures, setAdminLockedFeatures] = useState<Set<string>>(new Set());
   const t = useTranslation();
@@ -142,7 +142,7 @@ export function Sidebar() {
     setExpandedGroups((prev) => { if (prev.has(group)) return prev; const n = new Set(prev); n.add(group); return n; });
   }, [setActiveSection, userRole]);
 
-  const accentColor = appTheme === "premium-dark" ? "#d4a017" : "#10b981";
+  const accentColor = appTheme === "premium-dark" ? "#d4a017" : "#D4AF37";
   const isCollapsed = sidebarCollapsed;
 
   // Pre-compute group visibility to avoid hiding groups with no visible items
@@ -222,13 +222,13 @@ export function Sidebar() {
               <div className="absolute -inset-[1px] rounded-xl bg-gradient-to-br opacity-80 blur-[0.5px]"
                 style={{ background: appTheme === "premium-dark"
                   ? "linear-gradient(135deg, #d4a017, #f5d060, #b8860b)"
-                  : "linear-gradient(135deg, #10b981, #059669, #047857)" }} />
+                  : "linear-gradient(135deg, #D4AF37, #C9A227, #B8860B)" }} />
               <div className="relative flex h-10 w-10 items-center justify-center rounded-xl bg-slate-900 shadow-lg overflow-hidden">
                 {brandLogo ? <img src={brandLogo} alt="Logo" className="h-8 w-8 rounded-lg object-cover" /> : (
                   <div className="flex h-8 w-8 items-center justify-center rounded-lg"
                     style={{ background: appTheme === "premium-dark"
                       ? "linear-gradient(135deg, #d4a017, #b8860b)"
-                      : "linear-gradient(135deg, #10b981, #059669)" }}>
+                      : "linear-gradient(135deg, #D4AF37, #C9A227)" }}>
                     <span className="text-sm font-black text-white">{displayInitial}</span>
                   </div>
                 )}
@@ -293,7 +293,7 @@ export function Sidebar() {
                       <TooltipTrigger asChild>
                         <button onClick={() => toggleGroup(groupId)} className={cn(
                           "flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-left transition-all hover:bg-white/[0.04]",
-                          hasActive ? "text-emerald-400" : "text-slate-500 hover:text-slate-300"
+                          hasActive ? "text-amber-400" : "text-slate-500 hover:text-slate-300"
                         )}>
                           <span className="flex-shrink-0 text-sm">{groupDef.emoji}</span>
                           <span className="flex-1 text-[11px] font-semibold uppercase tracking-widest">{groupDef.label}</span>
@@ -330,7 +330,7 @@ export function Sidebar() {
                                     isActive
                                       ? appTheme === "premium-dark"
                                         ? "text-yellow-100 bg-gradient-to-r from-amber-600/[0.18] via-amber-500/[0.08] to-transparent"
-                                        : "text-emerald-50 bg-gradient-to-r from-emerald-500/[0.18] via-emerald-500/[0.08] to-transparent"
+                                        : "text-amber-50 bg-gradient-to-r from-amber-500/[0.18] via-amber-500/[0.08] to-transparent"
                                       : isSubLocked
                                         ? "text-slate-500 hover:bg-white/[0.03] hover:text-slate-300"
                                         : isReadOnly
@@ -340,10 +340,10 @@ export function Sidebar() {
                                     {isActive && <motion.div layoutId="active-accent" className="absolute left-0 top-1/2 h-5 w-[3px] -translate-y-1/2 rounded-r-full"
                                       style={{ background: appTheme === "premium-dark"
                                         ? "linear-gradient(to bottom, #d4a017, #b8860b)"
-                                        : "linear-gradient(to bottom, #34d399, #059669)" }}
+                                        : "linear-gradient(to bottom, #E8D48B, #C9A227)" }}
                                       transition={{ type: "spring", stiffness: 350, damping: 30 }} />}
                                     <span className={cn("flex-shrink-0 transition-colors", isActive
-                                      ? appTheme === "premium-dark" ? "text-amber-400" : "text-emerald-400"
+                                      ? appTheme === "premium-dark" ? "text-amber-400" : "text-amber-400"
                                       : isSubLocked
                                         ? "text-slate-600 group-hover/item:text-slate-500"
                                         : "text-slate-500 group-hover/item:text-slate-400"
@@ -358,7 +358,7 @@ export function Sidebar() {
                                         "flex items-center gap-1 px-1.5 py-0.5 rounded-md text-[9px] font-semibold flex-shrink-0 whitespace-nowrap",
                                         requiredPlan === "enterprise"
                                           ? "bg-amber-500/10 text-amber-400/80 border border-amber-500/15"
-                                          : "bg-emerald-500/10 text-emerald-400/80 border border-emerald-500/15"
+                                          : "bg-amber-500/10 text-amber-400/80 border border-amber-500/15"
                                       )}>
                                         <Zap className="h-2.5 w-2.5" />
                                         {requiredPlan === "enterprise" ? "Enterprise" : "Growth"}
@@ -381,7 +381,7 @@ export function Sidebar() {
                                       </div>
                                       <p className="text-slate-400">Requires <span className={cn(
                                         "font-medium",
-                                        requiredPlan === "enterprise" ? "text-amber-400" : "text-emerald-400"
+                                        requiredPlan === "enterprise" ? "text-amber-400" : "text-amber-400"
                                       )}>{getPlanDisplayName(requiredPlan)}</span> plan</p>
                                       <p className="text-slate-500 mt-0.5">Click to upgrade →</p>
                                     </div>
@@ -438,18 +438,18 @@ export function Sidebar() {
                 <div className="absolute -inset-[1px] rounded-full opacity-60"
                   style={{ background: appTheme === "premium-dark"
                     ? "linear-gradient(135deg, #d4a017, #b8860b)"
-                    : "linear-gradient(135deg, #10b981, #059669)" }} />
+                    : "linear-gradient(135deg, #D4AF37, #C9A227)" }} />
                 <Avatar className="relative h-8 w-8 ring-2 ring-slate-900">
                   {user?.image ? <AvatarImage src={user.image} /> : null}
                   <AvatarFallback className="text-[11px] font-bold text-white"
                     style={{ background: appTheme === "premium-dark"
                       ? "linear-gradient(135deg, #d4a017, #b8860b)"
-                      : "linear-gradient(135deg, #10b981, #059669)" }}>
+                      : "linear-gradient(135deg, #D4AF37, #C9A227)" }}>
                     {userInitials}
                   </AvatarFallback>
                 </Avatar>
                 <span className="absolute -bottom-0.5 -right-0.5 h-3 w-3 rounded-full border-2 border-slate-900"
-                  style={{ background: appTheme === "premium-dark" ? "#d4a017" : "#10b981",
+                  style={{ background: appTheme === "premium-dark" ? "#d4a017" : "#D4AF37",
                     boxShadow: appTheme === "premium-dark" ? "0 0 6px rgba(212,160,23,0.6)" : "0 0 6px rgba(16,185,129,0.6)" }} />
               </div>
               {!isCollapsed && (
@@ -476,7 +476,7 @@ export function Sidebar() {
             </span>
             {!isCollapsed && <span className="text-[10px] font-medium text-slate-500">{visibleGroups.length} groups</span>}
           </div>
-          {/* "Powered by BrandOnyx" subtle text */}
+          {/* "Powered by Valtriox" subtle text */}
           <div className="pb-3 flex justify-center">
             <span className="text-[10px] text-slate-500/60">Powered by {companyName}</span>
           </div>

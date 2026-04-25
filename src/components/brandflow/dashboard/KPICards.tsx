@@ -3,7 +3,7 @@
 import { motion } from "framer-motion";
 import { DollarSign, ShoppingCart, Users, Star, TrendingUp, TrendingDown, AlertTriangle } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
-import { useBrandOnyxStore } from "@/store/brandflow-store";
+import { useValtrioxStore } from "@/store/brandflow-store";
 
 const containerVariants = {
   hidden: {},
@@ -16,7 +16,7 @@ const cardVariants = {
 };
 
 export function KPICards() {
-  const { appTheme } = useBrandOnyxStore();
+  const { appTheme } = useValtrioxStore();
   const isGold = appTheme === "premium-dark";
   const isDark = appTheme === "dark" || appTheme === "premium-dark";
 
@@ -27,8 +27,8 @@ export function KPICards() {
       change: "0%",
       trend: "neutral" as const,
       icon: DollarSign,
-      iconBg: isGold ? "bg-amber-500/10" : "bg-emerald-100",
-      iconColor: isGold ? "text-amber-400" : "text-emerald-600",
+      iconBg: isGold ? "bg-amber-500/10" : "bg-amber-100",
+      iconColor: isGold ? "text-amber-400" : "text-amber-600",
     },
     {
       label: "Active Orders",
@@ -54,8 +54,8 @@ export function KPICards() {
       change: "No data",
       trend: "neutral" as const,
       icon: Star,
-      iconBg: isGold ? "bg-amber-500/10" : "bg-purple-100",
-      iconColor: isGold ? "text-amber-400" : "text-purple-600",
+      iconBg: isGold ? "bg-amber-500/10" : "bg-amber-100",
+      iconColor: isGold ? "text-amber-400" : "text-amber-600",
     },
   ];
 

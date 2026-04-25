@@ -64,7 +64,7 @@ export function AIAssistantPage() {
           { id: "descriptions", label: "Product Descriptions" },
           { id: "insights", label: "Customer Insights" },
         ].map((tab) => (
-          <button key={tab.id} onClick={() => setActiveTab(tab.id)} className={`px-4 py-2.5 text-sm font-medium border-b-2 transition-colors ${activeTab === tab.id ? "border-emerald-600 text-emerald-600" : "border-transparent text-slate-500 hover:text-slate-700"}`}>
+          <button key={tab.id} onClick={() => setActiveTab(tab.id)} className={`px-4 py-2.5 text-sm font-medium border-b-2 transition-colors ${activeTab === tab.id ? "border-amber-600 text-amber-600" : "border-transparent text-slate-500 hover:text-slate-700"}`}>
             {tab.label}
           </button>
         ))}
@@ -83,11 +83,11 @@ export function AIAssistantPage() {
               )}
               {messages.map((msg) => (
                 <div key={msg.id} className={`flex ${msg.role === "user" ? "justify-end" : "justify-start"}`}>
-                  <div className={`max-w-[75%] rounded-xl px-4 py-3 ${msg.role === "user" ? "bg-emerald-600 text-white rounded-br-sm" : "bg-slate-100 border border-slate-200 rounded-bl-sm"}`}>
+                  <div className={`max-w-[75%] rounded-xl px-4 py-3 ${msg.role === "user" ? "bg-amber-600 text-white rounded-br-sm" : "bg-slate-100 border border-slate-200 rounded-bl-sm"}`}>
                     {msg.role === "assistant" && (
                       <div className="flex items-center gap-1.5 mb-2">
-                        <Bot className="h-4 w-4 text-emerald-600" />
-                        <span className="text-xs font-medium text-emerald-600">{companyName} AI</span>
+                        <Bot className="h-4 w-4 text-amber-600" />
+                        <span className="text-xs font-medium text-amber-600">{companyName} AI</span>
                       </div>
                     )}
                     <p className="text-sm whitespace-pre-line leading-relaxed">{msg.content}</p>
@@ -98,7 +98,7 @@ export function AIAssistantPage() {
                 <div className="flex justify-start">
                   <div className="bg-slate-100 border border-slate-200 rounded-xl rounded-bl-sm px-4 py-3">
                     <div className="flex items-center gap-2">
-                      <Loader2 className="h-4 w-4 animate-spin text-emerald-600" />
+                      <Loader2 className="h-4 w-4 animate-spin text-amber-600" />
                       <span className="text-sm text-muted-foreground">AI is thinking...</span>
                     </div>
                   </div>
@@ -118,7 +118,7 @@ export function AIAssistantPage() {
             <div className="p-4 border-t">
               <div className="flex gap-2">
                 <Input placeholder="Ask me anything about your business..." value={input} onChange={(e) => setInput(e.target.value)} onKeyDown={(e) => e.key === "Enter" && !e.shiftKey && handleSend()} className="flex-1" />
-                <Button className="bg-emerald-600 hover:bg-emerald-700" onClick={handleSend} disabled={!input.trim()}><Send className="h-4 w-4" /></Button>
+                <Button className="bg-amber-600 hover:bg-amber-700" onClick={handleSend} disabled={!input.trim()}><Send className="h-4 w-4" /></Button>
               </div>
             </div>
           </Card>
@@ -127,7 +127,7 @@ export function AIAssistantPage() {
 
       {activeTab === "descriptions" && (
         <Card className="max-w-2xl">
-          <CardHeader><CardTitle className="text-base flex items-center gap-2"><FileText className="h-5 w-5 text-emerald-600" /> Product Description Generator</CardTitle></CardHeader>
+          <CardHeader><CardTitle className="text-base flex items-center gap-2"><FileText className="h-5 w-5 text-amber-600" /> Product Description Generator</CardTitle></CardHeader>
           <CardContent className="space-y-4">
             <div><label className="text-sm font-medium mb-1 block">Product Name</label><Input placeholder="e.g., Vitamin C Brightening Serum" /></div>
             <div><label className="text-sm font-medium mb-1 block">Key Features (comma separated)</label><Input placeholder="e.g., Brightens skin, Reduces dark spots" /></div>
@@ -138,7 +138,7 @@ export function AIAssistantPage() {
                 ))}
               </div>
             </div>
-            <Button className="bg-emerald-600 hover:bg-emerald-700" onClick={() => toast.info("Fill in product details to generate a description")}><Sparkles className="mr-2 h-4 w-4" /> Generate Description</Button>
+            <Button className="bg-amber-600 hover:bg-amber-700" onClick={() => toast.info("Fill in product details to generate a description")}><Sparkles className="mr-2 h-4 w-4" /> Generate Description</Button>
           </CardContent>
         </Card>
       )}
@@ -150,7 +150,7 @@ export function AIAssistantPage() {
             <CardContent><EmptyState icon={Users} title="No customer insights yet" description="Customer insights will be available once you have sufficient order data." /></CardContent>
           </Card>
           <Card>
-            <CardHeader><CardTitle className="text-base flex items-center gap-2"><Package className="h-5 w-5 text-emerald-500" /> Product Insights</CardTitle></CardHeader>
+            <CardHeader><CardTitle className="text-base flex items-center gap-2"><Package className="h-5 w-5 text-amber-500" /> Product Insights</CardTitle></CardHeader>
             <CardContent><EmptyState icon={Package} title="No product insights yet" description="Product insights will be available once you have sufficient sales data." /></CardContent>
           </Card>
         </div>

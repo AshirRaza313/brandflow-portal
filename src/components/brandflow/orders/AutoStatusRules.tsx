@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState, useCallback } from "react";
-import { useBrandOnyxStore } from "@/store/brandflow-store";
+import { useValtrioxStore } from "@/store/brandflow-store";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -53,7 +53,7 @@ const statusOptions = [
 // ── Component ──
 
 export function AutoStatusRules() {
-  const { organization, appTheme } = useBrandOnyxStore();
+  const { organization, appTheme } = useValtrioxStore();
   const isGold = appTheme === "premium-dark";
   const isDark = appTheme === "dark" || isGold;
 
@@ -139,8 +139,8 @@ export function AutoStatusRules() {
   const textPrimary = isDark ? "text-white" : "text-slate-900";
   const textSecondary = isDark ? "text-slate-400" : "text-slate-500";
   const textMuted = isDark ? "text-slate-500" : "text-muted-foreground";
-  const accentColor = isGold ? "text-amber-400" : "text-emerald-500";
-  const accentBg = isGold ? "bg-amber-500/10" : "bg-emerald-500/10";
+  const accentColor = isGold ? "text-amber-400" : "text-amber-500";
+  const accentBg = isGold ? "bg-amber-500/10" : "bg-amber-500/10";
 
   return (
     <div className="space-y-4">
@@ -190,7 +190,7 @@ export function AutoStatusRules() {
               "text-xs",
               isGold
                 ? "bg-gradient-to-r from-amber-600 via-yellow-500 to-amber-600 text-black"
-                : "bg-emerald-600 hover:bg-emerald-700 text-white"
+                : "bg-amber-600 hover:bg-amber-700 text-white"
             )}
           >
             {saving ? <Loader2 className="mr-1.5 h-3 w-3 animate-spin" /> : <Save className="mr-1.5 h-3 w-3" />}
@@ -239,7 +239,7 @@ export function AutoStatusRules() {
                   rule.enabled
                     ? isGold
                       ? "border-amber-500/20"
-                      : "border-emerald-500/20"
+                      : "border-amber-500/20"
                     : isDark
                     ? "opacity-60"
                     : "opacity-70"

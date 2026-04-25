@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { useBrandOnyxStore } from "@/store/brandflow-store";
+import { useValtrioxStore } from "@/store/brandflow-store";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -149,10 +149,10 @@ const getStatusBadgeClasses = (status: string, isGold: boolean, isDark: boolean)
           : cn(base, "bg-blue-50 text-blue-700 border border-blue-200");
     case "packed":
       return isGold
-        ? cn(base, "bg-purple-500/15 text-purple-400 border border-purple-500/20")
+        ? cn(base, "bg-amber-500/15 text-amber-400 border border-amber-500/20")
         : isDark
-          ? cn(base, "bg-purple-500/15 text-purple-400 border border-purple-500/20")
-          : cn(base, "bg-purple-50 text-purple-700 border border-purple-200");
+          ? cn(base, "bg-amber-500/15 text-amber-400 border border-amber-500/20")
+          : cn(base, "bg-amber-50 text-amber-700 border border-amber-200");
     case "dispatched":
       return isGold
         ? cn(base, "bg-cyan-500/15 text-cyan-400 border border-cyan-500/20")
@@ -161,10 +161,10 @@ const getStatusBadgeClasses = (status: string, isGold: boolean, isDark: boolean)
           : cn(base, "bg-cyan-50 text-cyan-700 border border-cyan-200");
     case "delivered":
       return isGold
-        ? cn(base, "bg-emerald-500/15 text-emerald-400 border border-emerald-500/20")
+        ? cn(base, "bg-amber-500/15 text-amber-400 border border-amber-500/20")
         : isDark
-          ? cn(base, "bg-emerald-500/15 text-emerald-400 border border-emerald-500/20")
-          : cn(base, "bg-emerald-50 text-emerald-700 border border-emerald-200");
+          ? cn(base, "bg-amber-500/15 text-amber-400 border border-amber-500/20")
+          : cn(base, "bg-amber-50 text-amber-700 border border-amber-200");
     case "cancelled":
       return isGold
         ? cn(base, "bg-red-500/15 text-red-400 border border-red-500/20")
@@ -190,7 +190,7 @@ const getChannelBadgeClasses = (channel: string, isGold: boolean, isDark: boolea
     case "instagram":
       return isGold ? cn(base, "bg-pink-500/10 text-pink-400") : isDark ? cn(base, "bg-pink-500/10 text-pink-400") : cn(base, "bg-pink-50 text-pink-700");
     case "website":
-      return isGold ? cn(base, "bg-indigo-500/10 text-indigo-400") : isDark ? cn(base, "bg-indigo-500/10 text-indigo-400") : cn(base, "bg-indigo-50 text-indigo-700");
+      return isGold ? cn(base, "bg-amber-500/10 text-amber-400") : isDark ? cn(base, "bg-amber-500/10 text-amber-400") : cn(base, "bg-amber-50 text-amber-700");
     default:
       return isDark ? cn(base, "bg-white/5 text-slate-500") : cn(base, "bg-slate-100 text-slate-500");
   }
@@ -199,7 +199,7 @@ const getChannelBadgeClasses = (channel: string, isGold: boolean, isDark: boolea
 // ── Component ──────────────────────────────────────────────────────────────
 
 export function OrdersPage() {
-  const { organization, appTheme } = useBrandOnyxStore();
+  const { organization, appTheme } = useValtrioxStore();
   const isGold = appTheme === "premium-dark";
   const isDark = appTheme === "dark" || isGold;
 
@@ -447,7 +447,7 @@ export function OrdersPage() {
           <Button
             className={isGold
               ? "bg-gradient-to-r from-amber-600 via-yellow-500 to-amber-600 text-black hover:shadow-[0_4px_20px_rgba(212,160,23,0.3)] hover:-translate-y-0.5"
-              : "bg-emerald-600 hover:bg-emerald-700"
+              : "bg-amber-600 hover:bg-amber-700"
             }
             onClick={() => setOrderModalOpen(true)}
           >
@@ -513,7 +513,7 @@ export function OrdersPage() {
                   ? isGold
                     ? "bg-gradient-to-r from-amber-600/20 to-yellow-500/20 text-amber-400 border border-amber-500/30"
                     : isDark
-                      ? "bg-emerald-600/20 text-emerald-400 border border-emerald-500/30"
+                      ? "bg-amber-600/20 text-amber-400 border border-amber-500/30"
                       : "bg-slate-900 text-white"
                   : isDark
                     ? "bg-white/5 text-slate-400 hover:bg-white/10 hover:text-slate-300"
@@ -528,7 +528,7 @@ export function OrdersPage() {
                     ? isGold
                       ? "bg-amber-500/30 text-amber-300"
                       : isDark
-                        ? "bg-emerald-500/30 text-emerald-300"
+                        ? "bg-amber-500/30 text-amber-300"
                         : "bg-white/20 text-white/80"
                     : isDark
                       ? "bg-white/10 text-slate-500"
@@ -553,7 +553,7 @@ export function OrdersPage() {
             className={cn(
               "pl-9",
               isGold && "border-white/10 bg-white/[0.03] focus-visible:border-amber-500/50 focus-visible:ring-amber-500/20 placeholder:text-slate-500",
-              isDark && !isGold && "border-white/10 bg-white/[0.03] focus-visible:border-emerald-500/50 placeholder:text-slate-500"
+              isDark && !isGold && "border-white/10 bg-white/[0.03] focus-visible:border-amber-500/50 placeholder:text-slate-500"
             )}
           />
         </div>
@@ -992,7 +992,7 @@ export function OrdersPage() {
                     currentPage === pageNum
                       ? isGold
                         ? "bg-gradient-to-r from-amber-600 to-yellow-500 text-black"
-                        : "bg-emerald-600 text-white hover:bg-emerald-700"
+                        : "bg-amber-600 text-white hover:bg-amber-700"
                       : isGold
                         ? "border-amber-500/20 text-amber-400 hover:bg-amber-500/10"
                         : isDark
@@ -1115,13 +1115,13 @@ export function OrdersPage() {
                 </div>
                 {selectedOrderForDetails.discount > 0 && (
                   <div className="flex justify-between text-sm">
-                    <span className="text-emerald-500">Discount</span>
-                    <span className="text-emerald-500">- Rs. {selectedOrderForDetails.discount.toLocaleString()}</span>
+                    <span className="text-amber-500">Discount</span>
+                    <span className="text-amber-500">- Rs. {selectedOrderForDetails.discount.toLocaleString()}</span>
                   </div>
                 )}
                 <div className="flex justify-between text-lg font-bold pt-1 border-t" style={{ borderColor: borderColor }}>
                   <span className={textPrimary}>Total</span>
-                  <span className={isGold ? "text-amber-400" : "text-emerald-600"}>
+                  <span className={isGold ? "text-amber-400" : "text-amber-600"}>
                     Rs. {selectedOrderForDetails.total.toLocaleString()}
                   </span>
                 </div>
