@@ -156,40 +156,8 @@ export const PUT = withAuth(async (
         },
       });
 
-      // ── AUTO-GENERATE INVOICE for extension ──
-      try {
-        const org = await db.organization.findUnique({ where: { id: subscription.organization.id } });
-        const currency = org ? getCurrencyForCountry(org.country || "PK") : { code: "PKR", symbol: "Rs." };
-        const invoiceCount = await db.invoice.count({ where: { organizationId: subscription.organization.id } });
-        const currentPlan = await db.subscriptionPlan.findUnique({ where: { id: subscription.planId } });
-        const amount = currentPlan ? (subscription.billingCycle === "annually" ? currentPlan.annualPrice : currentPlan.price) : 0;
-        if (amount > 0) {
-          await db.invoice.create({
-            data: {
-              invoiceNumber: generateInvoiceNumber(invoiceCount),
-              organizationId: subscription.organization.id,
-              subscriptionId: id,
-              planName: currentPlan?.name || subscription.organization.plan,
-              amount: Number(amount) || 0,
-              billingCycle: subscription.billingCycle || "monthly",
-              status: "paid",
-              currencyCode: currency.code,
-              currencySymbol: currency.symbol,
-              issuedAt: new Date(),
-              paidAt: new Date(),
-              periodStart: new Date(),
-              periodEnd: newEnd,
-              orgName: subscription.organization.name,
-              orgEmail: org?.email || null,
-              orgPhone: org?.phone || null,
-              orgAddress: org?.address || null,
-              notes: `Subscription extended by ${extendDays} days — processed by admin.`,
-            },
-          });
-        }
-      } catch (invErr: any) {
-        console.warn("[Admin extend] Auto-invoice generation failed:", invErr?.message);
-      }
+      // NOTE: Invoice for extension is NOT auto-generated.
+      // Admin must manually create/send the invoice from Invoice Management.
 
       return NextResponse.json({ success: true, message: `Subscription extended by ${extendDays} days` });
     }

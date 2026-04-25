@@ -129,25 +129,12 @@ export const PUT = withAuth(async (
           },
         });
 
-        // 7. Find and update related invoice
+        // 7. Find related invoice (DO NOT auto-update status — admin handles manually)
         const relatedInvoice = await tx.invoice.findFirst({
           where: { paymentProofId: payment.id },
         });
-
-        if (relatedInvoice) {
-          await tx.invoice.update({
-            where: { id: relatedInvoice.id },
-            data: {
-              status: "paid",
-              paidAt: new Date(),
-              periodStart: new Date(),
-              periodEnd: currentPeriodEnd,
-              notes: relatedInvoice.notes
-                ? `${relatedInvoice.notes} | Payment approved on ${new Date().toLocaleDateString("en-PK")}.`
-                : `Payment approved on ${new Date().toLocaleDateString("en-PK")}.`,
-            },
-          });
-        }
+        // NOTE: Invoice status is intentionally NOT updated to "paid" here.
+        // Admin must manually approve/mark the invoice from Invoice Management.
 
         return {
           updatedPayment,
