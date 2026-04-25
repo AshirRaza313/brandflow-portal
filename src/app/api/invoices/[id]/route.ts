@@ -77,9 +77,19 @@ export const GET = withAuth(async (
         orgPhone: invoice.orgPhone || undefined,
         orgAddress: invoice.orgAddress || undefined,
         platformName: platformSettings?.companyName || "Valtriox",
-        platformEmail: platformSettings?.companyEmail,
+        platformEmail: platformSettings?.companyEmail || undefined,
         platformPhone: platformSettings?.companyPhone || undefined,
         platformAddress: platformSettings?.companyAddress || undefined,
+        platformWebsite: platformSettings?.companyWebsite || undefined,
+        platformWhatsapp: platformSettings?.whatsappNumber || undefined,
+        platformInstagram: platformSettings?.instagramUrl || undefined,
+        platformFacebook: platformSettings?.facebookUrl || undefined,
+        platformTwitter: platformSettings?.twitterUrl || undefined,
+        platformSupportHours: platformSettings?.supportHours || undefined,
+        platformInvoiceHeaderText: platformSettings?.invoiceHeaderText || undefined,
+        platformPaymentMethods: platformSettings?.paymentMethods || undefined,
+        platformLogo: platformSettings?.logoUrl || undefined,
+        platformTagline: platformSettings?.tagline || "The Universal Brand Management Portal",
       };
 
       let pdfBuffer: Buffer;

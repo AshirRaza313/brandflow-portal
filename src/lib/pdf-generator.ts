@@ -656,6 +656,19 @@ export async function generateInvoicePDF(invoice: InvoiceData): Promise<Buffer> 
       // ── FULL PAGE BLACK BACKGROUND ──
       doc.rect(0, 0, W, H).fill(C.bg);
 
+      // ── VALTRIOX WATERMARK (diagonal, subtle) for paid plans ──
+      const planLower = (invoice.planName || "").toLowerCase();
+      if (planLower.includes("growth") || planLower.includes("enterprise")) {
+        doc.save();
+        doc.fontSize(52).fillColor("#1a1a2e");
+        doc.translate(W / 2, H / 2);
+        doc.rotate(-35);
+        doc.font(FONT.bold).text("VALTRIOX", -160, -40, { width: 320, align: "center" });
+        doc.fontSize(14).fillColor("#1a1a28");
+        doc.font(FONT.regular).text("POWERED BY VALTRIOX", -100, 20, { width: 200, align: "center" });
+        doc.restore();
+      }
+
       // Subtle gradient header area
       doc.save();
       const hdrGrad = doc.linearGradient(0, 0, W, 150);

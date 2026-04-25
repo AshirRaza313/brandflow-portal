@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db, ensureDb, dbErrorResponse } from "@/lib/db";
 import { withAuth } from "@/lib/auth-middleware";
+import { generateInvoiceNumber } from "@/lib/pdf-generator";
+import { getCurrencyForCountry } from "@/lib/currency";
 import logger from "@/lib/logger";
 
 // PUT /api/admin/subscriptions/[id] — Admin manage subscription (reset, downgrade, extend, ban/unban)
@@ -79,6 +81,41 @@ export const PUT = withAuth(async (
         },
       });
 
+      // ── AUTO-GENERATE INVOICE for plan change ──
+      if (targetPlan.price > 0) {
+        try {
+          const org = await db.organization.findUnique({ where: { id: subscription.organization.id } });
+          const currency = org ? getCurrencyForCountry(org.country || "PK") : { code: "PKR", symbol: "Rs." };
+          const invoiceCount = await db.invoice.count({ where: { organizationId: subscription.organization.id } });
+          const amount = cycle === "annually" ? targetPlan.annualPrice : targetPlan.price;
+          const periodEnd = new Date(Date.now() + periodDays * 24 * 60 * 60 * 1000);
+          await db.invoice.create({
+            data: {
+              invoiceNumber: generateInvoiceNumber(invoiceCount),
+              organizationId: subscription.organization.id,
+              subscriptionId: id,
+              planName: planName,
+              amount: Number(amount) || 0,
+              billingCycle: cycle,
+              status: "paid",
+              currencyCode: currency.code,
+              currencySymbol: currency.symbol,
+              issuedAt: new Date(),
+              paidAt: new Date(),
+              periodStart: new Date(),
+              periodEnd,
+              orgName: subscription.organization.name,
+              orgEmail: org?.email || null,
+              orgPhone: org?.phone || null,
+              orgAddress: org?.address || null,
+              notes: `Plan upgrade/change to ${planName} (${cycle}) — processed by admin.`,
+            },
+          });
+        } catch (invErr: any) {
+          console.warn("[Admin change_plan] Auto-invoice generation failed:", invErr?.message);
+        }
+      }
+
       return NextResponse.json({ success: true, message: `Plan changed to ${planName} (${cycle})` });
     }
 
@@ -118,6 +155,41 @@ export const PUT = withAuth(async (
           actionUrl: "/billing",
         },
       });
+
+      // ── AUTO-GENERATE INVOICE for extension ──
+      try {
+        const org = await db.organization.findUnique({ where: { id: subscription.organization.id } });
+        const currency = org ? getCurrencyForCountry(org.country || "PK") : { code: "PKR", symbol: "Rs." };
+        const invoiceCount = await db.invoice.count({ where: { organizationId: subscription.organization.id } });
+        const currentPlan = await db.subscriptionPlan.findUnique({ where: { id: subscription.planId } });
+        const amount = currentPlan ? (subscription.billingCycle === "annually" ? currentPlan.annualPrice : currentPlan.price) : 0;
+        if (amount > 0) {
+          await db.invoice.create({
+            data: {
+              invoiceNumber: generateInvoiceNumber(invoiceCount),
+              organizationId: subscription.organization.id,
+              subscriptionId: id,
+              planName: currentPlan?.name || subscription.organization.plan,
+              amount: Number(amount) || 0,
+              billingCycle: subscription.billingCycle || "monthly",
+              status: "paid",
+              currencyCode: currency.code,
+              currencySymbol: currency.symbol,
+              issuedAt: new Date(),
+              paidAt: new Date(),
+              periodStart: new Date(),
+              periodEnd: newEnd,
+              orgName: subscription.organization.name,
+              orgEmail: org?.email || null,
+              orgPhone: org?.phone || null,
+              orgAddress: org?.address || null,
+              notes: `Subscription extended by ${extendDays} days — processed by admin.`,
+            },
+          });
+        }
+      } catch (invErr: any) {
+        console.warn("[Admin extend] Auto-invoice generation failed:", invErr?.message);
+      }
 
       return NextResponse.json({ success: true, message: `Subscription extended by ${extendDays} days` });
     }
