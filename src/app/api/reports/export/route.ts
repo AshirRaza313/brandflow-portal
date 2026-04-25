@@ -641,9 +641,11 @@ export const GET = withAuth(async (req: NextRequest, authCtx) => {
       ]);
     } catch (pdfErr: any) {
       const errMsg = pdfErr?.message || String(pdfErr);
+      const errStack = pdfErr?.stack || 'N/A';
       console.error("[Report Export] PDF generation error:", errMsg);
+      console.error("[Report Export] Stack trace:", errStack);
       return NextResponse.json(
-        { error: "Report PDF generation failed", details: errMsg },
+        { error: "Report PDF generation failed", details: errMsg, stack: errStack },
         { status: 500 },
       );
     }

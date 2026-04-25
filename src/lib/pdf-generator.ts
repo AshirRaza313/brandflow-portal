@@ -21,10 +21,34 @@ const FONT = {
 };
 
 function ensureFontsRegistered(doc: any): void {
-  doc.registerFont(FONT.regular, FONT_REGULAR);
-  doc.registerFont(FONT.bold, FONT_BOLD);
-  doc.registerFont(FONT.italic, FONT_ITALIC);
-  doc.registerFont(FONT.boldItalic, FONT_BOLD_ITALIC);
+  // CRITICAL: Validate ALL 4 font buffers before registering.
+  // If any font buffer is null/undefined, pdfkit's registerFont internally
+  // accesses .length on the source and throws: "Cannot read properties of null (reading 'length')"
+  const fonts = [
+    { name: FONT.regular, buf: FONT_REGULAR, label: 'REGULAR' },
+    { name: FONT.bold, buf: FONT_BOLD, label: 'BOLD' },
+    { name: FONT.italic, buf: FONT_ITALIC, label: 'ITALIC' },
+    { name: FONT.boldItalic, buf: FONT_BOLD_ITALIC, label: 'BOLD_ITALIC' },
+  ];
+  for (const f of fonts) {
+    if (!f.buf || typeof f.buf.length !== 'number' || f.buf.length === 0) {
+      throw new Error(`Font buffer ${f.label} is invalid (type=${typeof f.buf}, length=${f.buf?.length ?? 'N/A'})`);
+    }
+    try {
+      doc.registerFont(f.name, f.buf);
+    } catch (fontErr: any) {
+      console.error(`[PDF] Font registration failed for ${f.label}:`, fontErr?.message);
+      // Only throw for REGULAR and BOLD (essential fonts);
+      // ITALIC/BOLD_ITALIC can fall back to REGULAR/BOLD
+      if (f.label === 'REGULAR' || f.label === 'BOLD') {
+        throw new Error(`Critical font ${f.label} failed to register: ${fontErr?.message || String(fontErr)}`);
+      }
+      // For italic/bold-italic, try to register with regular/bold as fallback
+      try {
+        doc.registerFont(f.name, f.label === 'ITALIC' ? FONT_REGULAR : FONT_BOLD);
+      } catch {}
+    }
+  }
 }
 
 // ── Types ──
@@ -1030,12 +1054,7 @@ export async function generateReportPDF(report: ReportData): Promise<Buffer> {
     }
 
     try {
-      // ── VALIDATE FONT BUFFERS — fail fast if fonts are missing/corrupt ──
-      if (!FONT_REGULAR || !FONT_REGULAR.length || !FONT_BOLD || !FONT_BOLD.length) {
-        throw new Error(`Font buffers invalid: REGULAR=${FONT_REGULAR?.length ?? 0}, BOLD=${FONT_BOLD?.length ?? 0}`);
-      }
-
-      // ── REGISTER FONTS FIRST ──
+      // ── REGISTER FONTS FIRST (includes full validation of all 4 buffers) ──
       ensureFontsRegistered(doc);
 
       // ====================================================================
@@ -1567,11 +1586,13 @@ export async function generateReportPDF(report: ReportData): Promise<Buffer> {
         }
       }
 
-    } catch (renderErr) {
+    } catch (renderErr: any) {
       hasErrored = true;
-      console.error("[PDF Report] Render error:", renderErr);
-      console.error("[PDF Report] Stack:", renderErr instanceof Error ? renderErr.stack : 'N/A');
-      reject(new Error(`Report PDF render failed: ${renderErr instanceof Error ? renderErr.message : String(renderErr)}`));
+      const errMsg = renderErr instanceof Error ? renderErr.message : String(renderErr);
+      const errStack = renderErr instanceof Error ? renderErr.stack : 'N/A';
+      console.error("[PDF Report] Render error:", errMsg);
+      console.error("[PDF Report] Stack:", errStack);
+      reject(new Error(`Report PDF render failed: ${errMsg}\n[Stack] ${errStack}`));
     }
 
     if (!hasErrored) {
