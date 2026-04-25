@@ -5,7 +5,7 @@ import { useValtrioxStore } from "@/store/brandflow-store";
 import { fetchWithAuth } from "@/lib/fetch-with-auth";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { Download, BarChart3, TrendingUp, ShoppingBag, DollarSign, RotateCcw, Loader2, FileText, FileSpreadsheet, ChevronDown } from "lucide-react";
+import { Download, BarChart3, TrendingUp, ShoppingBag, DollarSign, RotateCcw, Loader2, Printer, FileSpreadsheet, ChevronDown } from "lucide-react";
 import {
   AreaChart, Area, BarChart, Bar, PieChart, Pie, Cell,
   XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer,
@@ -62,7 +62,6 @@ export function SalesReportsPage() {
 
   const [activeTab, setActiveTab] = useState<string>("monthly");
   const [loading, setLoading] = useState(true);
-  const [exporting, setExporting] = useState(false);
   const [data, setData] = useState<SalesReportData | null>(null);
 
   const fetchData = useCallback(async () => {
@@ -84,42 +83,9 @@ export function SalesReportsPage() {
     fetchData();
   }, [fetchData]);
 
-  const handleExport = async () => {
-    if (!organization?.id) return;
-    setExporting(true);
-    try {
-      const res = await fetchWithAuth(
-        `/api/reports/export?type=sales&orgId=${organization.id}&period=${activeTab}`
-      );
-      if (res.ok) {
-        const blob = await res.blob();
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement("a");
-        a.href = url;
-        a.download = `sales-report-${activeTab}-${new Date().toISOString().split("T")[0]}.pdf`;
-        document.body.appendChild(a);
-        a.click();
-        document.body.removeChild(a);
-        URL.revokeObjectURL(url);
-        toast.success("Report exported successfully!");
-      } else {
-        let errorMsg = "Failed to export report. Please try again.";
-        try {
-          const errBody = await res.json();
-          if (errBody?.error) errorMsg = errBody.error;
-          if (errBody?.details) errorMsg += ` (${errBody.details})`;
-          console.error("[Export] Server error:", res.status, errBody);
-        } catch {
-          console.error("[Export] HTTP error status:", res.status, res.statusText);
-          errorMsg += ` (HTTP ${res.status})`;
-        }
-        toast.error(errorMsg);
-      }
-    } catch (err) {
-      console.error("[Export] Network/fetch error:", err);
-      toast.error("Export failed — check your connection and try again.");
-    }
-    setExporting(false);
+  const handlePrintReport = () => {
+    window.print();
+    toast.success("Print dialog opened");
   };
 
   const handleCSVExport = () => {
@@ -177,21 +143,17 @@ export function SalesReportsPage() {
             <Button
               variant="outline"
               className={cn("gap-2 text-xs", isDark && "border-white/[0.1]")}
-              disabled={loading || exporting}
+              disabled={loading}
             >
-              {exporting ? (
-                <Loader2 className="h-4 w-4 animate-spin" />
-              ) : (
-                <Download className="h-4 w-4" />
-              )}
-              {exporting ? "Generating..." : "Export Report"}
+              <Download className="h-4 w-4" />
+              Export Report
               <ChevronDown className="h-3 w-3 opacity-50" />
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end">
-            <DropdownMenuItem onClick={handleExport}>
-              <FileText className="h-4 w-4 mr-2 text-red-400" />
-              Export as PDF
+            <DropdownMenuItem onClick={handlePrintReport}>
+              <Printer className="h-4 w-4 mr-2 text-blue-400" />
+              Print Report
             </DropdownMenuItem>
             <DropdownMenuItem onClick={handleCSVExport}>
               <FileSpreadsheet className="h-4 w-4 mr-2 text-green-400" />

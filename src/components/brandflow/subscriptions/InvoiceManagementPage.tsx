@@ -34,7 +34,7 @@ import { cn } from "@/lib/utils";
 import { format } from "date-fns";
 import {
   FileText,
-  Download,
+  Printer,
   RefreshCw,
   Search,
   Loader2,
@@ -50,6 +50,7 @@ import {
   ChevronRight,
 } from "lucide-react";
 import { toast } from "sonner";
+import { SubscriptionInvoiceView } from "./SubscriptionInvoiceView";
 import { motion, AnimatePresence } from "framer-motion";
 import type { DateRange } from "react-day-picker";
 
@@ -113,7 +114,7 @@ export function InvoiceManagementPage() {
   const [statusFilter, setStatusFilter] = useState("all");
   const [searchInput, setSearchInput] = useState("");
   const [searchQuery, setSearchQuery] = useState("");
-  const [downloadingId, setDownloadingId] = useState<string | null>(null);
+  const [viewingInvoice, setViewingInvoice] = useState<InvoiceItem | null>(null);
   const [selectedInvoice, setSelectedInvoice] = useState<InvoiceItem | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
   const [dateRange, setDateRange] = useState<DateRange | undefined>(undefined);
@@ -214,51 +215,8 @@ export function InvoiceManagementPage() {
   }, []);
   /* eslint-enable react-hooks/set-state-in-effect */
 
-  const handleDownload = async (invoice: InvoiceItem) => {
-    setDownloadingId(invoice.id);
-    try {
-      const res = await fetchWithAuth(`/api/invoices/${invoice.id}/download`);
-      if (res.ok) {
-        const blob = await res.blob();
-        // Validate it's actually a PDF (not an error JSON)
-        if (blob.size < 100 || blob.type === "application/json") {
-          // Server returned JSON error disguised as OK
-          const errText = await blob.text();
-          console.error("Invalid PDF response:", errText);
-          toast.error("Received invalid PDF from server");
-          setDownloadingId(null);
-          return;
-        }
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement("a");
-        a.href = url;
-        a.download = `${invoice.invoiceNumber}.pdf`;
-        document.body.appendChild(a);
-        a.click();
-        document.body.removeChild(a);
-        URL.revokeObjectURL(url);
-        toast.success(`Invoice ${invoice.invoiceNumber} downloaded!`);
-      } else {
-        // Parse the error details from the server
-        let errorMsg = "Failed to download invoice PDF";
-        try {
-          const errData = await res.json();
-          if (errData.details) {
-            errorMsg = `${errData.error || errorMsg}: ${errData.details}`;
-          } else if (errData.error) {
-            errorMsg = errData.error;
-          }
-          console.error("Download error response:", errData);
-        } catch {
-          errorMsg = `Server returned ${res.status} ${res.statusText}`;
-        }
-        toast.error(errorMsg);
-      }
-    } catch (err) {
-      console.error("Download network error:", err);
-      toast.error("Network error downloading invoice");
-    }
-    setDownloadingId(null);
+  const handleViewInvoice = (invoice: InvoiceItem) => {
+    setViewingInvoice(invoice);
   };
 
   const clearDateRange = () => {
@@ -593,15 +551,10 @@ export function InvoiceManagementPage() {
                             size="sm"
                             variant="ghost"
                             className={cn("h-7 gap-1 text-xs", isDark ? "hover:bg-white/[0.05]" : "")}
-                            onClick={() => handleDownload(inv)}
-                            disabled={downloadingId === inv.id}
+                            onClick={() => handleViewInvoice(inv)}
                           >
-                            {downloadingId === inv.id ? (
-                              <Loader2 className="h-3 w-3 animate-spin" />
-                            ) : (
-                              <Download className="h-3 w-3" />
-                            )}
-                            <span className="hidden sm:inline">PDF</span>
+                            <Printer className="h-3 w-3" />
+                            <span className="hidden sm:inline">Print</span>
                           </Button>
                         </div>
                       </td>
@@ -736,6 +689,11 @@ export function InvoiceManagementPage() {
           </CardContent>
         </Card>
       )}
+      <SubscriptionInvoiceView
+        invoice={viewingInvoice}
+        open={!!viewingInvoice}
+        onClose={() => setViewingInvoice(null)}
+      />
     </div>
   );
 }

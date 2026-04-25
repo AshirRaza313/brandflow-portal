@@ -42,10 +42,11 @@ import {
   Mail,
   Globe,
   FileText,
-  Download,
+  Printer,
 } from "lucide-react";
 import { toast } from "sonner";
 import { motion, AnimatePresence } from "framer-motion";
+import { SubscriptionInvoiceView } from "./SubscriptionInvoiceView";
 import { isPlatformRole, canEditBillingPlans, canSetPaymentMethods } from "@/lib/roles";
 import { getCurrencyForCountry } from "@/lib/currency";
 
@@ -185,6 +186,7 @@ export function SubscriptionPage() {
   const [screenshotPreview, setScreenshotPreview] = useState<string | null>(null);
   const [invoices, setInvoices] = useState<InvoiceRecord[]>([]);
   const [loadingInvoices, setLoadingInvoices] = useState(false);
+  const [viewingInvoice, setViewingInvoice] = useState<InvoiceRecord | null>(null);
 
   // ── Fetch Data ──
   const fetchSubscription = useCallback(async () => {
@@ -300,26 +302,9 @@ export function SubscriptionPage() {
     toast.success("Copied to clipboard");
   };
 
-  // ── Download Invoice PDF ──
-  const downloadInvoice = async (invoiceId: string, invoiceNumber: string) => {
-    try {
-      const res = await fetch(`/api/invoices/${invoiceId}/download`);
-      if (res.ok) {
-        const blob = await res.blob();
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement("a");
-        a.href = url;
-        a.download = `${invoiceNumber}.pdf`;
-        document.body.appendChild(a);
-        a.click();
-        document.body.removeChild(a);
-        URL.revokeObjectURL(url);
-      } else {
-        toast.error("Failed to download invoice");
-      }
-    } catch (err) {
-      toast.error("Download failed");
-    }
+  // ── View Invoice ──
+  const handleViewInvoice = (invoice: InvoiceRecord) => {
+    setViewingInvoice(invoice);
   };
 
   // ── Status helpers ──
@@ -1072,10 +1057,10 @@ export function SubscriptionPage() {
                         ? "border-amber-500/20 text-amber-400 hover:bg-amber-500/10 hover:text-amber-300"
                         : "border-amber-500/20 text-amber-400 hover:bg-amber-500/10 hover:text-amber-300"
                     )}
-                    onClick={() => downloadInvoice(invoice.id, invoice.invoiceNumber)}
+                    onClick={() => handleViewInvoice(invoice)}
                   >
-                    <Download className="h-3.5 w-3.5" />
-                    Download PDF
+                    <Printer className="h-3.5 w-3.5" />
+                    Print Invoice
                   </Button>
                 </div>
               ))}
@@ -1125,6 +1110,11 @@ export function SubscriptionPage() {
           </CardContent>
         </Card>
       )}
+      <SubscriptionInvoiceView
+        invoice={viewingInvoice}
+        open={!!viewingInvoice}
+        onClose={() => setViewingInvoice(null)}
+      />
     </div>
   );
 }
