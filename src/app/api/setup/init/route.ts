@@ -66,19 +66,19 @@ export async function POST(req: NextRequest) {
     if (planCount === 0) {
       const plans = [
         {
-          name: "starter", price: 999, annualPrice: 9990,
-          features: JSON.stringify(["5 Team Members", "100 Orders/Month", "50 Products", "Basic Reports", "Email Support"]),
-          teamLimit: 5, orderLimit: 100, productLimit: 50, trialDays: 14,
+          name: "starter", price: 0, annualPrice: 0,
+          features: JSON.stringify(["3 Team Members", "100 Orders (Lifetime)", "50 Products", "Basic Reports", "Email Support"]),
+          teamLimit: 3, orderLimit: 100, productLimit: 50, trialDays: 14,
         },
         {
-          name: "professional", price: 2999, annualPrice: 29990,
-          features: JSON.stringify(["15 Team Members", "500 Orders/Month", "200 Products", "Advanced Reports", "Priority Support", "API Access"]),
-          teamLimit: 15, orderLimit: 500, productLimit: 200, trialDays: 14,
+          name: "growth", price: 4999, annualPrice: 49990,
+          features: JSON.stringify(["15 Team Members", "Unlimited Orders", "200 Products", "Advanced Reports", "Priority Support", "API Access", "WhatsApp Business", "AI Tools", "Email Marketing"]),
+          teamLimit: 15, orderLimit: -1, productLimit: 200, trialDays: 14,
         },
         {
-          name: "enterprise", price: 7999, annualPrice: 79990,
-          features: JSON.stringify(["Unlimited Team", "Unlimited Orders", "Unlimited Products", "Custom Reports", "24/7 Support", "API Access", "White Label", "Custom Domain"]),
-          teamLimit: -1, orderLimit: -1, productLimit: -1, trialDays: 30,
+          name: "enterprise", price: 14999, annualPrice: 149990,
+          features: JSON.stringify(["Unlimited Team", "Unlimited Orders", "Unlimited Products", "Custom Reports", "24/7 Support", "API Access", "White Label", "Custom Domain", "Custom Integrations", "Warehouse", "Audit Log"]),
+          teamLimit: -1, orderLimit: -1, productLimit: -1, trialDays: 14,
         },
       ];
       for (const plan of plans) {

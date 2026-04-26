@@ -13,7 +13,7 @@ async function main() {
       period: "forever",
       features: JSON.stringify([
         "Up to 3 team members",
-        "100 orders/month",
+        "100 orders (lifetime limit)",
         "50 products",
         "Basic analytics",
         "5 AI queries/day",
@@ -34,7 +34,7 @@ async function main() {
       period: "monthly",
       features: JSON.stringify([
         "Everything in Starter",
-        "Unlimited orders",
+        "Unlimited orders (lifetime)",
         "200 products",
         "Advanced analytics",
         "AI tools (unlimited)",

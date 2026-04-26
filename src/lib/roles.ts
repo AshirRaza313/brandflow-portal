@@ -532,7 +532,7 @@ export function isSectionAccessible(sectionId: string, roleName: string): boolea
   if (sectionId === "user-guide") return true;
 
   // Platform-only sections — only visible to platform_owner, platform_admin, and owner (first user)
-  if (["admin-dashboard", "payment-approvals", "subscription-management", "audit-log", "platform-settings"].includes(sectionId)) {
+  if (["admin-dashboard", "client-management", "payment-approvals", "subscription-management", "audit-log", "platform-settings", "integration-management"].includes(sectionId)) {
     return isPlatformRole(roleName);
   }
 

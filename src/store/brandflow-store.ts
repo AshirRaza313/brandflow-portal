@@ -70,12 +70,14 @@ export type Feature =
   | "brand-settings"
   | "user-management"
   | "admin-dashboard"
+  | "client-management"
   | "audit-log"
   | "subscriptions"
   | "payment-approvals"
   | "subscription-management"
   | "invoice-management"
   | "platform-settings"
+  | "integration-management"
   // Legacy aliases
   | "broadcasts"
   | "referral"
@@ -167,12 +169,14 @@ export const SECTION_GROUP_MAP: Record<SidebarSection, SidebarGroup> = {
   "brand-settings": "system",
   "user-management": "system",
   "admin-dashboard": "system",
+  "client-management": "system",
   "audit-log": "system",
   "subscriptions": "system",
   "payment-approvals": "system",
   "subscription-management": "system",
   "invoice-management": "system",
   "platform-settings": "system",
+  "integration-management": "system",
   // Legacy
   broadcasts: "marketing",
   referral: "marketing",
@@ -287,11 +291,13 @@ export const SIDEBAR_STRUCTURE: Record<SidebarGroup, { label: string; emoji: str
       { id: "brand-settings", label: "Settings", subTabs: ["General", "Theme & Colors", "Logo & Branding", "Event Theming"] },
       { id: "user-management", label: "User Management", subTabs: ["Users", "Roles", "Permissions"] },
       { id: "admin-dashboard", label: "Admin Dashboard" },
+      { id: "client-management", label: "Client Management" },
       { id: "payment-approvals", label: "Payment Approvals" },
       { id: "invoice-management", label: "Invoice Management" },
       { id: "subscription-management", label: "Subscription Management" },
       { id: "audit-log", label: "Audit Log" },
       { id: "platform-settings", label: "Platform Settings", subTabs: ["Personal Details", "Company Info", "Contact & Support", "Payment Methods", "Branding"] },
+      { id: "integration-management", label: "Integration Mgmt" },
     ],
   },
 };

@@ -19,6 +19,8 @@ import {
   TeamChatPage, SupportChatPage, UserGuidePage,
   SettingsPage, UserManagementPage, AdminDashboard, AuditLogPage,
   SubscriptionPage, PaymentApprovalsPage, AdminSubscriptionsPage, InvoiceManagementPage, PlatformSettingsPage,
+  ClientManagementPage,
+  IntegrationManagementPage,
 } from "@/components/brandflow/lazy-pages";
 
 // ── Auth & Layout Components ──
@@ -431,6 +433,7 @@ export default function Home() {
       case "brand-settings": return <SafeRender name="Settings"><SettingsPage /></SafeRender>;
       case "user-management": return <SafeRender name="User Management"><UserManagementPage /></SafeRender>;
       case "admin-dashboard": return <SafeRender name="Admin Dashboard"><AdminDashboard /></SafeRender>;
+      case "client-management": return <SafeRender name="Client Management"><ClientManagementPage /></SafeRender>;
       case "payment-approvals": return <SafeRender name="Payment Approvals"><PaymentApprovalsPage /></SafeRender>;
       case "invoice-management": return <SafeRender name="Invoice Management"><InvoiceManagementPage /></SafeRender>;
       case "subscription-management": return <SafeRender name="Subscription Management"><AdminSubscriptionsPage /></SafeRender>;
@@ -440,6 +443,7 @@ export default function Home() {
         return <SafeRender name="Audit Log"><AuditLogPage /></SafeRender>;
       }
       case "platform-settings": return <SafeRender name="Platform Settings"><PlatformSettingsPage /></SafeRender>;
+      case "integration-management": return <SafeRender name="Integration Management"><IntegrationManagementPage /></SafeRender>;
 
       default: return <SafeRender name="Dashboard"><DashboardHome /></SafeRender>;
     }

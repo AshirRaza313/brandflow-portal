@@ -16,7 +16,7 @@ const plans = [
     description: "Perfect for small businesses getting started.",
     features: [
       "Up to 3 team members",
-      "100 orders/month",
+      "100 orders (lifetime limit)",
       "Basic analytics",
       "5 AI queries/day",
       "Email support",
@@ -31,7 +31,7 @@ const plans = [
     description: "For growing brands that need more power.",
     features: [
       "Everything in Starter",
-      "Unlimited orders",
+      "Unlimited orders (lifetime)",
       "Advanced analytics",
       "AI tools",
       "Seasonal campaigns",

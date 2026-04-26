@@ -69,8 +69,10 @@ const ICON_MAP: Record<string, React.ReactNode> = {
   "brand-settings": <Settings className="h-4 w-4" />,
   "user-management": <Shield className="h-4 w-4" />,
   "admin-dashboard": <Shield className="h-4 w-4" />,
+  "client-management": <Building2 className="h-4 w-4" />,
   "invoice-management": <FileText className="h-4 w-4" />,
   "audit-log": <FileText className="h-4 w-4" />,
+  "integration-management": <Plug className="h-4 w-4" />,
 };
 
 // All badges set to 0
@@ -156,7 +158,7 @@ export function Sidebar() {
       if (groupId === "system") {
         return groupDef.items.some((item) => {
           // Admin-only items: only for platform roles
-          if (["admin-dashboard", "payment-approvals", "invoice-management", "audit-log", "platform-settings"].includes(item.id)) {
+          if (["admin-dashboard", "client-management", "payment-approvals", "invoice-management", "audit-log", "platform-settings", "integration-management"].includes(item.id)) {
             return isPlatformOwner(userRole);
           }
           return isSectionAccessible(item.id, userRole);

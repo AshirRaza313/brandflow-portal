@@ -13,7 +13,7 @@ const faqs = [
   {
     question: "Is Valtriox really free?",
     answer:
-      "Yes! Our Starter plan is completely free forever with no credit card required. You get up to 3 team members, 100 orders per month, basic analytics, and 5 AI queries per day. It's perfect for small businesses just getting started.",
+      "Yes! Our Starter plan is completely free forever with no credit card required. You get up to 3 team members, 100 orders (lifetime limit), basic analytics, and 5 AI queries per day. It's perfect for small businesses just getting started. Once you reach 100 orders, you can upgrade to Growth plan for unlimited orders.",
   },
   {
     question: "How many team members can I add?",

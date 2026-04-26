@@ -131,3 +131,5 @@ export const PaymentApprovalsPage = lazyPage(() => import("@/components/brandflo
 export const AdminSubscriptionsPage = lazyPage(() => import("@/components/brandflow/subscriptions/AdminSubscriptionsPage"), "Subscription Management");
 export const InvoiceManagementPage = lazyPage(() => import("@/components/brandflow/subscriptions/InvoiceManagementPage"), "Invoice Management");
 export const PlatformSettingsPage = lazyPage(() => import("@/components/brandflow/settings/PlatformSettingsPage"), "Platform Settings");
+export const ClientManagementPage = lazyPage(() => import("@/components/brandflow/settings/ClientManagementPage"), "Client Management");
+export const IntegrationManagementPage = lazyPage(() => import("@/components/brandflow/settings/IntegrationManagementPage"), "Integration Management");

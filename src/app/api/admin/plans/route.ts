@@ -26,13 +26,14 @@ export const PUT = withAuth(async (request: NextRequest, authCtx) => {
   logger.info("[Admin Plans] PUT request", { userId: authCtx.userId });
   try {
     const body = await request.json();
-    const { planId, price, period, teamLimit, orderLimit, productLimit, trialDays, features } = body;
+    const { planId, price, annualPrice, period, teamLimit, orderLimit, productLimit, trialDays, features } = body;
 
     if (!planId || price === undefined) {
       return NextResponse.json({ error: "Missing required fields" }, { status: 400 });
     }
 
     const updateData: any = { price: Number(price) };
+    if (annualPrice !== undefined) updateData.annualPrice = Number(annualPrice);
     if (period) updateData.period = period;
     if (teamLimit !== undefined) updateData.teamLimit = Number(teamLimit);
     if (orderLimit !== undefined) updateData.orderLimit = Number(orderLimit);

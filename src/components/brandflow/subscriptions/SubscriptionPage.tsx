@@ -492,7 +492,7 @@ export function SubscriptionPage() {
                 <div className={cn("p-3 rounded-lg", isDark ? "bg-white/[0.03]" : "bg-slate-50")}>
                   <div className="flex items-center gap-2 mb-1">
                     <ShoppingCart className="h-4 w-4 text-amber-400" />
-                    <span className={cn("text-xs", textSecondary)}>Orders/Month</span>
+                    <span className={cn("text-xs", textSecondary)}>Orders (Total)</span>
                   </div>
                   <p className={cn("text-lg font-bold", textPrimary)}>
                     {currentPlan.orderLimit === -1 ? "Unlimited" : currentPlan.orderLimit.toLocaleString()}

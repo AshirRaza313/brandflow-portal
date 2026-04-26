@@ -93,6 +93,30 @@ export const POST = withAuth(async (req, authCtx) => {
       return NextResponse.json({ error: "Missing required fields" }, { status: 400 });
     }
 
+    // ── Order limit enforcement (lifetime) ──
+    const org = await db.organization.findUnique({
+      where: { id: organizationId },
+      select: { plan: true, paymentRejectionCount: true, isBanned: true },
+    });
+    if (!org) return NextResponse.json({ error: "Organization not found" }, { status: 404 });
+    if (org.isBanned) return NextResponse.json({ error: "Organization is suspended" }, { status: 403 });
+
+    if (org.plan === "starter") {
+      const plan = await db.subscriptionPlan.findFirst({ where: { name: "starter" } });
+      if (plan && plan.orderLimit > 0) {
+        const currentOrderCount = await db.order.count({ where: { organizationId } });
+        if (currentOrderCount >= plan.orderLimit) {
+          return NextResponse.json({
+            error: `Order limit reached`,
+            message: `Your Starter plan allows ${plan.orderLimit} orders (lifetime). You have used ${currentOrderCount} orders. Please upgrade to Growth plan for unlimited orders.`,
+            code: "ORDER_LIMIT_REACHED",
+            currentCount: currentOrderCount,
+            limit: plan.orderLimit,
+          }, { status: 403 });
+        }
+      }
+    }
+
     // Security: Ensure user can only create orders in their own org
     if (organizationId !== authCtx.organizationId) {
       return NextResponse.json({ error: "Access denied" }, { status: 403 });
