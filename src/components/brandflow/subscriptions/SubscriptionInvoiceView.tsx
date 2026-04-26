@@ -599,7 +599,7 @@ export function SubscriptionInvoiceView({ invoice, open, onClose }: Subscription
               </p>
             )}
             <p className="text-4xl font-extrabold text-slate-50 mt-4 tracking-[0.3em] uppercase" style={{ WebkitTextStroke: "1px rgba(0,0,0,0.03)" }}>
-              Valtriox
+              {platformName}
             </p>
           </div>
         </div>

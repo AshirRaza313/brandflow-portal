@@ -142,7 +142,7 @@ export function Sidebar({ collapsed, onToggle, onLogout, activeItem, onItemClick
                   exit={{ opacity: 0, width: 0 }}
                   className="text-lg font-bold text-white overflow-hidden whitespace-nowrap"
                 >
-                  Brand<span className="text-amber-400">Flow</span>
+                  Valtriox
                 </motion.span>
               )}
             </AnimatePresence>

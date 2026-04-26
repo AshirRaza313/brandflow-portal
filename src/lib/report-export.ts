@@ -37,7 +37,7 @@ export function generateReportBranding(options: ReportExportOptions) {
     ? `
     <div style="padding:16px 32px;text-align:center;border-top:1px solid #f3f4f6;background:#fafafa;">
       <p style="font-size:10px;color:#d1d5db;margin:0;">
-        Powered by <strong style="color:#C9A227;">${brandName}</strong> — The Universal Brand Management Portal
+        Powered by <strong style="color:#C9A227;">${brandName}</strong> — Command Your Brand Universe
       </p>
     </div>
   `

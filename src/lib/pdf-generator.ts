@@ -1,5 +1,5 @@
 // ============================================================================
-// PDF Generator — Valtriox ULTRA PREMIUM Invoice & Report PDFs
+// PDF Generator — Valtriox — Premium Invoice & Report PDFs
 // Uses pdfkit with EMBEDDED TTF fonts (base64 in font-buffers.ts)
 // Serverless-safe — no filesystem dependency for fonts
 // BLACK Background + GOLD Everything — Luxury Shine Theme
@@ -218,8 +218,23 @@ function parseBase64DataUri(dataUri: string): { mimeType: string; base64: string
   return { mimeType: match[1], base64: match[2] };
 }
 
-// Helper: render default VTX logo and return right X position
-function renderDefaultLogo(doc: any, x: number, y: number): number {
+// Helper: render default Valtriox logo and return right X position
+async function renderDefaultLogo(doc: any, x: number, y: number): Promise<number> {
+  try {
+    const fs = await import("fs");
+    const path = await import("path");
+    const logoPath = path.join(process.cwd(), "public", "valtriox-logo.png");
+    if (fs.existsSync(logoPath)) {
+      const logoBuffer = fs.readFileSync(logoPath);
+      doc.save();
+      doc.roundedRect(x, y, 44, 44, 8).fill(C.goldBg2);
+      doc.roundedRect(x, y, 44, 44, 8).lineWidth(0.5).strokeColor(C.goldBorder2).stroke();
+      doc.image(logoBuffer, x + 4, y + 4, { width: 36, height: 36 });
+      doc.restore();
+      return x + 56;
+    }
+  } catch {}
+  // Fallback: VTX text logo
   doc.save();
   doc.roundedRect(x, y, 38, 38, 6).fill(C.gold);
   doc.fontSize(15).fillColor(C.bg);
@@ -621,7 +636,7 @@ function ensureSpace(doc: any, y: number, needed: number, W: number, H: number, 
 // ============================================================================
 
 export async function generateInvoicePDF(invoice: InvoiceData): Promise<Buffer> {
-  return new Promise((resolve, reject) => {
+  return new Promise(async (resolve, reject) => {
     let hasErrored = false;
     const buffers: Buffer[] = [];
     const doc = new PDFDocument({
@@ -689,13 +704,13 @@ export async function generateInvoicePDF(invoice: InvoiceData): Promise<Buffer> 
             doc.restore();
             headerRightStartX = P + 56;
           } catch (imgErr) {
-            headerRightStartX = renderDefaultLogo(doc, P, y);
+            headerRightStartX = await renderDefaultLogo(doc, P, y);
           }
         } else {
-          headerRightStartX = renderDefaultLogo(doc, P, y);
+          headerRightStartX = await renderDefaultLogo(doc, P, y);
         }
       } else {
-        headerRightStartX = renderDefaultLogo(doc, P, y);
+        headerRightStartX = await renderDefaultLogo(doc, P, y);
       }
 
       // Company Name — bright gold
@@ -704,7 +719,7 @@ export async function generateInvoicePDF(invoice: InvoiceData): Promise<Buffer> 
 
       // Slogan — from DB or default
       doc.font(FONT.italic).fontSize(8).fillColor(C.goldMid);
-      doc.text(invoice.platformTagline || "The Universal Brand Management Portal", headerRightStartX, y + 24);
+      doc.text(invoice.platformTagline || "Command Your Brand Universe", headerRightStartX, y + 24);
 
       // Platform contact info (right side of header)
       const rx = W - P;
@@ -1084,7 +1099,7 @@ export async function generateInvoicePDF(invoice: InvoiceData): Promise<Buffer> 
 // ============================================================================
 
 export async function generateReportPDF(report: ReportData): Promise<Buffer> {
-  return new Promise((resolve, reject) => {
+  return new Promise(async (resolve, reject) => {
     let hasErrored = false;
     const buffers: Buffer[] = [];
     const doc = new PDFDocument({
@@ -1363,13 +1378,13 @@ export async function generateReportPDF(report: ReportData): Promise<Buffer> {
             doc.restore();
             contentLogoRightX = P + 40;
           } catch {
-            contentLogoRightX = renderDefaultLogo(doc, P, tableY);
+            contentLogoRightX = await renderDefaultLogo(doc, P, tableY);
           }
         } else {
-          contentLogoRightX = renderDefaultLogo(doc, P, tableY);
+          contentLogoRightX = await renderDefaultLogo(doc, P, tableY);
         }
       } else {
-        contentLogoRightX = renderDefaultLogo(doc, P, tableY);
+        contentLogoRightX = await renderDefaultLogo(doc, P, tableY);
       }
 
       doc.font(FONT.bold).fontSize(14).fillColor(C.goldBright);
