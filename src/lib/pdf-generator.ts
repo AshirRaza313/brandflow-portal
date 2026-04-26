@@ -2,7 +2,7 @@
 // PDF Generator — Valtriox — Premium Invoice & Report PDFs
 // Uses pdfkit with EMBEDDED TTF fonts (base64 in font-buffers.ts)
 // Serverless-safe — no filesystem dependency for fonts
-// BLACK Background + GOLD Everything — Luxury Shine Theme
+// SOFT LIGHT PREMIUM Theme — Clean whites, warm creams, dark text hierarchy
 // ============================================================================
 
 import PDFDocument from "pdfkit";
@@ -144,28 +144,43 @@ export interface ReportData {
   totalPages?: number;
 }
 
-// ── Color Constants — BLACK + GOLD Shine Theme ──
+// ── Color Constants — SOFT LIGHT PREMIUM Theme ──
 
 const C = {
-  bg: "#0a0a0f",
-  bg2: "#111118",
-  bg3: "#16161f",
-  goldBright: "#fbbf24",
-  gold: "#f59e0b",
-  goldMid: "#d97706",
-  goldDim: "#b45309",
-  goldFaint: "#92400e",
-  goldUltraFaint: "#78350f",
-  // Pre-blended hex colors against #0a0a0f background (pdfkit does NOT support rgba() strings)
-  goldBg: "#120e0f",
-  goldBg2: "#1b130e",
-  goldBg3: "#23170e",
-  goldBorder: "#291a0e",
-  goldBorder2: "#3e250d",
-  goldLine: "#482b0c",
-  green: "#34d399",
-  yellow: "#fbbf24",
-  red: "#f87171",
+  // Page & Card Backgrounds
+  bg: "#ffffff",
+  bg2: "#fafaf9",
+  bg3: "#f5f5f4",
+  // Gold Accent Hierarchy
+  goldBright: "#b8860b",
+  gold: "#C9A227",
+  goldMid: "#d4a017",
+  goldDim: "#92710c",
+  goldFaint: "#785e0a",
+  goldUltraFaint: "#5c4808",
+  // Card backgrounds (soft cream/warm whites)
+  goldBg: "#fffefb",
+  goldBg2: "#fefcf5",
+  goldBg3: "#fdf8e8",
+  // Borders (warm grays)
+  goldBorder: "#e8dcc8",
+  goldBorder2: "#d4c5a0",
+  goldLine: "#ddd0b8",
+  // Text hierarchy (on light bg)
+  textPrimary: "#1a1a2e",
+  textSecondary: "#334155",
+  textMuted: "#64748b",
+  textLight: "#94a3b8",
+  textFaint: "#cbd5e1",
+  // Status Colors
+  green: "#059669",
+  greenBg: "#ecfdf5",
+  yellow: "#d97706",
+  yellowBg: "#fffbeb",
+  red: "#dc2626",
+  redBg: "#fef2f2",
+  slate: "#64748b",
+  slateBg: "#f1f5f9",
 };
 
 // ── Helpers ──
@@ -194,7 +209,7 @@ export function generateInvoiceNumber(existingCount: number): string {
 }
 
 function goldLine(doc: any, x1: number, y1: number, x2: number, y2: number, width: number = 0.5) {
-  doc.save().moveTo(x1, y1).lineTo(x2, y2).lineWidth(width).strokeColor(C.goldLine).stroke().restore();
+  doc.save().moveTo(x1, y1).lineTo(x2, y2).lineWidth(width).strokeColor(C.goldBorder).stroke().restore();
 }
 
 function drawCard(doc: any, x: number, y: number, w: number, h: number, radius: number = 8) {
@@ -237,7 +252,7 @@ async function renderDefaultLogo(doc: any, x: number, y: number): Promise<number
   // Fallback: VTX text logo
   doc.save();
   doc.roundedRect(x, y, 38, 38, 6).fill(C.gold);
-  doc.fontSize(15).fillColor(C.bg);
+  doc.fontSize(15).fillColor("#ffffff");
   doc.font(FONT.bold).text("VTX", x + 5, y + 11, { width: 28, align: "center" });
   doc.restore();
   return x + 48;
@@ -278,7 +293,7 @@ function drawTrendIndicator(doc: any, x: number, y: number, change: number, font
 
 /**
  * Draws a vertical bar chart for revenue / trend data.
- * Bars rendered with gold gradient fill on dark card background.
+ * Bars rendered with gold gradient fill on light card background.
  * Includes horizontal grid lines, Y-axis labels, X-axis labels, and value labels above bars.
  */
 function drawVerticalBarChart(
@@ -325,12 +340,12 @@ function drawVerticalBarChart(
 
     // Grid line (subtle dashed appearance via thin stroke)
     doc.save();
-    doc.moveTo(chartX, gy).lineTo(chartX + chartW, gy).lineWidth(0.3).strokeColor(C.goldLine).stroke();
+    doc.moveTo(chartX, gy).lineTo(chartX + chartW, gy).lineWidth(0.3).strokeColor(C.goldBorder).stroke();
     doc.restore();
 
     // Y-axis label
     doc.save();
-    doc.font(fn).fontSize(6.5).fillColor(C.goldDim);
+    doc.font(fn).fontSize(6.5).fillColor(C.textLight);
     let label: string;
     if (niceMax >= 1000000) {
       label = `${(val / 1000000).toFixed(1)}M`;
@@ -368,12 +383,12 @@ function drawVerticalBarChart(
 
     // Subtle bar border
     doc.save();
-    doc.rect(bx, by, barWidth, barH).lineWidth(0.3).strokeColor(C.goldBorder2).stroke();
+    doc.rect(bx, by, barWidth, barH).lineWidth(0.3).strokeColor(C.goldBorder).stroke();
     doc.restore();
 
     // Value label above bar
     doc.save();
-    doc.font(fn).fontSize(6).fillColor(C.goldBright);
+    doc.font(fn).fontSize(6).fillColor(C.gold);
     let valLabel: string;
     if (currency) {
       if (item.value >= 1000000) {
@@ -391,7 +406,7 @@ function drawVerticalBarChart(
 
     // X-axis label (below bar)
     doc.save();
-    doc.font(fn).fontSize(6).fillColor(C.goldDim);
+    doc.font(fn).fontSize(6).fillColor(C.textLight);
     // Truncate long labels
     let lbl = String(item.label || "");
     if (lbl.length > 8) lbl = lbl.substring(0, 7) + "…";
@@ -401,7 +416,7 @@ function drawVerticalBarChart(
 
   // Baseline axis
   doc.save();
-  doc.moveTo(chartX, chartY + chartH).lineTo(chartX + chartW, chartY + chartH).lineWidth(0.6).strokeColor(C.goldMid).stroke();
+  doc.moveTo(chartX, chartY + chartH).lineTo(chartX + chartW, chartY + chartH).lineWidth(0.6).strokeColor(C.goldBorder).stroke();
   doc.restore();
 }
 
@@ -454,7 +469,7 @@ function drawHorizontalBarChart(
 
     // Label on the left
     doc.save();
-    doc.font(fn).fontSize(7.5).fillColor(C.gold);
+    doc.font(fn).fontSize(7.5).fillColor(C.textPrimary);
     let lbl = String(item.label || "");
     if (lbl.length > 14) lbl = lbl.substring(0, 13) + "…";
     doc.text(lbl, x + 10, by + barH / 2 - 4, { width: padLeft - 20, align: "right" });
@@ -471,12 +486,12 @@ function drawHorizontalBarChart(
 
     // Subtle bar border
     doc.save();
-    doc.roundedRect(barAreaX, by, barW, barH, 3).lineWidth(0.3).strokeColor(C.goldBorder2).stroke();
+    doc.roundedRect(barAreaX, by, barW, barH, 3).lineWidth(0.3).strokeColor(C.goldBorder).stroke();
     doc.restore();
 
     // Value at the end of bar
     doc.save();
-    doc.font(fn).fontSize(7).fillColor(C.goldBright);
+    doc.font(fn).fontSize(7).fillColor(C.gold);
     let valText: string;
     if (currency) {
       if (item.value >= 1000000) {
@@ -580,9 +595,9 @@ function drawDonutChart(
 
   // Center total value
   doc.save();
-  doc.font(FONT.bold).fontSize(14).fillColor(C.goldBright);
+  doc.font(FONT.bold).fontSize(14).fillColor(C.gold);
   doc.text(String(Math.round(total)), cx - 30, cy - 12, { width: 60, align: "center" });
-  doc.font(FONT.regular).fontSize(6.5).fillColor(C.goldDim);
+  doc.font(FONT.regular).fontSize(6.5).fillColor(C.textLight);
   doc.text("TOTAL", cx - 20, cy + 6, { width: 40, align: "center" });
   doc.restore();
 
@@ -605,7 +620,7 @@ function drawDonutChart(
 
     // Label
     doc.save();
-    doc.font(fn).fontSize(6.5).fillColor(C.gold);
+    doc.font(fn).fontSize(6.5).fillColor(C.textSecondary);
     let lbl = String(item.label || "");
     if (lbl.length > 16) lbl = lbl.substring(0, 15) + "…";
     const pctTxt = ` ${lbl} (${((item.value / total) * 100).toFixed(1)}%)`;
@@ -632,7 +647,7 @@ function ensureSpace(doc: any, y: number, needed: number, W: number, H: number, 
 }
 
 // ============================================================================
-// Generate ULTRA PREMIUM Invoice PDF — BLACK + GOLD Shine
+// Generate SOFT LIGHT PREMIUM Invoice PDF — Light Background + Gold Accents
 // ============================================================================
 
 export async function generateInvoicePDF(invoice: InvoiceData): Promise<Buffer> {
@@ -669,7 +684,7 @@ export async function generateInvoicePDF(invoice: InvoiceData): Promise<Buffer> 
       // ── REGISTER FONTS FIRST — throws immediately if failed ──
       ensureFontsRegistered(doc);
 
-      // ── FULL PAGE BLACK BACKGROUND ──
+      // ── FULL PAGE LIGHT BACKGROUND ──
       doc.rect(0, 0, W, H).fill(C.bg);
 
       // Watermark plan check (will be drawn at the end, on top of all content)
@@ -679,7 +694,7 @@ export async function generateInvoicePDF(invoice: InvoiceData): Promise<Buffer> 
       // Subtle gradient header area
       doc.save();
       const hdrGrad = doc.linearGradient(0, 0, W, 150);
-      hdrGrad.stop(0, C.bg3, 0.5);
+      hdrGrad.stop(0, C.goldBg3, 0.5);
       hdrGrad.stop(1, C.bg, 1);
       doc.rect(0, 0, W, 150).fill(hdrGrad);
       doc.restore();
@@ -713,17 +728,17 @@ export async function generateInvoicePDF(invoice: InvoiceData): Promise<Buffer> 
         headerRightStartX = await renderDefaultLogo(doc, P, y);
       }
 
-      // Company Name — bright gold
-      doc.font(FONT.bold).fontSize(20).fillColor(C.goldBright);
+      // Company Name — dark text
+      doc.font(FONT.bold).fontSize(20).fillColor(C.textPrimary);
       doc.text(platformName, headerRightStartX, y + 2);
 
       // Slogan — from DB or default
-      doc.font(FONT.italic).fontSize(8).fillColor(C.goldMid);
+      doc.font(FONT.italic).fontSize(8).fillColor(C.textLight);
       doc.text(invoice.platformTagline || "Command Your Brand Universe", headerRightStartX, y + 24);
 
       // Platform contact info (right side of header)
       const rx = W - P;
-      doc.font(FONT.regular).fontSize(7).fillColor(C.goldMid);
+      doc.font(FONT.regular).fontSize(7).fillColor(C.textMuted);
 
       const contactParts: string[] = [];
       if (invoice.platformEmail) contactParts.push(invoice.platformEmail);
@@ -736,8 +751,8 @@ export async function generateInvoicePDF(invoice: InvoiceData): Promise<Buffer> 
         doc.text(invoice.platformAddress, headerRightStartX, y + 13, { width: rx - headerRightStartX, align: "right" });
       }
 
-      // INVOICE title — BRIGHT GOLD, right side
-      doc.font(FONT.bold).fontSize(32).fillColor(C.goldBright);
+      // INVOICE title — gold accent, right side
+      doc.font(FONT.bold).fontSize(32).fillColor(C.gold);
       doc.text("INVOICE", rx - 160, y + 26, { width: 160, align: "right" });
 
       y += 58;
@@ -745,9 +760,9 @@ export async function generateInvoicePDF(invoice: InvoiceData): Promise<Buffer> 
       // ── INVOICE HEADER TEXT (gold banner) ──
       if (invoice.platformInvoiceHeaderText) {
         doc.save();
-        doc.roundedRect(P, y, CW, 22, 4).fill(C.goldBg2);
+        doc.roundedRect(P, y, CW, 22, 4).fill(C.goldBg3);
         doc.roundedRect(P, y, CW, 22, 4).lineWidth(0.3).strokeColor(C.goldBorder).stroke();
-        doc.font(FONT.italic).fontSize(8).fillColor(C.gold);
+        doc.font(FONT.italic).fontSize(8).fillColor(C.goldDim);
         doc.text(invoice.platformInvoiceHeaderText, P + 12, y + 7, { width: CW - 24, align: "center" });
         doc.restore();
         y += 28;
@@ -759,11 +774,11 @@ export async function generateInvoicePDF(invoice: InvoiceData): Promise<Buffer> 
 
       // ── STATUS BADGE ──
       const statusMap: Record<string, { color: string; bg: string; label: string }> = {
-        pending: { color: C.yellow, bg: "#1d1811", label: "PENDING" },
-        paid: { color: C.green, bg: "#0d1a1a", label: "PAID" },
-        approved: { color: C.green, bg: "#0d1a1a", label: "APPROVED" },
-        cancelled: { color: "#94a3b8", bg: "#121319", label: "CANCELLED" },
-        refunded: { color: C.red, bg: "#1d1217", label: "REFUNDED" },
+        pending: { color: C.yellow, bg: C.yellowBg, label: "PENDING" },
+        paid: { color: C.green, bg: C.greenBg, label: "PAID" },
+        approved: { color: C.green, bg: C.greenBg, label: "APPROVED" },
+        cancelled: { color: C.slate, bg: C.slateBg, label: "CANCELLED" },
+        refunded: { color: C.red, bg: C.redBg, label: "REFUNDED" },
       };
       const st = statusMap[invoice.status] || statusMap.pending;
 
@@ -779,27 +794,27 @@ export async function generateInvoicePDF(invoice: InvoiceData): Promise<Buffer> 
       const rightColX = P + leftColW + 24;
       const billedToStartY = y + 26;
 
-      doc.font(FONT.bold).fontSize(7).fillColor(C.goldMid);
+      doc.font(FONT.bold).fontSize(7).fillColor(C.textMuted);
       doc.text("BILLED TO", P, billedToStartY);
 
-      doc.font(FONT.bold).fontSize(13).fillColor(C.goldBright);
+      doc.font(FONT.bold).fontSize(13).fillColor(C.textPrimary);
       doc.text(invoice.orgName, P, billedToStartY + 12);
 
-      doc.font(FONT.regular).fontSize(8).fillColor(C.goldMid);
+      doc.font(FONT.regular).fontSize(8).fillColor(C.textSecondary);
       let detailY = billedToStartY + 28;
       if (invoice.orgEmail) { doc.text(invoice.orgEmail, P, detailY); detailY += 13; }
       if (invoice.orgPhone) { doc.text(invoice.orgPhone, P, detailY); detailY += 13; }
       if (invoice.orgAddress) { doc.text(invoice.orgAddress, P, detailY, { width: leftColW - 10 }); detailY += 13; }
       if (invoice.orgCountry) { doc.text(invoice.orgCountry, P, detailY); detailY += 13; }
       if (invoice.orgTaxId) {
-        doc.font(FONT.regular).fontSize(7).fillColor(C.goldDim);
+        doc.font(FONT.regular).fontSize(7).fillColor(C.textLight);
         doc.text(`Tax ID: ${invoice.orgTaxId}`, P, detailY);
         detailY += 13;
       }
 
       const leftEndY = detailY;
 
-      doc.font(FONT.bold).fontSize(7).fillColor(C.goldMid);
+      doc.font(FONT.bold).fontSize(7).fillColor(C.textMuted);
       doc.text("INVOICE DETAILS", rightColX, billedToStartY);
 
       const details: [string, string][] = [
@@ -814,9 +829,9 @@ export async function generateInvoicePDF(invoice: InvoiceData): Promise<Buffer> 
 
       let dY = billedToStartY + 12;
       for (const [label, value] of details) {
-        doc.font(FONT.bold).fontSize(7).fillColor(C.goldMid);
+        doc.font(FONT.bold).fontSize(7).fillColor(C.textMuted);
         doc.text(label, rightColX, dY);
-        doc.font(FONT.regular).fontSize(7.5).fillColor(C.goldBright);
+        doc.font(FONT.regular).fontSize(7.5).fillColor(C.textPrimary);
         // Truncate long period strings to avoid overlap
         const displayValue = value.length > 40 ? value.substring(0, 37) + "..." : value;
         doc.text(displayValue, rightColX + 72, dY, { width: CW - leftColW - 96 });
@@ -837,7 +852,7 @@ export async function generateInvoicePDF(invoice: InvoiceData): Promise<Buffer> 
       planCardH = Math.max(planCardH, 140);
       drawCardBright(doc, P, y, CW, planCardH);
 
-      doc.font(FONT.bold).fontSize(14).fillColor(C.goldBright);
+      doc.font(FONT.bold).fontSize(14).fillColor(C.textPrimary);
       doc.text(`${invoice.planName.charAt(0).toUpperCase() + invoice.planName.slice(1)} Plan`, P + 16, y + 14);
 
       // ── CYCLE BADGE ──
@@ -847,8 +862,8 @@ export async function generateInvoicePDF(invoice: InvoiceData): Promise<Buffer> 
       const planTitleWidth = doc.font(FONT.bold).fontSize(14).widthOfString(planTitleText);
       const cycleBadgeX = Math.max(P + planTitleWidth + 16, P + 200);
       doc.roundedRect(cycleBadgeX, y + 12, 55, 18, 4).fill(C.goldBg3);
-      doc.roundedRect(cycleBadgeX, y + 12, 55, 18, 4).lineWidth(0.3).strokeColor(C.goldBorder2).stroke();
-      doc.font(FONT.bold).fontSize(7.5).fillColor(C.gold);
+      doc.roundedRect(cycleBadgeX, y + 12, 55, 18, 4).lineWidth(0.3).strokeColor(C.goldBorder).stroke();
+      doc.font(FONT.bold).fontSize(7.5).fillColor(C.goldDim);
       doc.text(cycleLabel, cycleBadgeX, y + 17, { width: 55, align: "center" });
       doc.restore();
 
@@ -868,7 +883,7 @@ export async function generateInvoicePDF(invoice: InvoiceData): Promise<Buffer> 
         doc.save();
         doc.roundedRect(badgeX, y + 12, bw, 18, 4).fill(C.goldBg);
         doc.roundedRect(badgeX, y + 12, bw, 18, 4).lineWidth(0.3).strokeColor(C.goldBorder).stroke();
-        doc.font(FONT.regular).fontSize(7).fillColor(C.goldMid);
+        doc.font(FONT.regular).fontSize(7).fillColor(C.textMuted);
         doc.text(String(lim), badgeX, y + 17, { width: bw, align: "center" });
         doc.restore();
         badgeX += bw + 5;
@@ -876,7 +891,7 @@ export async function generateInvoicePDF(invoice: InvoiceData): Promise<Buffer> 
 
       if (invoice.planFeatures && invoice.planFeatures.length > 0) {
         const featStartY = y + 40;
-        doc.font(FONT.bold).fontSize(7).fillColor(C.goldMid);
+        doc.font(FONT.bold).fontSize(7).fillColor(C.textMuted);
         doc.text("PLAN FEATURES", P + 16, featStartY);
         const colW = (CW - 32) / 2;
         const perCol = Math.ceil(invoice.planFeatures.length / 2);
@@ -888,7 +903,7 @@ export async function generateInvoicePDF(invoice: InvoiceData): Promise<Buffer> 
             const feature = invoice.planFeatures[fi];
             const fx = P + 16 + ci * colW;
             doc.circle(fx + 3, fy + 3.5, 1.5).fill(C.gold);
-            doc.font(FONT.regular).fontSize(7.5).fillColor(C.goldMid);
+            doc.font(FONT.regular).fontSize(7.5).fillColor(C.textSecondary);
             // Truncate long feature names to avoid overlap
             const featText = feature.length > 32 ? feature.substring(0, 29) + "..." : feature;
             doc.text(featText, fx + 10, fy, { width: colW - 14 });
@@ -899,7 +914,7 @@ export async function generateInvoicePDF(invoice: InvoiceData): Promise<Buffer> 
 
       const payY = y + planCardH - 50;
       doc.save();
-      doc.moveTo(P + 16, payY).lineTo(W - P - 16, payY).lineWidth(0.4).strokeColor(C.goldLine).stroke();
+      doc.moveTo(P + 16, payY).lineTo(W - P - 16, payY).lineWidth(0.4).strokeColor(C.goldBorder).stroke();
       doc.restore();
 
       const payLabelX = P + 16;
@@ -907,16 +922,16 @@ export async function generateInvoicePDF(invoice: InvoiceData): Promise<Buffer> 
 
       if (invoice.paymentMethod) {
         const pmLabel = invoice.paymentMethod.replace(/_/g, " ").replace(/\b\w/g, l => l.toUpperCase());
-        doc.font(FONT.bold).fontSize(7.5).fillColor(C.goldMid);
+        doc.font(FONT.bold).fontSize(7.5).fillColor(C.textMuted);
         doc.text("Payment Method", payLabelX, payY + 8);
-        doc.font(FONT.regular).fontSize(8).fillColor(C.gold);
+        doc.font(FONT.regular).fontSize(8).fillColor(C.textSecondary);
         doc.text(pmLabel, payValueX, payY + 8);
       }
 
       if (invoice.transactionId) {
-        doc.font(FONT.bold).fontSize(7.5).fillColor(C.goldDim);
+        doc.font(FONT.bold).fontSize(7.5).fillColor(C.textMuted);
         doc.text("Transaction ID", payLabelX, payY + 22);
-        doc.font(FONT.regular).fontSize(8).fillColor(C.goldMid);
+        doc.font(FONT.regular).fontSize(8).fillColor(C.textSecondary);
         doc.text(invoice.transactionId, payValueX, payY + 22);
       }
 
@@ -944,7 +959,7 @@ export async function generateInvoicePDF(invoice: InvoiceData): Promise<Buffer> 
       doc.roundedRect(tableLeft, headerY - 2, tableW, 18, 3).fill(C.goldBg3);
       doc.restore();
 
-      doc.font(FONT.bold).fontSize(7).fillColor(C.gold);
+      doc.font(FONT.bold).fontSize(7).fillColor(C.goldDim);
       doc.text("DESCRIPTION", col1X + 6, headerY + 2);
       doc.text("QTY", col2X + 4, headerY + 2);
       doc.text("UNIT PRICE", col3X + 4, headerY + 2);
@@ -952,35 +967,35 @@ export async function generateInvoicePDF(invoice: InvoiceData): Promise<Buffer> 
 
       // Divider under header
       doc.save();
-      doc.moveTo(tableLeft, headerY + 18).lineTo(tableRight, headerY + 18).lineWidth(0.3).strokeColor(C.goldLine).stroke();
+      doc.moveTo(tableLeft, headerY + 18).lineTo(tableRight, headerY + 18).lineWidth(0.3).strokeColor(C.goldBorder).stroke();
       doc.restore();
 
       // Data row
       const rowY = headerY + 24;
       const planLabel = `${invoice.planName.charAt(0).toUpperCase() + invoice.planName.slice(1)} Plan — ${cycleLabel} Subscription`;
-      doc.font(FONT.regular).fontSize(8).fillColor(C.goldBright);
+      doc.font(FONT.regular).fontSize(8).fillColor(C.textPrimary);
       doc.text(planLabel, col1X + 6, rowY, { width: descColW - 10 });
 
-      doc.font(FONT.regular).fontSize(8).fillColor(C.gold);
+      doc.font(FONT.regular).fontSize(8).fillColor(C.textSecondary);
       doc.text("1", col2X + 4, rowY);
 
-      doc.font(FONT.regular).fontSize(8).fillColor(C.gold);
+      doc.font(FONT.regular).fontSize(8).fillColor(C.textSecondary);
       doc.text(formatCurrency(invoice.amount, invoice.currencySymbol), col3X + 4, rowY);
 
-      doc.font(FONT.bold).fontSize(8).fillColor(C.goldBright);
+      doc.font(FONT.bold).fontSize(8).fillColor(C.textSecondary);
       doc.text(formatCurrency(invoice.amount, invoice.currencySymbol), col4X + 4, rowY);
 
       // Divider before total
       const totalDivY = rowY + 20;
       doc.save();
-      doc.moveTo(tableLeft, totalDivY).lineTo(tableRight, totalDivY).lineWidth(0.5).strokeColor(C.goldBorder2).stroke();
+      doc.moveTo(tableLeft, totalDivY).lineTo(tableRight, totalDivY).lineWidth(0.5).strokeColor(C.goldBorder).stroke();
       doc.restore();
 
       // Total row
-      doc.font(FONT.bold).fontSize(10).fillColor(C.gold);
+      doc.font(FONT.bold).fontSize(10).fillColor(C.textMuted);
       doc.text("Total Due", col1X + 6, totalDivY + 8);
 
-      doc.font(FONT.bold).fontSize(18).fillColor(C.goldBright);
+      doc.font(FONT.bold).fontSize(18).fillColor(C.gold);
       doc.text(formatCurrency(invoice.amount, invoice.currencySymbol), col4X + 4, totalDivY + 5, { width: amtColW - 6, align: "right" });
 
       y = amtY + amtCardH + 10;
@@ -988,9 +1003,9 @@ export async function generateInvoicePDF(invoice: InvoiceData): Promise<Buffer> 
       // ── NOTES ──
       if (invoice.notes) {
         drawCard(doc, P, y, CW, 40);
-        doc.font(FONT.bold).fontSize(7).fillColor(C.goldMid);
+        doc.font(FONT.bold).fontSize(7).fillColor(C.textMuted);
         doc.text("NOTES", P + 14, y + 8);
-        doc.font(FONT.italic).fontSize(8).fillColor(C.goldMid);
+        doc.font(FONT.italic).fontSize(8).fillColor(C.textSecondary);
         doc.text(invoice.notes, P + 14, y + 20, { width: CW - 28 });
         y += 48;
       }
@@ -1007,12 +1022,12 @@ export async function generateInvoicePDF(invoice: InvoiceData): Promise<Buffer> 
       }
       if (paymentMethods.length > 0) {
         drawCard(doc, P, y, CW, 30);
-        doc.font(FONT.bold).fontSize(7).fillColor(C.goldMid);
+        doc.font(FONT.bold).fontSize(7).fillColor(C.textMuted);
         doc.text("ACCEPTED PAYMENT METHODS", P + 14, y + 8);
         const pmText = paymentMethods
           .map((pm: string) => String(pm).replace(/_/g, " ").replace(/\b\w/g, (l: string) => l.toUpperCase()))
           .join("  •  ");
-        doc.font(FONT.regular).fontSize(7.5).fillColor(C.goldMid);
+        doc.font(FONT.regular).fontSize(7.5).fillColor(C.textSecondary);
         doc.text(pmText, P + 14, y + 17, { width: CW - 28 });
         y += 38;
       }
@@ -1022,15 +1037,14 @@ export async function generateInvoicePDF(invoice: InvoiceData): Promise<Buffer> 
 
       doc.save();
       const footerGrad = doc.linearGradient(P, 0, W - P, 0);
-      // pdfkit _normalizeColor does NOT support rgba() strings; use pre-blended hex against #0a0a0f
-      footerGrad.stop(0, "#0a0a0f");
-      footerGrad.stop(0.3, "#5d360b");
-      footerGrad.stop(0.7, "#5d360b");
-      footerGrad.stop(1, "#0a0a0f");
+      footerGrad.stop(0, C.goldBg);
+      footerGrad.stop(0.3, C.goldBorder);
+      footerGrad.stop(0.7, C.goldBorder);
+      footerGrad.stop(1, C.goldBg);
       doc.moveTo(P, footerY).lineTo(W - P, footerY).lineWidth(1).stroke(footerGrad);
       doc.restore();
 
-      doc.font(FONT.italic).fontSize(9).fillColor(C.gold);
+      doc.font(FONT.italic).fontSize(9).fillColor(C.textSecondary);
       doc.text(`Thank you for choosing ${platformName}!`, P, footerY + 8, { width: CW, align: "center" });
 
       const footerParts: string[] = [];
@@ -1040,7 +1054,7 @@ export async function generateInvoicePDF(invoice: InvoiceData): Promise<Buffer> 
       if (invoice.platformWhatsapp) footerParts.push(`WhatsApp: ${invoice.platformWhatsapp}`);
 
       if (footerParts.length > 0) {
-        doc.font(FONT.regular).fontSize(7).fillColor(C.goldDim);
+        doc.font(FONT.regular).fontSize(7).fillColor(C.textLight);
         doc.text(footerParts.join("   |   "), P, footerY + 22, { width: CW, align: "center" });
       }
 
@@ -1050,12 +1064,12 @@ export async function generateInvoicePDF(invoice: InvoiceData): Promise<Buffer> 
       if (invoice.platformTwitter) socialParts.push(`Twitter: ${invoice.platformTwitter}`);
 
       if (socialParts.length > 0) {
-        doc.font(FONT.regular).fontSize(6.5).fillColor(C.goldDim);
+        doc.font(FONT.regular).fontSize(6.5).fillColor(C.textLight);
         doc.text(socialParts.join("   |   "), P, footerY + 34, { width: CW, align: "center" });
       }
 
       if (invoice.platformSupportHours) {
-        doc.font(FONT.regular).fontSize(6.5).fillColor(C.goldDim);
+        doc.font(FONT.regular).fontSize(6.5).fillColor(C.textLight);
         doc.text(`Support Hours: ${invoice.platformSupportHours}`, P, footerY + 44, { width: CW, align: "center" });
       }
 
@@ -1065,12 +1079,12 @@ export async function generateInvoicePDF(invoice: InvoiceData): Promise<Buffer> 
       // ── VALTRIOX WATERMARK — drawn LAST so it appears ON TOP of all content ──
       if (showWatermark) {
         doc.save();
-        doc.opacity(0.04);
-        doc.fontSize(52).fillColor(C.gold);
+        doc.opacity(0.06);
+        doc.fontSize(52).fillColor(C.goldMid);
         doc.translate(W / 2, H / 2);
         doc.rotate(-35);
         doc.font(FONT.bold).text("VALTRIOX", -160, -40, { width: 320, align: "center" });
-        doc.fontSize(14).fillColor(C.goldMid);
+        doc.fontSize(14).fillColor(C.goldDim);
         doc.font(FONT.regular).text("POWERED BY VALTRIOX", -100, 20, { width: 200, align: "center" });
         doc.opacity(1);
         doc.restore();
@@ -1094,7 +1108,7 @@ export async function generateInvoicePDF(invoice: InvoiceData): Promise<Buffer> 
 }
 
 // ============================================================================
-// Generate ULTRA PREMIUM Report PDF — BLACK + GOLD Shine
+// Generate SOFT LIGHT PREMIUM Report PDF — Light Background + Gold Accents
 // ENHANCED: Cover page, Executive Summary with trends, Charts, Comparison, Page numbers
 // ============================================================================
 
@@ -1197,9 +1211,9 @@ export async function generateReportPDF(report: ReportData): Promise<Buffer> {
       const topDecoY = 180;
       doc.save();
       const decoGrad = doc.linearGradient(W / 2 - 100, 0, W / 2 + 100, 0);
-      decoGrad.stop(0, "#0a0a0f");
-      decoGrad.stop(0.5, "#72410b");
-      decoGrad.stop(1, "#0a0a0f");
+      decoGrad.stop(0, C.bg);
+      decoGrad.stop(0.5, C.goldBorder);
+      decoGrad.stop(1, C.bg);
       doc.moveTo(W / 2 - 100, topDecoY).lineTo(W / 2 + 100, topDecoY).lineWidth(0.8).stroke(decoGrad);
       doc.restore();
 
@@ -1254,14 +1268,14 @@ export async function generateReportPDF(report: ReportData): Promise<Buffer> {
 
       // Organization name
       doc.save();
-      doc.font(FONT.regular).fontSize(14).fillColor(C.goldMid);
+      doc.font(FONT.regular).fontSize(14).fillColor(C.textMuted);
       doc.text(safeOrgName, P, logoCenterY, { width: CW, align: "center" });
       doc.restore();
       logoCenterY += 30;
 
       // Report title (large, bold, gold)
       doc.save();
-      doc.font(FONT.bold).fontSize(30).fillColor(C.goldBright);
+      doc.font(FONT.bold).fontSize(30).fillColor(C.gold);
       doc.text(safeTitle, P, logoCenterY, { width: CW, align: "center" });
       doc.restore();
       logoCenterY += 42;
@@ -1269,7 +1283,7 @@ export async function generateReportPDF(report: ReportData): Promise<Buffer> {
       // Subtitle
       if (safeSubtitle) {
         doc.save();
-        doc.font(FONT.italic).fontSize(12).fillColor(C.gold);
+        doc.font(FONT.italic).fontSize(12).fillColor(C.goldDim);
         doc.text(safeSubtitle, P, logoCenterY, { width: CW, align: "center" });
         doc.restore();
         logoCenterY += 22;
@@ -1281,7 +1295,7 @@ export async function generateReportPDF(report: ReportData): Promise<Buffer> {
       const periodH = 30;
       doc.roundedRect(W / 2 - periodW / 2, logoCenterY, periodW, periodH, 6).fill(C.goldBg2);
       doc.roundedRect(W / 2 - periodW / 2, logoCenterY, periodW, periodH, 6).lineWidth(0.5).strokeColor(C.goldBorder2).stroke();
-      doc.font(FONT.regular).fontSize(10).fillColor(C.gold);
+      doc.font(FONT.regular).fontSize(10).fillColor(C.goldDim);
       doc.text(safePeriod, W / 2 - periodW / 2 + 8, logoCenterY + 9, { width: periodW - 16, align: "center" });
       doc.restore();
       logoCenterY += periodH + 16;
@@ -1293,7 +1307,7 @@ export async function generateReportPDF(report: ReportData): Promise<Buffer> {
         const planH = 22;
         doc.roundedRect(W / 2 - planW / 2, logoCenterY, planW, planH, 4).fill(C.goldBg);
         doc.roundedRect(W / 2 - planW / 2, logoCenterY, planW, planH, 4).lineWidth(0.3).strokeColor(C.goldBorder).stroke();
-        doc.font(FONT.bold).fontSize(8).fillColor(C.goldMid);
+        doc.font(FONT.bold).fontSize(8).fillColor(C.textMuted);
         doc.text(safePlan, W / 2 - planW / 2 + 4, logoCenterY + 7, { width: planW - 8, align: "center" });
         doc.restore();
         logoCenterY += planH + 14;
@@ -1302,9 +1316,9 @@ export async function generateReportPDF(report: ReportData): Promise<Buffer> {
       // Decorative bottom line
       doc.save();
       const decoGrad2 = doc.linearGradient(W / 2 - 100, 0, W / 2 + 100, 0);
-      decoGrad2.stop(0, "#0a0a0f");
-      decoGrad2.stop(0.5, "#72410b");
-      decoGrad2.stop(1, "#0a0a0f");
+      decoGrad2.stop(0, C.bg);
+      decoGrad2.stop(0.5, C.goldBorder);
+      decoGrad2.stop(1, C.bg);
       doc.moveTo(W / 2 - 100, logoCenterY).lineTo(W / 2 + 100, logoCenterY).lineWidth(0.8).stroke(decoGrad2);
       doc.restore();
 
@@ -1318,13 +1332,13 @@ export async function generateReportPDF(report: ReportData): Promise<Buffer> {
       // Bottom cover info
       const coverBottomY = H - 100;
       doc.save();
-      doc.font(FONT.regular).fontSize(8).fillColor(C.goldDim);
+      doc.font(FONT.regular).fontSize(8).fillColor(C.textLight);
       doc.text(`Generated on ${safeGeneratedAt}`, P, coverBottomY, { width: CW, align: "center" });
       doc.restore();
 
       if (safeTagline || safeOrgEmail) {
         doc.save();
-        doc.font(FONT.italic).fontSize(8).fillColor(C.goldDim);
+        doc.font(FONT.italic).fontSize(8).fillColor(C.textLight);
         const taglineText = safeTagline || `Prepared for ${safeOrgName}`;
         doc.text(taglineText, P, coverBottomY + 14, { width: CW, align: "center" });
         doc.restore();
@@ -1337,7 +1351,7 @@ export async function generateReportPDF(report: ReportData): Promise<Buffer> {
       if (report.platformPhone) coverContactParts.push(String(report.platformPhone));
       if (coverContactParts.length > 0) {
         doc.save();
-        doc.font(FONT.regular).fontSize(7).fillColor(C.goldDim);
+        doc.font(FONT.regular).fontSize(7).fillColor(C.textLight);
         doc.text(coverContactParts.join("   |   "), P, coverBottomY + 32, { width: CW, align: "center" });
         doc.restore();
       }
@@ -1354,7 +1368,7 @@ export async function generateReportPDF(report: ReportData): Promise<Buffer> {
       function drawContentPageBg() {
         doc.rect(0, 0, W, H).fill(C.bg);
         const gradient = doc.linearGradient(0, 0, W, 120);
-        gradient.stop(0, C.bg3, 0.15);
+        gradient.stop(0, C.goldBg3, 0.15);
         gradient.stop(1, C.bg, 1);
         doc.rect(0, 0, W, 120).fill(gradient);
         doc.rect(0, 0, W, 3).fill(accentColor);
@@ -1387,28 +1401,28 @@ export async function generateReportPDF(report: ReportData): Promise<Buffer> {
         contentLogoRightX = await renderDefaultLogo(doc, P, tableY);
       }
 
-      doc.font(FONT.bold).fontSize(14).fillColor(C.goldBright);
+      doc.font(FONT.bold).fontSize(14).fillColor(C.gold);
       doc.text(safeTitle, contentLogoRightX, tableY + 2);
 
-      doc.font(FONT.italic).fontSize(8).fillColor(C.goldMid);
+      doc.font(FONT.italic).fontSize(8).fillColor(C.textLight);
       doc.text(safeSubtitle || "Business Analytics Report", contentLogoRightX, tableY + 20);
 
       // Period badge (top right)
       doc.save();
       doc.roundedRect(W - P - 160, tableY + 4, 160, 18, 4).fill(C.goldBg);
       doc.roundedRect(W - P - 160, tableY + 4, 160, 18, 4).lineWidth(0.3).strokeColor(C.goldBorder).stroke();
-      doc.font(FONT.regular).fontSize(7.5).fillColor(C.gold);
+      doc.font(FONT.regular).fontSize(7.5).fillColor(C.textMuted);
       doc.text(safePeriod, W - P - 155, tableY + 9, { width: 150, align: "center" });
       doc.restore();
 
       goldLine(doc, P, tableY + 36, W - P, tableY + 36, 0.6);
 
-      doc.font(FONT.regular).fontSize(8).fillColor(C.gold);
+      doc.font(FONT.regular).fontSize(8).fillColor(C.textSecondary);
       let orgInfo = `Prepared for: ${safeOrgName}`;
       if (safeOrgEmail) orgInfo += `  |  ${safeOrgEmail}`;
       doc.text(orgInfo, P, tableY + 42, { width: CW });
 
-      doc.font(FONT.regular).fontSize(7).fillColor(C.goldDim);
+      doc.font(FONT.regular).fontSize(7).fillColor(C.textLight);
       doc.text(`Generated: ${safeGeneratedAt}`, P, tableY + 54);
 
       goldLine(doc, P, tableY + 66, W - P, tableY + 66, 0.4);
@@ -1421,7 +1435,7 @@ export async function generateReportPDF(report: ReportData): Promise<Buffer> {
         // Still add page numbers at the end (below)
       } else {
         // ── EXECUTIVE SUMMARY: KPI CARDS WITH TREND ARROWS ──
-        doc.font(FONT.bold).fontSize(12).fillColor(C.goldBright);
+        doc.font(FONT.bold).fontSize(12).fillColor(C.gold);
         doc.text("Executive Summary", P, tableY);
         tableY += 20;
 
@@ -1436,11 +1450,11 @@ export async function generateReportPDF(report: ReportData): Promise<Buffer> {
             drawCardBright(doc, cx, tableY, cardW2, cardH, 6);
 
             // Label
-            doc.font(FONT.bold).fontSize(6.5).fillColor(C.goldMid);
+            doc.font(FONT.bold).fontSize(6.5).fillColor(C.textMuted);
             doc.text(String(stat.label || "").toUpperCase(), cx + 10, tableY + 8, { width: cardW2 - 20 });
 
             // Value
-            doc.font(FONT.bold).fontSize(18).fillColor(C.goldBright);
+            doc.font(FONT.bold).fontSize(18).fillColor(C.textPrimary);
             doc.text(String(stat.value ?? 0), cx + 10, tableY + 22, { width: cardW2 - 20 });
 
             // Trend indicator (look up from comparison data)
@@ -1460,7 +1474,7 @@ export async function generateReportPDF(report: ReportData): Promise<Buffer> {
         if (report.trendChartData && report.trendChartData.length > 0) {
           tableY = ensureSpace(doc, tableY, 230, W, H, P);
 
-          doc.font(FONT.bold).fontSize(12).fillColor(C.goldBright);
+          doc.font(FONT.bold).fontSize(12).fillColor(C.gold);
           const trendTitle = safeTitle.includes("Sales") ? "Revenue Trend Over Time"
             : safeTitle.includes("Customer") ? "Customer Growth Trend"
             : safeTitle.includes("Product") ? "Sales Volume Trend"
@@ -1477,7 +1491,7 @@ export async function generateReportPDF(report: ReportData): Promise<Buffer> {
           const barChartH = Math.min(report.barChartData.length * 26 + 40, 320);
           tableY = ensureSpace(doc, tableY, barChartH + 30, W, H, P);
 
-          doc.font(FONT.bold).fontSize(12).fillColor(C.goldBright);
+          doc.font(FONT.bold).fontSize(12).fillColor(C.gold);
           const barTitle = safeTitle.includes("Sales") ? "Top 5 Products by Revenue"
             : safeTitle.includes("Customer") ? "Top 10 Customers by Spend"
             : safeTitle.includes("Product") ? "Top 10 Products by Revenue"
@@ -1493,7 +1507,7 @@ export async function generateReportPDF(report: ReportData): Promise<Buffer> {
         if (report.pieChartData && report.pieChartData.length > 0) {
           tableY = ensureSpace(doc, tableY, 260, W, H, P);
 
-          doc.font(FONT.bold).fontSize(12).fillColor(C.goldBright);
+          doc.font(FONT.bold).fontSize(12).fillColor(C.gold);
           const pieTitle = safeTitle.includes("Sales") ? "Order Status Distribution"
             : safeTitle.includes("Customer") ? "Customer Tier Distribution"
             : safeTitle.includes("Product") ? "Stock Status Distribution"
@@ -1516,7 +1530,7 @@ export async function generateReportPDF(report: ReportData): Promise<Buffer> {
           const compTableH = (safeCompStats.length + 1) * 24 + 40;
           tableY = ensureSpace(doc, tableY, compTableH + 30, W, H, P);
 
-          doc.font(FONT.bold).fontSize(12).fillColor(C.goldBright);
+          doc.font(FONT.bold).fontSize(12).fillColor(C.gold);
           doc.text(`Period Comparison vs ${String(report.comparison.previousPeriodLabel || "Previous")}`, P, tableY);
           tableY += 18;
 
@@ -1535,14 +1549,14 @@ export async function generateReportPDF(report: ReportData): Promise<Buffer> {
           // Header row
           let colX = P + 10;
           compHeaders.forEach((header, i) => {
-            doc.font(FONT.bold).fontSize(7).fillColor(C.goldMid);
+            doc.font(FONT.bold).fontSize(7).fillColor(C.textMuted);
             doc.text(header.toUpperCase(), colX, tableY + 10, { width: colWidths[i] - 16 });
             colX += colWidths[i];
           });
 
           // Header divider
           doc.save();
-          doc.moveTo(P + 8, tableY + 24).lineTo(W - P - 8, tableY + 24).lineWidth(0.4).strokeColor(C.goldLine).stroke();
+          doc.moveTo(P + 8, tableY + 24).lineTo(W - P - 8, tableY + 24).lineWidth(0.4).strokeColor(C.goldBorder).stroke();
           doc.restore();
 
           // Data rows
@@ -1569,7 +1583,7 @@ export async function generateReportPDF(report: ReportData): Promise<Buffer> {
                 doc.font(FONT.bold).fontSize(8).fillColor(color);
                 doc.text(changeText, colX, ry + 3, { width: colWidths[ci] - 16 });
               } else {
-                doc.font(FONT.regular).fontSize(8).fillColor(C.gold);
+                doc.font(FONT.regular).fontSize(8).fillColor(C.textSecondary);
                 doc.text(String(cell), colX, ry + 3, { width: colWidths[ci] - 16 });
               }
               colX += colWidths[ci];
@@ -1589,7 +1603,7 @@ export async function generateReportPDF(report: ReportData): Promise<Buffer> {
 
           tableY = ensureSpace(doc, tableY, tblH + 34, W, H, P);
 
-          doc.font(FONT.bold).fontSize(11).fillColor(C.goldBright);
+          doc.font(FONT.bold).fontSize(11).fillColor(C.gold);
           doc.text(String(table.title || "Data Table"), P, tableY);
           tableY += 18;
 
@@ -1598,16 +1612,16 @@ export async function generateReportPDF(report: ReportData): Promise<Buffer> {
           const safeHeaders = table.headers.filter(h => h != null);
           const colW = safeHeaders.length > 0 ? CW / safeHeaders.length : CW;
           safeHeaders.forEach((header, i) => {
-            doc.font(FONT.bold).fontSize(7).fillColor(C.goldMid);
+            doc.font(FONT.bold).fontSize(7).fillColor(C.textMuted);
             doc.text(String(header).toUpperCase(), P + 10 + i * colW, tableY + 9, { width: colW - 20 });
           });
 
           doc.save();
-          doc.moveTo(P + 8, tableY + 22).lineTo(W - P - 8, tableY + 22).lineWidth(0.4).strokeColor(C.goldLine).stroke();
+          doc.moveTo(P + 8, tableY + 22).lineTo(W - P - 8, tableY + 22).lineWidth(0.4).strokeColor(C.goldBorder).stroke();
           doc.restore();
 
           if (rowCount === 0) {
-            doc.font(FONT.italic).fontSize(9).fillColor(C.goldDim);
+            doc.font(FONT.italic).fontSize(9).fillColor(C.textMuted);
             doc.text("No data available for this period", P, tableY + 30, { width: CW, align: "center" });
           } else {
             table.rows.forEach((row, ri) => {
@@ -1622,7 +1636,7 @@ export async function generateReportPDF(report: ReportData): Promise<Buffer> {
               }
 
               row.forEach((cell, ci) => {
-                doc.font(FONT.regular).fontSize(8).fillColor(C.gold);
+                doc.font(FONT.regular).fontSize(8).fillColor(C.textSecondary);
                 doc.text(String(cell ?? ""), P + 10 + ci * colW, ry, { width: colW - 20 });
               });
             });
@@ -1636,9 +1650,9 @@ export async function generateReportPDF(report: ReportData): Promise<Buffer> {
         if (safeSummary) {
           tableY = ensureSpace(doc, tableY, 60, W, H, P);
           drawCard(doc, P, tableY, CW, 38);
-          doc.font(FONT.bold).fontSize(7).fillColor(C.goldMid);
+          doc.font(FONT.bold).fontSize(7).fillColor(C.textMuted);
           doc.text("SUMMARY", P + 14, tableY + 8);
-          doc.font(FONT.regular).fontSize(8).fillColor(C.gold);
+          doc.font(FONT.regular).fontSize(8).fillColor(C.textSecondary);
           doc.text(safeSummary, P + 14, tableY + 20, { width: CW - 28 });
           tableY += 48;
         }
@@ -1657,21 +1671,21 @@ export async function generateReportPDF(report: ReportData): Promise<Buffer> {
         // Footer line
         doc.save();
         const fGrad = doc.linearGradient(P, 0, W - P, 0);
-        fGrad.stop(0, "#0a0a0f");
-        fGrad.stop(0.5, "#5d360b");
-        fGrad.stop(1, "#0a0a0f");
+        fGrad.stop(0, C.goldBg);
+        fGrad.stop(0.5, C.goldBorder);
+        fGrad.stop(1, C.goldBg);
         doc.moveTo(P, H - 50).lineTo(W - P, H - 50).lineWidth(0.5).stroke(fGrad);
         doc.restore();
 
         // Powered by
         doc.save();
-        doc.font(FONT.italic).fontSize(7).fillColor(C.gold);
+        doc.font(FONT.italic).fontSize(7).fillColor(C.textLight);
         doc.text(`Powered by ${platformName} - The Universal Brand Management Portal`, P, H - 44, { width: CW, align: "center" });
         doc.restore();
 
         // Page number: "Page X of Y"
         doc.save();
-        doc.font(FONT.regular).fontSize(7).fillColor(C.goldDim);
+        doc.font(FONT.regular).fontSize(7).fillColor(C.textLight);
         const pageLabel = `Page ${i} of ${range.count - 1}`;
         doc.text(pageLabel, P, H - 14, { width: CW, align: "center" });
         doc.restore();
@@ -1685,7 +1699,7 @@ export async function generateReportPDF(report: ReportData): Promise<Buffer> {
 
           if (footerParts.length > 0) {
             doc.save();
-            doc.font(FONT.regular).fontSize(6.5).fillColor(C.goldDim);
+            doc.font(FONT.regular).fontSize(6.5).fillColor(C.textLight);
             doc.text(footerParts.join("   |   "), P, H - 26, { width: CW, align: "center" });
             doc.restore();
           }
@@ -1693,8 +1707,8 @@ export async function generateReportPDF(report: ReportData): Promise<Buffer> {
 
         // ── CONFIDENTIAL WATERMARK on content pages — drawn ON TOP of all content ──
         doc.save();
-        doc.opacity(0.03);
-        doc.font(FONT.bold).fontSize(72).fillColor(C.gold);
+        doc.opacity(0.05);
+        doc.font(FONT.bold).fontSize(72).fillColor(C.goldMid);
         doc.translate(W / 2, H / 2);
         doc.rotate(-Math.PI / 7);
         doc.text("CONFIDENTIAL", -200, -36, { width: 400, align: "center" });
@@ -1731,7 +1745,7 @@ function renderCoverDefaultLogo(doc: any, centerX: number, y: number, size: numb
   doc.roundedRect(centerX - size / 2 - 4, y - 4, size + 8, size + 8, 10).fill(C.goldBg2);
   doc.roundedRect(centerX - size / 2 - 4, y - 4, size + 8, size + 8, 10).lineWidth(0.5).strokeColor(C.goldBorder2).stroke();
   doc.roundedRect(centerX - size / 2, y, size, size, 8).fill(color);
-  doc.fontSize(size * 0.35).fillColor(C.bg);
+  doc.fontSize(size * 0.35).fillColor("#ffffff");
   doc.font(FONT.bold).text("VTX", centerX - size / 2, y + size * 0.3, { width: size, align: "center" });
   doc.restore();
 }
@@ -1745,27 +1759,27 @@ function drawEmptyState(doc: any, x: number, y: number, w: number, _W: number, _
 
   // Icon placeholder — large gold circle with "!" inside
   doc.save();
-  doc.circle(x + w / 2, centerY - 20, 36).lineWidth(1.5).strokeColor(C.goldBorder2).stroke();
+  doc.circle(x + w / 2, centerY - 20, 36).lineWidth(1.5).strokeColor(C.goldBorder).stroke();
   doc.circle(x + w / 2, centerY - 20, 36).fill(C.goldBg);
-  doc.font(FONT.bold).fontSize(28).fillColor(C.goldDim);
+  doc.font(FONT.bold).fontSize(28).fillColor(C.textMuted);
   doc.text("!", x + w / 2 - 6, centerY - 35);
   doc.restore();
 
   // Main message
   doc.save();
-  doc.font(FONT.bold).fontSize(14).fillColor(C.gold);
+  doc.font(FONT.bold).fontSize(14).fillColor(C.textPrimary);
   doc.text("No Data Available", x, centerY + 30, { width: w, align: "center" });
   doc.restore();
 
   // Subtitle
   doc.save();
-  doc.font(FONT.regular).fontSize(10).fillColor(C.goldDim);
+  doc.font(FONT.regular).fontSize(10).fillColor(C.textMuted);
   doc.text("There is no data available for this reporting period.", x, centerY + 54, { width: w, align: "center" });
   doc.restore();
 
   // Hint
   doc.save();
-  doc.font(FONT.italic).fontSize(8).fillColor(C.goldFaint);
+  doc.font(FONT.italic).fontSize(8).fillColor(C.textLight);
   doc.text("Data will appear here once transactions or activity are recorded.", x, centerY + 76, { width: w, align: "center" });
   doc.restore();
 }
