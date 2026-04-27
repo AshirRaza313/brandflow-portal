@@ -94,6 +94,7 @@ export const SocialMediaPage = lazyPage(() => import("@/components/brandflow/mar
 export const EmailMarketingPage = lazyPage(() => import("@/components/brandflow/marketing/EmailMarketingPage"), "Email Marketing");
 export const AdManagerPage = lazyPage(() => import("@/components/brandflow/marketing/AdManagerPage"), "Ad Manager");
 export const InfluencersPage = lazyPage(() => import("@/components/brandflow/marketing/InfluencersPage"), "Influencers");
+export const FlashSalesPage = lazyPage(() => import("@/components/brandflow/marketing/FlashSalesPage"), "Flash Sales");
 
 // ── OPERATIONS ──
 export const TeamPage = lazyPage(() => import("@/components/brandflow/team/TeamPage"), "Team");
@@ -107,6 +108,8 @@ export const PackagingPage = lazyPage(() => import("@/components/brandflow/opera
 export const ShippingPage = lazyPage(() => import("@/components/brandflow/operations/ShippingPage"), "Shipping");
 export const SuppliersPage = lazyPage(() => import("@/components/brandflow/operations/SuppliersPage"), "Suppliers");
 export const WarehousePage = lazyPage(() => import("@/components/brandflow/operations/WarehousePage"), "Warehouse");
+export const FollowUpPage = lazyPage(() => import("@/components/brandflow/operations/FollowUpPage"), "Follow-Up");
+export const PenaltyPage = lazyPage(() => import("@/components/brandflow/operations/PenaltyPage"), "Penalties");
 
 // ── CONNECTIONS ──
 export const AIAssistantPage = lazyPage(() => import("@/components/brandflow/tools/AIAssistantPage"), "AI Tools");

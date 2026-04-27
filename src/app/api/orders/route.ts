@@ -182,7 +182,36 @@ export const POST = withAuth(async (req, authCtx) => {
       }
     }
 
-    return NextResponse.json({ order }, { status: 201 });
+    // ── Auto-generate 4 tasks for the new order ──
+    const orderNum = order.orderNumber;
+    const autoTasks = [
+      { title: `Confirm order ${orderNum} with customer`, assignedTo: "sales_manager", priority: "critical" },
+      { title: `Send WhatsApp confirmation for ${orderNum}`, assignedTo: "support_agent", priority: "high" },
+      { title: `Pack order ${orderNum}`, assignedTo: "warehouse_manager", priority: "medium" },
+      { title: `Verify stock for order ${orderNum}`, assignedTo: "inventory_clerk", priority: "high" },
+    ];
+
+    try {
+      await Promise.all(
+        autoTasks.map((t) =>
+          db.teamTask.create({
+            data: {
+              organizationId,
+              title: t.title,
+              assignedTo: t.assignedTo,
+              priority: t.priority,
+              status: "todo",
+              description: `Auto-generated task for order ${orderNum}`,
+            },
+          })
+        )
+      );
+    } catch (taskErr: any) {
+      // Log task creation failure but don't fail the order creation
+      logger.warn("Auto-task creation failed (non-blocking)", taskErr.message, { orderNumber: orderNum });
+    }
+
+    return NextResponse.json({ order, autoTasksCreated: true }, { status: 201 });
   } catch (error: any) {
     logger.error("Create order error", error, { orgId: authCtx?.organizationId });
     if (error?.message?.includes('DATABASE_URL') || error?.message?.includes('Database connection')) {

@@ -57,6 +57,8 @@ export type Feature =
   | "support-chat"
   | "attendance"
   | "payroll"
+  | "follow-up"
+  | "penalty"
   // ── Group 6: CONNECTIONS ──
   | "integrations"
   | "wa-business"
@@ -80,6 +82,7 @@ export type Feature =
   | "integration-management"
   // Legacy aliases
   | "broadcasts"
+  | "flash-sales"
   | "referral"
   | "team-members"
   | "sales-reports"
@@ -156,6 +159,8 @@ export const SECTION_GROUP_MAP: Record<SidebarSection, SidebarGroup> = {
   "support-chat": "operations",
   attendance: "operations",
   payroll: "operations",
+  "follow-up": "operations",
+  penalty: "operations",
   // Group 6: CONNECTIONS
   integrations: "connections",
   "wa-business": "connections",
@@ -179,6 +184,7 @@ export const SECTION_GROUP_MAP: Record<SidebarSection, SidebarGroup> = {
   "integration-management": "system",
   // Legacy
   broadcasts: "marketing",
+  "flash-sales": "marketing",
   referral: "marketing",
   "team-members": "operations",
   "sales-reports": "analytics",
@@ -246,6 +252,7 @@ export const SIDEBAR_STRUCTURE: Record<SidebarGroup, { label: string; emoji: str
       { id: "ad-manager", label: "Ad Manager" },
       { id: "loyalty", label: "Loyalty Program", subTabs: ["Tiers", "Rewards", "Points History"] },
       { id: "seasonal-sales", label: "Seasonal Sales", subTabs: ["Active Events", "Upcoming", "Calendar"] },
+      { id: "flash-sales", label: "Flash Sales" },
       { id: "influencers", label: "Influencers" },
       { id: "affiliates", label: "Affiliates" },
     ],
@@ -256,6 +263,7 @@ export const SIDEBAR_STRUCTURE: Record<SidebarGroup, { label: string; emoji: str
     items: [
       { id: "returns", label: "Returns" },
       { id: "sla-engine", label: "SLA Engine" },
+      { id: "follow-up", label: "Follow-Up" },
       { id: "support-tickets", label: "Support Tickets" },
       { id: "packaging", label: "Packaging" },
       { id: "shipping", label: "Shipping" },
@@ -265,6 +273,7 @@ export const SIDEBAR_STRUCTURE: Record<SidebarGroup, { label: string; emoji: str
       { id: "team-management", label: "Team Management", subTabs: ["Members", "Attendance", "Payroll"] },
       { id: "team-chat", label: "Team Chat" },
       { id: "support-chat", label: "Support Chat" },
+      { id: "penalty", label: "Penalties" },
     ],
   },
   connections: {

@@ -12,9 +12,9 @@ import {
   CatalogPage, ReviewsPage, PricingRulesPage, VariantsPage,
   SalesReportsPage, CustomerReportsPage, ProductReportsPage, RevenueAnalyticsPage, TrafficAnalyticsPage,
   BroadcastsPage, LoyaltyPage, EventsPage, ReferralPage, CouponsPage, MarketingCalendarPage,
-  SEOManagerPage, SocialMediaPage, EmailMarketingPage, AdManagerPage, InfluencersPage,
+  SEOManagerPage, SocialMediaPage, EmailMarketingPage, AdManagerPage, InfluencersPage, FlashSalesPage,
   TeamPage, AttendancePage, PayrollPage, WhatsAppPage,
-  ReturnsPage, SLAEnginePage, TicketsPage, PackagingPage, ShippingPage, SuppliersPage, WarehousePage,
+  ReturnsPage, SLAEnginePage, FollowUpPage, TicketsPage, PackagingPage, ShippingPage, SuppliersPage, WarehousePage, PenaltyPage,
   AIAssistantPage, WhatsAppIntegrationPage, ImportExportPage, IntegrationsPage,
   TeamChatPage, SupportChatPage, UserGuidePage,
   SettingsPage, UserManagementPage, AdminDashboard, AuditLogPage,
@@ -358,6 +358,7 @@ export default function Home() {
       }
       case "loyalty": return <SafeRender name="Loyalty"><LoyaltyPage /></SafeRender>;
       case "seasonal-sales": case "events": return <SafeRender name="Events"><EventsPage /></SafeRender>;
+      case "flash-sales": return <SafeRender name="Flash Sales"><FlashSalesPage /></SafeRender>;
       case "influencers": {
         const lock = checkLock("influencers", "Influencers");
         if (lock) return lock;
@@ -382,6 +383,9 @@ export default function Home() {
         if (lock) return lock;
         return <SafeRender name="SLA Engine"><SLAEnginePage /></SafeRender>;
       }
+      case "follow-up": {
+        return <SafeRender name="Follow-Up"><FollowUpPage /></SafeRender>;
+      }
       case "support-tickets": {
         const lock = checkLock("support-tickets", "Support Tickets");
         if (lock) return lock;
@@ -401,6 +405,9 @@ export default function Home() {
       case "support-chat": return <SafeRender name="Support Chat"><SupportChatPage /></SafeRender>;
       case "attendance": return <SafeRender name="Attendance"><AttendancePage /></SafeRender>;
       case "payroll": return <SafeRender name="Payroll"><PayrollPage /></SafeRender>;
+      case "penalty": {
+        return <SafeRender name="Penalties"><PenaltyPage /></SafeRender>;
+      }
 
       // ── CONNECTIONS ──
       case "integrations": {

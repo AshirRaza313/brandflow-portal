@@ -1,26 +1,27 @@
 "use client";
 
-import { useState, useMemo, useCallback } from "react";
+import { useState, useMemo, useCallback, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useValtrioxStore } from "@/store/brandflow-store";
-import {
-  getActiveEvents,
-  getUpcomingEvents,
-  getAllEvents,
-  applyEventTheme,
-  getAllCountries,
-  type SeasonalEvent,
-} from "@/lib/event-themes";
+import { applyEventTheme, type SeasonalEvent } from "@/lib/event-themes";
+import { getEventsForRegion, getCountryName, getCountryFlag, type RegionEvent } from "@/lib/events-library";
 import {
   Card,
   CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
 } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import {
   PartyPopper,
   Calendar,
@@ -30,35 +31,20 @@ import {
   Globe,
   Eye,
   EyeOff,
-  ToggleLeft,
-  ToggleRight,
   Filter,
-  Info,
-  ChevronLeft,
-  ChevronRight,
-  Tag,
-  MapPin,
+  Plus,
+  Search,
+  Trash2,
+  Edit3,
+  Zap,
+  CalendarDays,
   X,
-  SkipForward,
-  RotateCcw,
+  Timer,
+  ZapOff,
+  MapPin,
+  Heart,
 } from "lucide-react";
-
-// ============================================================================
-// Valtriox Icon Component — Uses actual Valtriox logo (PNG converted to icon)
-// ============================================================================
-
-function ValtrioxIcon({ size = 14, className = "" }: { size?: number; className?: string }) {
-  return (
-    <img
-      src="/valtriox-icon-32.png"
-      alt="Valtriox"
-      width={size}
-      height={size}
-      className={`object-contain ${className}`}
-      draggable={false}
-    />
-  );
-}
+import { toast } from "sonner";
 
 // ============================================================================
 // Constants & Helpers
@@ -68,15 +54,28 @@ const MONTH_NAMES = [
   "January", "February", "March", "April", "May", "June",
   "July", "August", "September", "October", "November", "December",
 ];
-const DAY_NAMES = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
-const DAY_NAMES_SHORT = ["S", "M", "T", "W", "T", "F", "S"];
 
 const TYPE_CONFIG: Record<string, { label: string; color: string; darkColor: string }> = {
   religious: { label: "Religious", color: "bg-amber-100 text-amber-700 border-amber-200", darkColor: "bg-amber-500/15 text-amber-300 border-amber-500/30" },
-  national: { label: "National", color: "bg-amber-100 text-amber-700 border-amber-200", darkColor: "bg-amber-500/15 text-amber-300 border-amber-500/30" },
-  cultural: { label: "Cultural", color: "bg-amber-100 text-amber-700 border-amber-200", darkColor: "bg-amber-500/15 text-amber-300 border-amber-500/30" },
+  national: { label: "National", color: "bg-sky-100 text-sky-700 border-sky-200", darkColor: "bg-sky-500/15 text-sky-300 border-sky-500/30" },
+  cultural: { label: "Cultural", color: "bg-violet-100 text-violet-700 border-violet-200", darkColor: "bg-violet-500/15 text-violet-300 border-violet-500/30" },
   commercial: { label: "Commercial", color: "bg-rose-100 text-rose-700 border-rose-200", darkColor: "bg-rose-500/15 text-rose-300 border-rose-500/30" },
 };
+
+function normalizeCountryCode(input: string): string {
+  if (!input) return "";
+  const aliases: Record<string, string> = {
+    PK: "PK", pak: "PK", pakistan: "PK", PAK: "PK",
+    IN: "IN", ind: "IN", india: "IN", IND: "IN",
+    AE: "AE", are: "AE", uae: "AE", UAE: "AE",
+    SA: "SA", saudi: "SA", SAU: "SA", KSA: "SA",
+    US: "US", usa: "US", USA: "US", united_states: "US",
+    GB: "GB", gbr: "GB", uk: "GB", UK: "GB", united_kingdom: "GB",
+    BD: "BD", bgd: "BD", bangladesh: "BD", BGD: "BD",
+    TR: "TR", tur: "TR", turkey: "TR", TUR: "TR",
+  };
+  return aliases[input.trim().toLowerCase()] || input.trim().toUpperCase();
+}
 
 function formatDateRange(date: string, dateEnd?: string): string {
   const [m1, d1] = date.split("-").map(Number);
@@ -87,247 +86,160 @@ function formatDateRange(date: string, dateEnd?: string): string {
   return `${startStr} - ${MONTH_NAMES[m2 - 1]} ${d2}`;
 }
 
-function parseMMDDToDate(mmdd: string, year: number): Date {
-  const [m, d] = mmdd.split("-").map(Number);
-  return new Date(year, m - 1, d);
-}
-
-function getCountryFlag(code: string): string {
-  const country = getAllCountries().find((c) => c.code === code);
-  return country ? country.flag : code;
-}
-
-function getCountryName(code: string): string {
-  const country = getAllCountries().find((c) => c.code === code);
-  return country ? country.name : code;
-}
-
-// ============================================================================
-// Skipped Events Helper (persisted to localStorage per brand)
-// ============================================================================
-
-function getSkippedEventIds(): Set<string> {
-  try {
-    if (typeof window === "undefined") return new Set();
-    const raw = localStorage.getItem("valtriox-skipped-events");
-    return raw ? new Set(JSON.parse(raw)) : new Set();
-  } catch {
-    return new Set();
+function getDaysUntilEvent(dateStr: string): number {
+  if (dateStr === "dynamic") return -1;
+  const now = new Date();
+  const year = now.getFullYear();
+  const [m, d] = dateStr.split("-").map(Number);
+  const eventDate = new Date(year, m - 1, d);
+  if (eventDate < now) {
+    eventDate.setFullYear(year + 1);
   }
+  const diff = eventDate.getTime() - now.getTime();
+  return Math.ceil(diff / (1000 * 60 * 60 * 24));
 }
 
-function saveSkippedEventIds(ids: Set<string>) {
-  try {
-    if (typeof window !== "undefined") {
-      localStorage.setItem("valtriox-skipped-events", JSON.stringify([...ids]));
-    }
-  } catch {}
+function getCountdownLabel(days: number): string {
+  if (days < 0) return "Date varies";
+  if (days === 0) return "Today!";
+  if (days === 1) return "Tomorrow";
+  return `${days} days away`;
+}
+
+function getRegionEventCountdown(event: RegionEvent): string {
+  if (event.date === "dynamic" && event.month) {
+    return `~${MONTH_NAMES[event.month - 1]} (lunar)`;
+  }
+  return getCountdownLabel(getDaysUntilEvent(event.date));
+}
+
+function getActiveStatus(event: RegionEvent): "active" | "upcoming" | "past" {
+  if (event.date === "dynamic") return "upcoming";
+  const days = getDaysUntilEvent(event.date);
+  if (days <= event.autoDetectDaysBefore && days >= 0) return "active";
+  if (days > 0) return "upcoming";
+  return "past";
 }
 
 // ============================================================================
-// Event Card Component
+// Active Event Card (Tab 1)
 // ============================================================================
 
-function EventCard({
+function ActiveEventCard({
   event,
-  isPreviewed,
-  isApplied,
+  isActive,
   isDark,
-  isGold,
-  isSkipped,
-  onApply,
-  onSkip,
-  onUnskip,
+  onForceActivate,
+  onDeactivate,
+  onPreview,
 }: {
-  event: SeasonalEvent;
-  isPreviewed: boolean;
-  isApplied: boolean;
+  event: RegionEvent;
+  isActive: boolean;
   isDark: boolean;
-  isGold: boolean;
-  isSkipped: boolean;
-  onApply: () => void;
-  onSkip: () => void;
-  onUnskip: () => void;
+  onForceActivate: () => void;
+  onDeactivate: () => void;
+  onPreview: () => void;
 }) {
-  const typeConfig = TYPE_CONFIG[event.type];
-  const previewIcons = event.floatingIcons.slice(0, 6);
-  const displayCountries = event.countries.includes("all")
-    ? getAllCountries().slice(0, 3)
-    : event.countries.map((c) => ({ code: c, name: getCountryName(c), flag: getCountryFlag(c) }));
+  const status = isActive ? "active" : getActiveStatus(event);
+  const countdown = getRegionEventCountdown(event);
+  const typeConfig = TYPE_CONFIG[event.category];
 
   return (
     <motion.div
-      whileHover={{ y: -3, scale: 1.01 }}
+      initial={{ opacity: 0, y: 10 }}
+      animate={{ opacity: 1, y: 0 }}
+      whileHover={{ y: -2 }}
       transition={{ duration: 0.2 }}
     >
       <Card
-        className={`overflow-hidden cursor-pointer transition-all duration-200 relative ${
-          isSkipped ? "opacity-60" : ""
-        } ${
+        className={`overflow-hidden transition-all duration-200 ${
           isDark
-            ? "bg-white/[0.03] border-white/[0.06] hover:border-white/[0.12] hover:bg-white/[0.05]"
-            : "bg-white border-slate-200 hover:border-slate-300 hover:shadow-xl"
-        } ${isApplied ? `ring-2 ring-offset-2 ${isDark ? "ring-offset-slate-900" : "ring-offset-white"}` : ""}`}
-        style={isApplied ? { '--tw-ring-color': event.theme.primary } as React.CSSProperties : undefined}
+            ? "bg-white/[0.03] border-white/[0.06] hover:border-white/[0.12]"
+            : "bg-white border-slate-200 hover:border-slate-300 hover:shadow-lg"
+        }`}
       >
-        {/* Gradient Banner */}
-        <div
-          className="h-24 sm:h-28 relative overflow-hidden"
-          style={{ background: event.theme.gradient }}
-        >
-          {isSkipped && (
-            <div className="absolute inset-0 bg-black/40 flex items-center justify-center z-10">
-              <Badge className="bg-black/50 text-white border-0 text-xs backdrop-blur-sm">
-                <SkipForward className="h-3 w-3 mr-1" />
-                Skipped
-              </Badge>
-            </div>
-          )}
-          {isApplied && (
-            <motion.div
-              initial={{ scale: 0 }}
-              animate={{ scale: 1 }}
-              className="absolute top-2 right-2"
-            >
-              <Badge className="bg-white/25 text-white border-0 text-[10px] backdrop-blur-sm">
-                <Sparkles className="h-2.5 w-2.5 mr-1" />
-                Applied
-              </Badge>
-            </motion.div>
-          )}
+        <div className="h-20 sm:h-24 relative overflow-hidden" style={{ background: event.theme.gradient }}>
+          <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent" />
           <div className="absolute bottom-2 left-3 flex items-center gap-1.5">
-            <Badge className="bg-black/20 text-white border-0 text-[10px] backdrop-blur-sm">
-              <Tag className="h-2.5 w-2.5 mr-0.5" />
-              {event.countries.includes("all") ? "Global" : `${displayCountries.length} regions`}
-            </Badge>
-          </div>
-          <div className="absolute bottom-2 right-3 text-3xl sm:text-4xl opacity-30">
-            {event.emoji}
-          </div>
-        </div>
-
-        <CardHeader className="pb-2">
-          <div className="flex items-start justify-between gap-2">
-            <CardTitle className={`text-sm sm:text-base font-bold flex items-center gap-2 ${isDark ? "text-white" : "text-slate-900"}`}>
-              <span className="text-lg sm:text-xl">{event.emoji}</span>
-              <span className="truncate">{event.name}</span>
-            </CardTitle>
-          </div>
-          <CardDescription className={`text-xs flex items-center gap-1.5 ${isDark ? "text-slate-400" : "text-slate-500"}`}>
-            <Calendar className="h-3 w-3" />
-            {formatDateRange(event.date, event.dateEnd)}
-          </CardDescription>
-        </CardHeader>
-
-        <CardContent className="space-y-3">
-          {/* Badges row */}
-          <div className="flex flex-wrap gap-1.5">
-            <Badge variant="outline" className={`text-[10px] border ${isDark ? typeConfig.darkColor : typeConfig.color}`}>
+            <Badge className={`text-[10px] border ${isDark ? typeConfig.darkColor : typeConfig.color}`}>
               {typeConfig.label}
             </Badge>
-            {event.religions[0] !== "all" && (
-              <Badge variant="secondary" className={`text-[10px] ${isDark ? "bg-white/[0.06] text-slate-300" : "bg-slate-100 text-slate-600"}`}>
-                {event.religions.map((r) => r.charAt(0).toUpperCase() + r.slice(1)).join(", ")}
-              </Badge>
-            )}
           </div>
-
-          {/* Country flags */}
-          <div className="flex items-center gap-1">
-            <MapPin className={`h-3 w-3 flex-shrink-0 ${isDark ? "text-slate-500" : "text-slate-400"}`} />
-            <div className="flex items-center gap-0.5 flex-wrap">
-              {displayCountries.slice(0, 5).map((c) => (
-                <span key={c.code} className="text-sm" title={c.name}>
-                  {c.flag}
-                </span>
-              ))}
-              {(event.countries.includes("all") ? 110 : event.countries.length) > 5 && (
-                <span className={`text-[10px] ml-0.5 ${isDark ? "text-slate-500" : "text-slate-400"}`}>
-                  +{(event.countries.includes("all") ? 110 : event.countries.length) - 5}
-                </span>
-              )}
-            </div>
-          </div>
-
-          {/* Description */}
-          <p className={`text-xs line-clamp-2 ${isDark ? "text-slate-400" : "text-slate-500"}`}>
-            {event.description}
-          </p>
-
-          {/* Offer template */}
-          <div className={`text-xs px-2.5 py-1.5 rounded-md ${isDark ? "bg-white/[0.04] text-slate-300" : "bg-slate-50 text-slate-600"}`}>
-            <span className="opacity-60">Offer: </span>
-            {event.offerTemplate.replace("{discount}", "20")}
-          </div>
-
-          {/* Floating icons preview */}
-          {previewIcons.length > 0 && (
-            <div className="flex items-center gap-1">
-              <span className={`text-[10px] mr-1 ${isDark ? "text-slate-600" : "text-slate-400"}`}>Icons:</span>
-              {previewIcons.map((icon, i) => (
-                <motion.span
-                  key={i}
-                  initial={{ scale: 0 }}
-                  animate={{ scale: 1 }}
-                  transition={{ delay: i * 0.05 }}
-                  className="text-sm"
-                >
-                  {icon}
-                </motion.span>
-              ))}
-              {event.floatingIcons.length > 6 && (
-                <span className={`text-[10px] ml-0.5 ${isDark ? "text-slate-600" : "text-slate-400"}`}>
-                  +{event.floatingIcons.length - 6}
-                </span>
-              )}
-            </div>
+          {status === "active" && (
+            <Badge className="absolute top-2 right-2 bg-emerald-500/90 text-white border-0 text-[10px] backdrop-blur-sm">
+              <Zap className="h-2.5 w-2.5 mr-1" />
+              Active
+            </Badge>
           )}
-
-          {/* Action buttons */}
-          <div className="flex gap-2">
+          {status === "upcoming" && (
+            <Badge className="absolute top-2 right-2 bg-amber-500/90 text-white border-0 text-[10px] backdrop-blur-sm">
+              <Clock className="h-2.5 w-2.5 mr-1" />
+              Upcoming
+            </Badge>
+          )}
+          <div className="absolute bottom-2 right-3 text-3xl opacity-30">{event.emoji}</div>
+        </div>
+        <CardContent className="p-3 sm:p-4 space-y-2">
+          <div className="flex items-start justify-between gap-2">
+            <div className="min-w-0">
+              <h3 className={`text-sm font-bold flex items-center gap-1.5 ${isDark ? "text-white" : "text-slate-900"}`}>
+                <span>{event.emoji}</span>
+                <span className="truncate">{event.name}</span>
+              </h3>
+              <p className={`text-xs mt-0.5 flex items-center gap-1 ${isDark ? "text-slate-400" : "text-slate-500"}`}>
+                <Timer className="h-3 w-3" />
+                {event.date === "dynamic" ? `~${MONTH_NAMES[(event.month || 1) - 1]} (lunar)` : formatDateRange(event.date)}
+              </p>
+            </div>
+          </div>
+          <div className="flex items-center gap-1.5 text-xs">
+            <Calendar className={`h-3 w-3 ${isDark ? "text-slate-500" : "text-slate-400"}`} />
+            <span className={status === "active" ? "text-emerald-500 font-medium" : isDark ? "text-slate-400" : "text-slate-500"}>
+              {countdown}
+            </span>
+          </div>
+          {event.promotionalMessage && (
+            <p className={`text-[10px] sm:text-xs px-2 py-1 rounded ${isDark ? "bg-white/[0.04] text-amber-300" : "bg-amber-50 text-amber-700"}`}>
+              {event.promotionalMessage}
+            </p>
+          )}
+          <div className="flex gap-2 pt-1">
             <Button
               size="sm"
-              variant={isApplied ? "secondary" : "default"}
-              className={`flex-1 h-8 text-xs transition-all ${
-                isGold
-                  ? isApplied
-                    ? "bg-amber-500/20 text-amber-300 hover:bg-amber-500/30 border border-amber-500/30"
-                    : "bg-amber-600 hover:bg-amber-700 text-white"
-                  : isApplied
-                    ? "bg-amber-500/20 text-amber-300 hover:bg-amber-500/30 border border-amber-500/30"
-                    : "bg-amber-600 hover:bg-amber-700 text-white"
+              variant={status === "active" ? "outline" : "default"}
+              className={`flex-1 h-7 text-[11px] ${
+                status === "active"
+                  ? isDark
+                    ? "border-emerald-500/30 text-emerald-400 hover:bg-emerald-500/10"
+                    : "border-emerald-200 text-emerald-700 hover:bg-emerald-50"
+                  : "bg-amber-600 hover:bg-amber-700 text-white"
               }`}
-              onClick={(e) => {
-                e.stopPropagation();
-                onApply();
-              }}
+              onClick={onForceActivate}
             >
-              <Palette className="h-3 w-3 mr-1.5" />
-              {isApplied ? "Re-apply" : "Apply Theme"}
+              {status === "active" ? (
+                <><Zap className="h-3 w-3 mr-1" /> Active</>
+              ) : (
+                <><ZapOff className="h-3 w-3 mr-1" /> Activate</>
+              )}
             </Button>
+            {status === "active" && (
+              <Button
+                size="sm"
+                variant="ghost"
+                className={`h-7 text-[11px] px-2 ${isDark ? "text-red-400 hover:bg-red-500/10" : "text-red-500 hover:bg-red-50"}`}
+                onClick={onDeactivate}
+              >
+                <EyeOff className="h-3 w-3 mr-1" />
+                Deactivate
+              </Button>
+            )}
             <Button
               size="sm"
               variant="ghost"
-              className={`h-8 text-xs px-2.5 shrink-0 ${
-                isSkipped
-                  ? isDark
-                    ? "text-amber-400 hover:text-amber-300 hover:bg-amber-500/10"
-                    : "text-amber-600 hover:text-amber-700 hover:bg-amber-50"
-                  : isDark
-                    ? "text-slate-500 hover:text-slate-300 hover:bg-white/[0.06]"
-                    : "text-slate-400 hover:text-slate-600 hover:bg-slate-50"
-              }`}
-              onClick={(e) => {
-                e.stopPropagation();
-                if (isSkipped) { onUnskip(); } else { onSkip(); }
-              }}
-              title={isSkipped ? "Unskip this event" : "Skip this event"}
+              className={`h-7 text-[11px] px-2 ${isDark ? "text-slate-400 hover:text-white hover:bg-white/[0.06]" : "text-slate-500 hover:text-slate-700 hover:bg-slate-50"}`}
+              onClick={onPreview}
             >
-              {isSkipped ? (
-                <RotateCcw className="h-3 w-3" />
-              ) : (
-                <SkipForward className="h-3 w-3" />
-              )}
+              <Eye className="h-3 w-3" />
             </Button>
           </div>
         </CardContent>
@@ -337,373 +249,365 @@ function EventCard({
 }
 
 // ============================================================================
-// Calendar Component — Fully Mobile Responsive
+// All Events Card (Tab 2)
 // ============================================================================
 
-function EventCalendar({
-  events,
-  skippedEventIds,
+function AllEventCard({
+  event,
   isDark,
-  isGold,
-  onEventClick,
+  onPreview,
 }: {
-  events: SeasonalEvent[];
-  skippedEventIds: Set<string>;
+  event: RegionEvent;
   isDark: boolean;
-  isGold: boolean;
-  onEventClick: (event: SeasonalEvent) => void;
+  onPreview: () => void;
 }) {
-  const [viewDate, setViewDate] = useState(() => new Date());
-  const today = new Date();
-  const year = viewDate.getFullYear();
-  const month = viewDate.getMonth();
-
-  const firstDay = new Date(year, month, 1).getDay();
-  const daysInMonth = new Date(year, month + 1, 0).getDate();
-  const prevDaysInMonth = new Date(year, month, 0).getDate();
-
-  // Filter out skipped events
-  const visibleEvents = useMemo(
-    () => events.filter((e) => !skippedEventIds.has(e.id)),
-    [events, skippedEventIds]
-  );
-
-  // Map events to calendar days — only for the currently viewed month/year
-  const eventsByDay = useMemo(() => {
-    const map: Record<number, SeasonalEvent[]> = {};
-    visibleEvents.forEach((event) => {
-      const start = parseMMDDToDate(event.date, year);
-      const end = event.dateEnd ? parseMMDDToDate(event.dateEnd, year) : start;
-
-      // Build full Date objects for each day in the event range
-      const totalDays = (start <= end)
-        ? Math.floor((end.getTime() - start.getTime()) / 86400000) + 1
-        : 1;
-
-      for (let i = 0; i < totalDays; i++) {
-        const d = new Date(start);
-        d.setDate(d.getDate() + i);
-        // Only include dates that fall in the currently viewed month & year
-        if (d.getMonth() === month && d.getFullYear() === year) {
-          const day = d.getDate();
-          if (!map[day]) map[day] = [];
-          if (!map[day].find((e) => e.id === event.id)) {
-            map[day].push(event);
-          }
-        }
-      }
-    });
-    return map;
-  }, [visibleEvents, year, month, daysInMonth]);
-
-  const goToPrev = () => setViewDate(new Date(year, month - 1, 1));
-  const goToNext = () => setViewDate(new Date(year, month + 1, 1));
-  const goToToday = () => setViewDate(new Date());
-
-  const accentClass = isGold ? "text-amber-500" : "text-amber-500";
-  const accentBg = isGold ? "bg-amber-500/15" : "bg-amber-500/15";
-  const accentRing = isGold ? "ring-amber-500/40" : "ring-amber-500/40";
-
-  const calendarCells: Array<{
-    day: number;
-    isCurrentMonth: boolean;
-    isToday: boolean;
-    events: SeasonalEvent[];
-  }> = [];
-
-  // Previous month trailing days
-  for (let i = firstDay - 1; i >= 0; i--) {
-    calendarCells.push({ day: prevDaysInMonth - i, isCurrentMonth: false, isToday: false, events: [] });
-  }
-
-  // Current month days
-  for (let d = 1; d <= daysInMonth; d++) {
-    const isToday = d === today.getDate() && month === today.getMonth() && year === today.getFullYear();
-    calendarCells.push({
-      day: d,
-      isCurrentMonth: true,
-      isToday,
-      events: eventsByDay[d] || [],
-    });
-  }
-
-  // Next month leading days
-  const remaining = 42 - calendarCells.length;
-  for (let d = 1; d <= remaining; d++) {
-    calendarCells.push({ day: d, isCurrentMonth: false, isToday: false, events: [] });
-  }
-
-  return (
-    <Card className={`w-full overflow-hidden ${isDark ? "bg-white/[0.03] border-white/[0.06]" : ""}`}>
-      <CardHeader className="pb-2">
-        <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-          <CardTitle className={`flex items-center gap-2 text-base sm:text-lg ${isDark ? "text-white" : "text-slate-900"}`}>
-            <Calendar className={`h-5 w-5 ${accentClass}`} />
-            <span>Event Calendar</span>
-          </CardTitle>
-          <div className="flex items-center justify-between sm:justify-end gap-1">
-            <Button variant="ghost" size="sm" onClick={goToToday} className={`text-xs h-7 px-2 ${isDark ? "text-slate-400 hover:text-white hover:bg-white/[0.06]" : ""}`}>
-              Today
-            </Button>
-            <Button variant="ghost" size="icon" className={`h-7 w-7 ${isDark ? "text-slate-400 hover:text-white hover:bg-white/[0.06]" : ""}`} onClick={goToPrev}>
-              <ChevronLeft className="h-4 w-4" />
-            </Button>
-            <span className={`text-sm font-semibold min-w-[90px] sm:min-w-[140px] text-center ${isDark ? "text-white" : "text-slate-900"}`}>
-              {MONTH_NAMES[month]} {year}
-            </span>
-            <Button variant="ghost" size="icon" className={`h-7 w-7 ${isDark ? "text-slate-400 hover:text-white hover:bg-white/[0.06]" : ""}`} onClick={goToNext}>
-              <ChevronRight className="h-4 w-4" />
-            </Button>
-          </div>
-        </div>
-      </CardHeader>
-      <CardContent className="overflow-x-auto -mx-1 px-1">
-        <div className="min-w-[280px] sm:min-w-0">
-          {/* Day headers */}
-          <div className="grid grid-cols-7 gap-px mb-px">
-            {DAY_NAMES_SHORT.map((day, idx) => (
-              <div
-                key={idx}
-                className={`text-center font-semibold py-1 ${isDark ? "text-slate-500" : "text-slate-400"} text-[9px] sm:text-[11px]`}
-              >
-                {day}
-              </div>
-            ))}
-          </div>
-
-          {/* Calendar grid */}
-          <div className="grid grid-cols-7 gap-px">
-            {calendarCells.map((cell, idx) => {
-              const hasEvents = cell.events.length > 0;
-              const activeEvent = cell.events.find((e) => {
-                const todayMMDD = `${String(today.getMonth() + 1).padStart(2, "0")}-${String(today.getDate()).padStart(2, "0")}`;
-                const eStart = parseMMDDToDate(e.date, today.getFullYear());
-                const eEnd = e.dateEnd ? parseMMDDToDate(e.dateEnd, today.getFullYear()) : eStart;
-                const cellDate = new Date(year, month, cell.day);
-                return cellDate >= eStart && cellDate <= eEnd;
-              });
-
-              return (
-                <motion.button
-                  key={idx}
-                  whileHover={cell.isCurrentMonth && hasEvents ? { scale: 1.05 } : {}}
-                  onClick={() => cell.isCurrentMonth && hasEvents && cell.events[0] && onEventClick(cell.events[0])}
-                  className={`
-                    relative aspect-square rounded-md sm:rounded-lg flex flex-col items-center justify-center text-xs
-                    transition-all duration-150 min-h-[36px] sm:min-h-[44px]
-                    ${!cell.isCurrentMonth ? "opacity-30 cursor-default" : "cursor-default"}
-                    ${cell.isToday ? `ring-1.5 sm:ring-2 ${accentRing} font-bold ${accentClass}` : ""}
-                    ${cell.isCurrentMonth && !cell.isToday ? (isDark ? "text-slate-300 hover:bg-white/[0.06]" : "text-slate-700 hover:bg-slate-50") : ""}
-                    ${cell.isCurrentMonth && hasEvents && !cell.isToday ? (isDark ? "bg-white/[0.03]" : "bg-slate-50") : ""}
-                  `}
-                >
-                  <span className="text-[10px] sm:text-xs leading-none">
-                    {cell.day}
-                  </span>
-                  {/* Event markers — Valtriox Icon for events */}
-                  {hasEvents && (
-                    <div className="flex gap-px sm:gap-0.5 mt-0.5 items-center justify-center">
-                      {cell.events.slice(0, 2).map((ev, i) => (
-                        <div
-                          key={i}
-                          className="h-3.5 w-3.5 sm:h-4 sm:w-4 rounded-[2px] sm:rounded-[3px] flex items-center justify-center overflow-hidden shadow-sm"
-                          style={{ backgroundColor: ev.theme.primary }}
-                          title={ev.name}
-                        >
-                          <img
-                            src="/valtriox-icon-32.png"
-                            alt="Valtriox"
-                            className="h-full w-full object-contain"
-                            draggable={false}
-                          />
-                        </div>
-                      ))}
-                      {/* Extra events shown as dot */}
-                      {cell.events.length > 2 && (
-                        <div
-                          className="h-1.5 w-1.5 sm:h-2 sm:w-2 rounded-full shadow-sm"
-                          style={{ backgroundColor: cell.events[0].theme.primary }}
-                          title={`+${cell.events.length - 2} more`}
-                        />
-                      )}
-                    </div>
-                  )}
-                </motion.button>
-              );
-            })}
-          </div>
-        </div>
-
-        {/* Legend */}
-        <div className="flex flex-wrap items-center gap-3 sm:gap-4 mt-3 sm:mt-4 pt-2 sm:pt-3 border-t border-border">
-          <div className="flex items-center gap-1.5">
-            <div className={`h-2 w-2 rounded-full ${isGold ? "bg-amber-500" : "bg-amber-500"}`} />
-            <span className={`text-[10px] sm:text-[11px] ${isDark ? "text-slate-500" : "text-slate-400"}`}>Active Today</span>
-          </div>
-          <div className="flex items-center gap-1.5">
-            <div className="h-3.5 w-3.5 sm:h-4 sm:w-4 rounded-[2px] sm:rounded-[3px] bg-yellow-500 flex items-center justify-center overflow-hidden">
-              <img
-                src="/valtriox-icon-32.png"
-                alt="Valtriox"
-                className="h-full w-full object-contain"
-                draggable={false}
-              />
-            </div>
-            <span className={`text-[10px] sm:text-[11px] ${isDark ? "text-slate-500" : "text-slate-400"}`}>Has Events</span>
-          </div>
-          <div className="flex items-center gap-1.5">
-            <div className={`h-1.5 w-1.5 sm:h-2 sm:w-2 rounded-full ring-1.5 sm:ring-2 ${accentRing}`} />
-            <span className={`text-[10px] sm:text-[11px] ${isDark ? "text-slate-500" : "text-slate-400"}`}>Today</span>
-          </div>
-          {skippedEventIds.size > 0 && (
-            <div className="flex items-center gap-1.5">
-              <div className="h-2 w-2 rounded-full bg-slate-500/40" />
-              <span className={`text-[10px] sm:text-[11px] ${isDark ? "text-slate-500" : "text-slate-400"}`}>
-                {skippedEventIds.size} skipped
-              </span>
-            </div>
-          )}
-        </div>
-
-        {/* Events this month summary */}
-        {Object.keys(eventsByDay).length > 0 && (
-          <div className="mt-3 pt-3 border-t border-border">
-            <div className="flex items-center justify-between mb-2">
-              <p className={`text-xs font-medium ${isDark ? "text-slate-400" : "text-slate-500"}`}>
-                Events this month ({Object.keys(eventsByDay).length} days)
-              </p>
-              {skippedEventIds.size > 0 && (
-                <p className={`text-[10px] ${isDark ? "text-slate-600" : "text-slate-400"}`}>
-                  ({skippedEventIds.size} hidden)
-                </p>
-              )}
-            </div>
-            <div className="flex flex-wrap gap-1.5 max-h-28 sm:max-h-24 overflow-y-auto">
-              {[...new Map(visibleEvents.map((e) => [e.id, e])).values()].map((event) => (
-                <motion.button
-                  key={event.id}
-                  whileHover={{ scale: 1.03 }}
-                  onClick={() => onEventClick(event)}
-                  className={`flex items-center gap-1 px-2 py-1 rounded-md text-[10px] sm:text-[11px] border transition-colors shrink-0 ${
-                    isDark
-                      ? "bg-white/[0.04] border-white/[0.08] text-slate-300 hover:bg-white/[0.08]"
-                      : "bg-slate-50 border-slate-200 text-slate-600 hover:bg-slate-100"
-                  }`}
-                >
-                  <span>{event.emoji}</span>
-                  <span className="truncate max-w-[60px] sm:max-w-[120px]">{event.name}</span>
-                </motion.button>
-              ))}
-            </div>
-          </div>
-        )}
-      </CardContent>
-    </Card>
-  );
-}
-
-// ============================================================================
-// Skipped Events Panel
-// ============================================================================
-
-function SkippedEventsPanel({
-  events,
-  isDark,
-  isGold,
-  onUnskip,
-}: {
-  events: SeasonalEvent[];
-  isDark: boolean;
-  isGold: boolean;
-  onUnskip: (id: string) => void;
-}) {
-  const accentClass = isGold ? "text-amber-400" : "text-amber-400";
-  const [isExpanded, setIsExpanded] = useState(false);
-
-  if (events.length === 0) return null;
+  const status = getActiveStatus(event);
+  const countdown = getRegionEventCountdown(event);
+  const typeConfig = TYPE_CONFIG[event.category];
 
   return (
     <motion.div
-      initial={{ opacity: 0, y: -10 }}
+      initial={{ opacity: 0, y: 5 }}
       animate={{ opacity: 1, y: 0 }}
-      className={`rounded-xl border overflow-hidden ${
-        isDark ? "bg-white/[0.02] border-white/[0.06]" : "bg-slate-50 border-slate-200"
-      }`}
+      whileHover={{ y: -1 }}
     >
-      <button
-        onClick={() => setIsExpanded(!isExpanded)}
-        className={`w-full flex items-center justify-between px-3 py-2.5 text-left ${
-          isDark ? "hover:bg-white/[0.03]" : "hover:bg-slate-100"
-        } transition-colors`}
+      <div
+        className={`rounded-xl border p-3 sm:p-4 transition-all cursor-pointer ${
+          isDark
+            ? "bg-white/[0.03] border-white/[0.06] hover:border-white/[0.12]"
+            : "bg-white border-slate-200 hover:border-slate-300 hover:shadow-md"
+        }`}
+        onClick={onPreview}
       >
-        <div className="flex items-center gap-2">
-          <SkipForward className={`h-4 w-4 ${accentClass}`} />
-          <span className={`text-xs font-medium ${isDark ? "text-slate-300" : "text-slate-600"}`}>
-            Skipped Events ({events.length})
-          </span>
-        </div>
-        <ChevronRight
-          className={`h-3.5 w-3.5 transition-transform duration-200 ${isDark ? "text-slate-500" : "text-slate-400"} ${
-            isExpanded ? "rotate-90" : ""
-          }`}
-        />
-      </button>
-      <AnimatePresence>
-        {isExpanded && (
-          <motion.div
-            initial={{ height: 0, opacity: 0 }}
-            animate={{ height: "auto", opacity: 1 }}
-            exit={{ height: 0, opacity: 0 }}
-            transition={{ duration: 0.2 }}
-            className="overflow-hidden"
+        <div className="flex items-start gap-3">
+          <div
+            className="w-10 h-10 sm:w-12 sm:h-12 rounded-lg flex items-center justify-center text-xl sm:text-2xl shrink-0"
+            style={{ background: event.theme.gradient }}
           >
-            <div className="px-3 pb-3 space-y-1.5 max-h-48 overflow-y-auto">
-              {events.map((event) => (
-                <div
-                  key={event.id}
-                  className={`flex items-center justify-between gap-2 px-2.5 py-1.5 rounded-lg ${
-                    isDark ? "bg-white/[0.03]" : "bg-white border border-slate-100"
-                  }`}
-                >
-                  <div className="flex items-center gap-2 min-w-0">
-                    <span className="text-sm">{event.emoji}</span>
-                    <span className={`text-xs truncate ${isDark ? "text-slate-400" : "text-slate-500"}`}>
-                      {event.name}
-                    </span>
-                  </div>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className={`h-6 w-6 p-0 shrink-0 ${isDark ? "text-slate-500 hover:text-white hover:bg-white/[0.06]" : "text-slate-400 hover:text-slate-700 hover:bg-slate-100"}`}
-                    onClick={() => onUnskip(event.id)}
-                    title="Unskip"
-                  >
-                    <RotateCcw className="h-3 w-3" />
-                  </Button>
-                </div>
-              ))}
+            {event.emoji}
+          </div>
+          <div className="min-w-0 flex-1">
+            <div className="flex items-start justify-between gap-2">
+              <div className="min-w-0">
+                <h4 className={`text-sm font-semibold truncate ${isDark ? "text-white" : "text-slate-900"}`}>
+                  {event.name}
+                </h4>
+                <p className={`text-xs mt-0.5 flex items-center gap-1 ${isDark ? "text-slate-400" : "text-slate-500"}`}>
+                  <Calendar className="h-3 w-3" />
+                  {event.date === "dynamic" ? `~${MONTH_NAMES[(event.month || 1) - 1]} (lunar)` : formatDateRange(event.date)}
+                </p>
+              </div>
+              <Badge
+                variant="outline"
+                className={`text-[10px] border shrink-0 ${
+                  status === "active"
+                    ? "border-emerald-500/50 text-emerald-500"
+                    : status === "upcoming"
+                      ? isDark ? "text-amber-400 border-amber-500/30" : "text-amber-600 border-amber-200"
+                      : isDark ? "text-slate-600 border-white/[0.08]" : "text-slate-400 border-slate-200"
+                }`}
+              >
+                {status === "active" ? "Active" : status === "upcoming" ? `${countdown}` : "Past"}
+              </Badge>
             </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
+            <div className="flex items-center gap-1.5 mt-1.5">
+              <Badge variant="outline" className={`text-[10px] border ${isDark ? typeConfig.darkColor : typeConfig.color}`}>
+                {typeConfig.label}
+              </Badge>
+            </div>
+            <div className="flex gap-1.5 mt-2">
+              <div className="w-5 h-5 rounded-full border-2" style={{ borderColor: event.theme.primary, backgroundColor: event.theme.primary }} title="Primary" />
+              <div className="w-5 h-5 rounded-full border-2 border-slate-300" style={{ backgroundColor: event.theme.secondary }} title="Secondary" />
+              <div className="w-5 h-5 rounded-full border border-slate-300" style={{ background: event.theme.gradient }} title="Gradient" />
+            </div>
+            {event.promotionalMessage && (
+              <p className={`text-[10px] mt-2 ${isDark ? "text-slate-500" : "text-slate-400"}`} style={{ color: event.theme.primary }}>
+                {event.promotionalMessage}
+              </p>
+            )}
+          </div>
+        </div>
+      </div>
     </motion.div>
   );
 }
 
 // ============================================================================
-// Empty State Component
+// Event Preview Card (Tab 4)
 // ============================================================================
 
-function EmptyState({ isDark, title, description }: { isDark: boolean; title: string; description: string }) {
+function EventPreviewCard({ event, isDark }: { event: RegionEvent; isDark: boolean }) {
+  return (
+    <div className="space-y-4">
+      {/* Mockup Storefront Card */}
+      <Card className={`overflow-hidden ${isDark ? "bg-white/[0.03] border-white/[0.06]" : "bg-white border-slate-200"}`}>
+        <div className="h-32 sm:h-40 relative overflow-hidden" style={{ background: event.theme.gradient }}>
+          <div className="absolute inset-0 flex items-center justify-center">
+            <div className="text-center">
+              <span className="text-4xl sm:text-5xl block mb-1">{event.emoji}</span>
+              <span className="text-sm sm:text-base font-bold text-white drop-shadow-lg">{event.name}</span>
+            </div>
+          </div>
+          <div className="absolute inset-0" style={{ backgroundColor: event.theme.bgPattern }} />
+        </div>
+        <CardContent className="p-4 sm:p-6 space-y-3">
+          <div className="flex items-center gap-3">
+            <div className="flex gap-1.5">
+              <div className="w-6 h-6 rounded-full" style={{ backgroundColor: event.theme.primary }} />
+              <div className="w-6 h-6 rounded-full" style={{ backgroundColor: event.theme.secondary }} />
+            </div>
+            <Badge className="text-xs" style={{ backgroundColor: event.theme.primary, color: "#fff" }}>
+              Live Preview
+            </Badge>
+          </div>
+          <div className={`rounded-lg p-3 ${isDark ? "bg-white/[0.04]" : "bg-slate-50"}`}>
+            <p className={`text-xs font-medium mb-1 ${isDark ? "text-white" : "text-slate-700"}`}>Promotional Banner</p>
+            <div className="rounded-md p-2 text-center" style={{ background: event.theme.gradient }}>
+              <p className="text-xs font-semibold text-white drop-shadow">{event.emoji} {event.name}</p>
+              <p className="text-[10px] text-white/80 mt-0.5">{event.promotionalMessage || "Special event promotion!"}</p>
+            </div>
+          </div>
+          <div className={`rounded-lg p-3 ${isDark ? "bg-white/[0.04]" : "bg-slate-50"}`}>
+            <p className={`text-xs font-medium mb-2 ${isDark ? "text-white" : "text-slate-700"}`}>Product Card Preview</p>
+            <div className="flex gap-3">
+              <div className="w-16 h-16 rounded-lg shrink-0" style={{ backgroundColor: event.theme.bgPattern }} />
+              <div className="flex-1 space-y-1.5">
+                <div className="h-2.5 rounded-full w-3/4" style={{ backgroundColor: event.theme.primary }} />
+                <div className="h-2 rounded-full w-1/2" style={{ backgroundColor: event.theme.secondary + "60" }} />
+                <div className="h-2 rounded-full w-2/3" style={{ backgroundColor: event.theme.primary + "30" }} />
+              </div>
+            </div>
+          </div>
+          <div className={`rounded-lg p-3 ${isDark ? "bg-white/[0.04]" : "bg-slate-50"}`}>
+            <p className={`text-xs font-medium mb-2 ${isDark ? "text-white" : "text-slate-700"}`}>CTA Button</p>
+            <div className="flex gap-2">
+              <div className="px-4 py-2 rounded-lg text-white text-xs font-semibold" style={{ backgroundColor: event.theme.primary }}>
+                Shop Now
+              </div>
+              <div className="px-4 py-2 rounded-lg border-2 text-xs font-semibold" style={{ borderColor: event.theme.primary, color: event.theme.primary }}>
+                Learn More
+              </div>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Theme Details */}
+      <Card className={`p-4 ${isDark ? "bg-white/[0.03] border-white/[0.06]" : "bg-white border-slate-200"}`}>
+        <h4 className={`text-sm font-semibold mb-3 ${isDark ? "text-white" : "text-slate-900"}`}>
+          Theme Details
+        </h4>
+        <div className="grid grid-cols-2 gap-2 text-xs">
+          <div className={`rounded-lg p-2 ${isDark ? "bg-white/[0.04]" : "bg-slate-50"}`}>
+            <p className={isDark ? "text-slate-500" : "text-slate-400"}>Primary</p>
+            <div className="flex items-center gap-2 mt-1">
+              <div className="w-4 h-4 rounded" style={{ backgroundColor: event.theme.primary }} />
+              <code className={`text-[10px] ${isDark ? "text-slate-300" : "text-slate-600"}`}>{event.theme.primary}</code>
+            </div>
+          </div>
+          <div className={`rounded-lg p-2 ${isDark ? "bg-white/[0.04]" : "bg-slate-50"}`}>
+            <p className={isDark ? "text-slate-500" : "text-slate-400"}>Secondary</p>
+            <div className="flex items-center gap-2 mt-1">
+              <div className="w-4 h-4 rounded" style={{ backgroundColor: event.theme.secondary }} />
+              <code className={`text-[10px] ${isDark ? "text-slate-300" : "text-slate-600"}`}>{event.theme.secondary}</code>
+            </div>
+          </div>
+          <div className={`rounded-lg p-2 ${isDark ? "bg-white/[0.04]" : "bg-slate-50"}`}>
+            <p className={isDark ? "text-slate-500" : "text-slate-400"}>Gradient</p>
+            <div className="mt-1 h-4 rounded-full" style={{ background: event.theme.gradient }} />
+          </div>
+          <div className={`rounded-lg p-2 ${isDark ? "bg-white/[0.04]" : "bg-slate-50"}`}>
+            <p className={isDark ? "text-slate-500" : "text-slate-400"}>Category</p>
+            <p className={`mt-1 font-medium ${isDark ? "text-white" : "text-slate-700"}`}>
+              {event.category.charAt(0).toUpperCase() + event.category.slice(1)}
+            </p>
+          </div>
+        </div>
+      </Card>
+    </div>
+  );
+}
+
+// ============================================================================
+// Custom Event Form Dialog
+// ============================================================================
+
+function CustomEventDialog({
+  open,
+  onClose,
+  editEvent,
+  onSubmit,
+  isDark,
+}: {
+  open: boolean;
+  onClose: () => void;
+  editEvent?: RegionEvent | null;
+  onSubmit: (data: Partial<RegionEvent>) => void;
+  isDark: boolean;
+}) {
+  const [form, setForm] = useState({
+    name: editEvent?.name || "",
+    date: editEvent?.date || "",
+    emoji: editEvent?.emoji || "🎉",
+    description: editEvent?.description || "",
+    category: editEvent?.category || "cultural" as RegionEvent["category"],
+    primaryColor: editEvent?.theme?.primary || "#C9A227",
+    secondaryColor: editEvent?.theme?.secondary || "#f59e0b",
+    promotionalMessage: editEvent?.promotionalMessage || "",
+  });
+
+  const categories: Array<{ value: RegionEvent["category"]; label: string }> = [
+    { value: "religious", label: "Religious" },
+    { value: "cultural", label: "Cultural" },
+    { value: "national", label: "National" },
+    { value: "commercial", label: "Commercial" },
+  ];
+
+  /* eslint-disable react-hooks/set-state-in-effect -- form reset on dialog open is intentional */
+  useEffect(() => {
+    if (open) {
+      setForm({
+        name: editEvent?.name || "",
+        date: editEvent?.date || "",
+        emoji: editEvent?.emoji || "🎉",
+        description: editEvent?.description || "",
+        category: editEvent?.category || "cultural" as RegionEvent["category"],
+        primaryColor: editEvent?.theme?.primary || "#C9A227",
+        secondaryColor: editEvent?.theme?.secondary || "#f59e0b",
+        promotionalMessage: editEvent?.promotionalMessage || "",
+      });
+    }
+  }, [open, editEvent]);
+  /* eslint-enable react-hooks/set-state-in-effect */
+
+  const handleSubmit = () => {
+    if (!form.name.trim() || !form.date.trim()) return;
+    onSubmit({
+      name: form.name,
+      date: form.date,
+      emoji: form.emoji,
+      description: form.description,
+      category: form.category,
+      promotionalMessage: form.promotionalMessage,
+      theme: {
+        primary: form.primaryColor,
+        secondary: form.secondaryColor,
+        gradient: `linear-gradient(135deg, ${form.primaryColor}, ${form.secondaryColor})`,
+        bgPattern: `${form.primaryColor}08`,
+      },
+    });
+    onClose();
+  };
+
+  const inputClass = isDark
+    ? "bg-white/[0.06] border-white/[0.1] text-white placeholder:text-slate-500 focus:border-amber-500/50"
+    : "bg-white border-slate-200 text-slate-900 placeholder:text-slate-400 focus:border-amber-500";
+
+  return (
+    <Dialog open={open} onOpenChange={(v) => !v && onClose()}>
+      <DialogContent className={`max-w-md ${isDark ? "bg-slate-900 border-white/[0.06]" : "bg-white"} sm:max-w-[480px]`}>
+        <DialogHeader>
+          <DialogTitle className={`text-base font-semibold ${isDark ? "text-white" : "text-slate-900"}`}>
+            {editEvent ? "Edit Custom Event" : "Create Custom Event"}
+          </DialogTitle>
+          <DialogDescription className={isDark ? "text-slate-400" : "text-slate-500"}>
+            Add brand-specific events like anniversaries, brand launches, or local holidays
+          </DialogDescription>
+        </DialogHeader>
+        <div className="space-y-3 mt-2">
+          <div className="grid grid-cols-4 gap-3">
+            <div className="col-span-3">
+              <Label className={`text-xs font-medium ${isDark ? "text-slate-300" : "text-slate-700"}`}>Event Name</Label>
+              <Input className={`mt-1 ${inputClass}`} value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} placeholder="e.g., Brand Anniversary" />
+            </div>
+            <div>
+              <Label className={`text-xs font-medium ${isDark ? "text-slate-300" : "text-slate-700"}`}>Emoji</Label>
+              <Input className={`mt-1 ${inputClass} text-center text-xl`} value={form.emoji} onChange={(e) => setForm({ ...form, emoji: e.target.value })} placeholder="🎉" maxLength={4} />
+            </div>
+          </div>
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <Label className={`text-xs font-medium ${isDark ? "text-slate-300" : "text-slate-700"}`}>Date (MM-DD)</Label>
+              <Input className={`mt-1 ${inputClass}`} value={form.date} onChange={(e) => setForm({ ...form, date: e.target.value })} placeholder="06-15" />
+            </div>
+            <div>
+              <Label className={`text-xs font-medium ${isDark ? "text-slate-300" : "text-slate-700"}`}>Category</Label>
+              <div className="mt-1 flex flex-wrap gap-1">
+                {categories.map((cat) => (
+                  <button
+                    key={cat.value}
+                    onClick={() => setForm({ ...form, category: cat.value })}
+                    className={`px-2.5 py-1 rounded-md text-[11px] border transition-colors ${
+                      form.category === cat.value
+                        ? isDark
+                          ? "bg-amber-500/20 border-amber-500/40 text-amber-300"
+                          : "bg-amber-50 border-amber-200 text-amber-700"
+                        : isDark
+                          ? "bg-white/[0.04] border-white/[0.08] text-slate-400 hover:bg-white/[0.08]"
+                          : "bg-white border-slate-200 text-slate-600 hover:bg-slate-50"
+                    }`}
+                  >
+                    {cat.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+          </div>
+          <div>
+            <Label className={`text-xs font-medium ${isDark ? "text-slate-300" : "text-slate-700"}`}>Description</Label>
+            <Textarea className={`mt-1 ${inputClass} resize-none`} rows={2} value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} placeholder="Brief description..." />
+          </div>
+          <div>
+            <Label className={`text-xs font-medium ${isDark ? "text-slate-300" : "text-slate-700"}`}>Promotional Message</Label>
+            <Input className={`mt-1 ${inputClass}`} value={form.promotionalMessage} onChange={(e) => setForm({ ...form, promotionalMessage: e.target.value })} placeholder="e.g., Special 25% off!" />
+          </div>
+          <div>
+            <Label className={`text-xs font-medium ${isDark ? "text-slate-300" : "text-slate-700"}`}>Theme Colors</Label>
+            <div className="mt-1 flex items-center gap-3">
+              <div>
+                <p className={`text-[10px] ${isDark ? "text-slate-500" : "text-slate-400"}`}>Primary</p>
+                <input type="color" className="w-8 h-8 rounded cursor-pointer border-0 p-0" value={form.primaryColor} onChange={(e) => setForm({ ...form, primaryColor: e.target.value })} />
+              </div>
+              <div>
+                <p className={`text-[10px] ${isDark ? "text-slate-500" : "text-slate-400"}`}>Secondary</p>
+                <input type="color" className="w-8 h-8 rounded cursor-pointer border-0 p-0" value={form.secondaryColor} onChange={(e) => setForm({ ...form, secondaryColor: e.target.value })} />
+              </div>
+              <div
+                className="flex-1 h-8 rounded-md"
+                style={{ background: `linear-gradient(135deg, ${form.primaryColor}, ${form.secondaryColor})` }}
+              />
+            </div>
+          </div>
+          <div className="flex justify-end gap-2 pt-2">
+            <Button variant="ghost" size="sm" onClick={onClose} className={isDark ? "text-slate-400 hover:text-white hover:bg-white/[0.06]" : ""}>
+              Cancel
+            </Button>
+            <Button size="sm" onClick={handleSubmit} className="bg-amber-600 hover:bg-amber-700 text-white text-xs">
+              {editEvent ? "Save Changes" : "Create Event"}
+            </Button>
+          </div>
+        </div>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+// ============================================================================
+// Empty State
+// ============================================================================
+
+function EmptyState({ isDark, title, description }: { isDark: boolean; title: string; description: string; icon?: React.ReactNode }) {
   return (
     <motion.div
       initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
-      className="text-center py-12 sm:py-16"
+      className="text-center py-10 sm:py-14"
     >
-      <Globe className={`h-12 w-12 sm:h-14 sm:w-14 mx-auto mb-4 ${isDark ? "text-slate-700" : "text-slate-300"}`} />
-      <h3 className={`text-base sm:text-lg font-semibold ${isDark ? "text-slate-300" : "text-slate-600"}`}>{title}</h3>
-      <p className={`text-xs sm:text-sm mt-1 ${isDark ? "text-slate-500" : "text-slate-400"}`}>{description}</p>
+      <div className={`mx-auto mb-3 w-12 h-12 rounded-full flex items-center justify-center ${isDark ? "bg-white/[0.04]" : "bg-slate-100"}`}>
+        {icon || <Globe className={`h-5 w-5 ${isDark ? "text-slate-600" : "text-slate-400"}`} />}
+      </div>
+      <h3 className={`text-sm font-semibold ${isDark ? "text-slate-300" : "text-slate-600"}`}>{title}</h3>
+      <p className={`text-xs mt-1 max-w-xs mx-auto ${isDark ? "text-slate-500" : "text-slate-400"}`}>{description}</p>
     </motion.div>
   );
 }
@@ -723,129 +627,225 @@ export function EventsPage() {
     selectedCountry,
     selectedReligion,
     appTheme,
+    organization,
   } = useValtrioxStore();
 
-  const [previewEventId, setPreviewEventId] = useState<string | null>(null);
-  const [skippedEventIds, setSkippedEventIds] = useState<Set<string>>(() => getSkippedEventIds());
-
-  // Theme helpers
   const isDark = appTheme === "premium-dark" || appTheme === "dark";
   const isGold = appTheme === "premium-dark";
+  const accentClass = isGold ? "text-amber-500" : "text-amber-500";
 
-  // Resolve country + religion for queries (case-insensitive)
-  const resolvedCountry = selectedCountry || "";
-  const resolvedReligion = selectedReligion?.toLowerCase() || "";
+  // State
+  const [regionEvents, setRegionEvents] = useState<RegionEvent[]>([]);
+  const [customEvents, setCustomEvents] = useState<RegionEvent[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [categoryFilter, setCategoryFilter] = useState<string>("all");
+  const [previewEvent, setPreviewEvent] = useState<RegionEvent | null>(null);
+  const [customDialogOpen, setCustomDialogOpen] = useState(false);
+  const [editingEvent, setEditingEvent] = useState<RegionEvent | null>(null);
+  const [forceActivatedIds, setForceActivatedIds] = useState<Set<string>>(new Set());
+  const [deactivatedIds, setDeactivatedIds] = useState<Set<string>>(new Set());
 
-  // Fetch events from real database
+  // Country/religion from store or org
+  const country = selectedCountry || organization?.country || "";
+  const religion = selectedReligion || organization?.religion || "";
+
+  // Fetch events
+  /* eslint-disable react-hooks/set-state-in-effect -- data fetching pattern is standard */
+  useEffect(() => {
+    const controller = new AbortController();
+    const signal = controller.signal;
+
+    if (!country && !religion) {
+      // Use library directly on client
+      const events = getEventsForRegion("", "");
+      if (!signal.aborted) {
+        setRegionEvents(events);
+        setIsLoading(false);
+      }
+      return () => controller.abort();
+    }
+
+    setIsLoading(true);
+    const params = new URLSearchParams();
+    if (country) params.set("country", country);
+    if (religion) params.set("religion", religion);
+
+    fetch(`/api/events/region?${params.toString()}`, { signal })
+      .then((res) => res.json())
+      .then((data) => {
+        if (!signal.aborted) {
+          setRegionEvents(data.regionEvents || data.events?.filter((e: RegionEvent) => !e.id.startsWith("custom-")) || []);
+          setCustomEvents(data.customEvents || data.events?.filter((e: RegionEvent) => e.id.startsWith("custom-")) || []);
+        }
+      })
+      .catch((err) => {
+        if (err.name !== "AbortError" && !signal.aborted) {
+          setRegionEvents(getEventsForRegion(country, religion));
+        }
+      })
+      .finally(() => {
+        if (!signal.aborted) setIsLoading(false);
+      });
+
+    return () => controller.abort();
+  }, [country, religion]);
+  /* eslint-enable react-hooks/set-state-in-effect */
+
+  // Derived data
+  const allEvents = useMemo(() => [...regionEvents, ...customEvents], [regionEvents, customEvents]);
+
   const activeEvents = useMemo(() => {
-    return getActiveEvents(resolvedCountry, resolvedReligion);
-  }, [resolvedCountry, resolvedReligion]);
-
-  const upcomingEvents = useMemo(() => {
-    return getUpcomingEvents(resolvedCountry, resolvedReligion, 365);
-  }, [resolvedCountry, resolvedReligion]);
-
-  const allFilteredEvents = useMemo(() => {
-    const all = getAllEvents();
-    return all.filter((event) => {
-      const countryMatch =
-        !resolvedCountry ||
-        event.countries.includes("all") ||
-        event.countries.includes(resolvedCountry);
-      const religionMatch =
-        !resolvedReligion ||
-        event.religions.includes("all") ||
-        event.religions.includes(resolvedReligion);
-      return countryMatch && religionMatch;
+    return allEvents.filter((e) => {
+      if (deactivatedIds.has(e.id)) return false;
+      if (forceActivatedIds.has(e.id)) return true;
+      return getActiveStatus(e) === "active" || getActiveStatus(e) === "upcoming";
     });
-  }, [resolvedCountry, resolvedReligion]);
+  }, [allEvents, forceActivatedIds, deactivatedIds]);
 
-  // Filter out skipped events for display
-  const visibleActiveEvents = useMemo(
-    () => activeEvents.filter((e) => !skippedEventIds.has(e.id)),
-    [activeEvents, skippedEventIds]
-  );
-  const visibleUpcomingEvents = useMemo(
-    () => upcomingEvents.filter((e) => !skippedEventIds.has(e.id)),
-    [upcomingEvents, skippedEventIds]
-  );
-  const visibleAllEvents = useMemo(
-    () => allFilteredEvents.filter((e) => !skippedEventIds.has(e.id)),
-    [allFilteredEvents, skippedEventIds]
-  );
-  const skippedEvents = useMemo(
-    () => allFilteredEvents.filter((e) => skippedEventIds.has(e.id)),
-    [allFilteredEvents, skippedEventIds]
-  );
-
-  const hasFilters = !!(selectedCountry || selectedReligion);
-
-  // Country display info
-  const countryInfo = useMemo(() => {
-    if (!selectedCountry) return null;
-    return getAllCountries().find((c) => c.code === selectedCountry);
-  }, [selectedCountry]);
-
-  // Combined event list for preview lookups
-  const allEventsMap = useMemo(() => {
-    const map = new Map<string, SeasonalEvent>();
-    getAllEvents().forEach((e) => map.set(e.id, e));
-    return map;
-  }, []);
+  const filteredAllEvents = useMemo(() => {
+    let filtered = allEvents;
+    if (categoryFilter !== "all") {
+      filtered = filtered.filter((e) => e.category === categoryFilter);
+    }
+    if (searchQuery.trim()) {
+      const q = searchQuery.toLowerCase();
+      filtered = filtered.filter(
+        (e) =>
+          e.name.toLowerCase().includes(q) ||
+          e.description.toLowerCase().includes(q) ||
+          e.category.includes(q)
+      );
+    }
+    return filtered;
+  }, [allEvents, categoryFilter, searchQuery]);
 
   // Handlers
-  const handleApplyTheme = useCallback(
-    (event: SeasonalEvent) => {
-      const theme = applyEventTheme(event);
-      setActiveEventTheme(theme);
-      setPreviewEventId(event.id);
-      setFloatingIconsEnabled(true);
-    },
-    [setActiveEventTheme, setFloatingIconsEnabled],
-  );
+  const handleForceActivate = useCallback((eventId: string) => {
+    setForceActivatedIds((prev) => {
+      const next = new Set(prev);
+      next.add(eventId);
+      if (deactivatedIds.has(eventId)) {
+        setDeactivatedIds((prev) => {
+          const n = new Set(prev);
+          n.delete(eventId);
+          return n;
+        });
+      }
+      return next;
+    });
+    toast.success("Event activated!");
+  }, [deactivatedIds]);
+
+  const handleDeactivate = useCallback((eventId: string) => {
+    setDeactivatedIds((prev) => {
+      const next = new Set(prev);
+      next.add(eventId);
+      if (forceActivatedIds.has(eventId)) {
+        setForceActivatedIds((prev) => {
+          const n = new Set(prev);
+          n.delete(eventId);
+          return n;
+        });
+      }
+      return next;
+    });
+    toast.info("Event deactivated");
+  }, [forceActivatedIds]);
+
+  const handlePreview = useCallback((event: RegionEvent) => {
+    setPreviewEvent(event);
+  }, []);
+
+  const handleApplyPreview = useCallback(() => {
+    if (!previewEvent) return;
+    // Convert RegionEvent to SeasonalEvent format for applyEventTheme
+    const seasonEvent: SeasonalEvent = {
+      id: previewEvent.id,
+      name: previewEvent.name,
+      emoji: previewEvent.emoji,
+      date: previewEvent.date === "dynamic" ? "03-15" : previewEvent.date,
+      type: previewEvent.category === "commercial" ? "commercial" : previewEvent.category,
+      religions: [religion || "all"],
+      countries: [country || "all"],
+      theme: {
+        primary: previewEvent.theme.primary,
+        secondary: previewEvent.theme.secondary,
+        accent: previewEvent.theme.primary,
+        gradient: previewEvent.theme.gradient,
+        bgPattern: previewEvent.theme.bgPattern,
+        textOnPrimary: "#ffffff",
+        glow: previewEvent.theme.primary + "60",
+      },
+      description: previewEvent.description,
+      offerTemplate: `{discount}% off — ${previewEvent.name}`,
+      floatingIcons: [previewEvent.emoji],
+    };
+    const theme = applyEventTheme(seasonEvent);
+    setActiveEventTheme(theme);
+    setFloatingIconsEnabled(true);
+    setEventThemingEnabled(true);
+    toast.success(`${previewEvent.emoji} ${previewEvent.name} theme applied!`);
+  }, [previewEvent, religion, country, setActiveEventTheme, setFloatingIconsEnabled, setEventThemingEnabled]);
 
   const handleClearTheme = useCallback(() => {
     setActiveEventTheme(null);
     setEventThemingEnabled(false);
     setFloatingIconsEnabled(false);
-    setPreviewEventId(null);
+    setPreviewEvent(null);
+    toast.info("Theme cleared");
   }, [setActiveEventTheme, setEventThemingEnabled, setFloatingIconsEnabled]);
 
-  const handleCalendarEventClick = useCallback(
-    (event: SeasonalEvent) => {
-      handleApplyTheme(event);
+  const handleCreateCustom = useCallback(
+    (data: Partial<RegionEvent>) => {
+      if (!country) {
+        toast.error("Set country in Settings first");
+        return;
+      }
+      fetch("/api/events/region", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(data),
+      })
+        .then((res) => res.json())
+        .then((data) => {
+          if (data.event) {
+            setCustomEvents((prev) => [...prev, data.event]);
+            toast.success(`Created "${data.event.name}"`);
+          }
+        })
+        .catch(() => toast.error("Failed to create event"));
     },
-    [handleApplyTheme],
+    [country],
   );
 
-  const handleSkipEvent = useCallback((eventId: string) => {
-    setSkippedEventIds((prev) => {
-      const next = new Set(prev);
-      next.add(eventId);
-      saveSkippedEventIds(next);
-      return next;
-    });
-  }, []);
+  const handleEditCustom = useCallback(
+    (data: Partial<RegionEvent>) => {
+      if (!editingEvent) return;
+      setCustomEvents((prev) =>
+        prev.map((e) => (e.id === editingEvent.id ? { ...e, ...data } : e)),
+      );
+      toast.success(`Updated "${editingEvent.name}"`);
+      setEditingEvent(null);
+    },
+    [editingEvent],
+  );
 
-  const handleUnskipEvent = useCallback((eventId: string) => {
-    setSkippedEventIds((prev) => {
-      const next = new Set(prev);
-      next.delete(eventId);
-      saveSkippedEventIds(next);
-      return next;
-    });
-  }, []);
+  const handleDeleteCustom = useCallback(
+    (eventId: string) => {
+      if (!country) return;
+      fetch(`/api/events/region?id=${eventId}`, { method: "DELETE" })
+        .then((res) => res.json())
+        .then(() => {
+          setCustomEvents((prev) => prev.filter((e) => e.id !== eventId));
+          toast.success("Event deleted");
+        })
+        .catch(() => toast.error("Failed to delete event"));
+    },
+    [country],
+  );
 
-  const handleUnskipAll = useCallback(() => {
-    setSkippedEventIds(new Set());
-    saveSkippedEventIds(new Set());
-  }, []);
-
-  // Compute previewed event
-  const previewedEvent = previewEventId ? allEventsMap.get(previewEventId) : null;
-
-  // Accent color
-  const accentClass = isGold ? "text-amber-500" : "text-amber-500";
+  const accentColor = isGold ? "text-amber-500" : "text-amber-500";
 
   return (
     <div className="space-y-4 sm:space-y-6 min-w-0 overflow-hidden">
@@ -853,342 +853,377 @@ export function EventsPage() {
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-4">
         <div className="min-w-0">
           <h1 className={`text-lg sm:text-2xl font-bold flex items-center gap-2 ${isDark ? "text-white" : "text-slate-900"}`}>
-            <PartyPopper className={`h-5 w-5 sm:h-6 sm:w-6 flex-shrink-0 ${accentClass}`} />
-            <span className="truncate">Event Themes</span>
+            <PartyPopper className={`h-5 w-5 sm:h-6 sm:w-6 flex-shrink-0 ${accentColor}`} />
+            <span className="truncate">Seasonal Events</span>
           </h1>
           <p className={`text-xs sm:text-sm mt-1 ${isDark ? "text-slate-400" : "text-slate-500"}`}>
-            Manage dynamic event theming for seasonal celebrations
+            Region-based events for your brand
           </p>
-        </div>
-        <div className="flex flex-wrap items-center gap-2 sm:gap-3">
-          {skippedEventIds.size > 0 && (
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={handleUnskipAll}
-              className={`text-xs h-7 px-2 ${isDark ? "border-white/[0.1] text-slate-300 hover:bg-white/[0.06]" : ""}`}
-            >
-              <RotateCcw className="h-3 w-3 mr-1.5" />
-              Restore All
-            </Button>
+          {/* Country + Religion Badge Bar */}
+          {(country || religion) && (
+            <div className="flex flex-wrap items-center gap-2 mt-2">
+              {country && (
+                <Badge
+                  variant="outline"
+                  className={`text-[11px] gap-1.5 px-2.5 py-1 border ${
+                    isDark
+                      ? "border-white/[0.1] bg-white/[0.04] text-slate-300"
+                      : "border-slate-200 bg-slate-50 text-slate-700"
+                  }`}
+                >
+                  <MapPin className="h-3 w-3" />
+                  {getCountryFlag(normalizeCountryCode(country))} {getCountryName(normalizeCountryCode(country))}
+                </Badge>
+              )}
+              {religion && (
+                <Badge
+                  variant="outline"
+                  className={`text-[11px] gap-1.5 px-2.5 py-1 border ${
+                    isDark
+                      ? "border-amber-500/20 bg-amber-500/10 text-amber-300"
+                      : "border-amber-200 bg-amber-50 text-amber-700"
+                  }`}
+                >
+                  <Heart className="h-3 w-3" />
+                  {religion.charAt(0).toUpperCase() + religion.slice(1)}
+                </Badge>
+              )}
+              <span className={`text-[10px] ${isDark ? "text-slate-500" : "text-slate-400"}`}>
+                {allEvents.length} event{allEvents.length !== 1 ? "s" : ""} available
+              </span>
+            </div>
           )}
+        </div>
+        <div className="flex flex-wrap items-center gap-2">
           {activeEventTheme && (
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={handleClearTheme}
-              className={`text-xs h-7 px-2 ${isDark ? "border-white/[0.1] text-slate-300 hover:bg-white/[0.06]" : ""}`}
-            >
+            <Button variant="outline" size="sm" onClick={handleClearTheme} className={`text-xs h-7 ${isDark ? "border-white/[0.1] text-slate-300" : ""}`}>
               <EyeOff className="h-3.5 w-3.5 mr-1.5" />
               Clear Theme
             </Button>
           )}
-          <Button
-            size="sm"
-            onClick={() => {
-              if (activeEventTheme) {
-                setEventThemingEnabled(!eventThemingEnabled);
-                if (!eventThemingEnabled) setFloatingIconsEnabled(true);
-              }
-            }}
-            disabled={!activeEventTheme}
-            className={`text-xs ${
-              eventThemingEnabled
-                ? isGold
-                  ? "bg-amber-600 hover:bg-amber-700 text-white"
-                  : "bg-amber-600 hover:bg-amber-700 text-white"
-                : isDark
-                  ? "bg-white/[0.06] text-slate-300 hover:bg-white/[0.1]"
-                  : ""
-            }`}
-          >
-            {eventThemingEnabled ? (
-              <ToggleRight className="h-4 w-4 mr-1.5" />
-            ) : (
-              <ToggleLeft className="h-4 w-4 mr-1.5" />
-            )}
-            <span className="hidden sm:inline">{eventThemingEnabled ? "Theming Active" : "Enable Theming"}</span>
-            <span className="sm:hidden">{eventThemingEnabled ? "Active" : "Enable"}</span>
+          <Button size="sm" onClick={() => setCustomDialogOpen(true)} className="bg-amber-600 hover:bg-amber-700 text-white text-xs">
+            <Plus className="h-3.5 w-3.5 mr-1.5" />
+            Custom Event
           </Button>
         </div>
       </div>
 
-      {/* Filter Banner */}
-      <AnimatePresence mode="wait">
-        {hasFilters ? (
-          <motion.div
-            key="filter-active"
-            initial={{ opacity: 0, y: -10 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -10 }}
-            className={`rounded-xl p-2.5 sm:p-4 border flex flex-col sm:flex-row sm:items-center gap-1.5 sm:gap-3 ${
-              isDark
-                ? `bg-amber-500/5 border-amber-500/20`
-                : "bg-amber-50/50 border-amber-200"
-            }`}
-          >
-            <Filter className={`h-4 w-4 sm:h-5 sm:w-5 flex-shrink-0 ${isGold ? "text-amber-500" : "text-amber-600"}`} />
-            <div className="min-w-0">
-              <p className={`text-xs sm:text-sm font-semibold ${isDark ? "text-amber-300" : "text-amber-800"} break-words`}>
-                Showing events for: {countryInfo ? `${countryInfo.name} (${countryInfo.flag})` : "All Countries"}
-                {selectedReligion && ` • ${selectedReligion.charAt(0).toUpperCase() + selectedReligion.slice(1)}`}
-              </p>
-              <p className={`text-[10px] sm:text-xs mt-0.5 ${isDark ? "text-amber-400/60" : "text-amber-600"}`}>
-                {visibleActiveEvents.length} active, {visibleUpcomingEvents.length} upcoming, {visibleAllEvents.length} total events match your filters
-              </p>
-            </div>
-          </motion.div>
-        ) : (
-          <motion.div
-            key="filter-empty"
-            initial={{ opacity: 0, y: -10 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -10 }}
-            className={`rounded-xl p-2.5 sm:p-4 border flex flex-col sm:flex-row sm:items-center gap-1.5 sm:gap-3 ${
-              isDark
-                ? "bg-amber-500/5 border-amber-500/20"
-                : "bg-amber-50/50 border-amber-200"
-            }`}
-          >
-            <Info className={`h-4 w-4 sm:h-5 sm:w-5 flex-shrink-0 ${isDark ? "text-amber-400" : "text-amber-600"}`} />
-            <div className="min-w-0">
-              <p className={`text-xs sm:text-sm font-semibold ${isDark ? "text-amber-300" : "text-amber-800"}`}>
-                Select country & religion in Settings
-              </p>
-              <p className={`text-[10px] sm:text-xs mt-0.5 ${isDark ? "text-amber-400/60" : "text-amber-600"}`}>
-                Showing all {visibleAllEvents.length} events globally. Configure your region in Settings for personalized results.
-              </p>
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
-
-      {/* Skipped Events Panel */}
-      {skippedEvents.length > 0 && (
-        <SkippedEventsPanel
-          events={skippedEvents}
-          isDark={isDark}
-          isGold={isGold}
-          onUnskip={handleUnskipEvent}
-        />
-      )}
-
-      {/* Active Theme Status Banner */}
+      {/* Active Theme Banner */}
       <AnimatePresence>
-        {activeEventTheme && previewedEvent && (
+        {activeEventTheme && !previewEvent && (
           <motion.div
             initial={{ opacity: 0, y: -10 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -10 }}
-            className="rounded-xl p-2.5 sm:p-4 border"
+            className="rounded-xl p-2.5 sm:p-3 border"
             style={{
               background: activeEventTheme.gradient,
               borderColor: activeEventTheme.primary,
             }}
           >
-            <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-              <div className="flex items-center gap-2 sm:gap-3 min-w-0">
-                <span className="text-xl sm:text-2xl flex-shrink-0">{previewedEvent.emoji}</span>
-                <div className="min-w-0">
-                  <p className="font-semibold text-xs sm:text-sm text-white truncate">
-                    {previewedEvent.name} Applied
-                  </p>
-                  <p className="text-[10px] sm:text-xs text-white/80">
-                    {eventThemingEnabled
-                      ? "Event theming is active across your storefront"
-                      : "Click 'Enable Theming' to activate"}
-                  </p>
-                </div>
+            <div className="flex items-center justify-between gap-3">
+              <div className="flex items-center gap-2 min-w-0">
+                <Sparkles className="h-4 w-4 text-white shrink-0" />
+                <p className="text-xs font-semibold text-white truncate">
+                  {eventThemingEnabled ? "Event theme is live" : "Preview ready — click Enable in header"}
+                </p>
               </div>
-              <div className="flex items-center gap-2">
-                <div className="flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 bg-black/20 backdrop-blur-sm">
-                  <Eye className="h-3 w-3 sm:h-3.5 sm:w-3.5 text-white" />
-                  <span className="text-[10px] sm:text-xs font-medium text-white">Preview</span>
-                </div>
-                <Button
-                  size="sm"
-                  variant="ghost"
-                  className="h-6 w-6 sm:h-7 sm:w-auto sm:px-2 text-xs text-white hover:bg-white/20"
-                  onClick={handleClearTheme}
-                >
-                  <EyeOff className="h-3 w-3 sm:mr-1" />
-                  <span className="hidden sm:inline">Clear</span>
-                </Button>
-              </div>
+              <Button size="sm" variant="ghost" onClick={handleClearTheme} className="h-7 text-xs text-white/80 hover:text-white hover:bg-white/10">
+                <X className="h-3.5 w-3.5" />
+              </Button>
             </div>
           </motion.div>
         )}
       </AnimatePresence>
 
-      {/* Event Tabs */}
-      <Tabs defaultValue="active">
-        <TabsList className={`${isDark ? "bg-white/[0.04] border border-white/[0.06]" : ""} overflow-x-auto flex-nowrap w-full justify-start sm:justify-center`}>
-          <TabsTrigger
-            value="active"
-            className={`gap-1 sm:gap-1.5 text-xs sm:text-sm data-[state=active]:${
-              isGold ? "bg-amber-500/15 text-amber-400" : "bg-amber-500/15 text-amber-600"
-            } ${isDark ? "text-slate-400" : ""} shrink-0`}
-          >
-            <PartyPopper className="h-3 w-3 sm:h-3.5 sm:w-3.5" />
-            Active
-            {visibleActiveEvents.length > 0 && (
-              <Badge variant="secondary" className={`h-4 sm:h-5 min-w-[16px] sm:min-w-[20px] text-[9px] sm:text-[10px] px-1 ${isGold ? "bg-amber-500/20 text-amber-400" : "bg-amber-500/20 text-amber-600"}`}>
-                {visibleActiveEvents.length}
-              </Badge>
-            )}
+      {/* Main Tabs */}
+      <Tabs defaultValue="active" className="w-full">
+        <TabsList className={`${isDark ? "bg-white/[0.04] border-white/[0.06]" : ""} overflow-x-auto flex-nowrap w-full justify-start`}>
+          <TabsTrigger value="active" className={`text-xs ${isDark ? "data-[state=active]:bg-amber-500/20 data-[state=active]:text-amber-300 data-[state=active]:border-amber-500/30" : ""}`}>
+            <CalendarDays className="h-3.5 w-3.5 mr-1" />
+            Active Events
           </TabsTrigger>
-          <TabsTrigger
-            value="upcoming"
-            className={`gap-1 sm:gap-1.5 text-xs sm:text-sm data-[state=active]:${
-              isGold ? "bg-amber-500/15 text-amber-400" : "bg-amber-500/15 text-amber-600"
-            } ${isDark ? "text-slate-400" : ""} shrink-0`}
-          >
-            <Clock className="h-3 w-3 sm:h-3.5 sm:w-3.5" />
-            Upcoming
-            {visibleUpcomingEvents.length > 0 && (
-              <Badge variant="secondary" className={`h-4 sm:h-5 min-w-[16px] sm:min-w-[20px] text-[9px] sm:text-[10px] px-1 ${isGold ? "bg-amber-500/20 text-amber-400" : "bg-amber-500/20 text-amber-600"}`}>
-                {visibleUpcomingEvents.length}
-              </Badge>
-            )}
-          </TabsTrigger>
-          <TabsTrigger
-            value="all"
-            className={`gap-1 sm:gap-1.5 text-xs sm:text-sm data-[state=active]:${
-              isGold ? "bg-amber-500/15 text-amber-400" : "bg-amber-500/15 text-amber-600"
-            } ${isDark ? "text-slate-400" : ""} shrink-0`}
-          >
-            <Globe className="h-3 w-3 sm:h-3.5 sm:w-3.5" />
+          <TabsTrigger value="all" className={`text-xs ${isDark ? "data-[state=active]:bg-amber-500/20 data-[state=active]:text-amber-300 data-[state=active]:border-amber-500/30" : ""}`}>
+            <Filter className="h-3.5 w-3.5 mr-1" />
             All Events
-            <Badge variant="secondary" className={`h-4 sm:h-5 min-w-[16px] sm:min-w-[20px] text-[9px] sm:text-[10px] px-1 ${isDark ? "bg-white/[0.06] text-slate-400" : "bg-slate-100 text-slate-500"}`}>
-              {visibleAllEvents.length}
-            </Badge>
           </TabsTrigger>
-          <TabsTrigger
-            value="calendar"
-            className={`gap-1 sm:gap-1.5 text-xs sm:text-sm data-[state=active]:${
-              isGold ? "bg-amber-500/15 text-amber-400" : "bg-amber-500/15 text-amber-600"
-            } ${isDark ? "text-slate-400" : ""} shrink-0`}
-          >
-            <Calendar className="h-3 w-3 sm:h-3.5 sm:w-3.5" />
-            Calendar
+          <TabsTrigger value="custom" className={`text-xs ${isDark ? "data-[state=active]:bg-amber-500/20 data-[state=active]:text-amber-300 data-[state=active]:border-amber-500/30" : ""}`}>
+            <Plus className="h-3.5 w-3.5 mr-1" />
+            Custom Events
+          </TabsTrigger>
+          <TabsTrigger value="preview" className={`text-xs ${isDark ? "data-[state=active]:bg-amber-500/20 data-[state=active]:text-amber-300 data-[state=active]:border-amber-500/30" : ""}`}>
+            <Eye className="h-3.5 w-3.5 mr-1" />
+            Preview
           </TabsTrigger>
         </TabsList>
 
-        {/* Active Events Tab */}
+        {/* Tab 1: Active Events */}
         <TabsContent value="active" className="mt-3 sm:mt-4">
-          {visibleActiveEvents.length > 0 ? (
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-3 sm:gap-4"
-            >
-              {visibleActiveEvents.map((event) => (
-                <EventCard
-                  key={event.id}
-                  event={event}
-                  isPreviewed={previewEventId === event.id}
-                  isApplied={previewEventId === event.id}
-                  isDark={isDark}
-                  isGold={isGold}
-                  isSkipped={skippedEventIds.has(event.id)}
-                  onApply={() => handleApplyTheme(event)}
-                  onSkip={() => handleSkipEvent(event.id)}
-                  onUnskip={() => handleUnskipEvent(event.id)}
-                />
+          {isLoading ? (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
+              {[1, 2, 3].map((i) => (
+                <div key={i} className={`h-48 rounded-xl animate-pulse ${isDark ? "bg-white/[0.03]" : "bg-slate-100"}`} />
               ))}
-            </motion.div>
-          ) : (
+            </div>
+          ) : activeEvents.length === 0 ? (
             <EmptyState
               isDark={isDark}
-              title="No active events right now"
-              description={
-                hasFilters
-                  ? "No events are happening today for your selected country and religion. Check the Upcoming tab!"
-                  : "No events are happening today globally. Check the Upcoming or All Events tab."
-              }
+              title="No active events"
+              description={country ? "No events are currently active for your region. They will appear here automatically when the time comes." : "Set your country and religion in Settings to see region-specific events."}
+              icon={<CalendarDays className="h-5 w-5" />}
             />
+          ) : (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
+              {activeEvents.map((event) => (
+                <ActiveEventCard
+                  key={event.id}
+                  event={event}
+                  isActive={forceActivatedIds.has(event.id) || getActiveStatus(event) === "active"}
+                  isDark={isDark}
+                  onForceActivate={() => handleForceActivate(event.id)}
+                  onDeactivate={() => handleDeactivate(event.id)}
+                  onPreview={() => handlePreview(event)}
+                />
+              ))}
+            </div>
           )}
         </TabsContent>
 
-        {/* Upcoming Events Tab */}
-        <TabsContent value="upcoming" className="mt-3 sm:mt-4">
-          {visibleUpcomingEvents.length > 0 ? (
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-3 sm:gap-4"
-            >
-              {visibleUpcomingEvents.map((event) => (
-                <EventCard
-                  key={event.id}
-                  event={event}
-                  isPreviewed={previewEventId === event.id}
-                  isApplied={previewEventId === event.id}
-                  isDark={isDark}
-                  isGold={isGold}
-                  isSkipped={skippedEventIds.has(event.id)}
-                  onApply={() => handleApplyTheme(event)}
-                  onSkip={() => handleSkipEvent(event.id)}
-                  onUnskip={() => handleUnskipEvent(event.id)}
-                />
-              ))}
-            </motion.div>
-          ) : (
-            <EmptyState
-              isDark={isDark}
-              title="No upcoming events"
-              description={
-                hasFilters
-                  ? "No events found in the next 365 days for your filters."
-                  : "No upcoming events found in the next 365 days."
-              }
-            />
-          )}
-        </TabsContent>
-
-        {/* All Events Tab */}
+        {/* Tab 2: All Events */}
         <TabsContent value="all" className="mt-3 sm:mt-4">
-          {visibleAllEvents.length > 0 ? (
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-3 sm:gap-4"
-            >
-              {visibleAllEvents.map((event) => (
-                <EventCard
-                  key={event.id}
-                  event={event}
-                  isPreviewed={previewEventId === event.id}
-                  isApplied={previewEventId === event.id}
-                  isDark={isDark}
-                  isGold={isGold}
-                  isSkipped={skippedEventIds.has(event.id)}
-                  onApply={() => handleApplyTheme(event)}
-                  onSkip={() => handleSkipEvent(event.id)}
-                  onUnskip={() => handleUnskipEvent(event.id)}
-                />
+          <div className="flex flex-col sm:flex-row gap-2 sm:gap-3 mb-3">
+            <div className="relative flex-1">
+              <Search className={`absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 ${isDark ? "text-slate-500" : "text-slate-400"}`} />
+              <Input
+                placeholder="Search events..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className={`pl-8 h-8 text-xs ${isDark ? "bg-white/[0.06] border-white/[0.1] text-white placeholder:text-slate-500" : ""}`}
+              />
+            </div>
+            <div className="flex items-center gap-1 flex-wrap">
+              <button
+                onClick={() => setCategoryFilter("all")}
+                className={`px-2.5 py-1.5 rounded-md text-[11px] border transition-colors ${
+                  categoryFilter === "all"
+                    ? isGold
+                      ? "bg-amber-500/20 border-amber-500/40 text-amber-300"
+                      : "bg-amber-50 border-amber-200 text-amber-700"
+                    : isDark
+                      ? "bg-white/[0.04] border-white/[0.08] text-slate-400 hover:bg-white/[0.08]"
+                      : "bg-white border-slate-200 text-slate-600 hover:bg-slate-50"
+                }`}
+              >
+                All
+              </button>
+              {(["religious", "cultural", "national", "commercial"] as const).map((cat) => (
+                <button
+                  key={cat}
+                  onClick={() => setCategoryFilter(cat)}
+                  className={`px-2.5 py-1.5 rounded-md text-[11px] border transition-colors ${
+                    categoryFilter === cat
+                      ? isDark
+                        ? `${TYPE_CONFIG[cat].darkColor}`
+                        : `${TYPE_CONFIG[cat].color}`
+                      : isDark
+                        ? "bg-white/[0.04] border-white/[0.08] text-slate-400 hover:bg-white/[0.08]"
+                        : "bg-white border-slate-200 text-slate-600 hover:bg-slate-50"
+                  }`}
+                >
+                  {TYPE_CONFIG[cat].label}
+                </button>
               ))}
-            </motion.div>
-          ) : (
+            </div>
+          </div>
+          {filteredAllEvents.length === 0 ? (
             <EmptyState
               isDark={isDark}
               title="No matching events"
-              description="No events found for your current country and religion settings."
+              description={searchQuery ? "Try a different search term." : "No events found for the selected filters."}
             />
+          ) : (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4 max-h-[600px] overflow-y-auto">
+              {filteredAllEvents.map((event) => (
+                <AllEventCard key={event.id} event={event} isDark={isDark} onPreview={() => handlePreview(event)} />
+              ))}
+            </div>
           )}
         </TabsContent>
 
-        {/* Calendar Tab */}
-        <TabsContent value="calendar" className="mt-3 sm:mt-4">
-          <EventCalendar
-            events={allFilteredEvents}
-            skippedEventIds={skippedEventIds}
-            isDark={isDark}
-            isGold={isGold}
-            onEventClick={handleCalendarEventClick}
-          />
+        {/* Tab 3: Custom Events */}
+        <TabsContent value="custom" className="mt-3 sm:mt-4">
+          <div className="flex items-center justify-between mb-3">
+            <p className={`text-xs ${isDark ? "text-slate-400" : "text-slate-500"}`}>
+              {customEvents.length} custom event{customEvents.length !== 1 ? "s" : ""}
+            </p>
+            <Button size="sm" onClick={() => { setEditingEvent(null); setCustomDialogOpen(true); }} className="bg-amber-600 hover:bg-amber-700 text-white text-xs h-7">
+              <Plus className="h-3.5 w-3.5 mr-1.5" />
+              Add Event
+            </Button>
+          </div>
+          {customEvents.length === 0 ? (
+            <EmptyState
+              isDark={isDark}
+              title="No custom events yet"
+              description="Create your first custom event for brand anniversaries, local holidays, or promotional campaigns."
+              icon={<Plus className="h-5 w-5" />}
+            />
+          ) : (
+            <div className="space-y-2 max-h-[600px] overflow-y-auto">
+              {customEvents.map((event) => (
+                <motion.div
+                  key={event.id}
+                  initial={{ opacity: 0, y: 5 }}
+                  animate={{ opacity: 1, y: 0 }}
+                >
+                  <div
+                    className={`flex items-center gap-3 p-3 rounded-xl border transition-colors ${
+                      isDark
+                        ? "bg-white/[0.03] border-white/[0.06] hover:bg-white/[0.05]"
+                        : "bg-white border-slate-200 hover:border-slate-300"
+                    }`}
+                  >
+                    <div
+                      className="w-10 h-10 rounded-lg flex items-center justify-center text-xl shrink-0"
+                      style={{ background: event.theme.gradient }}
+                    >
+                      {event.emoji}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <h4 className={`text-sm font-semibold truncate ${isDark ? "text-white" : "text-slate-900"}`}>
+                        {event.name}
+                      </h4>
+                      <p className={`text-[10px] flex items-center gap-1 ${isDark ? "text-slate-400" : "text-slate-500"}`}>
+                        <Calendar className="h-2.5 w-2.5" />
+                        {event.date === "dynamic" ? "Lunar" : formatDateRange(event.date)} • {TYPE_CONFIG[event.category]?.label}
+                      </p>
+                    </div>
+                    <div className="flex items-center gap-1 shrink-0">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className={`h-7 w-7 p-0 ${isDark ? "text-slate-400 hover:text-white hover:bg-white/[0.06]" : "text-slate-500 hover:text-slate-700 hover:bg-slate-50"}`}
+                        onClick={() => { setEditingEvent(event); setCustomDialogOpen(true); }}
+                      >
+                        <Edit3 className="h-3.5 w-3.5" />
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className={`h-7 w-7 p-0 text-red-500 hover:text-red-400 hover:bg-red-500/10`}
+                        onClick={() => handleDeleteCustom(event.id)}
+                      >
+                        <Trash2 className="h-3.5 w-3.5" />
+                      </Button>
+                    </div>
+                  </div>
+                </motion.div>
+              ))}
+            </div>
+          )}
+        </TabsContent>
+
+        {/* Tab 4: Event Preview */}
+        <TabsContent value="preview" className="mt-3 sm:mt-4">
+          {previewEvent ? (
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+              <div>
+                <h3 className={`text-sm font-semibold mb-3 ${isDark ? "text-white" : "text-slate-900"}`}>
+                  Event Details
+                </h3>
+                <Card className={`p-4 ${isDark ? "bg-white/[0.03] border-white/[0.06]" : "bg-white border-slate-200"}`}>
+                  <div className="flex items-start gap-3">
+                    <div
+                      className="w-14 h-14 rounded-xl flex items-center justify-center text-3xl shrink-0"
+                      style={{ background: previewEvent.theme.gradient }}
+                    >
+                      {previewEvent.emoji}
+                    </div>
+                    <div className="min-w-0">
+                      <h4 className={`text-base font-bold ${isDark ? "text-white" : "text-slate-900"}`}>
+                        {previewEvent.name}
+                      </h4>
+                      <p className={`text-xs mt-0.5 ${isDark ? "text-slate-400" : "text-slate-500"}`}>
+                        {previewEvent.description}
+                      </p>
+                      <div className="flex items-center gap-1.5 mt-1.5">
+                        <Badge variant="outline" className={`text-[10px] border ${isDark ? TYPE_CONFIG[previewEvent.category]?.darkColor : TYPE_CONFIG[previewEvent.category]?.color}`}>
+                          {TYPE_CONFIG[previewEvent.category]?.label}
+                        </Badge>
+                        <span className={`text-[10px] ${isDark ? "text-slate-500" : "text-slate-400"}`}>
+                          {previewEvent.date === "dynamic" ? `Lunar (~${MONTH_NAMES[(previewEvent.month || 1) - 1]})` : formatDateRange(previewEvent.date)}
+                        </span>
+                      </div>
+                      {previewEvent.promotionalMessage && (
+                        <p className={`text-xs mt-2 font-medium px-2.5 py-1.5 rounded-md ${isDark ? "bg-white/[0.04] text-amber-300" : "bg-amber-50 text-amber-700"}`}>
+                          {previewEvent.promotionalMessage}
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                </Card>
+              </div>
+              <EventPreviewCard event={previewEvent} isDark={isDark} />
+            </div>
+          ) : (
+            <EmptyState
+              isDark={isDark}
+              title="Select an event to preview"
+              description="Click the eye icon on any event card to see how the theme would look on your storefront."
+              icon={<Eye className="h-5 w-5" />}
+            />
+          )}
         </TabsContent>
       </Tabs>
+
+      {/* Preview Apply CTA */}
+      <AnimatePresence>
+        {previewEvent && (
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: 10 }}
+            className="rounded-xl p-3 border flex flex-col sm:flex-row sm:items-center gap-3"
+            style={{
+              background: previewEvent.theme.gradient,
+              borderColor: previewEvent.theme.primary,
+            }}
+          >
+            <div className="flex items-center gap-2 min-w-0">
+              <span className="text-2xl">{previewEvent.emoji}</span>
+              <div className="min-w-0">
+                <p className="font-semibold text-xs sm:text-sm text-white truncate">{previewEvent.name}</p>
+                <p className="text-[10px] text-white/80">
+                  {eventThemingEnabled ? "Theme is active on your storefront" : "Click below to apply this theme"}
+                </p>
+              </div>
+            </div>
+            <div className="flex items-center gap-2 shrink-0">
+              {eventThemingEnabled && (
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  onClick={handleClearTheme}
+                  className="h-7 text-[11px] text-white/80 hover:text-white hover:bg-white/10"
+                >
+                  <EyeOff className="h-3.5 w-3.5 mr-1" />
+                  Hide
+                </Button>
+              )}
+              <Button
+                size="sm"
+                onClick={handleApplyPreview}
+                className={`h-7 text-[11px font-semibold text-white ${
+                  isGold ? "bg-amber-600 hover:bg-amber-700" : "bg-white/20 hover:bg-white/30"
+                }`}
+              >
+                <Palette className="h-3.5 w-3.5 mr-1.5" />
+                Apply Theme
+              </Button>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }
