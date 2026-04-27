@@ -4,6 +4,7 @@ import { useState, useMemo, useCallback, useRef, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useValtrioxStore } from "@/store/brandflow-store";
 import { usePlatformIdentity } from "@/lib/platform-identity";
+import { fetchWithAuth } from "@/lib/fetch-with-auth";
 import {
   Card,
   CardContent,
@@ -1093,7 +1094,7 @@ export function SupportChatPage() {
   // ── Fetch conversations (admin only) ──
   const fetchConversations = useCallback(async () => {
     try {
-      const res = await fetch("/api/support-chat?mode=conversations");
+      const res = await fetchWithAuth("/api/support-chat?mode=conversations");
       if (!res.ok) return;
       const data = await res.json();
       const conversations: ClientConversation[] = (data.conversations || []).map((c: any) => ({
@@ -1126,7 +1127,7 @@ export function SupportChatPage() {
       } else {
         params = `?mode=messages`;
       }
-      const res = await fetch(`/api/support-chat${params}`);
+      const res = await fetchWithAuth(`/api/support-chat${params}`);
       if (!res.ok) return;
       const data = await res.json();
       const messages: SupportMessage[] = (data.messages || []).map((m: any) => ({
@@ -1163,12 +1164,15 @@ export function SupportChatPage() {
       if (msg.voiceNote) payload.voiceNote = msg.voiceNote;
       if (msg.callInfo) payload.callInfo = msg.callInfo;
 
-      const res = await fetch("/api/support-chat", {
+      const res = await fetchWithAuth("/api/support-chat", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),
       });
-      if (!res.ok) return null;
+      if (!res.ok) {
+        console.error("[SupportChat] Send failed:", res.status, res.statusText);
+        return null;
+      }
       const data = await res.json();
       const savedMsg: SupportMessage = {
         id: data.message.id,
@@ -1198,7 +1202,7 @@ export function SupportChatPage() {
   const deleteMessage = useCallback(async (targetConvId: string | null, messageId: string) => {
     if (!targetConvId) return;
     try {
-      await fetch(`/api/support-chat?messageId=${messageId}&conversationId=${targetConvId}`, {
+      await fetchWithAuth(`/api/support-chat?messageId=${messageId}&conversationId=${targetConvId}`, {
         method: "DELETE",
       });
       // Remove from local state and add system message
@@ -1350,6 +1354,8 @@ export function SupportChatPage() {
     // Get the DB conversation ID for admin
     const dbConvId = isAdmin ? conversationIdMap[targetId] : targetId;
 
+    let sendSuccess = false;
+
     if (hasAttachment) {
       try {
         const url = await fileToBase64(pendingAttachment);
@@ -1368,12 +1374,15 @@ export function SupportChatPage() {
           type: "attachment",
           attachment,
         };
-        await sendMessage(dbConvId, msg, isAdmin ? undefined : orgName);
+        const result = await sendMessage(dbConvId, msg, isAdmin ? undefined : orgName);
+        if (result) sendSuccess = true;
       } catch {
         // Failed to process file
       }
-      setPendingAttachment(null);
-      setAttachmentPreview(undefined);
+      if (sendSuccess) {
+        setPendingAttachment(null);
+        setAttachmentPreview(undefined);
+      }
     }
 
     if (hasText && !hasAttachment) {
@@ -1384,10 +1393,13 @@ export function SupportChatPage() {
         timestamp: Date.now(),
         type: "text",
       };
-      await sendMessage(dbConvId, msg, isAdmin ? undefined : orgName);
+      const result = await sendMessage(dbConvId, msg, isAdmin ? undefined : orgName);
+      if (result) sendSuccess = true;
     }
 
-    setMessageInput("");
+    if (sendSuccess) {
+      setMessageInput("");
+    }
   }, [messageInput, pendingAttachment, createBaseMessage, sendMessage, fileToBase64, getTargetOrgId, isAdmin, conversationIdMap, orgName]);
 
   // Handle voice note stop
