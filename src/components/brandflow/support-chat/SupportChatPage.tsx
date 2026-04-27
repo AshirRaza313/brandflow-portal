@@ -1097,6 +1097,27 @@ export function SupportChatPage() {
   const currentConversationId = isAdmin ? activeClientOrgId : orgId;
   const currentMessages = currentConversationId ? (messagesMap[currentConversationId] || []) : [];
 
+  // ── Helper: build auth headers directly from localStorage ──
+  // Must be declared BEFORE all callbacks that reference it (TDZ fix).
+  const getDirectAuthHeaders = useCallback((): Record<string, string> => {
+    try {
+      const userStr = localStorage.getItem("valtriox-user");
+      const orgStr = localStorage.getItem("valtriox-org");
+      if (!userStr) return {};
+      const user = JSON.parse(userStr);
+      const org = orgStr ? JSON.parse(orgStr) : null;
+      if (!user?.id) return {};
+      return {
+        "X-User-Id": user.id,
+        "X-User-Email": user.email || "",
+        "X-User-Role": user.role || "member",
+        "X-Org-Id": org?.id || "",
+      };
+    } catch {
+      return {};
+    }
+  }, []);
+
   // ── Fetch conversations (admin only) ──
   const fetchConversations = useCallback(async () => {
     try {
@@ -1159,28 +1180,6 @@ export function SupportChatPage() {
       setMessagesMap((prev) => ({ ...prev, [convId]: messages }));
     } catch {}
   }, [isAdmin, conversationIdMap]);
-
-  // ── Helper: build auth headers directly from store/localStorage ──
-  // This is a robust fallback that reads auth data the same way the store does,
-  // ensuring headers are always present even if fetchWithAuth misses them.
-  const getDirectAuthHeaders = useCallback((): Record<string, string> => {
-    try {
-      const userStr = localStorage.getItem("valtriox-user");
-      const orgStr = localStorage.getItem("valtriox-org");
-      if (!userStr) return {};
-      const user = JSON.parse(userStr);
-      const org = orgStr ? JSON.parse(orgStr) : null;
-      if (!user?.id) return {};
-      return {
-        "X-User-Id": user.id,
-        "X-User-Email": user.email || "",
-        "X-User-Role": user.role || "member",
-        "X-Org-Id": org?.id || "",
-      };
-    } catch {
-      return {};
-    }
-  }, []);
 
   // ── Send message via API ──
   const sendMessage = useCallback(async (targetConvId: string | null, msg: SupportMessage, orgNameOverride?: string) => {
