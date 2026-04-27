@@ -45,6 +45,7 @@ import {
   Heart,
 } from "lucide-react";
 import { toast } from "sonner";
+import { fetchWithAuth } from "@/lib/fetch-with-auth";
 
 // ============================================================================
 // Constants & Helpers
@@ -671,7 +672,7 @@ export function EventsPage() {
     if (country) params.set("country", country);
     if (religion) params.set("religion", religion);
 
-    fetch(`/api/events/region?${params.toString()}`, { signal })
+    fetchWithAuth(`/api/events/region?${params.toString()}`, { signal })
       .then((res) => res.json())
       .then((data) => {
         if (!signal.aborted) {
@@ -802,7 +803,7 @@ export function EventsPage() {
         toast.error("Set country in Settings first");
         return;
       }
-      fetch("/api/events/region", {
+      fetchWithAuth("/api/events/region", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(data),
@@ -834,7 +835,7 @@ export function EventsPage() {
   const handleDeleteCustom = useCallback(
     (eventId: string) => {
       if (!country) return;
-      fetch(`/api/events/region?id=${eventId}`, { method: "DELETE" })
+      fetchWithAuth(`/api/events/region?id=${eventId}`, { method: "DELETE" })
         .then((res) => res.json())
         .then(() => {
           setCustomEvents((prev) => prev.filter((e) => e.id !== eventId));
@@ -1224,15 +1225,8 @@ export function EventsPage() {
           </motion.div>
         )}
       </AnimatePresence>
-
-      {/* Custom Event Dialog */}
-      <CustomEventDialog
-        open={customDialogOpen}
-        onClose={() => { setCustomDialogOpen(false); setEditingEvent(null); }}
-        editEvent={editingEvent}
-        onSubmit={editingEvent ? handleEditCustom : handleCreateCustom}
-        isDark={isDark}
-      />
     </div>
   );
 }
+
+export default EventsPage;

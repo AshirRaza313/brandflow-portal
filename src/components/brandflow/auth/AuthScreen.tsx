@@ -348,7 +348,7 @@ export function AuthScreen() {
   };
 
   return (
-    <div className="min-h-screen max-h-screen bg-[#050508] flex items-center justify-center p-3 sm:p-4 relative overflow-y-auto">
+    <div className="min-h-screen bg-[#050508] flex items-center justify-center p-4 relative overflow-hidden">
       {/* Canvas particle system */}
       <GoldParticleCanvas />
 
@@ -395,7 +395,7 @@ export function AuthScreen() {
         initial={{ opacity: 0, y: 30, scale: 0.98 }}
         animate={{ opacity: 1, y: 0, scale: 1 }}
         transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
-        className="w-full max-w-md relative z-10"
+        className="w-full max-w-md relative z-10 px-2 sm:px-0"
       >
         {/* Back to Home button */}
         <motion.button
@@ -411,7 +411,7 @@ export function AuthScreen() {
 
         {/* Logo + Brand Identity */}
         <motion.div
-          className="text-center mb-10"
+          className="text-center mb-6 sm:mb-10"
           initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.3, duration: 0.6 }}
@@ -440,7 +440,7 @@ export function AuthScreen() {
           </div>
 
           <motion.h1
-            className="text-3xl sm:text-4xl font-bold mb-2 mt-6"
+            className="text-2xl sm:text-3xl md:text-4xl font-bold mb-2 mt-4 sm:mt-6"
             style={{ fontFamily: "'Cinzel', serif" }}
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
@@ -482,7 +482,7 @@ export function AuthScreen() {
             <div className="absolute top-0 left-0 w-16 h-px bg-gradient-to-r from-amber-500/30 to-transparent" />
             <div className="absolute top-0 right-0 w-16 h-px bg-gradient-to-l from-amber-500/30 to-transparent" />
 
-            <div className="p-5 sm:p-7">
+            <div className="p-5 sm:p-7 md:p-9">
               {/* Header with sparkle icon */}
               <div className="flex items-center gap-3 mb-6">
                 <div className="h-8 w-8 rounded-lg bg-amber-500/10 flex items-center justify-center">
@@ -497,7 +497,7 @@ export function AuthScreen() {
               </div>
 
               <Tabs value={defaultTab} onValueChange={setDefaultTab} className="w-full">
-                <TabsList className="grid w-full grid-cols-3 mb-7 bg-white/[0.04] border border-white/[0.06] rounded-xl h-10 sm:h-11 p-1">
+                <TabsList className="grid w-full grid-cols-3 mb-5 sm:mb-7 bg-white/[0.04] border border-white/[0.06] rounded-xl h-10 sm:h-11 p-1">
                   <TabsTrigger
                     value="login"
                     className="text-slate-500 data-[state=active]:text-amber-300 data-[state=active]:bg-amber-500/10 data-[state=active]:shadow-[0_0_15px_rgba(212,160,23,0.1)] rounded-lg transition-all text-[10px] sm:text-xs font-medium"
@@ -565,7 +565,7 @@ export function AuthScreen() {
                 </TabsContent>
 
                 <TabsContent value="register" forceMount={true} hidden={defaultTab !== "register"}>
-                  <form onSubmit={handleRegister} className="space-y-2.5 sm:space-y-3">
+                  <form onSubmit={handleRegister} className="space-y-3">
                     <div className="space-y-2">
                       <Label htmlFor="reg-name" className="text-slate-400 text-xs font-medium uppercase tracking-wider">Full Name</Label>
                       <Input
