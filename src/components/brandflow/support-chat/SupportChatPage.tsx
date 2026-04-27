@@ -1108,10 +1108,10 @@ export function SupportChatPage() {
       const org = orgStr ? JSON.parse(orgStr) : null;
       if (!user?.id) return {};
       return {
-        "X-User-Id": user.id,
-        "X-User-Email": user.email || "",
-        "X-User-Role": user.role || "member",
-        "X-Org-Id": org?.id || "",
+        "x-user-id": user.id,
+        "x-user-email": user.email || "",
+        "x-user-role": user.role || "member",
+        "x-org-id": org?.id || "",
       };
     } catch {
       return {};
@@ -1214,6 +1214,7 @@ export function SupportChatPage() {
         // Log the actual error for debugging
         const errorBody = await res.text().catch(() => "(could not read error)");
         console.error("[SupportChat] sendMessage failed:", res.status, errorBody);
+        toast.error("Failed to send message. Please try again.");
         return null;
       }
 
