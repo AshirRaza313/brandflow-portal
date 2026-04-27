@@ -766,12 +766,14 @@ function CallOverlay({
   isDark,
   isGold,
   callerName,
+  companyName: callerCompany,
   isActive,
   onEnd,
 }: {
   isDark: boolean;
   isGold: boolean;
   callerName: string;
+  companyName?: string;
   isActive: boolean;
   onEnd: (duration: number) => void;
 }) {
@@ -947,7 +949,7 @@ function CallOverlay({
 
         {/* Subtle branding */}
         <p className={`text-[10px] mt-4 ${isDark ? "text-slate-500" : "text-slate-600"}`}>
-          {companyName} Secure Call
+          {callerCompany || 'Valtriox'} Secure Call
         </p>
       </div>
     </motion.div>
@@ -1835,6 +1837,7 @@ export function SupportChatPage() {
               isDark={isDark}
               isGold={isGold}
               callerName={callTarget}
+              companyName={companyName}
               isActive={callActive}
               onEnd={handleEndCall}
             />
@@ -2070,6 +2073,7 @@ export function SupportChatPage() {
             isDark={isDark}
             isGold={isGold}
             callerName={callTarget}
+            companyName={companyName}
             isActive={callActive}
             onEnd={handleEndCall}
           />
