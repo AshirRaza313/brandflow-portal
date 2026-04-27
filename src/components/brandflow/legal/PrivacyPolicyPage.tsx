@@ -1,5 +1,6 @@
 "use client";
 
+import { useValtrioxStore } from "@/store/brandflow-store";
 import { ArrowLeft } from "lucide-react";
 import { usePlatformIdentity } from "@/lib/platform-identity";
 
@@ -8,6 +9,8 @@ interface LegalPageProps {
 }
 
 export function PrivacyPolicyPage({ onBack }: LegalPageProps) {
+  const { appTheme } = useValtrioxStore();
+  const isDark = appTheme === "dark" || appTheme === "premium-dark";
   const { identity } = usePlatformIdentity();
   return (
     <div className="min-h-screen bg-white">
@@ -23,7 +26,7 @@ export function PrivacyPolicyPage({ onBack }: LegalPageProps) {
 
         {/* Header */}
         <div className="mb-10">
-          <h1 className="text-3xl sm:text-4xl font-bold text-slate-900 mb-3">
+          <h1 className={isDark ? "text-3xl sm:text-4xl font-bold text-white mb-3" : "text-3xl sm:text-4xl font-bold text-slate-900 mb-3"}>
             Privacy Policy
           </h1>
           <p className="text-slate-500 text-sm">
@@ -43,11 +46,11 @@ export function PrivacyPolicyPage({ onBack }: LegalPageProps) {
         {/* Content */}
         <div className="prose prose-slate max-w-none space-y-8">
           <section>
-            <h2 className="text-xl font-semibold text-slate-900 mb-3 pb-2 border-b border-slate-200">
+            <h2 className={isDark ? "text-xl font-semibold text-white mb-3 pb-2 border-b border-slate-200" : "text-xl font-semibold text-slate-900 mb-3 pb-2 border-b border-slate-200"}>
               1. Information We Collect
             </h2>
 
-            <h3 className="text-lg font-medium text-slate-800 mt-6 mb-2">
+            <h3 className={isDark ? "text-lg font-medium text-slate-200 mt-6 mb-2" : "text-lg font-medium text-slate-800 mt-6 mb-2"}>
               1.1 Personal Information
             </h3>
             <p className="text-slate-600 leading-relaxed">
@@ -63,7 +66,7 @@ export function PrivacyPolicyPage({ onBack }: LegalPageProps) {
               <li>Profile pictures and branding assets you upload</li>
             </ul>
 
-            <h3 className="text-lg font-medium text-slate-800 mt-6 mb-2">
+            <h3 className={isDark ? "text-lg font-medium text-slate-200 mt-6 mb-2" : "text-lg font-medium text-slate-800 mt-6 mb-2"}>
               1.2 Usage Data
             </h3>
             <p className="text-slate-600 leading-relaxed">
@@ -79,7 +82,7 @@ export function PrivacyPolicyPage({ onBack }: LegalPageProps) {
               <li>Session duration and frequency of visits</li>
             </ul>
 
-            <h3 className="text-lg font-medium text-slate-800 mt-6 mb-2">
+            <h3 className={isDark ? "text-lg font-medium text-slate-200 mt-6 mb-2" : "text-lg font-medium text-slate-800 mt-6 mb-2"}>
               1.3 Cookies and Tracking Technologies
             </h3>
             <p className="text-slate-600 leading-relaxed">
@@ -91,25 +94,25 @@ export function PrivacyPolicyPage({ onBack }: LegalPageProps) {
           </section>
 
           <section>
-            <h2 className="text-xl font-semibold text-slate-900 mb-3 pb-2 border-b border-slate-200">
+            <h2 className={isDark ? "text-xl font-semibold text-white mb-3 pb-2 border-b border-slate-200" : "text-xl font-semibold text-slate-900 mb-3 pb-2 border-b border-slate-200"}>
               2. How We Use Your Information
             </h2>
             <p className="text-slate-600 leading-relaxed">
               We use the information we collect for the following purposes:
             </p>
             <ul className="list-disc pl-6 space-y-1.5 text-slate-600 mt-3">
-              <li><strong className="text-slate-700">Service Delivery:</strong> To provide, maintain, and improve the {identity.companyName} Portal, process transactions, send order confirmations, and deliver customer support.</li>
-              <li><strong className="text-slate-700">Account Management:</strong> To create and manage your account, authenticate your identity, and manage team member access and permissions.</li>
-              <li><strong className="text-slate-700">Communication:</strong> To send you service-related notifications, updates, security alerts, and respond to your inquiries.</li>
-              <li><strong className="text-slate-700">Analytics and Improvement:</strong> To analyze usage patterns, diagnose technical issues, and improve our platform&apos;s features, performance, and user experience.</li>
-              <li><strong className="text-slate-700">Marketing:</strong> With your consent, to send promotional materials, newsletters, and information about new features or services that may interest you. You may opt out at any time.</li>
-              <li><strong className="text-slate-700">Security:</strong> To detect, prevent, and address fraud, unauthorized access, and other illegal activities, and to protect the security of our platform and users.</li>
-              <li><strong className="text-slate-700">Legal Compliance:</strong> To comply with applicable laws, regulations, legal processes, or enforceable governmental requests.</li>
+              <li><strong className={isDark ? "text-slate-300" : "text-slate-700"}>Service Delivery:</strong> To provide, maintain, and improve the {identity.companyName} Portal, process transactions, send order confirmations, and deliver customer support.</li>
+              <li><strong className={isDark ? "text-slate-300" : "text-slate-700"}>Account Management:</strong> To create and manage your account, authenticate your identity, and manage team member access and permissions.</li>
+              <li><strong className={isDark ? "text-slate-300" : "text-slate-700"}>Communication:</strong> To send you service-related notifications, updates, security alerts, and respond to your inquiries.</li>
+              <li><strong className={isDark ? "text-slate-300" : "text-slate-700"}>Analytics and Improvement:</strong> To analyze usage patterns, diagnose technical issues, and improve our platform&apos;s features, performance, and user experience.</li>
+              <li><strong className={isDark ? "text-slate-300" : "text-slate-700"}>Marketing:</strong> With your consent, to send promotional materials, newsletters, and information about new features or services that may interest you. You may opt out at any time.</li>
+              <li><strong className={isDark ? "text-slate-300" : "text-slate-700"}>Security:</strong> To detect, prevent, and address fraud, unauthorized access, and other illegal activities, and to protect the security of our platform and users.</li>
+              <li><strong className={isDark ? "text-slate-300" : "text-slate-700"}>Legal Compliance:</strong> To comply with applicable laws, regulations, legal processes, or enforceable governmental requests.</li>
             </ul>
           </section>
 
           <section>
-            <h2 className="text-xl font-semibold text-slate-900 mb-3 pb-2 border-b border-slate-200">
+            <h2 className={isDark ? "text-xl font-semibold text-white mb-3 pb-2 border-b border-slate-200" : "text-xl font-semibold text-slate-900 mb-3 pb-2 border-b border-slate-200"}>
               3. Data Sharing and Third Parties
             </h2>
             <p className="text-slate-600 leading-relaxed">
@@ -117,16 +120,16 @@ export function PrivacyPolicyPage({ onBack }: LegalPageProps) {
               third parties only in the following circumstances:
             </p>
             <ul className="list-disc pl-6 space-y-1.5 text-slate-600 mt-3">
-              <li><strong className="text-slate-700">Service Providers:</strong> We engage trusted third-party service providers who perform services on our behalf, such as cloud hosting (Supabase), payment processing, email delivery, and analytics. These providers are contractually obligated to protect your data and use it only for the purposes we specify.</li>
-              <li><strong className="text-slate-700">Integrations:</strong> When you connect {identity.companyName} with third-party services (e.g., WhatsApp Business API, social media platforms, payment gateways), data may be shared with those services in accordance with their own privacy policies.</li>
-              <li><strong className="text-slate-700">Business Transfers:</strong> In connection with any merger, acquisition, reorganization, bankruptcy, or sale of assets, your information may be transferred as part of such transaction, subject to continued protection under this policy.</li>
-              <li><strong className="text-slate-700">Legal Requirements:</strong> We may disclose your information if required by law, court order, governmental regulation, or subpoena, or if we believe such disclosure is necessary to protect our rights, safety, or property, or that of our users or the public.</li>
-              <li><strong className="text-slate-700">With Your Consent:</strong> We may share your information with third parties when you have given us explicit consent to do so.</li>
+              <li><strong className={isDark ? "text-slate-300" : "text-slate-700"}>Service Providers:</strong> We engage trusted third-party service providers who perform services on our behalf, such as cloud hosting (Supabase), payment processing, email delivery, and analytics. These providers are contractually obligated to protect your data and use it only for the purposes we specify.</li>
+              <li><strong className={isDark ? "text-slate-300" : "text-slate-700"}>Integrations:</strong> When you connect {identity.companyName} with third-party services (e.g., WhatsApp Business API, social media platforms, payment gateways), data may be shared with those services in accordance with their own privacy policies.</li>
+              <li><strong className={isDark ? "text-slate-300" : "text-slate-700"}>Business Transfers:</strong> In connection with any merger, acquisition, reorganization, bankruptcy, or sale of assets, your information may be transferred as part of such transaction, subject to continued protection under this policy.</li>
+              <li><strong className={isDark ? "text-slate-300" : "text-slate-700"}>Legal Requirements:</strong> We may disclose your information if required by law, court order, governmental regulation, or subpoena, or if we believe such disclosure is necessary to protect our rights, safety, or property, or that of our users or the public.</li>
+              <li><strong className={isDark ? "text-slate-300" : "text-slate-700"}>With Your Consent:</strong> We may share your information with third parties when you have given us explicit consent to do so.</li>
             </ul>
           </section>
 
           <section>
-            <h2 className="text-xl font-semibold text-slate-900 mb-3 pb-2 border-b border-slate-200">
+            <h2 className={isDark ? "text-xl font-semibold text-white mb-3 pb-2 border-b border-slate-200" : "text-xl font-semibold text-slate-900 mb-3 pb-2 border-b border-slate-200"}>
               4. Data Security and Storage
             </h2>
             <p className="text-slate-600 leading-relaxed">
@@ -150,7 +153,7 @@ export function PrivacyPolicyPage({ onBack }: LegalPageProps) {
           </section>
 
           <section>
-            <h2 className="text-xl font-semibold text-slate-900 mb-3 pb-2 border-b border-slate-200">
+            <h2 className={isDark ? "text-xl font-semibold text-white mb-3 pb-2 border-b border-slate-200" : "text-xl font-semibold text-slate-900 mb-3 pb-2 border-b border-slate-200"}>
               5. Your Rights
             </h2>
             <p className="text-slate-600 leading-relaxed">
@@ -159,13 +162,13 @@ export function PrivacyPolicyPage({ onBack }: LegalPageProps) {
               rights regarding your personal information:
             </p>
             <ul className="list-disc pl-6 space-y-1.5 text-slate-600 mt-3">
-              <li><strong className="text-slate-700">Right of Access:</strong> You may request a copy of the personal information we hold about you.</li>
-              <li><strong className="text-slate-700">Right to Correction:</strong> You may request that we correct any inaccurate or incomplete personal information.</li>
-              <li><strong className="text-slate-700">Right to Deletion:</strong> You may request that we delete your personal information, subject to certain legal obligations and legitimate business needs. Upon account deletion, we will remove your personal data within 30 days, except where retention is required by law.</li>
-              <li><strong className="text-slate-700">Right to Restrict Processing:</strong> You may request that we limit how we use your personal information in certain circumstances.</li>
-              <li><strong className="text-slate-700">Right to Data Portability:</strong> You may request to receive your data in a structured, commonly used, and machine-readable format.</li>
-              <li><strong className="text-slate-700">Right to Withdraw Consent:</strong> Where processing is based on consent, you may withdraw your consent at any time without affecting the lawfulness of processing carried out prior to withdrawal.</li>
-              <li><strong className="text-slate-700">Right to Object:</strong> You may object to certain types of processing, including direct marketing.</li>
+              <li><strong className={isDark ? "text-slate-300" : "text-slate-700"}>Right of Access:</strong> You may request a copy of the personal information we hold about you.</li>
+              <li><strong className={isDark ? "text-slate-300" : "text-slate-700"}>Right to Correction:</strong> You may request that we correct any inaccurate or incomplete personal information.</li>
+              <li><strong className={isDark ? "text-slate-300" : "text-slate-700"}>Right to Deletion:</strong> You may request that we delete your personal information, subject to certain legal obligations and legitimate business needs. Upon account deletion, we will remove your personal data within 30 days, except where retention is required by law.</li>
+              <li><strong className={isDark ? "text-slate-300" : "text-slate-700"}>Right to Restrict Processing:</strong> You may request that we limit how we use your personal information in certain circumstances.</li>
+              <li><strong className={isDark ? "text-slate-300" : "text-slate-700"}>Right to Data Portability:</strong> You may request to receive your data in a structured, commonly used, and machine-readable format.</li>
+              <li><strong className={isDark ? "text-slate-300" : "text-slate-700"}>Right to Withdraw Consent:</strong> Where processing is based on consent, you may withdraw your consent at any time without affecting the lawfulness of processing carried out prior to withdrawal.</li>
+              <li><strong className={isDark ? "text-slate-300" : "text-slate-700"}>Right to Object:</strong> You may object to certain types of processing, including direct marketing.</li>
             </ul>
             <p className="text-slate-600 leading-relaxed mt-3">
               To exercise any of these rights, please contact us at{" "}
@@ -174,7 +177,7 @@ export function PrivacyPolicyPage({ onBack }: LegalPageProps) {
           </section>
 
           <section>
-            <h2 className="text-xl font-semibold text-slate-900 mb-3 pb-2 border-b border-slate-200">
+            <h2 className={isDark ? "text-xl font-semibold text-white mb-3 pb-2 border-b border-slate-200" : "text-xl font-semibold text-slate-900 mb-3 pb-2 border-b border-slate-200"}>
               6. Cookies and Tracking
             </h2>
             <p className="text-slate-600 leading-relaxed">
@@ -183,10 +186,10 @@ export function PrivacyPolicyPage({ onBack }: LegalPageProps) {
               cookies:
             </p>
             <ul className="list-disc pl-6 space-y-1.5 text-slate-600 mt-3">
-              <li><strong className="text-slate-700">Essential Cookies:</strong> Required for the platform to function properly, including authentication, security, and session management.</li>
-              <li><strong className="text-slate-700">Performance Cookies:</strong> Help us understand how visitors interact with our platform by collecting anonymous statistical information.</li>
-              <li><strong className="text-slate-700">Functionality Cookies:</strong> Remember your preferences and settings to provide a personalized experience.</li>
-              <li><strong className="text-slate-700">Marketing Cookies:</strong> Used to deliver relevant advertisements and track campaign effectiveness (only with your consent).</li>
+              <li><strong className={isDark ? "text-slate-300" : "text-slate-700"}>Essential Cookies:</strong> Required for the platform to function properly, including authentication, security, and session management.</li>
+              <li><strong className={isDark ? "text-slate-300" : "text-slate-700"}>Performance Cookies:</strong> Help us understand how visitors interact with our platform by collecting anonymous statistical information.</li>
+              <li><strong className={isDark ? "text-slate-300" : "text-slate-700"}>Functionality Cookies:</strong> Remember your preferences and settings to provide a personalized experience.</li>
+              <li><strong className={isDark ? "text-slate-300" : "text-slate-700"}>Marketing Cookies:</strong> Used to deliver relevant advertisements and track campaign effectiveness (only with your consent).</li>
             </ul>
             <p className="text-slate-600 leading-relaxed mt-3">
               You can manage your cookie preferences through your browser settings. Please note
@@ -197,7 +200,7 @@ export function PrivacyPolicyPage({ onBack }: LegalPageProps) {
           </section>
 
           <section>
-            <h2 className="text-xl font-semibold text-slate-900 mb-3 pb-2 border-b border-slate-200">
+            <h2 className={isDark ? "text-xl font-semibold text-white mb-3 pb-2 border-b border-slate-200" : "text-xl font-semibold text-slate-900 mb-3 pb-2 border-b border-slate-200"}>
               7. Data Retention
             </h2>
             <p className="text-slate-600 leading-relaxed">
@@ -207,10 +210,10 @@ export function PrivacyPolicyPage({ onBack }: LegalPageProps) {
               enforce our agreements, and protect our legitimate business interests.
             </p>
             <ul className="list-disc pl-6 space-y-1.5 text-slate-600 mt-3">
-              <li><strong className="text-slate-700">Active Account Data:</strong> Retained for the duration of your active subscription and for 90 days after cancellation or expiration.</li>
-              <li><strong className="text-slate-700">Transactional Records:</strong> Billing and payment records are retained for a period of 7 years as required under Pakistani tax regulations.</li>
-              <li><strong className="text-slate-700">Support Communications:</strong> Retained for 3 years from the date of last interaction.</li>
-              <li><strong className="text-slate-700">Marketing Data:</strong> Retained until you withdraw consent or request deletion.</li>
+              <li><strong className={isDark ? "text-slate-300" : "text-slate-700"}>Active Account Data:</strong> Retained for the duration of your active subscription and for 90 days after cancellation or expiration.</li>
+              <li><strong className={isDark ? "text-slate-300" : "text-slate-700"}>Transactional Records:</strong> Billing and payment records are retained for a period of 7 years as required under Pakistani tax regulations.</li>
+              <li><strong className={isDark ? "text-slate-300" : "text-slate-700"}>Support Communications:</strong> Retained for 3 years from the date of last interaction.</li>
+              <li><strong className={isDark ? "text-slate-300" : "text-slate-700"}>Marketing Data:</strong> Retained until you withdraw consent or request deletion.</li>
             </ul>
             <p className="text-slate-600 leading-relaxed mt-3">
               Upon account deletion, we will delete or anonymize your personal data within 30
@@ -219,7 +222,7 @@ export function PrivacyPolicyPage({ onBack }: LegalPageProps) {
           </section>
 
           <section>
-            <h2 className="text-xl font-semibold text-slate-900 mb-3 pb-2 border-b border-slate-200">
+            <h2 className={isDark ? "text-xl font-semibold text-white mb-3 pb-2 border-b border-slate-200" : "text-xl font-semibold text-slate-900 mb-3 pb-2 border-b border-slate-200"}>
               8. Children&apos;s Privacy
             </h2>
             <p className="text-slate-600 leading-relaxed">
@@ -234,7 +237,7 @@ export function PrivacyPolicyPage({ onBack }: LegalPageProps) {
           </section>
 
           <section>
-            <h2 className="text-xl font-semibold text-slate-900 mb-3 pb-2 border-b border-slate-200">
+            <h2 className={isDark ? "text-xl font-semibold text-white mb-3 pb-2 border-b border-slate-200" : "text-xl font-semibold text-slate-900 mb-3 pb-2 border-b border-slate-200"}>
               9. International Data Transfers
             </h2>
             <p className="text-slate-600 leading-relaxed">
@@ -247,7 +250,7 @@ export function PrivacyPolicyPage({ onBack }: LegalPageProps) {
           </section>
 
           <section>
-            <h2 className="text-xl font-semibold text-slate-900 mb-3 pb-2 border-b border-slate-200">
+            <h2 className={isDark ? "text-xl font-semibold text-white mb-3 pb-2 border-b border-slate-200" : "text-xl font-semibold text-slate-900 mb-3 pb-2 border-b border-slate-200"}>
               10. Changes to This Privacy Policy
             </h2>
             <p className="text-slate-600 leading-relaxed">
@@ -267,7 +270,7 @@ export function PrivacyPolicyPage({ onBack }: LegalPageProps) {
           </section>
 
           <section>
-            <h2 className="text-xl font-semibold text-slate-900 mb-3 pb-2 border-b border-slate-200">
+            <h2 className={isDark ? "text-xl font-semibold text-white mb-3 pb-2 border-b border-slate-200" : "text-xl font-semibold text-slate-900 mb-3 pb-2 border-b border-slate-200"}>
               11. Contact Us
             </h2>
             <p className="text-slate-600 leading-relaxed">
@@ -275,7 +278,7 @@ export function PrivacyPolicyPage({ onBack }: LegalPageProps) {
               or our data practices, please contact us:
             </p>
             <div className="mt-4 p-6 bg-slate-50 rounded-lg border border-slate-200">
-              <div className="space-y-2 text-slate-700">
+              <div className={isDark ? "space-y-2 text-slate-300" : "space-y-2 text-slate-700"}>
                 <p><strong>{identity.companyName} Portal</strong></p>
                 <p>
                   Email:{" "}

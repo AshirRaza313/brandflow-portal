@@ -1,5 +1,6 @@
 "use client";
 
+import { useValtrioxStore } from "@/store/brandflow-store";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -20,6 +21,8 @@ const subTabs = [
 ];
 
 export function AttendancePage() {
+  const { appTheme } = useValtrioxStore();
+  const isDark = appTheme === "dark" || appTheme === "premium-dark";
   const [activeTab, setActiveTab] = useState("daily");
   const [search, setSearch] = useState("");
   const [dateFilter, setDateFilter] = useState("");
@@ -48,7 +51,7 @@ export function AttendancePage() {
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-slate-900">Attendance</h1>
+          <h1 className={isDark ? "text-2xl font-bold text-white" : "text-2xl font-bold text-slate-900"}>Attendance</h1>
           <p className="text-sm text-slate-500 mt-1">Track team attendance and working hours</p>
         </div>
         <div className="flex flex-wrap gap-2"><Button variant="outline"><Download className="mr-2 h-4 w-4" /> Export</Button>
@@ -65,7 +68,7 @@ export function AttendancePage() {
 
       <div className="flex gap-1 border-b border-slate-200 overflow-x-auto">
         {subTabs.map((tab) => (
-          <button key={tab.id} onClick={() => setActiveTab(tab.id)} className={`px-4 py-2.5 text-sm font-medium border-b-2 transition-colors ${activeTab === tab.id ? "border-amber-600 text-amber-600" : "border-transparent text-slate-500 hover:text-slate-700"}`}>
+          <button key={tab.id} onClick={() => setActiveTab(tab.id)} className={isDark ? `px-4 py-2.5 text-sm font-medium border-b-2 transition-colors ${activeTab === tab.id ? "border-amber-600 text-amber-600" : "border-transparent text-slate-500 hover:text-slate-300"}` : `px-4 py-2.5 text-sm font-medium border-b-2 transition-colors ${activeTab === tab.id ? "border-amber-600 text-amber-600" : "border-transparent text-slate-500 hover:text-slate-700"}`}>
             {tab.label}
           </button>
         ))}

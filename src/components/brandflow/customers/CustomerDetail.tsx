@@ -1,5 +1,6 @@
 "use client";
 
+import { useValtrioxStore } from "@/store/brandflow-store";
 import { useEffect, useState, useCallback } from "react";
 import {
   Dialog,
@@ -37,6 +38,8 @@ const tierColors: Record<string, string> = {
 };
 
 export function CustomerDetail({ open, onClose, customerId }: CustomerDetailProps) {
+  const { appTheme } = useValtrioxStore();
+  const isDark = appTheme === "dark" || appTheme === "premium-dark";
   const [customer, setCustomer] = useState<any>(null);
   const [loading, setLoading] = useState(false);
 
@@ -90,7 +93,7 @@ export function CustomerDetail({ open, onClose, customerId }: CustomerDetailProp
                   </span>
                 </div>
                 <div>
-                  <h3 className="text-lg font-semibold text-slate-900">{customer.name}</h3>
+                  <h3 className={isDark ? "text-lg font-semibold text-white" : "text-lg font-semibold text-slate-900"}>{customer.name}</h3>
                   <div className="flex items-center gap-2 mt-0.5">
                     <Badge variant="secondary" className={`${tierColors[customer.loyaltyTier] || ""} text-xs`}>
                       {customer.loyaltyTier}
@@ -141,7 +144,7 @@ export function CustomerDetail({ open, onClose, customerId }: CustomerDetailProp
                   <ShoppingBag className="h-3.5 w-3.5" />
                   <span className="text-xs font-medium">Orders</span>
                 </div>
-                <p className="text-xl font-bold text-slate-700 mt-1">{customer.orderCount}</p>
+                <p className={isDark ? "text-xl font-bold text-slate-300 mt-1" : "text-xl font-bold text-slate-700 mt-1"}>{customer.orderCount}</p>
               </div>
             </div>
 
@@ -151,7 +154,7 @@ export function CustomerDetail({ open, onClose, customerId }: CustomerDetailProp
                 <Separator />
                 <div>
                   <p className="text-xs font-medium text-muted-foreground mb-1">Notes</p>
-                  <p className="text-sm text-slate-700">{customer.notes}</p>
+                  <p className={isDark ? "text-sm text-slate-300" : "text-sm text-slate-700"}>{customer.notes}</p>
                 </div>
               </>
             )}
@@ -165,7 +168,7 @@ export function CustomerDetail({ open, onClose, customerId }: CustomerDetailProp
                   {customer.orders.map((order: any) => (
                     <div key={order.id} className="flex items-center justify-between py-2 border-b border-slate-50 last:border-0">
                       <div className="min-w-0">
-                        <p className="text-sm font-medium text-slate-900">{order.orderNumber}</p>
+                        <p className={isDark ? "text-sm font-medium text-white" : "text-sm font-medium text-slate-900"}>{order.orderNumber}</p>
                         <div className="flex items-center gap-1 mt-0.5">
                           <CalendarDays className="h-3 w-3 text-muted-foreground" />
                           <span className="text-xs text-muted-foreground">{format(new Date(order.createdAt), "MMM d, yyyy")}</span>

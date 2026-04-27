@@ -1117,9 +1117,15 @@ export function SupportChatPage() {
   const fetchMessages = useCallback(async (convId: string | null) => {
     if (!convId) return;
     try {
-      const params = isAdmin
-        ? `?conversationId=${convId}`
-        : `?mode=messages`;
+      let params: string;
+      if (isAdmin) {
+        // convId for admin is orgId — resolve to DB conversation ID
+        const dbConvId = conversationIdMap[convId];
+        if (!dbConvId) return;
+        params = `?conversationId=${dbConvId}`;
+      } else {
+        params = `?mode=messages`;
+      }
       const res = await fetch(`/api/support-chat${params}`);
       if (!res.ok) return;
       const data = await res.json();
@@ -1136,9 +1142,10 @@ export function SupportChatPage() {
         voiceNote: m.voiceNote,
         callInfo: m.callInfo,
       }));
+      // Always key by orgId so currentConversationId lookup works
       setMessagesMap((prev) => ({ ...prev, [convId]: messages }));
     } catch {}
-  }, [isAdmin]);
+  }, [isAdmin, conversationIdMap]);
 
   // ── Send message via API ──
   const sendMessage = useCallback(async (targetConvId: string | null, msg: SupportMessage, orgNameOverride?: string) => {
@@ -1224,13 +1231,12 @@ export function SupportChatPage() {
   // ── Admin: fetch messages when selecting a client ──
   useEffect(() => {
     if (isAdmin && activeClientOrgId) {
-      // The conversationIdMap might not have the ID yet; use the orgId directly
-      // The API will resolve it. First check if we have the conversation ID.
+      // conversationIdMap might not have the ID yet; try fetch, or refresh first
       const convId = conversationIdMap[activeClientOrgId];
       if (convId) {
         fetchMessages(activeClientOrgId);
       } else {
-        // Fetch conversations again to get the ID, then fetch messages
+        // Fetch conversations first to populate conversationIdMap, then fetch messages
         fetchConversations().then(() => {
           fetchMessages(activeClientOrgId);
         });
@@ -1243,13 +1249,15 @@ export function SupportChatPage() {
     const interval = setInterval(() => {
       if (isAdmin) {
         fetchConversations();
-        if (activeClientOrgId) fetchMessages(activeClientOrgId);
+        if (activeClientOrgId && conversationIdMap[activeClientOrgId]) {
+          fetchMessages(activeClientOrgId);
+        }
       } else if (orgId) {
         fetchMessages(orgId);
       }
     }, 5000);
     return () => clearInterval(interval);
-  }, [isAdmin, activeClientOrgId, orgId, fetchConversations, fetchMessages]);
+  }, [isAdmin, activeClientOrgId, orgId, conversationIdMap, fetchConversations, fetchMessages]);
 
   // Filtered messages (search)
   const filteredMessages = useMemo(() => {

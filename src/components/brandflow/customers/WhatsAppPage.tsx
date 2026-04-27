@@ -11,14 +11,15 @@ import { motion } from "framer-motion";
 import { useValtrioxStore } from "@/store/brandflow-store";
 
 export function WhatsAppPage() {
-  const { setActiveSection } = useValtrioxStore();
+  const { setActiveSection, appTheme } = useValtrioxStore();
+  const isDark = appTheme === "dark" || appTheme === "premium-dark";
   const [search, setSearch] = useState("");
   const [messageText, setMessageText] = useState("");
 
   return (
     <div className="space-y-4">
       <div>
-        <h1 className="text-2xl font-bold text-slate-900">WhatsApp Messages</h1>
+        <h1 className={isDark ? "text-2xl font-bold text-white" : "text-2xl font-bold text-slate-900"}>WhatsApp Messages</h1>
         <p className="text-sm text-slate-500 mt-1">Manage customer conversations</p>
       </div>
 

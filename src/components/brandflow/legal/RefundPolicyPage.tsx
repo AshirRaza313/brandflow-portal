@@ -1,5 +1,6 @@
 "use client";
 
+import { useValtrioxStore } from "@/store/brandflow-store";
 import { ArrowLeft } from "lucide-react";
 import { usePlatformIdentity } from "@/lib/platform-identity";
 
@@ -8,6 +9,8 @@ interface LegalPageProps {
 }
 
 export function RefundPolicyPage({ onBack }: LegalPageProps) {
+  const { appTheme } = useValtrioxStore();
+  const isDark = appTheme === "dark" || appTheme === "premium-dark";
   const { identity } = usePlatformIdentity();
   return (
     <div className="min-h-screen bg-white">
@@ -23,7 +26,7 @@ export function RefundPolicyPage({ onBack }: LegalPageProps) {
 
         {/* Header */}
         <div className="mb-10">
-          <h1 className="text-3xl sm:text-4xl font-bold text-slate-900 mb-3">
+          <h1 className={isDark ? "text-3xl sm:text-4xl font-bold text-white mb-3" : "text-3xl sm:text-4xl font-bold text-slate-900 mb-3"}>
             Refund Policy
           </h1>
           <p className="text-slate-500 text-sm">
@@ -43,7 +46,7 @@ export function RefundPolicyPage({ onBack }: LegalPageProps) {
         {/* Content */}
         <div className="prose prose-slate max-w-none space-y-8">
           <section>
-            <h2 className="text-xl font-semibold text-slate-900 mb-3 pb-2 border-b border-slate-200">
+            <h2 className={isDark ? "text-xl font-semibold text-white mb-3 pb-2 border-b border-slate-200" : "text-xl font-semibold text-slate-900 mb-3 pb-2 border-b border-slate-200"}>
               1. Subscription Refund Policy
             </h2>
             <p className="text-slate-600 leading-relaxed">
@@ -51,9 +54,9 @@ export function RefundPolicyPage({ onBack }: LegalPageProps) {
               subscription payments is as follows:
             </p>
             <ul className="list-disc pl-6 space-y-1.5 text-slate-600 mt-3">
-              <li><strong className="text-slate-700">Monthly Subscriptions:</strong> Refund requests for monthly subscriptions must be submitted within 7 days of the payment date. If approved, a prorated refund will be issued for the unused portion of the billing period.</li>
-              <li><strong className="text-slate-700">Annual Subscriptions:</strong> Refund requests for annual subscriptions must be submitted within 14 days of the payment date. If approved, a prorated refund will be issued for the remaining unused months, minus a 10% early cancellation processing fee.</li>
-              <li><strong className="text-slate-700">Plan Upgrades:</strong> When upgrading from a lower-tier plan to a higher-tier plan, the price difference for the remaining billing period will be charged. No refund is provided for downgrading; the new plan will take effect at the start of the next billing cycle.</li>
+              <li><strong className={isDark ? "text-slate-300" : "text-slate-700"}>Monthly Subscriptions:</strong> Refund requests for monthly subscriptions must be submitted within 7 days of the payment date. If approved, a prorated refund will be issued for the unused portion of the billing period.</li>
+              <li><strong className={isDark ? "text-slate-300" : "text-slate-700"}>Annual Subscriptions:</strong> Refund requests for annual subscriptions must be submitted within 14 days of the payment date. If approved, a prorated refund will be issued for the remaining unused months, minus a 10% early cancellation processing fee.</li>
+              <li><strong className={isDark ? "text-slate-300" : "text-slate-700"}>Plan Upgrades:</strong> When upgrading from a lower-tier plan to a higher-tier plan, the price difference for the remaining billing period will be charged. No refund is provided for downgrading; the new plan will take effect at the start of the next billing cycle.</li>
             </ul>
             <p className="text-slate-600 leading-relaxed mt-3">
               Refunds will be processed using the same payment method that was used for the
@@ -62,7 +65,7 @@ export function RefundPolicyPage({ onBack }: LegalPageProps) {
           </section>
 
           <section>
-            <h2 className="text-xl font-semibold text-slate-900 mb-3 pb-2 border-b border-slate-200">
+            <h2 className={isDark ? "text-xl font-semibold text-white mb-3 pb-2 border-b border-slate-200" : "text-xl font-semibold text-slate-900 mb-3 pb-2 border-b border-slate-200"}>
               2. 14-Day Free Trial
             </h2>
             <p className="text-slate-600 leading-relaxed">
@@ -85,7 +88,7 @@ export function RefundPolicyPage({ onBack }: LegalPageProps) {
           </section>
 
           <section>
-            <h2 className="text-xl font-semibold text-slate-900 mb-3 pb-2 border-b border-slate-200">
+            <h2 className={isDark ? "text-xl font-semibold text-white mb-3 pb-2 border-b border-slate-200" : "text-xl font-semibold text-slate-900 mb-3 pb-2 border-b border-slate-200"}>
               3. Refund Eligibility
             </h2>
             <p className="text-slate-600 leading-relaxed">
@@ -94,7 +97,7 @@ export function RefundPolicyPage({ onBack }: LegalPageProps) {
             </p>
 
             <div className="mt-4">
-              <h3 className="text-lg font-medium text-slate-800 mb-2">
+              <h3 className={isDark ? "text-lg font-medium text-slate-200 mb-2" : "text-lg font-medium text-slate-800 mb-2"}>
                 3.1 Eligible for Refund
               </h3>
               <ul className="list-disc pl-6 space-y-1.5 text-slate-600 mt-2">
@@ -107,7 +110,7 @@ export function RefundPolicyPage({ onBack }: LegalPageProps) {
             </div>
 
             <div className="mt-6">
-              <h3 className="text-lg font-medium text-slate-800 mb-2">
+              <h3 className={isDark ? "text-lg font-medium text-slate-200 mb-2" : "text-lg font-medium text-slate-800 mb-2"}>
                 3.2 Not Eligible for Refund
               </h3>
               <ul className="list-disc pl-6 space-y-1.5 text-slate-600 mt-2">
@@ -123,7 +126,7 @@ export function RefundPolicyPage({ onBack }: LegalPageProps) {
           </section>
 
           <section>
-            <h2 className="text-xl font-semibold text-slate-900 mb-3 pb-2 border-b border-slate-200">
+            <h2 className={isDark ? "text-xl font-semibold text-white mb-3 pb-2 border-b border-slate-200" : "text-xl font-semibold text-slate-900 mb-3 pb-2 border-b border-slate-200"}>
               4. How to Request a Refund
             </h2>
             <p className="text-slate-600 leading-relaxed">
@@ -131,12 +134,12 @@ export function RefundPolicyPage({ onBack }: LegalPageProps) {
             </p>
             <ol className="list-decimal pl-6 space-y-2 text-slate-600 mt-3">
               <li>
-                <strong className="text-slate-700">Email Request:</strong> Send a refund request to{" "}
+                <strong className={isDark ? "text-slate-300" : "text-slate-700"}>Email Request:</strong> Send a refund request to{" "}
                 <a href={`mailto:${identity.companyEmail}`} className="text-amber-600 hover:underline">{identity.companyEmail}</a>{" "}
                 with the subject line &quot;Refund Request - [Your Organization Name]&quot;.
               </li>
               <li>
-                <strong className="text-slate-700">Required Information:</strong> Include the following in your request:
+                <strong className={isDark ? "text-slate-300" : "text-slate-700"}>Required Information:</strong> Include the following in your request:
                 <ul className="list-disc pl-5 mt-1.5 space-y-1">
                   <li>Registered email address and organization name</li>
                   <li>Subscription plan and billing period in question</li>
@@ -146,29 +149,29 @@ export function RefundPolicyPage({ onBack }: LegalPageProps) {
                 </ul>
               </li>
               <li>
-                <strong className="text-slate-700">Acknowledgment:</strong> We will acknowledge receipt of your refund request within 2 business days.
+                <strong className={isDark ? "text-slate-300" : "text-slate-700"}>Acknowledgment:</strong> We will acknowledge receipt of your refund request within 2 business days.
               </li>
               <li>
-                <strong className="text-slate-700">Review Period:</strong> Our billing team will review your request and respond with a decision within 7 business days.
+                <strong className={isDark ? "text-slate-300" : "text-slate-700"}>Review Period:</strong> Our billing team will review your request and respond with a decision within 7 business days.
               </li>
               <li>
-                <strong className="text-slate-700">Communication:</strong> All refund-related communications will be sent to your registered email address.
+                <strong className={isDark ? "text-slate-300" : "text-slate-700"}>Communication:</strong> All refund-related communications will be sent to your registered email address.
               </li>
             </ol>
           </section>
 
           <section>
-            <h2 className="text-xl font-semibold text-slate-900 mb-3 pb-2 border-b border-slate-200">
+            <h2 className={isDark ? "text-xl font-semibold text-white mb-3 pb-2 border-b border-slate-200" : "text-xl font-semibold text-slate-900 mb-3 pb-2 border-b border-slate-200"}>
               5. Processing Time
             </h2>
             <p className="text-slate-600 leading-relaxed">
               Once a refund is approved, the processing timeline is as follows:
             </p>
             <ul className="list-disc pl-6 space-y-1.5 text-slate-600 mt-3">
-              <li><strong className="text-slate-700">Bank Transfer:</strong> 7 to 14 business days from the date of approval</li>
-              <li><strong className="text-slate-700">JazzCash / EasyPaisa:</strong> 3 to 5 business days from the date of approval</li>
-              <li><strong className="text-slate-700">Credit/Debit Card:</strong> 5 to 10 business days from the date of approval, depending on your bank</li>
-              <li><strong className="text-slate-700">Service Credits:</strong> Applied within 1 business day of approval</li>
+              <li><strong className={isDark ? "text-slate-300" : "text-slate-700"}>Bank Transfer:</strong> 7 to 14 business days from the date of approval</li>
+              <li><strong className={isDark ? "text-slate-300" : "text-slate-700"}>JazzCash / EasyPaisa:</strong> 3 to 5 business days from the date of approval</li>
+              <li><strong className={isDark ? "text-slate-300" : "text-slate-700"}>Credit/Debit Card:</strong> 5 to 10 business days from the date of approval, depending on your bank</li>
+              <li><strong className={isDark ? "text-slate-300" : "text-slate-700"}>Service Credits:</strong> Applied within 1 business day of approval</li>
             </ul>
             <p className="text-slate-600 leading-relaxed mt-3">
               Processing times are estimates and may vary depending on your financial institution
@@ -186,42 +189,42 @@ export function RefundPolicyPage({ onBack }: LegalPageProps) {
           </section>
 
           <section>
-            <h2 className="text-xl font-semibold text-slate-900 mb-3 pb-2 border-b border-slate-200">
+            <h2 className={isDark ? "text-xl font-semibold text-white mb-3 pb-2 border-b border-slate-200" : "text-xl font-semibold text-slate-900 mb-3 pb-2 border-b border-slate-200"}>
               6. Non-Refundable Items
             </h2>
             <p className="text-slate-600 leading-relaxed">
               The following are not eligible for refunds under any circumstances:
             </p>
             <ul className="list-disc pl-6 space-y-1.5 text-slate-600 mt-3">
-              <li><strong className="text-slate-700">Custom Development Work:</strong> Any custom features, integrations, or development work specifically commissioned for your organization</li>
-              <li><strong className="text-slate-700">Domain Registration Fees:</strong> Fees paid for custom domain registration or renewal through our platform</li>
-              <li><strong className="text-slate-700">Third-Party Service Costs:</strong> Costs incurred for third-party services (e.g., WhatsApp Business API charges, SMS gateway fees) that are passed through to you at cost</li>
-              <li><strong className="text-slate-700">Setup or Onboarding Fees:</strong> One-time setup, onboarding, or data migration fees, unless the service was not delivered</li>
-              <li><strong className="text-slate-700">Promotional or Discounted Subscriptions:</strong> Subscriptions purchased at a discounted rate through special promotions, unless otherwise stated in the promotion terms</li>
-              <li><strong className="text-slate-700">Partial Month Usage:</strong> For monthly subscriptions, refunds are not provided for partial month usage beyond the 7-day refund window</li>
+              <li><strong className={isDark ? "text-slate-300" : "text-slate-700"}>Custom Development Work:</strong> Any custom features, integrations, or development work specifically commissioned for your organization</li>
+              <li><strong className={isDark ? "text-slate-300" : "text-slate-700"}>Domain Registration Fees:</strong> Fees paid for custom domain registration or renewal through our platform</li>
+              <li><strong className={isDark ? "text-slate-300" : "text-slate-700"}>Third-Party Service Costs:</strong> Costs incurred for third-party services (e.g., WhatsApp Business API charges, SMS gateway fees) that are passed through to you at cost</li>
+              <li><strong className={isDark ? "text-slate-300" : "text-slate-700"}>Setup or Onboarding Fees:</strong> One-time setup, onboarding, or data migration fees, unless the service was not delivered</li>
+              <li><strong className={isDark ? "text-slate-300" : "text-slate-700"}>Promotional or Discounted Subscriptions:</strong> Subscriptions purchased at a discounted rate through special promotions, unless otherwise stated in the promotion terms</li>
+              <li><strong className={isDark ? "text-slate-300" : "text-slate-700"}>Partial Month Usage:</strong> For monthly subscriptions, refunds are not provided for partial month usage beyond the 7-day refund window</li>
             </ul>
           </section>
 
           <section>
-            <h2 className="text-xl font-semibold text-slate-900 mb-3 pb-2 border-b border-slate-200">
+            <h2 className={isDark ? "text-xl font-semibold text-white mb-3 pb-2 border-b border-slate-200" : "text-xl font-semibold text-slate-900 mb-3 pb-2 border-b border-slate-200"}>
               7. Cancellation Policy
             </h2>
 
-            <h3 className="text-lg font-medium text-slate-800 mt-6 mb-2">
+            <h3 className={isDark ? "text-lg font-medium text-slate-200 mt-6 mb-2" : "text-lg font-medium text-slate-800 mt-6 mb-2"}>
               7.1 How to Cancel
             </h3>
             <p className="text-slate-600 leading-relaxed">
               You may cancel your subscription at any time through the following methods:
             </p>
             <ul className="list-disc pl-6 space-y-1.5 text-slate-600 mt-3">
-              <li><strong className="text-slate-700">Self-Service:</strong> Navigate to Settings &rarr; Billing &amp; Plans in your {identity.companyName} Portal dashboard and select &quot;Cancel Subscription&quot;</li>
-              <li><strong className="text-slate-700">Email:</strong> Send a cancellation request to{" "}
+              <li><strong className={isDark ? "text-slate-300" : "text-slate-700"}>Self-Service:</strong> Navigate to Settings &rarr; Billing &amp; Plans in your {identity.companyName} Portal dashboard and select &quot;Cancel Subscription&quot;</li>
+              <li><strong className={isDark ? "text-slate-300" : "text-slate-700"}>Email:</strong> Send a cancellation request to{" "}
                 <a href={`mailto:${identity.companyEmail}`} className="text-amber-600 hover:underline">{identity.companyEmail}</a>
               </li>
-              <li><strong className="text-slate-700">WhatsApp:</strong> Contact our support team via WhatsApp at the number provided in your account settings</li>
+              <li><strong className={isDark ? "text-slate-300" : "text-slate-700"}>WhatsApp:</strong> Contact our support team via WhatsApp at the number provided in your account settings</li>
             </ul>
 
-            <h3 className="text-lg font-medium text-slate-800 mt-6 mb-2">
+            <h3 className={isDark ? "text-lg font-medium text-slate-200 mt-6 mb-2" : "text-lg font-medium text-slate-800 mt-6 mb-2"}>
               7.2 What Happens After Cancellation
             </h3>
             <p className="text-slate-600 leading-relaxed">
@@ -235,7 +238,7 @@ export function RefundPolicyPage({ onBack }: LegalPageProps) {
               <li>You can reactivate your subscription at any time within the 30-day retention period by logging in and selecting a new plan</li>
             </ul>
 
-            <h3 className="text-lg font-medium text-slate-800 mt-6 mb-2">
+            <h3 className={isDark ? "text-lg font-medium text-slate-200 mt-6 mb-2" : "text-lg font-medium text-slate-800 mt-6 mb-2"}>
               7.3 Early Termination of Annual Plans
             </h3>
             <p className="text-slate-600 leading-relaxed">
@@ -249,7 +252,7 @@ export function RefundPolicyPage({ onBack }: LegalPageProps) {
           </section>
 
           <section>
-            <h2 className="text-xl font-semibold text-slate-900 mb-3 pb-2 border-b border-slate-200">
+            <h2 className={isDark ? "text-xl font-semibold text-white mb-3 pb-2 border-b border-slate-200" : "text-xl font-semibold text-slate-900 mb-3 pb-2 border-b border-slate-200"}>
               8. Disputes and Appeals
             </h2>
             <p className="text-slate-600 leading-relaxed">
@@ -272,7 +275,7 @@ export function RefundPolicyPage({ onBack }: LegalPageProps) {
           </section>
 
           <section>
-            <h2 className="text-xl font-semibold text-slate-900 mb-3 pb-2 border-b border-slate-200">
+            <h2 className={isDark ? "text-xl font-semibold text-white mb-3 pb-2 border-b border-slate-200" : "text-xl font-semibold text-slate-900 mb-3 pb-2 border-b border-slate-200"}>
               9. Changes to This Refund Policy
             </h2>
             <p className="text-slate-600 leading-relaxed">
@@ -285,14 +288,14 @@ export function RefundPolicyPage({ onBack }: LegalPageProps) {
           </section>
 
           <section>
-            <h2 className="text-xl font-semibold text-slate-900 mb-3 pb-2 border-b border-slate-200">
+            <h2 className={isDark ? "text-xl font-semibold text-white mb-3 pb-2 border-b border-slate-200" : "text-xl font-semibold text-slate-900 mb-3 pb-2 border-b border-slate-200"}>
               10. Contact Us
             </h2>
             <p className="text-slate-600 leading-relaxed">
               For all billing and refund inquiries, please contact us:
             </p>
             <div className="mt-4 p-6 bg-slate-50 rounded-lg border border-slate-200">
-              <div className="space-y-2 text-slate-700">
+              <div className={isDark ? "space-y-2 text-slate-300" : "space-y-2 text-slate-700"}>
                 <p><strong>{identity.companyName} Portal — Billing Department</strong></p>
                 <p>
                   Email:{" "}

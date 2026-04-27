@@ -1,5 +1,6 @@
 "use client";
 
+import { useValtrioxStore } from "@/store/brandflow-store";
 import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -53,6 +54,8 @@ const marginData = [
 ];
 
 export function PricingRulesPage() {
+  const { appTheme } = useValtrioxStore();
+  const isDark = appTheme === "dark" || appTheme === "premium-dark";
   const [rules, setRules] = useState(pricingRules);
   const [showBuilder, setShowBuilder] = useState(false);
 
@@ -69,7 +72,7 @@ export function PricingRulesPage() {
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-slate-800">Pricing Rules</h1>
+          <h1 className={isDark ? "text-2xl font-bold text-slate-200" : "text-2xl font-bold text-slate-800"}>Pricing Rules</h1>
           <p className="text-sm text-slate-500 mt-1">Manage dynamic pricing engine for your cosmetics & skincare catalog</p>
         </div>
         <Button onClick={() => setShowBuilder(!showBuilder)} className="bg-amber-600 hover:bg-amber-700">
@@ -84,7 +87,7 @@ export function PricingRulesPage() {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-xs font-medium text-slate-500 uppercase tracking-wider">Active Rules</p>
-                <p className="text-2xl font-bold text-slate-800 mt-1">{activeRules}</p>
+                <p className={isDark ? "text-2xl font-bold text-slate-200 mt-1" : "text-2xl font-bold text-slate-800 mt-1"}>{activeRules}</p>
                 <p className="text-xs text-amber-600 mt-1">of {rules.length} total</p>
               </div>
               <div className="h-10 w-10 rounded-lg bg-amber-100 flex items-center justify-center">
@@ -112,7 +115,7 @@ export function PricingRulesPage() {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-xs font-medium text-slate-500 uppercase tracking-wider">Products Covered</p>
-                <p className="text-2xl font-bold text-slate-800 mt-1">{rules.reduce((s, r) => s + r.products, 0)}</p>
+                <p className={isDark ? "text-2xl font-bold text-slate-200 mt-1" : "text-2xl font-bold text-slate-800 mt-1"}>{rules.reduce((s, r) => s + r.products, 0)}</p>
                 <p className="text-xs text-slate-500 mt-1">across all rules</p>
               </div>
               <div className="h-10 w-10 rounded-lg bg-amber-100 flex items-center justify-center">
@@ -126,7 +129,7 @@ export function PricingRulesPage() {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-xs font-medium text-slate-500 uppercase tracking-wider">Avg Margin</p>
-                <p className="text-2xl font-bold text-slate-800 mt-1">{avgMargin}%</p>
+                <p className={isDark ? "text-2xl font-bold text-slate-200 mt-1" : "text-2xl font-bold text-slate-800 mt-1"}>{avgMargin}%</p>
                 <p className="text-xs text-amber-600 mt-1">+2.4% vs last month</p>
               </div>
               <div className="h-10 w-10 rounded-lg bg-amber-100 flex items-center justify-center">
@@ -149,7 +152,7 @@ export function PricingRulesPage() {
         <TabsContent value="rules">
           <Card className="border-slate-200">
             <CardHeader className="pb-3">
-              <CardTitle className="text-lg font-semibold text-slate-800">Active Pricing Rules</CardTitle>
+              <CardTitle className={isDark ? "text-lg font-semibold text-slate-200" : "text-lg font-semibold text-slate-800"}>Active Pricing Rules</CardTitle>
             </CardHeader>
             <CardContent className="p-0">
               <div className="overflow-x-auto -mx-3 sm:mx-0 max-h-[480px] overflow-y-auto">
@@ -168,7 +171,7 @@ export function PricingRulesPage() {
                   <TableBody>
                     {rules.map((rule) => (
                       <TableRow key={rule.id} className={!rule.status ? "opacity-50" : ""}>
-                        <TableCell className="font-medium text-slate-700">{rule.name}</TableCell>
+                        <TableCell className={isDark ? "font-medium text-slate-300" : "font-medium text-slate-700"}>{rule.name}</TableCell>
                         <TableCell>
                           <Badge variant="secondary" className={typeColors[rule.type]}>{rule.type}</Badge>
                         </TableCell>
@@ -182,7 +185,7 @@ export function PricingRulesPage() {
                           <Switch checked={rule.status} onCheckedChange={() => toggleRule(rule.id)} className="data-[state=checked]:bg-amber-600" />
                         </TableCell>
                         <TableCell className="text-center">
-                          <span className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-slate-100 text-xs font-bold text-slate-700">
+                          <span className={isDark ? "inline-flex h-6 w-6 items-center justify-center rounded-full bg-slate-100 text-xs font-bold text-slate-300" : "inline-flex h-6 w-6 items-center justify-center rounded-full bg-slate-100 text-xs font-bold text-slate-700"}>
                             {rule.priority}
                           </span>
                         </TableCell>
@@ -200,16 +203,16 @@ export function PricingRulesPage() {
         <TabsContent value="builder">
           <Card className="border-slate-200">
             <CardHeader className="pb-3">
-              <CardTitle className="text-lg font-semibold text-slate-800">Create New Pricing Rule</CardTitle>
+              <CardTitle className={isDark ? "text-lg font-semibold text-slate-200" : "text-lg font-semibold text-slate-800"}>Create New Pricing Rule</CardTitle>
             </CardHeader>
             <CardContent className="space-y-6">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label className="text-sm font-medium text-slate-700">Rule Name</Label>
+                  <Label className={isDark ? "text-sm font-medium text-slate-300" : "text-sm font-medium text-slate-700"}>Rule Name</Label>
                   <Input placeholder="e.g., Eid Collection Markup" className="border-slate-300 focus:border-amber-500" />
                 </div>
                 <div className="space-y-2">
-                  <Label className="text-sm font-medium text-slate-700">Rule Type</Label>
+                  <Label className={isDark ? "text-sm font-medium text-slate-300" : "text-sm font-medium text-slate-700"}>Rule Type</Label>
                   <Select>
                     <SelectTrigger className="border-slate-300"><SelectValue placeholder="Select type" /></SelectTrigger>
                     <SelectContent>
@@ -222,15 +225,15 @@ export function PricingRulesPage() {
                   </Select>
                 </div>
                 <div className="space-y-2">
-                  <Label className="text-sm font-medium text-slate-700">Condition</Label>
+                  <Label className={isDark ? "text-sm font-medium text-slate-300" : "text-sm font-medium text-slate-700"}>Condition</Label>
                   <Input placeholder="e.g., Category = Skincare" className="border-slate-300 focus:border-amber-500" />
                 </div>
                 <div className="space-y-2">
-                  <Label className="text-sm font-medium text-slate-700">Value (%)</Label>
+                  <Label className={isDark ? "text-sm font-medium text-slate-300" : "text-sm font-medium text-slate-700"}>Value (%)</Label>
                   <Input placeholder="e.g., -15 or +10" className="border-slate-300 focus:border-amber-500" />
                 </div>
                 <div className="space-y-2">
-                  <Label className="text-sm font-medium text-slate-700">Priority</Label>
+                  <Label className={isDark ? "text-sm font-medium text-slate-300" : "text-sm font-medium text-slate-700"}>Priority</Label>
                   <Select>
                     <SelectTrigger className="border-slate-300"><SelectValue placeholder="Select priority" /></SelectTrigger>
                     <SelectContent>
@@ -239,7 +242,7 @@ export function PricingRulesPage() {
                   </Select>
                 </div>
                 <div className="space-y-2">
-                  <Label className="text-sm font-medium text-slate-700">Applicable Products</Label>
+                  <Label className={isDark ? "text-sm font-medium text-slate-300" : "text-sm font-medium text-slate-700"}>Applicable Products</Label>
                   <Select>
                     <SelectTrigger className="border-slate-300"><SelectValue placeholder="Select products" /></SelectTrigger>
                     <SelectContent>
@@ -270,7 +273,7 @@ export function PricingRulesPage() {
         <TabsContent value="history">
           <Card className="border-slate-200">
             <CardHeader className="pb-3">
-              <CardTitle className="text-lg font-semibold text-slate-800">Price History (6 Months)</CardTitle>
+              <CardTitle className={isDark ? "text-lg font-semibold text-slate-200" : "text-lg font-semibold text-slate-800"}>Price History (6 Months)</CardTitle>
             </CardHeader>
             <CardContent>
               <div className="h-[400px]">
@@ -296,7 +299,7 @@ export function PricingRulesPage() {
         <TabsContent value="margins">
           <Card className="border-slate-200">
             <CardHeader className="pb-3">
-              <CardTitle className="text-lg font-semibold text-slate-800">Margin Analysis</CardTitle>
+              <CardTitle className={isDark ? "text-lg font-semibold text-slate-200" : "text-lg font-semibold text-slate-800"}>Margin Analysis</CardTitle>
             </CardHeader>
             <CardContent className="p-0">
               <div className="overflow-x-auto -mx-3 sm:mx-0 max-h-[480px] overflow-y-auto">
@@ -313,9 +316,9 @@ export function PricingRulesPage() {
                   <TableBody>
                     {marginData.map((item) => (
                       <TableRow key={item.product}>
-                        <TableCell className="font-medium text-slate-700">{item.product}</TableCell>
+                        <TableCell className={isDark ? "font-medium text-slate-300" : "font-medium text-slate-700"}>{item.product}</TableCell>
                         <TableCell className="text-right text-slate-600">PKR {item.costPrice}</TableCell>
-                        <TableCell className="text-right font-medium text-slate-800">PKR {item.retailPrice}</TableCell>
+                        <TableCell className={isDark ? "text-right font-medium text-slate-200" : "text-right font-medium text-slate-800"}>PKR {item.retailPrice}</TableCell>
                         <TableCell className="text-right text-slate-600">PKR {item.wholesalePrice}</TableCell>
                         <TableCell className="text-right">
                           <Badge variant="secondary" className={item.margin >= 60 ? "bg-amber-100 text-amber-700" : "bg-amber-100 text-amber-700"}>

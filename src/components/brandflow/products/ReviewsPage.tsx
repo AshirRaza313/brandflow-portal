@@ -1,5 +1,6 @@
 "use client";
 
+import { useValtrioxStore } from "@/store/brandflow-store";
 import { useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -19,6 +20,8 @@ function StarRating({ rating }: { rating: number }) {
 }
 
 export function ReviewsPage() {
+  const { appTheme } = useValtrioxStore();
+  const isDark = appTheme === "dark" || appTheme === "premium-dark";
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   const [ratingFilter, setRatingFilter] = useState("all");
@@ -26,7 +29,7 @@ export function ReviewsPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-bold text-slate-900">Product Reviews</h1>
+        <h1 className={isDark ? "text-2xl font-bold text-white" : "text-2xl font-bold text-slate-900"}>Product Reviews</h1>
         <p className="text-sm text-slate-500 mt-1">Monitor and manage customer feedback</p>
       </div>
 
@@ -35,7 +38,7 @@ export function ReviewsPage() {
         <Card>
           <CardContent className="p-4">
             <div className="text-center mb-4">
-              <p className="text-4xl font-bold text-slate-900">—</p>
+              <p className={isDark ? "text-4xl font-bold text-white" : "text-4xl font-bold text-slate-900"}>—</p>
               <StarRating rating={0} />
               <p className="text-sm text-muted-foreground mt-1">0 reviews</p>
             </div>

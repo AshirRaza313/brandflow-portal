@@ -48,7 +48,7 @@ export function ReturnsPage() {
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-slate-900">Returns Management</h1>
+          <h1 className={isDark ? "text-2xl font-bold text-white" : "text-2xl font-bold text-slate-900"}>Returns Management</h1>
           <p className="text-sm text-slate-500 mt-1">Track, process and manage product returns</p>
         </div>
         <Button className="bg-amber-600 hover:bg-amber-700 text-white" onClick={() => toast.info("Return processing queue is empty")}>
@@ -67,7 +67,7 @@ export function ReturnsPage() {
           <Card key={stat.title} className="border-slate-200">
             <CardContent className="p-4">
               <p className="text-xs font-medium text-slate-500 uppercase tracking-wider">{stat.title}</p>
-              <p className="text-2xl font-bold text-slate-900 mt-1">{stat.value}</p>
+              <p className={isDark ? "text-2xl font-bold text-white mt-1" : "text-2xl font-bold text-slate-900 mt-1"}>{stat.value}</p>
             </CardContent>
           </Card>
         ))}
@@ -78,7 +78,7 @@ export function ReturnsPage() {
           <Card className="border-slate-200">
             <CardContent className="p-4">
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4">
-                <p className="text-base font-semibold text-slate-900">Return Requests</p>
+                <p className={isDark ? "text-base font-semibold text-white" : "text-base font-semibold text-slate-900"}>Return Requests</p>
                 <div className="flex gap-1 flex-wrap">
                   {["all", "pending", "processing", "approved", "completed", "rejected"].map((s) => (
                     <button key={s} onClick={() => setFilterStatus(s)}
@@ -99,7 +99,7 @@ export function ReturnsPage() {
         <div>
           <Card className="border-slate-200">
             <CardContent className="p-4">
-              <p className="text-base font-semibold text-slate-900 mb-4">Return Reasons</p>
+              <p className={isDark ? "text-base font-semibold text-white mb-4" : "text-base font-semibold text-slate-900 mb-4"}>Return Reasons</p>
               <EmptyState
                 icon={RotateCcw}
                 title="No data"
@@ -113,7 +113,7 @@ export function ReturnsPage() {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <Card className="border-slate-200">
           <CardContent className="p-4">
-            <p className="text-base font-semibold text-slate-900 mb-4 flex items-center gap-2">
+            <p className={isDark ? "text-base font-semibold text-white mb-4 flex items-center gap-2" : "text-base font-semibold text-slate-900 mb-4 flex items-center gap-2"}>
               <PackageCheck className="h-5 w-5 text-amber-600" /> Quality Check
             </p>
             <EmptyState icon={PackageCheck} title="No QC data" description="Quality check data will appear after returns are processed." />
@@ -122,22 +122,22 @@ export function ReturnsPage() {
         <Card className="border-slate-200">
           <CardContent className="p-4">
             <div className="flex items-center justify-between mb-4">
-              <p className="text-base font-semibold text-slate-900 flex items-center gap-2">
+              <p className={isDark ? "text-base font-semibold text-white flex items-center gap-2" : "text-base font-semibold text-slate-900 flex items-center gap-2"}>
                 <ShieldCheck className="h-5 w-5 text-amber-600" /> Return Policy Settings
               </p>
             </div>
             <div className="space-y-3">
               <div className="flex justify-between py-2 border-b border-slate-100">
                 <span className="text-xs text-slate-600">Return Window</span>
-                <span className="text-xs font-semibold text-slate-900">{currentPolicy?.returnWindow || "Not configured"}</span>
+                <span className={isDark ? "text-xs font-semibold text-white" : "text-xs font-semibold text-slate-900"}>{currentPolicy?.returnWindow || "Not configured"}</span>
               </div>
               <div className="flex justify-between py-2 border-b border-slate-100">
                 <span className="text-xs text-slate-600">Refund Method</span>
-                <span className="text-xs font-semibold text-slate-900">{currentPolicy?.refundMethod || "Not configured"}</span>
+                <span className={isDark ? "text-xs font-semibold text-white" : "text-xs font-semibold text-slate-900"}>{currentPolicy?.refundMethod || "Not configured"}</span>
               </div>
               <div className="flex justify-between py-2">
                 <span className="text-xs text-slate-600">Restocking Fee</span>
-                <span className="text-xs font-semibold text-slate-900">{currentPolicy?.restockingFee || "Not configured"}</span>
+                <span className={isDark ? "text-xs font-semibold text-white" : "text-xs font-semibold text-slate-900"}>{currentPolicy?.restockingFee || "Not configured"}</span>
               </div>
             </div>
             <Button variant="outline" size="sm" className="mt-4 w-full border-amber-200 text-amber-700 hover:bg-amber-50 text-xs" onClick={() => setPolicyOpen(true)}>
@@ -155,7 +155,7 @@ export function ReturnsPage() {
           </DialogHeader>
           <div className="space-y-4 py-2">
             <div className="space-y-2">
-              <Label className={`text-xs font-medium ${isDark ? "text-slate-300" : "text-slate-700"}`}>Return Window (e.g. 30 days)</Label>
+              <Label className={isDark ? `text-xs font-medium ${isDark ? "text-slate-300" : "text-slate-300"}` : `text-xs font-medium ${isDark ? "text-slate-300" : "text-slate-700"}`}>Return Window (e.g. 30 days)</Label>
               <Input
                 placeholder="e.g. 30 days"
                 value={policyForm.returnWindow}
@@ -164,7 +164,7 @@ export function ReturnsPage() {
               />
             </div>
             <div className="space-y-2">
-              <Label className={`text-xs font-medium ${isDark ? "text-slate-300" : "text-slate-700"}`}>Refund Method</Label>
+              <Label className={isDark ? `text-xs font-medium ${isDark ? "text-slate-300" : "text-slate-300"}` : `text-xs font-medium ${isDark ? "text-slate-300" : "text-slate-700"}`}>Refund Method</Label>
               <Input
                 placeholder="e.g. Original payment method, Store credit"
                 value={policyForm.refundMethod}
@@ -173,7 +173,7 @@ export function ReturnsPage() {
               />
             </div>
             <div className="space-y-2">
-              <Label className={`text-xs font-medium ${isDark ? "text-slate-300" : "text-slate-700"}`}>Restocking Fee (%)</Label>
+              <Label className={isDark ? `text-xs font-medium ${isDark ? "text-slate-300" : "text-slate-300"}` : `text-xs font-medium ${isDark ? "text-slate-300" : "text-slate-700"}`}>Restocking Fee (%)</Label>
               <Input
                 placeholder="e.g. 10"
                 value={policyForm.restockingFee}

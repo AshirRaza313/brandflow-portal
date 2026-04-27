@@ -75,7 +75,7 @@ export function ShippingPage() {
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-slate-900">Shipping Management</h1>
+          <h1 className={isDark ? "text-2xl font-bold text-white" : "text-2xl font-bold text-slate-900"}>Shipping Management</h1>
           <p className="text-sm text-slate-500 mt-1">Track shipments, manage carriers, and calculate rates</p>
         </div>
         <Button className="bg-amber-600 hover:bg-amber-700 text-white" onClick={() => setShipmentOpen(true)}>
@@ -94,7 +94,7 @@ export function ShippingPage() {
           <Card key={stat.title} className="border-slate-200">
             <CardContent className="p-4">
               <p className="text-xs font-medium text-slate-500 uppercase tracking-wider">{stat.title}</p>
-              <p className="text-2xl font-bold text-slate-900 mt-1">{stat.value}</p>
+              <p className={isDark ? "text-2xl font-bold text-white mt-1" : "text-2xl font-bold text-slate-900 mt-1"}>{stat.value}</p>
             </CardContent>
           </Card>
         ))}
@@ -102,13 +102,13 @@ export function ShippingPage() {
 
       <Card className="border-slate-200">
         <CardContent className="p-4">
-          <p className="text-base font-semibold text-slate-900 mb-4 flex items-center gap-2"><BarChart3 className="h-4 w-4 text-amber-600" />Carrier Comparison</p>
+          <p className={isDark ? "text-base font-semibold text-white mb-4 flex items-center gap-2" : "text-base font-semibold text-slate-900 mb-4 flex items-center gap-2"}><BarChart3 className="h-4 w-4 text-amber-600" />Carrier Comparison</p>
           {carriers.length > 0 ? (
             <div className="space-y-2">
               {carriers.map((carrier) => (
                 <div key={carrier.id} className="flex items-center justify-between p-3 bg-slate-50 rounded-lg">
                   <div>
-                    <p className="text-sm font-medium text-slate-900">{carrier.name}</p>
+                    <p className={isDark ? "text-sm font-medium text-white" : "text-sm font-medium text-slate-900"}>{carrier.name}</p>
                     <p className="text-xs text-slate-500">{carrier.serviceType} · {carrier.apiKey ? "Connected" : "No API key"}</p>
                   </div>
                   <span className={`px-2 py-1 text-xs font-medium rounded-full ${carrier.active ? "bg-amber-100 text-amber-700" : "bg-slate-100 text-slate-600"}`}>
@@ -134,7 +134,7 @@ export function ShippingPage() {
           <Card className="border-slate-200">
             <CardContent className="p-4">
               <div className="flex items-center justify-between mb-4">
-                <p className="text-base font-semibold text-slate-900 flex items-center gap-2"><MapPin className="h-4 w-4 text-amber-600" /> Tracking Dashboard</p>
+                <p className={isDark ? "text-base font-semibold text-white flex items-center gap-2" : "text-base font-semibold text-slate-900 flex items-center gap-2"}><MapPin className="h-4 w-4 text-amber-600" /> Tracking Dashboard</p>
                 <span className="text-xs text-slate-400">{shipments.filter(s => s.status === "in_transit").length} in transit</span>
               </div>
               {shipments.length > 0 ? (
@@ -142,7 +142,7 @@ export function ShippingPage() {
                   {shipments.map((shipment) => (
                     <div key={shipment.id} className="flex items-center justify-between p-3 bg-slate-50 rounded-lg">
                       <div>
-                        <p className="text-sm font-medium text-slate-900">{shipment.recipientName}</p>
+                        <p className={isDark ? "text-sm font-medium text-white" : "text-sm font-medium text-slate-900"}>{shipment.recipientName}</p>
                         <p className="text-xs text-slate-500">{shipment.destination} · {shipment.weight} kg</p>
                       </div>
                       <span className={`px-2 py-1 text-xs font-medium rounded-full capitalize ${shipment.status === "delivered" ? "bg-amber-100 text-amber-700" : shipment.status === "in_transit" ? "bg-blue-100 text-blue-700" : "bg-amber-100 text-amber-700"}`}>
@@ -160,21 +160,21 @@ export function ShippingPage() {
         <div>
           <Card className="border-slate-200">
             <CardContent className="p-4">
-              <p className="text-base font-semibold text-slate-900 flex items-center gap-2"><Calculator className="h-4 w-4 text-amber-600" /> Rate Calculator</p>
+              <p className={isDark ? "text-base font-semibold text-white flex items-center gap-2" : "text-base font-semibold text-slate-900 flex items-center gap-2"}><Calculator className="h-4 w-4 text-amber-600" /> Rate Calculator</p>
               <div className="space-y-4 mt-4">
                 <div className="space-y-2">
-                  <Label className="text-xs font-medium text-slate-700">Origin</Label>
+                  <Label className={isDark ? "text-xs font-medium text-slate-300" : "text-xs font-medium text-slate-700"}>Origin</Label>
                   <Select><SelectTrigger className="text-xs h-9"><SelectValue placeholder="Select origin" /></SelectTrigger>
                     <SelectContent><SelectItem value="dubai">Dubai, UAE</SelectItem><SelectItem value="riyadh">Riyadh, KSA</SelectItem></SelectContent></Select>
                 </div>
                 <div className="space-y-2">
-                  <Label className="text-xs font-medium text-slate-700">Destination</Label>
+                  <Label className={isDark ? "text-xs font-medium text-slate-300" : "text-xs font-medium text-slate-700"}>Destination</Label>
                   <Select><SelectTrigger className="text-xs h-9"><SelectValue placeholder="Select destination" /></SelectTrigger>
                     <SelectContent><SelectItem value="abu-dhabi">Abu Dhabi, UAE</SelectItem><SelectItem value="jeddah">Jeddah, KSA</SelectItem></SelectContent></Select>
                 </div>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  <div className="space-y-2"><Label className="text-xs font-medium text-slate-700">Weight (kg)</Label><Input type="number" placeholder="0.5" className="text-xs h-9" /></div>
-                  <div className="space-y-2"><Label className="text-xs font-medium text-slate-700">Dimensions (cm)</Label><Input placeholder="20x15x10" className="text-xs h-9" /></div>
+                  <div className="space-y-2"><Label className={isDark ? "text-xs font-medium text-slate-300" : "text-xs font-medium text-slate-700"}>Weight (kg)</Label><Input type="number" placeholder="0.5" className="text-xs h-9" /></div>
+                  <div className="space-y-2"><Label className={isDark ? "text-xs font-medium text-slate-300" : "text-xs font-medium text-slate-700"}>Dimensions (cm)</Label><Input placeholder="20x15x10" className="text-xs h-9" /></div>
                 </div>
                 <Button onClick={() => setCalculatedRate("Select origin and destination")} className="w-full bg-amber-600 hover:bg-amber-700 text-white text-xs">
                   Calculate Rate
@@ -182,7 +182,7 @@ export function ShippingPage() {
                 {calculatedRate && (
                   <div className="p-3 bg-amber-50 border border-amber-200 rounded-lg text-center mt-4">
                     <p className="text-xs text-slate-500 uppercase tracking-wider">Note</p>
-                    <p className="text-sm font-medium text-slate-700">{calculatedRate}</p>
+                    <p className={isDark ? "text-sm font-medium text-slate-300" : "text-sm font-medium text-slate-700"}>{calculatedRate}</p>
                   </div>
                 )}
               </div>
@@ -199,7 +199,7 @@ export function ShippingPage() {
           </DialogHeader>
           <div className="space-y-4 py-2">
             <div className="space-y-2">
-              <Label className={`text-xs font-medium ${isDark ? "text-slate-300" : "text-slate-700"}`}>Recipient Name</Label>
+              <Label className={isDark ? `text-xs font-medium ${isDark ? "text-slate-300" : "text-slate-300"}` : `text-xs font-medium ${isDark ? "text-slate-300" : "text-slate-700"}`}>Recipient Name</Label>
               <Input
                 placeholder="Enter recipient name"
                 value={shipmentForm.recipientName}
@@ -208,7 +208,7 @@ export function ShippingPage() {
               />
             </div>
             <div className="space-y-2">
-              <Label className={`text-xs font-medium ${isDark ? "text-slate-300" : "text-slate-700"}`}>Destination</Label>
+              <Label className={isDark ? `text-xs font-medium ${isDark ? "text-slate-300" : "text-slate-300"}` : `text-xs font-medium ${isDark ? "text-slate-300" : "text-slate-700"}`}>Destination</Label>
               <Input
                 placeholder="Enter destination address or city"
                 value={shipmentForm.destination}
@@ -218,7 +218,7 @@ export function ShippingPage() {
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div className="space-y-2">
-                <Label className={`text-xs font-medium ${isDark ? "text-slate-300" : "text-slate-700"}`}>Weight (kg)</Label>
+                <Label className={isDark ? `text-xs font-medium ${isDark ? "text-slate-300" : "text-slate-300"}` : `text-xs font-medium ${isDark ? "text-slate-300" : "text-slate-700"}`}>Weight (kg)</Label>
                 <Input
                   type="number"
                   placeholder="0.5"
@@ -228,7 +228,7 @@ export function ShippingPage() {
                 />
               </div>
               <div className="space-y-2">
-                <Label className={`text-xs font-medium ${isDark ? "text-slate-300" : "text-slate-700"}`}>Items Description</Label>
+                <Label className={isDark ? `text-xs font-medium ${isDark ? "text-slate-300" : "text-slate-300"}` : `text-xs font-medium ${isDark ? "text-slate-300" : "text-slate-700"}`}>Items Description</Label>
                 <Input
                   placeholder="e.g. Skincare set"
                   value={shipmentForm.items}
@@ -257,7 +257,7 @@ export function ShippingPage() {
           </DialogHeader>
           <div className="space-y-4 py-2">
             <div className="space-y-2">
-              <Label className={`text-xs font-medium ${isDark ? "text-slate-300" : "text-slate-700"}`}>Carrier Name</Label>
+              <Label className={isDark ? `text-xs font-medium ${isDark ? "text-slate-300" : "text-slate-300"}` : `text-xs font-medium ${isDark ? "text-slate-300" : "text-slate-700"}`}>Carrier Name</Label>
               <Input
                 placeholder="e.g. DHL, FedEx, Aramex"
                 value={carrierForm.name}
@@ -266,7 +266,7 @@ export function ShippingPage() {
               />
             </div>
             <div className="space-y-2">
-              <Label className={`text-xs font-medium ${isDark ? "text-slate-300" : "text-slate-700"}`}>Service Type</Label>
+              <Label className={isDark ? `text-xs font-medium ${isDark ? "text-slate-300" : "text-slate-300"}` : `text-xs font-medium ${isDark ? "text-slate-300" : "text-slate-700"}`}>Service Type</Label>
               <Input
                 placeholder="e.g. Express, Standard, Economy"
                 value={carrierForm.serviceType}
@@ -275,7 +275,7 @@ export function ShippingPage() {
               />
             </div>
             <div className="space-y-2">
-              <Label className={`text-xs font-medium ${isDark ? "text-slate-300" : "text-slate-700"}`}>API Key</Label>
+              <Label className={isDark ? `text-xs font-medium ${isDark ? "text-slate-300" : "text-slate-300"}` : `text-xs font-medium ${isDark ? "text-slate-300" : "text-slate-700"}`}>API Key</Label>
               <Input
                 type="password"
                 placeholder="Enter carrier API key"

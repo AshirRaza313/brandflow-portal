@@ -1,5 +1,6 @@
 "use client";
 
+import { useValtrioxStore } from "@/store/brandflow-store";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Package, Clock, CheckCircle2, Timer, Play } from "lucide-react";
@@ -7,11 +8,13 @@ import { EmptyState } from "@/components/brandflow/shared/EmptyState";
 import { toast } from "sonner";
 
 export function PackagingPage() {
+  const { appTheme } = useValtrioxStore();
+  const isDark = appTheme === "dark" || appTheme === "premium-dark";
   return (
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-slate-900">Packaging Management</h1>
+          <h1 className={isDark ? "text-2xl font-bold text-white" : "text-2xl font-bold text-slate-900"}>Packaging Management</h1>
           <p className="text-sm text-slate-500 mt-1">Manage packing workflow, materials, and quality control</p>
         </div>
         <Button className="bg-amber-600 hover:bg-amber-700 text-white" onClick={() => toast.info("No orders in packing queue")}>
@@ -30,7 +33,7 @@ export function PackagingPage() {
           <Card key={stat.title} className="border-slate-200">
             <CardContent className="p-4">
               <p className="text-xs font-medium text-slate-500 uppercase tracking-wider">{stat.title}</p>
-              <p className="text-2xl font-bold text-slate-900 mt-1">{stat.value}</p>
+              <p className={isDark ? "text-2xl font-bold text-white mt-1" : "text-2xl font-bold text-slate-900 mt-1"}>{stat.value}</p>
             </CardContent>
           </Card>
         ))}
@@ -38,7 +41,7 @@ export function PackagingPage() {
 
       <Card className="border-slate-200">
         <CardContent className="p-4">
-          <p className="text-base font-semibold text-slate-900 mb-4">Packing Queue</p>
+          <p className={isDark ? "text-base font-semibold text-white mb-4" : "text-base font-semibold text-slate-900 mb-4"}>Packing Queue</p>
           <EmptyState
             icon={Package}
             title="No orders to pack"
@@ -50,14 +53,14 @@ export function PackagingPage() {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <Card className="border-slate-200">
           <CardContent className="p-4">
-            <p className="text-base font-semibold text-slate-900 mb-4">Material Inventory</p>
+            <p className={isDark ? "text-base font-semibold text-white mb-4" : "text-base font-semibold text-slate-900 mb-4"}>Material Inventory</p>
             <EmptyState icon={Package} title="No materials tracked" description="Material inventory will appear once you set up your warehouse." />
           </CardContent>
         </Card>
         <Card className="border-slate-200">
           <CardContent className="p-4">
             <div className="flex items-center justify-between mb-4">
-              <p className="text-base font-semibold text-slate-900 flex items-center gap-2">
+              <p className={isDark ? "text-base font-semibold text-white flex items-center gap-2" : "text-base font-semibold text-slate-900 flex items-center gap-2"}>
                 <CheckCircle2 className="h-5 w-5 text-amber-600" /> QC Checklist
               </p>
               <span className="text-xs text-slate-400">0/0</span>

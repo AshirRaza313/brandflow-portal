@@ -1,5 +1,6 @@
 "use client";
 
+import { useValtrioxStore } from "@/store/brandflow-store";
 import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -52,6 +53,8 @@ const stockByColor = [
 ];
 
 export function VariantsPage() {
+  const { appTheme } = useValtrioxStore();
+  const isDark = appTheme === "dark" || appTheme === "premium-dark";
   const [selectedVariants, setSelectedVariants] = useState<number[]>([]);
   const [bulkAction, setBulkAction] = useState("");
 
@@ -80,7 +83,7 @@ export function VariantsPage() {
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-slate-800">Product Variants</h1>
+          <h1 className={isDark ? "text-2xl font-bold text-slate-200" : "text-2xl font-bold text-slate-800"}>Product Variants</h1>
           <p className="text-sm text-slate-500 mt-1">Manage size, color, and material combinations for your products</p>
         </div>
         <Button className="bg-amber-600 hover:bg-amber-700">
@@ -95,7 +98,7 @@ export function VariantsPage() {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-xs font-medium text-slate-500 uppercase tracking-wider">Products with Variants</p>
-                <p className="text-2xl font-bold text-slate-800 mt-1">{totalProducts}</p>
+                <p className={isDark ? "text-2xl font-bold text-slate-200 mt-1" : "text-2xl font-bold text-slate-800 mt-1"}>{totalProducts}</p>
                 <p className="text-xs text-slate-500 mt-1">active products</p>
               </div>
               <div className="h-10 w-10 rounded-lg bg-amber-100 flex items-center justify-center">
@@ -109,7 +112,7 @@ export function VariantsPage() {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-xs font-medium text-slate-500 uppercase tracking-wider">Total Variant SKUs</p>
-                <p className="text-2xl font-bold text-slate-800 mt-1">{totalSKUs}</p>
+                <p className={isDark ? "text-2xl font-bold text-slate-200 mt-1" : "text-2xl font-bold text-slate-800 mt-1"}>{totalSKUs}</p>
                 <p className="text-xs text-amber-600 mt-1">+3 this week</p>
               </div>
               <div className="h-10 w-10 rounded-lg bg-amber-100 flex items-center justify-center">
@@ -161,7 +164,7 @@ export function VariantsPage() {
         <TabsContent value="matrix">
           <Card className="border-slate-200">
             <CardHeader className="pb-3">
-              <CardTitle className="text-lg font-semibold text-slate-800">
+              <CardTitle className={isDark ? "text-lg font-semibold text-slate-200" : "text-lg font-semibold text-slate-800"}>
                 Glow Serum — Variant Matrix
                 <span className="text-sm font-normal text-slate-500 ml-2">(Size × Color)</span>
               </CardTitle>
@@ -180,7 +183,7 @@ export function VariantsPage() {
                   <tbody>
                     {sizes.map(size => (
                       <tr key={size}>
-                        <td className="p-3 text-sm font-medium text-slate-700 border-b border-slate-100">{size}</td>
+                        <td className={isDark ? "p-3 text-sm font-medium text-slate-300 border-b border-slate-100" : "p-3 text-sm font-medium text-slate-700 border-b border-slate-100"}>{size}</td>
                         {colors.map(color => {
                           const key = `${size}-${color}-Glass`;
                           const stock = variantMatrix[key] || 0;
@@ -210,7 +213,7 @@ export function VariantsPage() {
         <TabsContent value="list">
           <Card className="border-slate-200">
             <CardHeader className="pb-3">
-              <CardTitle className="text-lg font-semibold text-slate-800">All Variants</CardTitle>
+              <CardTitle className={isDark ? "text-lg font-semibold text-slate-200" : "text-lg font-semibold text-slate-800"}>All Variants</CardTitle>
             </CardHeader>
             <CardContent className="p-0">
               <div className="overflow-x-auto -mx-3 sm:mx-0 max-h-[480px] overflow-y-auto">
@@ -231,12 +234,12 @@ export function VariantsPage() {
                     {variants.map((v) => (
                       <TableRow key={v.id}>
                         <TableCell className="font-mono text-xs text-slate-600">{v.sku}</TableCell>
-                        <TableCell className="font-medium text-slate-700">{v.product}</TableCell>
+                        <TableCell className={isDark ? "font-medium text-slate-300" : "font-medium text-slate-700"}>{v.product}</TableCell>
                         <TableCell><Badge variant="outline" className="border-slate-300">{v.size}</Badge></TableCell>
                         <TableCell><Badge variant="outline" className="border-slate-300">{v.color}</Badge></TableCell>
                         <TableCell className="text-sm text-slate-600">{v.material}</TableCell>
                         <TableCell className={`text-right ${getStockColor(v.stock)}`}>{v.stock}</TableCell>
-                        <TableCell className="text-right font-medium text-slate-800">PKR {v.price}</TableCell>
+                        <TableCell className={isDark ? "text-right font-medium text-slate-200" : "text-right font-medium text-slate-800"}>PKR {v.price}</TableCell>
                         <TableCell><Badge variant="secondary" className={statusColor[v.status]}>{v.status}</Badge></TableCell>
                       </TableRow>
                     ))}
@@ -251,12 +254,12 @@ export function VariantsPage() {
         <TabsContent value="add">
           <Card className="border-slate-200">
             <CardHeader className="pb-3">
-              <CardTitle className="text-lg font-semibold text-slate-800">Add New Variant</CardTitle>
+              <CardTitle className={isDark ? "text-lg font-semibold text-slate-200" : "text-lg font-semibold text-slate-800"}>Add New Variant</CardTitle>
             </CardHeader>
             <CardContent className="space-y-5">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label className="text-sm font-medium text-slate-700">Product</Label>
+                  <Label className={isDark ? "text-sm font-medium text-slate-300" : "text-sm font-medium text-slate-700"}>Product</Label>
                   <Select>
                     <SelectTrigger className="border-slate-300"><SelectValue placeholder="Select product" /></SelectTrigger>
                     <SelectContent>
@@ -268,7 +271,7 @@ export function VariantsPage() {
                   </Select>
                 </div>
                 <div className="space-y-2">
-                  <Label className="text-sm font-medium text-slate-700">Size</Label>
+                  <Label className={isDark ? "text-sm font-medium text-slate-300" : "text-sm font-medium text-slate-700"}>Size</Label>
                   <Select>
                     <SelectTrigger className="border-slate-300"><SelectValue placeholder="Select size" /></SelectTrigger>
                     <SelectContent>
@@ -277,7 +280,7 @@ export function VariantsPage() {
                   </Select>
                 </div>
                 <div className="space-y-2">
-                  <Label className="text-sm font-medium text-slate-700">Color</Label>
+                  <Label className={isDark ? "text-sm font-medium text-slate-300" : "text-sm font-medium text-slate-700"}>Color</Label>
                   <Select>
                     <SelectTrigger className="border-slate-300"><SelectValue placeholder="Select color" /></SelectTrigger>
                     <SelectContent>
@@ -286,7 +289,7 @@ export function VariantsPage() {
                   </Select>
                 </div>
                 <div className="space-y-2">
-                  <Label className="text-sm font-medium text-slate-700">Material</Label>
+                  <Label className={isDark ? "text-sm font-medium text-slate-300" : "text-sm font-medium text-slate-700"}>Material</Label>
                   <Select>
                     <SelectTrigger className="border-slate-300"><SelectValue placeholder="Select material" /></SelectTrigger>
                     <SelectContent>
@@ -295,16 +298,16 @@ export function VariantsPage() {
                   </Select>
                 </div>
                 <div className="space-y-2">
-                  <Label className="text-sm font-medium text-slate-700">Stock Quantity</Label>
+                  <Label className={isDark ? "text-sm font-medium text-slate-300" : "text-sm font-medium text-slate-700"}>Stock Quantity</Label>
                   <Input type="number" placeholder="0" className="border-slate-300 focus:border-amber-500" />
                 </div>
                 <div className="space-y-2">
-                  <Label className="text-sm font-medium text-slate-700">Price (PKR)</Label>
+                  <Label className={isDark ? "text-sm font-medium text-slate-300" : "text-sm font-medium text-slate-700"}>Price (PKR)</Label>
                   <Input type="number" placeholder="0" className="border-slate-300 focus:border-amber-500" />
                 </div>
               </div>
               <div className="space-y-2">
-                <Label className="text-sm font-medium text-slate-700">Variant Image</Label>
+                <Label className={isDark ? "text-sm font-medium text-slate-300" : "text-sm font-medium text-slate-700"}>Variant Image</Label>
                 <div className="border-2 border-dashed border-slate-300 rounded-lg p-6 text-center hover:border-amber-400 transition-colors cursor-pointer">
                   <Upload className="h-8 w-8 mx-auto text-slate-400 mb-2" />
                   <p className="text-sm text-slate-500">Drag & drop or click to upload</p>
@@ -321,7 +324,7 @@ export function VariantsPage() {
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
             <Card className="border-slate-200">
               <CardHeader className="pb-3">
-                <CardTitle className="text-lg font-semibold text-slate-800">Stock by Size</CardTitle>
+                <CardTitle className={isDark ? "text-lg font-semibold text-slate-200" : "text-lg font-semibold text-slate-800"}>Stock by Size</CardTitle>
               </CardHeader>
               <CardContent>
                 <div className="h-[300px]">
@@ -343,7 +346,7 @@ export function VariantsPage() {
             </Card>
             <Card className="border-slate-200">
               <CardHeader className="pb-3">
-                <CardTitle className="text-lg font-semibold text-slate-800">Stock by Color</CardTitle>
+                <CardTitle className={isDark ? "text-lg font-semibold text-slate-200" : "text-lg font-semibold text-slate-800"}>Stock by Color</CardTitle>
               </CardHeader>
               <CardContent>
                 <div className="h-[300px]">
@@ -369,7 +372,7 @@ export function VariantsPage() {
         <TabsContent value="bulk">
           <Card className="border-slate-200">
             <CardHeader className="pb-3">
-              <CardTitle className="text-lg font-semibold text-slate-800">Bulk Update Variants</CardTitle>
+              <CardTitle className={isDark ? "text-lg font-semibold text-slate-200" : "text-lg font-semibold text-slate-800"}>Bulk Update Variants</CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="overflow-x-auto -mx-3 sm:mx-0 max-h-[260px] overflow-y-auto border rounded-lg">
@@ -392,7 +395,7 @@ export function VariantsPage() {
                           <Checkbox checked={selectedVariants.includes(v.id)} onCheckedChange={() => toggleVariant(v.id)} className="data-[state=checked]:bg-amber-600 data-[state=checked]:border-amber-600" />
                         </TableCell>
                         <TableCell className="font-mono text-xs">{v.sku}</TableCell>
-                        <TableCell className="text-sm text-slate-700">{v.product}</TableCell>
+                        <TableCell className={isDark ? "text-sm text-slate-300" : "text-sm text-slate-700"}>{v.product}</TableCell>
                         <TableCell className="text-sm text-slate-600">{v.size}</TableCell>
                         <TableCell className="text-sm text-slate-600">{v.color}</TableCell>
                         <TableCell className="text-right text-sm">PKR {v.price}</TableCell>
@@ -404,7 +407,7 @@ export function VariantsPage() {
               </div>
               <div className="flex flex-wrap gap-3 items-end">
                 <div className="space-y-2">
-                  <Label className="text-sm font-medium text-slate-700">Action</Label>
+                  <Label className={isDark ? "text-sm font-medium text-slate-300" : "text-sm font-medium text-slate-700"}>Action</Label>
                   <Select value={bulkAction} onValueChange={setBulkAction}>
                     <SelectTrigger className="w-[200px] border-slate-300"><SelectValue placeholder="Select action" /></SelectTrigger>
                     <SelectContent>
@@ -416,7 +419,7 @@ export function VariantsPage() {
                   </Select>
                 </div>
                 <div className="space-y-2">
-                  <Label className="text-sm font-medium text-slate-700">Value</Label>
+                  <Label className={isDark ? "text-sm font-medium text-slate-300" : "text-sm font-medium text-slate-700"}>Value</Label>
                   <Input placeholder="e.g., +10% or 50" className="w-[160px] border-slate-300 focus:border-amber-500" />
                 </div>
                 <Button className="bg-amber-600 hover:bg-amber-700" disabled={selectedVariants.length === 0}>

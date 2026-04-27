@@ -15,7 +15,8 @@ const actions = [
 ];
 
 export function QuickActions() {
-  const { setActiveSection } = useValtrioxStore();
+  const { setActiveSection, appTheme } = useValtrioxStore();
+  const isDark = appTheme === "dark" || appTheme === "premium-dark";
 
   return (
     <motion.div
@@ -25,7 +26,7 @@ export function QuickActions() {
     >
       <Card className="border-slate-200">
         <CardHeader className="pb-3">
-          <CardTitle className="text-base font-semibold text-slate-900">
+          <CardTitle className={isDark ? "text-base font-semibold text-white" : "text-base font-semibold text-slate-900"}>
             Quick Actions
           </CardTitle>
         </CardHeader>

@@ -1,16 +1,19 @@
 "use client";
 
+import { useValtrioxStore } from "@/store/brandflow-store";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { DollarSign, Percent, BarChart3, TrendingUp } from "lucide-react";
 import { EmptyState } from "@/components/brandflow/shared/EmptyState";
 import { toast } from "sonner";
 
 export function RevenueAnalyticsPage() {
+  const { appTheme } = useValtrioxStore();
+  const isDark = appTheme === "dark" || appTheme === "premium-dark";
   return (
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-slate-800">Revenue Analytics</h1>
+          <h1 className={isDark ? "text-2xl font-bold text-slate-200" : "text-2xl font-bold text-slate-800"}>Revenue Analytics</h1>
           <p className="text-sm text-slate-500 mt-1">Comprehensive revenue tracking, profit analysis, and forecasting</p>
         </div>
         <button
@@ -34,7 +37,7 @@ export function RevenueAnalyticsPage() {
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-xs font-medium text-slate-500 uppercase tracking-wider">{stat.title}</p>
-                  <p className="text-2xl font-bold text-slate-800 mt-1">{stat.value}</p>
+                  <p className={isDark ? "text-2xl font-bold text-slate-200 mt-1" : "text-2xl font-bold text-slate-800 mt-1"}>{stat.value}</p>
                   {stat.sub && <p className="text-sm text-slate-600">{stat.sub}</p>}
                 </div>
                 <div className="h-10 w-10 rounded-lg bg-amber-100 flex items-center justify-center">

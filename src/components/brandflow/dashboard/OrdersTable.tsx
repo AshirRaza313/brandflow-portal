@@ -1,11 +1,14 @@
 "use client";
 
+import { useValtrioxStore } from "@/store/brandflow-store";
 import { motion } from "framer-motion";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { ShoppingBag } from "lucide-react";
 
 export function OrdersTable() {
+  const { appTheme } = useValtrioxStore();
+  const isDark = appTheme === "dark" || appTheme === "premium-dark";
   return (
     <motion.div
       initial={{ opacity: 0, y: 20 }}
@@ -15,7 +18,7 @@ export function OrdersTable() {
       <Card className="border-slate-200">
         <CardHeader className="pb-3">
           <div className="flex items-center justify-between">
-            <CardTitle className="text-base font-semibold text-slate-900">
+            <CardTitle className={isDark ? "text-base font-semibold text-white" : "text-base font-semibold text-slate-900"}>
               Recent Orders
             </CardTitle>
           </div>

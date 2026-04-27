@@ -19,6 +19,7 @@ const monthNames = ["January", "February", "March", "April", "May", "June", "Jul
 
 export function CalendarPage() {
   const { appTheme } = useValtrioxStore();
+  const isDark = appTheme === "dark" || appTheme === "premium-dark";
   const [currentMonth, setCurrentMonth] = useState(new Date().getMonth());
   const [currentYear, setCurrentYear] = useState(new Date().getFullYear());
   const [eventOpen, setEventOpen] = useState(false);
@@ -45,7 +46,7 @@ export function CalendarPage() {
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-xl sm:text-2xl font-bold text-slate-900">Calendar</h1>
+          <h1 className={isDark ? "text-xl sm:text-2xl font-bold text-white" : "text-xl sm:text-2xl font-bold text-slate-900"}>Calendar</h1>
           <p className="text-sm text-slate-500 mt-1">View your schedule and upcoming events</p>
         </div>
         <Button className="bg-amber-600 hover:bg-amber-700" onClick={() => { setEventForm({ title: "", date: "", time: "", description: "" }); setEventOpen(true); }}><Plus className="mr-2 h-4 w-4" /> Add Event</Button>
@@ -75,7 +76,7 @@ export function CalendarPage() {
                 const isToday = day === today.getDate() && currentMonth === today.getMonth() && currentYear === today.getFullYear();
                 return (
                   <div key={day} className={`bg-white min-h-[40px] sm:min-h-[60px] p-1 hover:bg-slate-50/50 transition-colors ${isToday ? "bg-amber-50/50" : ""}`}>
-                    <span className={`text-[11px] sm:text-xs font-medium ${isToday ? "bg-amber-600 text-white rounded-full h-5 w-5 sm:h-6 sm:w-6 flex items-center justify-center" : "text-slate-700"}`}>
+                    <span className={isDark ? `text-[11px] sm:text-xs font-medium ${isToday ? "bg-amber-600 text-white rounded-full h-5 w-5 sm:h-6 sm:w-6 flex items-center justify-center" : "text-slate-300"}` : `text-[11px] sm:text-xs font-medium ${isToday ? "bg-amber-600 text-white rounded-full h-5 w-5 sm:h-6 sm:w-6 flex items-center justify-center" : "text-slate-700"}`}>
                       {day}
                     </span>
                   </div>

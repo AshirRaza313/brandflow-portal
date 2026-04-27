@@ -10,7 +10,8 @@ import { motion } from "framer-motion";
 import { useValtrioxStore } from "@/store/brandflow-store";
 
 export function CatalogPage() {
-  const { setActiveSection } = useValtrioxStore();
+  const { setActiveSection, appTheme } = useValtrioxStore();
+  const isDark = appTheme === "dark" || appTheme === "premium-dark";
   const [search, setSearch] = useState("");
   const [categoryFilter, setCategoryFilter] = useState("all");
   const [showWholesale, setShowWholesale] = useState(false);
@@ -19,7 +20,7 @@ export function CatalogPage() {
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-slate-900">Catalog / Price List</h1>
+          <h1 className={isDark ? "text-2xl font-bold text-white" : "text-2xl font-bold text-slate-900"}>Catalog / Price List</h1>
           <p className="text-sm text-slate-500 mt-1">Shareable product catalog with pricing</p>
         </div>
         <div className="flex flex-wrap gap-2">

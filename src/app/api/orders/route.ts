@@ -102,10 +102,12 @@ export const POST = withAuth(async (req, authCtx) => {
     if (!org) return NextResponse.json({ error: "Organization not found" }, { status: 404 });
     if (org.isBanned) return NextResponse.json({ error: "Organization is suspended" }, { status: 403 });
 
-    // Skip order limit check for platform admin roles
+    // Skip order limit check for platform admin roles and admin email
     const isPlatformAdmin = authCtx.role === "platform_owner" || authCtx.role === "platform_admin" || authCtx.role === "owner";
+    const adminEmail = (process.env.ADMIN_EMAIL || "").toLowerCase().trim();
+    const isAdminByEmail = adminEmail && authCtx.email?.toLowerCase() === adminEmail;
 
-    if (!isPlatformAdmin && org.plan === "starter") {
+    if (!isPlatformAdmin && !isAdminByEmail && org.plan === "starter") {
       const plan = await db.subscriptionPlan.findFirst({ where: { name: "starter" } });
       if (plan && plan.orderLimit > 0) {
         const currentOrderCount = await db.order.count({ where: { organizationId } });

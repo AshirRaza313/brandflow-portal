@@ -11,7 +11,8 @@ interface DashboardHeaderProps {
 }
 
 export function DashboardHeader({ onToggleSidebar }: DashboardHeaderProps) {
-  const { user } = useValtrioxStore();
+  const { user, appTheme } = useValtrioxStore();
+  const isDark = appTheme === "dark" || appTheme === "premium-dark";
 
   const initials = user?.name
     ? user.name.split(" ").map((n: string) => n[0]).join("").toUpperCase().slice(0, 2)
@@ -53,7 +54,7 @@ export function DashboardHeader({ onToggleSidebar }: DashboardHeaderProps) {
             </AvatarFallback>
           </Avatar>
           <div className="hidden sm:block">
-            <p className="text-sm font-medium text-slate-900">{user?.name || "User"}</p>
+            <p className={isDark ? "text-sm font-medium text-white" : "text-sm font-medium text-slate-900"}>{user?.name || "User"}</p>
             <p className="text-xs text-slate-500">Admin</p>
           </div>
         </div>

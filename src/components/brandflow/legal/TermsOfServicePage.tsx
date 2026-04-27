@@ -1,5 +1,6 @@
 "use client";
 
+import { useValtrioxStore } from "@/store/brandflow-store";
 import { ArrowLeft } from "lucide-react";
 import { usePlatformIdentity } from "@/lib/platform-identity";
 
@@ -8,6 +9,8 @@ interface LegalPageProps {
 }
 
 export function TermsOfServicePage({ onBack }: LegalPageProps) {
+  const { appTheme } = useValtrioxStore();
+  const isDark = appTheme === "dark" || appTheme === "premium-dark";
   const { identity } = usePlatformIdentity();
   return (
     <div className="min-h-screen bg-white">
@@ -23,7 +26,7 @@ export function TermsOfServicePage({ onBack }: LegalPageProps) {
 
         {/* Header */}
         <div className="mb-10">
-          <h1 className="text-3xl sm:text-4xl font-bold text-slate-900 mb-3">
+          <h1 className={isDark ? "text-3xl sm:text-4xl font-bold text-white mb-3" : "text-3xl sm:text-4xl font-bold text-slate-900 mb-3"}>
             Terms of Service
           </h1>
           <p className="text-slate-500 text-sm">
@@ -43,7 +46,7 @@ export function TermsOfServicePage({ onBack }: LegalPageProps) {
         {/* Content */}
         <div className="prose prose-slate max-w-none space-y-8">
           <section>
-            <h2 className="text-xl font-semibold text-slate-900 mb-3 pb-2 border-b border-slate-200">
+            <h2 className={isDark ? "text-xl font-semibold text-white mb-3 pb-2 border-b border-slate-200" : "text-xl font-semibold text-slate-900 mb-3 pb-2 border-b border-slate-200"}>
               1. Acceptance of Terms
             </h2>
             <p className="text-slate-600 leading-relaxed">
@@ -67,7 +70,7 @@ export function TermsOfServicePage({ onBack }: LegalPageProps) {
           </section>
 
           <section>
-            <h2 className="text-xl font-semibold text-slate-900 mb-3 pb-2 border-b border-slate-200">
+            <h2 className={isDark ? "text-xl font-semibold text-white mb-3 pb-2 border-b border-slate-200" : "text-xl font-semibold text-slate-900 mb-3 pb-2 border-b border-slate-200"}>
               2. Service Description
             </h2>
             <p className="text-slate-600 leading-relaxed">
@@ -95,7 +98,7 @@ export function TermsOfServicePage({ onBack }: LegalPageProps) {
           </section>
 
           <section>
-            <h2 className="text-xl font-semibold text-slate-900 mb-3 pb-2 border-b border-slate-200">
+            <h2 className={isDark ? "text-xl font-semibold text-white mb-3 pb-2 border-b border-slate-200" : "text-xl font-semibold text-slate-900 mb-3 pb-2 border-b border-slate-200"}>
               3. User Accounts and Registration
             </h2>
             <p className="text-slate-600 leading-relaxed">
@@ -119,11 +122,11 @@ export function TermsOfServicePage({ onBack }: LegalPageProps) {
           </section>
 
           <section>
-            <h2 className="text-xl font-semibold text-slate-900 mb-3 pb-2 border-b border-slate-200">
+            <h2 className={isDark ? "text-xl font-semibold text-white mb-3 pb-2 border-b border-slate-200" : "text-xl font-semibold text-slate-900 mb-3 pb-2 border-b border-slate-200"}>
               4. Subscription Plans and Payments
             </h2>
 
-            <h3 className="text-lg font-medium text-slate-800 mt-6 mb-2">
+            <h3 className={isDark ? "text-lg font-medium text-slate-200 mt-6 mb-2" : "text-lg font-medium text-slate-800 mt-6 mb-2"}>
               4.1 Plan Selection
             </h3>
             <p className="text-slate-600 leading-relaxed">
@@ -133,7 +136,7 @@ export function TermsOfServicePage({ onBack }: LegalPageProps) {
               of your next billing cycle unless otherwise stated.
             </p>
 
-            <h3 className="text-lg font-medium text-slate-800 mt-6 mb-2">
+            <h3 className={isDark ? "text-lg font-medium text-slate-200 mt-6 mb-2" : "text-lg font-medium text-slate-800 mt-6 mb-2"}>
               4.2 Free Trial
             </h3>
             <p className="text-slate-600 leading-relaxed">
@@ -144,7 +147,7 @@ export function TermsOfServicePage({ onBack }: LegalPageProps) {
               your trial expires.
             </p>
 
-            <h3 className="text-lg font-medium text-slate-800 mt-6 mb-2">
+            <h3 className={isDark ? "text-lg font-medium text-slate-200 mt-6 mb-2" : "text-lg font-medium text-slate-800 mt-6 mb-2"}>
               4.3 Payment Terms
             </h3>
             <p className="text-slate-600 leading-relaxed">
@@ -163,7 +166,7 @@ export function TermsOfServicePage({ onBack }: LegalPageProps) {
               All prices are exclusive of applicable taxes unless stated otherwise.
             </p>
 
-            <h3 className="text-lg font-medium text-slate-800 mt-6 mb-2">
+            <h3 className={isDark ? "text-lg font-medium text-slate-200 mt-6 mb-2" : "text-lg font-medium text-slate-800 mt-6 mb-2"}>
               4.4 Late Payments
             </h3>
             <p className="text-slate-600 leading-relaxed">
@@ -175,7 +178,7 @@ export function TermsOfServicePage({ onBack }: LegalPageProps) {
           </section>
 
           <section>
-            <h2 className="text-xl font-semibold text-slate-900 mb-3 pb-2 border-b border-slate-200">
+            <h2 className={isDark ? "text-xl font-semibold text-white mb-3 pb-2 border-b border-slate-200" : "text-xl font-semibold text-slate-900 mb-3 pb-2 border-b border-slate-200"}>
               5. Acceptable Use Policy
             </h2>
             <p className="text-slate-600 leading-relaxed">
@@ -204,7 +207,7 @@ export function TermsOfServicePage({ onBack }: LegalPageProps) {
           </section>
 
           <section>
-            <h2 className="text-xl font-semibold text-slate-900 mb-3 pb-2 border-b border-slate-200">
+            <h2 className={isDark ? "text-xl font-semibold text-white mb-3 pb-2 border-b border-slate-200" : "text-xl font-semibold text-slate-900 mb-3 pb-2 border-b border-slate-200"}>
               6. Intellectual Property
             </h2>
             <p className="text-slate-600 leading-relaxed">
@@ -227,7 +230,7 @@ export function TermsOfServicePage({ onBack }: LegalPageProps) {
           </section>
 
           <section>
-            <h2 className="text-xl font-semibold text-slate-900 mb-3 pb-2 border-b border-slate-200">
+            <h2 className={isDark ? "text-xl font-semibold text-white mb-3 pb-2 border-b border-slate-200" : "text-xl font-semibold text-slate-900 mb-3 pb-2 border-b border-slate-200"}>
               7. Data Ownership
             </h2>
             <p className="text-slate-600 leading-relaxed">
@@ -248,7 +251,7 @@ export function TermsOfServicePage({ onBack }: LegalPageProps) {
           </section>
 
           <section>
-            <h2 className="text-xl font-semibold text-slate-900 mb-3 pb-2 border-b border-slate-200">
+            <h2 className={isDark ? "text-xl font-semibold text-white mb-3 pb-2 border-b border-slate-200" : "text-xl font-semibold text-slate-900 mb-3 pb-2 border-b border-slate-200"}>
               8. Service Availability and SLA
             </h2>
             <p className="text-slate-600 leading-relaxed">
@@ -261,10 +264,10 @@ export function TermsOfServicePage({ onBack }: LegalPageProps) {
               The Service Level Agreement (SLA) applies to paying subscribers and includes:
             </p>
             <ul className="list-disc pl-6 space-y-1.5 text-slate-600 mt-3">
-              <li><strong className="text-slate-700">Uptime Commitment:</strong> 99.5% availability per month (excluding scheduled maintenance)</li>
-              <li><strong className="text-slate-700">Response Time:</strong> Critical issues will be acknowledged within 4 hours during business hours</li>
-              <li><strong className="text-slate-700">Support Hours:</strong> Monday to Friday, 9:00 AM to 6:00 PM Pakistan Standard Time (PKT)</li>
-              <li><strong className="text-slate-700">Credit for Downtime:</strong> If uptime falls below 99.5%, subscribers may be eligible for service credits equal to 10% of the monthly subscription fee for each 0.5% below the SLA threshold</li>
+              <li><strong className={isDark ? "text-slate-300" : "text-slate-700"}>Uptime Commitment:</strong> 99.5% availability per month (excluding scheduled maintenance)</li>
+              <li><strong className={isDark ? "text-slate-300" : "text-slate-700"}>Response Time:</strong> Critical issues will be acknowledged within 4 hours during business hours</li>
+              <li><strong className={isDark ? "text-slate-300" : "text-slate-700"}>Support Hours:</strong> Monday to Friday, 9:00 AM to 6:00 PM Pakistan Standard Time (PKT)</li>
+              <li><strong className={isDark ? "text-slate-300" : "text-slate-700"}>Credit for Downtime:</strong> If uptime falls below 99.5%, subscribers may be eligible for service credits equal to 10% of the monthly subscription fee for each 0.5% below the SLA threshold</li>
             </ul>
             <p className="text-slate-600 leading-relaxed mt-3">
               This SLA does not apply to downtime caused by factors beyond our reasonable control,
@@ -274,7 +277,7 @@ export function TermsOfServicePage({ onBack }: LegalPageProps) {
           </section>
 
           <section>
-            <h2 className="text-xl font-semibold text-slate-900 mb-3 pb-2 border-b border-slate-200">
+            <h2 className={isDark ? "text-xl font-semibold text-white mb-3 pb-2 border-b border-slate-200" : "text-xl font-semibold text-slate-900 mb-3 pb-2 border-b border-slate-200"}>
               9. Limitation of Liability
             </h2>
             <p className="text-slate-600 leading-relaxed">
@@ -293,11 +296,11 @@ export function TermsOfServicePage({ onBack }: LegalPageProps) {
           </section>
 
           <section>
-            <h2 className="text-xl font-semibold text-slate-900 mb-3 pb-2 border-b border-slate-200">
+            <h2 className={isDark ? "text-xl font-semibold text-white mb-3 pb-2 border-b border-slate-200" : "text-xl font-semibold text-slate-900 mb-3 pb-2 border-b border-slate-200"}>
               10. Termination
             </h2>
 
-            <h3 className="text-lg font-medium text-slate-800 mt-6 mb-2">
+            <h3 className={isDark ? "text-lg font-medium text-slate-200 mt-6 mb-2" : "text-lg font-medium text-slate-800 mt-6 mb-2"}>
               10.1 Termination by You
             </h3>
             <p className="text-slate-600 leading-relaxed">
@@ -309,7 +312,7 @@ export function TermsOfServicePage({ onBack }: LegalPageProps) {
               <span className="text-amber-600 font-medium cursor-pointer hover:underline">Refund Policy</span>.
             </p>
 
-            <h3 className="text-lg font-medium text-slate-800 mt-6 mb-2">
+            <h3 className={isDark ? "text-lg font-medium text-slate-200 mt-6 mb-2" : "text-lg font-medium text-slate-800 mt-6 mb-2"}>
               10.2 Termination by {identity.companyName}
             </h3>
             <p className="text-slate-600 leading-relaxed">
@@ -323,7 +326,7 @@ export function TermsOfServicePage({ onBack }: LegalPageProps) {
               <li>If we discontinue the Services or a particular plan permanently</li>
             </ul>
 
-            <h3 className="text-lg font-medium text-slate-800 mt-6 mb-2">
+            <h3 className={isDark ? "text-lg font-medium text-slate-200 mt-6 mb-2" : "text-lg font-medium text-slate-800 mt-6 mb-2"}>
               10.3 Effect of Termination
             </h3>
             <p className="text-slate-600 leading-relaxed">
@@ -335,7 +338,7 @@ export function TermsOfServicePage({ onBack }: LegalPageProps) {
           </section>
 
           <section>
-            <h2 className="text-xl font-semibold text-slate-900 mb-3 pb-2 border-b border-slate-200">
+            <h2 className={isDark ? "text-xl font-semibold text-white mb-3 pb-2 border-b border-slate-200" : "text-xl font-semibold text-slate-900 mb-3 pb-2 border-b border-slate-200"}>
               11. Indemnification
             </h2>
             <p className="text-slate-600 leading-relaxed">
@@ -349,7 +352,7 @@ export function TermsOfServicePage({ onBack }: LegalPageProps) {
           </section>
 
           <section>
-            <h2 className="text-xl font-semibold text-slate-900 mb-3 pb-2 border-b border-slate-200">
+            <h2 className={isDark ? "text-xl font-semibold text-white mb-3 pb-2 border-b border-slate-200" : "text-xl font-semibold text-slate-900 mb-3 pb-2 border-b border-slate-200"}>
               12. Dispute Resolution and Governing Law
             </h2>
             <p className="text-slate-600 leading-relaxed">
@@ -373,7 +376,7 @@ export function TermsOfServicePage({ onBack }: LegalPageProps) {
           </section>
 
           <section>
-            <h2 className="text-xl font-semibold text-slate-900 mb-3 pb-2 border-b border-slate-200">
+            <h2 className={isDark ? "text-xl font-semibold text-white mb-3 pb-2 border-b border-slate-200" : "text-xl font-semibold text-slate-900 mb-3 pb-2 border-b border-slate-200"}>
               13. Changes to Terms
             </h2>
             <p className="text-slate-600 leading-relaxed">
@@ -391,27 +394,27 @@ export function TermsOfServicePage({ onBack }: LegalPageProps) {
           </section>
 
           <section>
-            <h2 className="text-xl font-semibold text-slate-900 mb-3 pb-2 border-b border-slate-200">
+            <h2 className={isDark ? "text-xl font-semibold text-white mb-3 pb-2 border-b border-slate-200" : "text-xl font-semibold text-slate-900 mb-3 pb-2 border-b border-slate-200"}>
               14. General Provisions
             </h2>
             <ul className="list-disc pl-6 space-y-1.5 text-slate-600 mt-3">
-              <li><strong className="text-slate-700">Entire Agreement:</strong> These Terms, together with the Privacy Policy, Refund Policy, and Cookie Policy, constitute the entire agreement between you and {identity.companyName} regarding the Services.</li>
-              <li><strong className="text-slate-700">Severability:</strong> If any provision of these Terms is found to be unenforceable or invalid, that provision will be limited or eliminated to the minimum extent necessary, and the remaining provisions will remain in full force and effect.</li>
-              <li><strong className="text-slate-700">Waiver:</strong> The failure of either party to enforce any right or provision of these Terms will not constitute a waiver of such right or provision.</li>
-              <li><strong className="text-slate-700">Assignment:</strong> You may not assign or transfer these Terms or your rights hereunder without our prior written consent. We may assign our rights and obligations without restriction.</li>
-              <li><strong className="text-slate-700">Force Majeure:</strong> Neither party shall be liable for any failure to perform its obligations where such failure is caused by circumstances beyond its reasonable control, including natural disasters, war, terrorism, riots, epidemics, or government actions.</li>
+              <li><strong className={isDark ? "text-slate-300" : "text-slate-700"}>Entire Agreement:</strong> These Terms, together with the Privacy Policy, Refund Policy, and Cookie Policy, constitute the entire agreement between you and {identity.companyName} regarding the Services.</li>
+              <li><strong className={isDark ? "text-slate-300" : "text-slate-700"}>Severability:</strong> If any provision of these Terms is found to be unenforceable or invalid, that provision will be limited or eliminated to the minimum extent necessary, and the remaining provisions will remain in full force and effect.</li>
+              <li><strong className={isDark ? "text-slate-300" : "text-slate-700"}>Waiver:</strong> The failure of either party to enforce any right or provision of these Terms will not constitute a waiver of such right or provision.</li>
+              <li><strong className={isDark ? "text-slate-300" : "text-slate-700"}>Assignment:</strong> You may not assign or transfer these Terms or your rights hereunder without our prior written consent. We may assign our rights and obligations without restriction.</li>
+              <li><strong className={isDark ? "text-slate-300" : "text-slate-700"}>Force Majeure:</strong> Neither party shall be liable for any failure to perform its obligations where such failure is caused by circumstances beyond its reasonable control, including natural disasters, war, terrorism, riots, epidemics, or government actions.</li>
             </ul>
           </section>
 
           <section>
-            <h2 className="text-xl font-semibold text-slate-900 mb-3 pb-2 border-b border-slate-200">
+            <h2 className={isDark ? "text-xl font-semibold text-white mb-3 pb-2 border-b border-slate-200" : "text-xl font-semibold text-slate-900 mb-3 pb-2 border-b border-slate-200"}>
               15. Contact Us
             </h2>
             <p className="text-slate-600 leading-relaxed">
               If you have any questions about these Terms of Service, please contact us:
             </p>
             <div className="mt-4 p-6 bg-slate-50 rounded-lg border border-slate-200">
-              <div className="space-y-2 text-slate-700">
+              <div className={isDark ? "space-y-2 text-slate-300" : "space-y-2 text-slate-700"}>
                 <p><strong>{identity.companyName} Portal</strong></p>
                 <p>
                   Legal Inquiries:{" "}

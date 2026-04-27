@@ -135,7 +135,13 @@ export const POST = withAuth(async (req: NextRequest, authCtx) => {
 
     const totalUsed = currentMemberCount + pendingInviteCount;
 
-    if (teamLimit !== -1 && totalUsed >= teamLimit) {
+    // Platform admin/owner bypasses team limit
+    const platformAdminRoles = ["platform_owner", "platform_admin", "owner"];
+    const isPlatformAdmin = platformAdminRoles.includes(authCtx.role);
+    const adminEmail = (process.env.ADMIN_EMAIL || "").toLowerCase().trim();
+    const isAdminByEmail = adminEmail && authCtx.email?.toLowerCase() === adminEmail;
+
+    if (!isPlatformAdmin && !isAdminByEmail && teamLimit !== -1 && totalUsed >= teamLimit) {
       return NextResponse.json({
         error: `Team member limit reached! Your ${org.subscription?.plan?.name || "Starter"} plan allows ${teamLimit} team members. Upgrade your plan to add more members.`,
         code: "TEAM_LIMIT_REACHED",

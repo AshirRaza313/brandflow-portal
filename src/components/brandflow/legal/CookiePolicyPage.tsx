@@ -1,5 +1,6 @@
 "use client";
 
+import { useValtrioxStore } from "@/store/brandflow-store";
 import { ArrowLeft, Shield, Globe, Database, BarChart3, Eye, Settings, RefreshCw, Mail } from "lucide-react";
 import { usePlatformIdentity } from "@/lib/platform-identity";
 
@@ -8,6 +9,8 @@ interface LegalPageProps {
 }
 
 export function CookiePolicyPage({ onBack }: LegalPageProps) {
+  const { appTheme } = useValtrioxStore();
+  const isDark = appTheme === "dark" || appTheme === "premium-dark";
   const { identity } = usePlatformIdentity();
   return (
     <div className="min-h-screen bg-white">
@@ -23,7 +26,7 @@ export function CookiePolicyPage({ onBack }: LegalPageProps) {
 
         {/* Header */}
         <div className="mb-10">
-          <h1 className="text-3xl sm:text-4xl font-bold text-slate-900 mb-3">
+          <h1 className={isDark ? "text-3xl sm:text-4xl font-bold text-white mb-3" : "text-3xl sm:text-4xl font-bold text-slate-900 mb-3"}>
             Cookie Policy
           </h1>
           <p className="text-slate-500 text-sm">
@@ -43,7 +46,7 @@ export function CookiePolicyPage({ onBack }: LegalPageProps) {
         {/* Content */}
         <div className="prose prose-slate max-w-none space-y-8">
           <section>
-            <h2 className="text-xl font-semibold text-slate-900 mb-3 pb-2 border-b border-slate-200">
+            <h2 className={isDark ? "text-xl font-semibold text-white mb-3 pb-2 border-b border-slate-200" : "text-xl font-semibold text-slate-900 mb-3 pb-2 border-b border-slate-200"}>
               1. What Are Cookies
             </h2>
             <p className="text-slate-600 leading-relaxed">
@@ -62,14 +65,14 @@ export function CookiePolicyPage({ onBack }: LegalPageProps) {
               In addition to cookies, we may also use similar technologies such as:
             </p>
             <ul className="list-disc pl-6 space-y-1.5 text-slate-600 mt-3">
-              <li><strong className="text-slate-700">Web Beacons (Pixel Tags):</strong> Small transparent images embedded in emails and web pages that help us track email opens and page views</li>
-              <li><strong className="text-slate-700">Local Storage:</strong> Browser-based storage that allows us to store data locally on your device for faster access</li>
-              <li><strong className="text-slate-700">Session Storage:</strong> Similar to local storage but data is cleared when the browser session ends</li>
+              <li><strong className={isDark ? "text-slate-300" : "text-slate-700"}>Web Beacons (Pixel Tags):</strong> Small transparent images embedded in emails and web pages that help us track email opens and page views</li>
+              <li><strong className={isDark ? "text-slate-300" : "text-slate-700"}>Local Storage:</strong> Browser-based storage that allows us to store data locally on your device for faster access</li>
+              <li><strong className={isDark ? "text-slate-300" : "text-slate-700"}>Session Storage:</strong> Similar to local storage but data is cleared when the browser session ends</li>
             </ul>
           </section>
 
           <section>
-            <h2 className="text-xl font-semibold text-slate-900 mb-3 pb-2 border-b border-slate-200">
+            <h2 className={isDark ? "text-xl font-semibold text-white mb-3 pb-2 border-b border-slate-200" : "text-xl font-semibold text-slate-900 mb-3 pb-2 border-b border-slate-200"}>
               2. How We Use Cookies
             </h2>
             <p className="text-slate-600 leading-relaxed">
@@ -82,7 +85,7 @@ export function CookiePolicyPage({ onBack }: LegalPageProps) {
                   <Shield className="w-5 h-5 text-amber-600" />
                 </div>
                 <div>
-                  <h3 className="text-sm font-semibold text-slate-900">Authentication & Security</h3>
+                  <h3 className={isDark ? "text-sm font-semibold text-white" : "text-sm font-semibold text-slate-900"}>Authentication & Security</h3>
                   <p className="text-sm text-slate-600 mt-1">
                     We use cookies to verify your identity, maintain your logged-in session, and protect your account from unauthorized access. These cookies are essential for the platform to function securely.
                   </p>
@@ -94,7 +97,7 @@ export function CookiePolicyPage({ onBack }: LegalPageProps) {
                   <Settings className="w-5 h-5 text-amber-600" />
                 </div>
                 <div>
-                  <h3 className="text-sm font-semibold text-slate-900">Preferences & Settings</h3>
+                  <h3 className={isDark ? "text-sm font-semibold text-white" : "text-sm font-semibold text-slate-900"}>Preferences & Settings</h3>
                   <p className="text-sm text-slate-600 mt-1">
                     Cookies remember your language preference, theme selection, sidebar state, and other personalization settings so you don&apos;t need to reconfigure them each time you visit.
                   </p>
@@ -106,7 +109,7 @@ export function CookiePolicyPage({ onBack }: LegalPageProps) {
                   <BarChart3 className="w-5 h-5 text-amber-600" />
                 </div>
                 <div>
-                  <h3 className="text-sm font-semibold text-slate-900">Analytics & Performance</h3>
+                  <h3 className={isDark ? "text-sm font-semibold text-white" : "text-sm font-semibold text-slate-900"}>Analytics & Performance</h3>
                   <p className="text-sm text-slate-600 mt-1">
                     We use analytics cookies to understand how visitors interact with our platform, which pages are most visited, how long users spend on features, and where they encounter errors. This helps us improve the user experience and optimize performance.
                   </p>
@@ -118,7 +121,7 @@ export function CookiePolicyPage({ onBack }: LegalPageProps) {
                   <Mail className="w-5 h-5 text-amber-600" />
                 </div>
                 <div>
-                  <h3 className="text-sm font-semibold text-slate-900">Marketing & Communication</h3>
+                  <h3 className={isDark ? "text-sm font-semibold text-white" : "text-sm font-semibold text-slate-900"}>Marketing & Communication</h3>
                   <p className="text-sm text-slate-600 mt-1">
                     With your consent, we may use cookies to deliver relevant content, measure the effectiveness of our marketing campaigns, and provide personalized recommendations based on your usage patterns.
                   </p>
@@ -130,7 +133,7 @@ export function CookiePolicyPage({ onBack }: LegalPageProps) {
                   <Database className="w-5 h-5 text-amber-600" />
                 </div>
                 <div>
-                  <h3 className="text-sm font-semibold text-slate-900">Functionality</h3>
+                  <h3 className={isDark ? "text-sm font-semibold text-white" : "text-sm font-semibold text-slate-900"}>Functionality</h3>
                   <p className="text-sm text-slate-600 mt-1">
                     Cookies enable certain features of the platform, such as form auto-fill, recently viewed items, multi-page navigation state, and integration with third-party services like WhatsApp Business API.
                   </p>
@@ -140,7 +143,7 @@ export function CookiePolicyPage({ onBack }: LegalPageProps) {
           </section>
 
           <section>
-            <h2 className="text-xl font-semibold text-slate-900 mb-3 pb-2 border-b border-slate-200">
+            <h2 className={isDark ? "text-xl font-semibold text-white mb-3 pb-2 border-b border-slate-200" : "text-xl font-semibold text-slate-900 mb-3 pb-2 border-b border-slate-200"}>
               3. Types of Cookies We Use
             </h2>
 
@@ -148,33 +151,33 @@ export function CookiePolicyPage({ onBack }: LegalPageProps) {
               <table className="w-full text-sm border-collapse">
                 <thead>
                   <tr className="bg-slate-50">
-                    <th className="text-left p-3 font-semibold text-slate-900 border border-slate-200 rounded-tl-lg">Cookie Category</th>
-                    <th className="text-left p-3 font-semibold text-slate-900 border border-slate-200">Purpose</th>
-                    <th className="text-left p-3 font-semibold text-slate-900 border border-slate-200">Duration</th>
-                    <th className="text-left p-3 font-semibold text-slate-900 border border-slate-200 rounded-tr-lg">Can Be Disabled?</th>
+                    <th className={isDark ? "text-left p-3 font-semibold text-white border border-slate-200 rounded-tl-lg" : "text-left p-3 font-semibold text-slate-900 border border-slate-200 rounded-tl-lg"}>Cookie Category</th>
+                    <th className={isDark ? "text-left p-3 font-semibold text-white border border-slate-200" : "text-left p-3 font-semibold text-slate-900 border border-slate-200"}>Purpose</th>
+                    <th className={isDark ? "text-left p-3 font-semibold text-white border border-slate-200" : "text-left p-3 font-semibold text-slate-900 border border-slate-200"}>Duration</th>
+                    <th className={isDark ? "text-left p-3 font-semibold text-white border border-slate-200 rounded-tr-lg" : "text-left p-3 font-semibold text-slate-900 border border-slate-200 rounded-tr-lg"}>Can Be Disabled?</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-200">
                   <tr>
-                    <td className="p-3 font-medium text-slate-800 border border-slate-200">Essential / Strictly Necessary</td>
+                    <td className={isDark ? "p-3 font-medium text-slate-200 border border-slate-200" : "p-3 font-medium text-slate-800 border border-slate-200"}>Essential / Strictly Necessary</td>
                     <td className="p-3 text-slate-600 border border-slate-200">Authentication, session management, security, CSRF protection</td>
                     <td className="p-3 text-slate-600 border border-slate-200">Session to 30 days</td>
                     <td className="p-3 text-slate-600 border border-slate-200"><span className="text-red-600 font-medium">No</span> — Required for platform to function</td>
                   </tr>
                   <tr>
-                    <td className="p-3 font-medium text-slate-800 border border-slate-200">Performance / Analytics</td>
+                    <td className={isDark ? "p-3 font-medium text-slate-200 border border-slate-200" : "p-3 font-medium text-slate-800 border border-slate-200"}>Performance / Analytics</td>
                     <td className="p-3 text-slate-600 border border-slate-200">Page views, feature usage, error tracking, load times</td>
                     <td className="p-3 text-slate-600 border border-slate-200">Up to 2 years</td>
                     <td className="p-3 text-slate-600 border border-slate-200"><span className="text-amber-600 font-medium">Yes</span></td>
                   </tr>
                   <tr>
-                    <td className="p-3 font-medium text-slate-800 border border-slate-200">Functionality</td>
+                    <td className={isDark ? "p-3 font-medium text-slate-200 border border-slate-200" : "p-3 font-medium text-slate-800 border border-slate-200"}>Functionality</td>
                     <td className="p-3 text-slate-600 border border-slate-200">Language, theme, preferences, recently viewed items</td>
                     <td className="p-3 text-slate-600 border border-slate-200">Up to 1 year</td>
                     <td className="p-3 text-slate-600 border border-slate-200"><span className="text-amber-600 font-medium">Yes</span></td>
                   </tr>
                   <tr>
-                    <td className="p-3 font-medium text-slate-800 border border-slate-200">Marketing / Advertising</td>
+                    <td className={isDark ? "p-3 font-medium text-slate-200 border border-slate-200" : "p-3 font-medium text-slate-800 border border-slate-200"}>Marketing / Advertising</td>
                     <td className="p-3 text-slate-600 border border-slate-200">Ad targeting, campaign tracking, remarketing</td>
                     <td className="p-3 text-slate-600 border border-slate-200">Up to 2 years</td>
                     <td className="p-3 text-slate-600 border border-slate-200"><span className="text-amber-600 font-medium">Yes</span> — Only set with your consent</td>
@@ -183,7 +186,7 @@ export function CookiePolicyPage({ onBack }: LegalPageProps) {
               </table>
             </div>
 
-            <h3 className="text-lg font-medium text-slate-800 mt-8 mb-2">
+            <h3 className={isDark ? "text-lg font-medium text-slate-200 mt-8 mb-2" : "text-lg font-medium text-slate-800 mt-8 mb-2"}>
               3.1 Essential Cookies
             </h3>
             <p className="text-slate-600 leading-relaxed">
@@ -194,34 +197,34 @@ export function CookiePolicyPage({ onBack }: LegalPageProps) {
               <table className="w-full text-sm border-collapse">
                 <thead>
                   <tr className="bg-slate-50">
-                    <th className="text-left p-3 font-semibold text-slate-900 border border-slate-200">Cookie Name</th>
-                    <th className="text-left p-3 font-semibold text-slate-900 border border-slate-200">Purpose</th>
-                    <th className="text-left p-3 font-semibold text-slate-900 border border-slate-200">Duration</th>
+                    <th className={isDark ? "text-left p-3 font-semibold text-white border border-slate-200" : "text-left p-3 font-semibold text-slate-900 border border-slate-200"}>Cookie Name</th>
+                    <th className={isDark ? "text-left p-3 font-semibold text-white border border-slate-200" : "text-left p-3 font-semibold text-slate-900 border border-slate-200"}>Purpose</th>
+                    <th className={isDark ? "text-left p-3 font-semibold text-white border border-slate-200" : "text-left p-3 font-semibold text-slate-900 border border-slate-200"}>Duration</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-200">
                   <tr>
-                    <td className="p-3 text-slate-700 border border-slate-200 font-mono text-xs">next-auth.session-token</td>
+                    <td className={isDark ? "p-3 text-slate-300 border border-slate-200 font-mono text-xs" : "p-3 text-slate-700 border border-slate-200 font-mono text-xs"}>next-auth.session-token</td>
                     <td className="p-3 text-slate-600 border border-slate-200">Maintains your authenticated session</td>
                     <td className="p-3 text-slate-600 border border-slate-200">Session</td>
                   </tr>
                   <tr>
-                    <td className="p-3 text-slate-700 border border-slate-200 font-mono text-xs">next-auth.csrf-token</td>
+                    <td className={isDark ? "p-3 text-slate-300 border border-slate-200 font-mono text-xs" : "p-3 text-slate-700 border border-slate-200 font-mono text-xs"}>next-auth.csrf-token</td>
                     <td className="p-3 text-slate-600 border border-slate-200">Prevents Cross-Site Request Forgery attacks</td>
                     <td className="p-3 text-slate-600 border border-slate-200">Session</td>
                   </tr>
                   <tr>
-                    <td className="p-3 text-slate-700 border border-slate-200 font-mono text-xs">next-auth.callback-url</td>
+                    <td className={isDark ? "p-3 text-slate-300 border border-slate-200 font-mono text-xs" : "p-3 text-slate-700 border border-slate-200 font-mono text-xs"}>next-auth.callback-url</td>
                     <td className="p-3 text-slate-600 border border-slate-200">Stores the URL to redirect to after authentication</td>
                     <td className="p-3 text-slate-600 border border-slate-200">Session</td>
                   </tr>
                   <tr>
-                    <td className="p-3 text-slate-700 border border-slate-200 font-mono text-xs">bf_theme</td>
+                    <td className={isDark ? "p-3 text-slate-300 border border-slate-200 font-mono text-xs" : "p-3 text-slate-700 border border-slate-200 font-mono text-xs"}>bf_theme</td>
                     <td className="p-3 text-slate-600 border border-slate-200">Stores your UI theme preference (light/dark/premium-dark)</td>
                     <td className="p-3 text-slate-600 border border-slate-200">1 year</td>
                   </tr>
                   <tr>
-                    <td className="p-3 text-slate-700 border border-slate-200 font-mono text-xs">bf_lang</td>
+                    <td className={isDark ? "p-3 text-slate-300 border border-slate-200 font-mono text-xs" : "p-3 text-slate-700 border border-slate-200 font-mono text-xs"}>bf_lang</td>
                     <td className="p-3 text-slate-600 border border-slate-200">Stores your language preference</td>
                     <td className="p-3 text-slate-600 border border-slate-200">1 year</td>
                   </tr>
@@ -231,7 +234,7 @@ export function CookiePolicyPage({ onBack }: LegalPageProps) {
           </section>
 
           <section>
-            <h2 className="text-xl font-semibold text-slate-900 mb-3 pb-2 border-b border-slate-200">
+            <h2 className={isDark ? "text-xl font-semibold text-white mb-3 pb-2 border-b border-slate-200" : "text-xl font-semibold text-slate-900 mb-3 pb-2 border-b border-slate-200"}>
               4. Third-Party Cookies
             </h2>
             <p className="text-slate-600 leading-relaxed">
@@ -239,7 +242,7 @@ export function CookiePolicyPage({ onBack }: LegalPageProps) {
               when you interact with {identity.companyName} Portal:
             </p>
 
-            <h3 className="text-lg font-medium text-slate-800 mt-6 mb-2">
+            <h3 className={isDark ? "text-lg font-medium text-slate-200 mt-6 mb-2" : "text-lg font-medium text-slate-800 mt-6 mb-2"}>
               4.1 Google Analytics
             </h3>
             <p className="text-slate-600 leading-relaxed">
@@ -252,7 +255,7 @@ export function CookiePolicyPage({ onBack }: LegalPageProps) {
               </a>.
             </p>
 
-            <h3 className="text-lg font-medium text-slate-800 mt-6 mb-2">
+            <h3 className={isDark ? "text-lg font-medium text-slate-200 mt-6 mb-2" : "text-lg font-medium text-slate-800 mt-6 mb-2"}>
               4.2 Supabase
             </h3>
             <p className="text-slate-600 leading-relaxed">
@@ -264,7 +267,7 @@ export function CookiePolicyPage({ onBack }: LegalPageProps) {
               </a>.
             </p>
 
-            <h3 className="text-lg font-medium text-slate-800 mt-6 mb-2">
+            <h3 className={isDark ? "text-lg font-medium text-slate-200 mt-6 mb-2" : "text-lg font-medium text-slate-800 mt-6 mb-2"}>
               4.3 Payment Processors
             </h3>
             <p className="text-slate-600 leading-relaxed">
@@ -274,7 +277,7 @@ export function CookiePolicyPage({ onBack }: LegalPageProps) {
               cookie policies.
             </p>
 
-            <h3 className="text-lg font-medium text-slate-800 mt-6 mb-2">
+            <h3 className={isDark ? "text-lg font-medium text-slate-200 mt-6 mb-2" : "text-lg font-medium text-slate-800 mt-6 mb-2"}>
               4.4 Social Media and Communication Platforms
             </h3>
             <p className="text-slate-600 leading-relaxed">
@@ -294,7 +297,7 @@ export function CookiePolicyPage({ onBack }: LegalPageProps) {
           </section>
 
           <section>
-            <h2 className="text-xl font-semibold text-slate-900 mb-3 pb-2 border-b border-slate-200">
+            <h2 className={isDark ? "text-xl font-semibold text-white mb-3 pb-2 border-b border-slate-200" : "text-xl font-semibold text-slate-900 mb-3 pb-2 border-b border-slate-200"}>
               5. Managing Cookie Preferences
             </h2>
             <p className="text-slate-600 leading-relaxed">
@@ -302,7 +305,7 @@ export function CookiePolicyPage({ onBack }: LegalPageProps) {
               ways you can manage your cookie preferences:
             </p>
 
-            <h3 className="text-lg font-medium text-slate-800 mt-6 mb-2">
+            <h3 className={isDark ? "text-lg font-medium text-slate-200 mt-6 mb-2" : "text-lg font-medium text-slate-800 mt-6 mb-2"}>
               5.1 Browser Settings
             </h3>
             <p className="text-slate-600 leading-relaxed">
@@ -311,13 +314,13 @@ export function CookiePolicyPage({ onBack }: LegalPageProps) {
               cookies when you close your browser. Here&apos;s how to manage cookies in common browsers:
             </p>
             <ul className="list-disc pl-6 space-y-1.5 text-slate-600 mt-3">
-              <li><strong className="text-slate-700">Google Chrome:</strong> Settings &rarr; Privacy and Security &rarr; Cookies and other site data</li>
-              <li><strong className="text-slate-700">Mozilla Firefox:</strong> Settings &rarr; Privacy &amp; Security &rarr; Cookies and Site Data</li>
-              <li><strong className="text-slate-700">Safari:</strong> Preferences &rarr; Privacy &rarr; Manage Website Data</li>
-              <li><strong className="text-slate-700">Microsoft Edge:</strong> Settings &rarr; Cookies and site permissions &rarr; Manage and delete cookies</li>
+              <li><strong className={isDark ? "text-slate-300" : "text-slate-700"}>Google Chrome:</strong> Settings &rarr; Privacy and Security &rarr; Cookies and other site data</li>
+              <li><strong className={isDark ? "text-slate-300" : "text-slate-700"}>Mozilla Firefox:</strong> Settings &rarr; Privacy &amp; Security &rarr; Cookies and Site Data</li>
+              <li><strong className={isDark ? "text-slate-300" : "text-slate-700"}>Safari:</strong> Preferences &rarr; Privacy &rarr; Manage Website Data</li>
+              <li><strong className={isDark ? "text-slate-300" : "text-slate-700"}>Microsoft Edge:</strong> Settings &rarr; Cookies and site permissions &rarr; Manage and delete cookies</li>
             </ul>
 
-            <h3 className="text-lg font-medium text-slate-800 mt-6 mb-2">
+            <h3 className={isDark ? "text-lg font-medium text-slate-200 mt-6 mb-2" : "text-lg font-medium text-slate-800 mt-6 mb-2"}>
               5.2 Cookie Consent Banner
             </h3>
             <p className="text-slate-600 leading-relaxed">
@@ -334,7 +337,7 @@ export function CookiePolicyPage({ onBack }: LegalPageProps) {
               accessible from the footer of our website or through your account settings.
             </p>
 
-            <h3 className="text-lg font-medium text-slate-800 mt-6 mb-2">
+            <h3 className={isDark ? "text-lg font-medium text-slate-200 mt-6 mb-2" : "text-lg font-medium text-slate-800 mt-6 mb-2"}>
               5.3 Opt-Out Links
             </h3>
             <p className="text-slate-600 leading-relaxed">
@@ -364,7 +367,7 @@ export function CookiePolicyPage({ onBack }: LegalPageProps) {
           </section>
 
           <section>
-            <h2 className="text-xl font-semibold text-slate-900 mb-3 pb-2 border-b border-slate-200">
+            <h2 className={isDark ? "text-xl font-semibold text-white mb-3 pb-2 border-b border-slate-200" : "text-xl font-semibold text-slate-900 mb-3 pb-2 border-b border-slate-200"}>
               6. Do Not Track
             </h2>
             <p className="text-slate-600 leading-relaxed">
@@ -377,17 +380,17 @@ export function CookiePolicyPage({ onBack }: LegalPageProps) {
           </section>
 
           <section>
-            <h2 className="text-xl font-semibold text-slate-900 mb-3 pb-2 border-b border-slate-200">
+            <h2 className={isDark ? "text-xl font-semibold text-white mb-3 pb-2 border-b border-slate-200" : "text-xl font-semibold text-slate-900 mb-3 pb-2 border-b border-slate-200"}>
               7. Similar Technologies
             </h2>
             <p className="text-slate-600 leading-relaxed">
               In addition to cookies, we may use the following technologies for similar purposes:
             </p>
             <ul className="list-disc pl-6 space-y-1.5 text-slate-600 mt-3">
-              <li><strong className="text-slate-700">LocalStorage:</strong> Used to store your theme preference, language, sidebar state, and other UI settings for a better experience across sessions.</li>
-              <li><strong className="text-slate-700">SessionStorage:</strong> Used for temporary data needed during a single browser session, such as form state and multi-step navigation data.</li>
-              <li><strong className="text-slate-700">IndexedDB:</strong> May be used for client-side caching of frequently accessed data to improve platform performance and reduce load times.</li>
-              <li><strong className="text-slate-700">Service Workers:</strong> Used to enable offline capabilities and improve performance through intelligent caching of static assets.</li>
+              <li><strong className={isDark ? "text-slate-300" : "text-slate-700"}>LocalStorage:</strong> Used to store your theme preference, language, sidebar state, and other UI settings for a better experience across sessions.</li>
+              <li><strong className={isDark ? "text-slate-300" : "text-slate-700"}>SessionStorage:</strong> Used for temporary data needed during a single browser session, such as form state and multi-step navigation data.</li>
+              <li><strong className={isDark ? "text-slate-300" : "text-slate-700"}>IndexedDB:</strong> May be used for client-side caching of frequently accessed data to improve platform performance and reduce load times.</li>
+              <li><strong className={isDark ? "text-slate-300" : "text-slate-700"}>Service Workers:</strong> Used to enable offline capabilities and improve performance through intelligent caching of static assets.</li>
             </ul>
             <p className="text-slate-600 leading-relaxed mt-3">
               These technologies function similarly to cookies and are subject to the same consent
@@ -396,7 +399,7 @@ export function CookiePolicyPage({ onBack }: LegalPageProps) {
           </section>
 
           <section>
-            <h2 className="text-xl font-semibold text-slate-900 mb-3 pb-2 border-b border-slate-200">
+            <h2 className={isDark ? "text-xl font-semibold text-white mb-3 pb-2 border-b border-slate-200" : "text-xl font-semibold text-slate-900 mb-3 pb-2 border-b border-slate-200"}>
               8. Changes to This Cookie Policy
             </h2>
             <p className="text-slate-600 leading-relaxed">
@@ -416,7 +419,7 @@ export function CookiePolicyPage({ onBack }: LegalPageProps) {
           </section>
 
           <section>
-            <h2 className="text-xl font-semibold text-slate-900 mb-3 pb-2 border-b border-slate-200">
+            <h2 className={isDark ? "text-xl font-semibold text-white mb-3 pb-2 border-b border-slate-200" : "text-xl font-semibold text-slate-900 mb-3 pb-2 border-b border-slate-200"}>
               9. Contact Us
             </h2>
             <p className="text-slate-600 leading-relaxed">
@@ -424,7 +427,7 @@ export function CookiePolicyPage({ onBack }: LegalPageProps) {
               please contact us:
             </p>
             <div className="mt-4 p-6 bg-slate-50 rounded-lg border border-slate-200">
-              <div className="space-y-2 text-slate-700">
+              <div className={isDark ? "space-y-2 text-slate-300" : "space-y-2 text-slate-700"}>
                 <p><strong>{identity.companyName} Portal</strong></p>
                 <p>
                   Privacy Inquiries:{" "}

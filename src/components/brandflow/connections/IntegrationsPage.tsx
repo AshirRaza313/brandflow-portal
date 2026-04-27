@@ -1,5 +1,6 @@
 "use client";
 
+import { useValtrioxStore } from "@/store/brandflow-store";
 import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -14,6 +15,8 @@ import { toast } from "sonner";
 import { usePlatformIdentity } from "@/lib/platform-identity";
 
 export function IntegrationsPage() {
+  const { appTheme } = useValtrioxStore();
+  const isDark = appTheme === "dark" || appTheme === "premium-dark";
   const { identity } = usePlatformIdentity();
   const companyName = identity.companyName;
   const [syncing, setSyncing] = useState<string | null>(null);
@@ -45,7 +48,7 @@ export function IntegrationsPage() {
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-slate-800">Integrations Hub</h1>
+          <h1 className={isDark ? "text-2xl font-bold text-slate-200" : "text-2xl font-bold text-slate-800"}>Integrations Hub</h1>
           <p className="text-sm text-slate-500 mt-1">Connect and manage third-party services for your {companyName} portal</p>
         </div>
         <Button className="bg-amber-600 hover:bg-amber-700" onClick={() => setMarketplaceOpen(true)}>
@@ -66,7 +69,7 @@ export function IntegrationsPage() {
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-xs font-medium text-slate-500 uppercase tracking-wider">{stat.title}</p>
-                  <p className="text-2xl font-bold text-slate-800 mt-1">{stat.value}</p>
+                  <p className={isDark ? "text-2xl font-bold text-slate-200 mt-1" : "text-2xl font-bold text-slate-800 mt-1"}>{stat.value}</p>
                   {stat.sub && <p className="text-xs text-slate-500 mt-1">{stat.sub}</p>}
                 </div>
                 <div className="h-10 w-10 rounded-lg bg-amber-100 flex items-center justify-center">
@@ -113,7 +116,7 @@ export function IntegrationsPage() {
 
         <TabsContent value="webhooks">
           <Card className="border-slate-200">
-            <CardHeader className="pb-3"><CardTitle className="text-lg font-semibold text-slate-800">Webhook Management</CardTitle></CardHeader>
+            <CardHeader className="pb-3"><CardTitle className={isDark ? "text-lg font-semibold text-slate-200" : "text-lg font-semibold text-slate-800"}>Webhook Management</CardTitle></CardHeader>
             <CardContent>
               <EmptyState icon={Webhook} title="No webhooks configured" description="Set up webhooks to receive real-time notifications for events like orders, inventory changes, and payments." />
             </CardContent>

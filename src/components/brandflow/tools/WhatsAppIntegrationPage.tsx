@@ -1,5 +1,6 @@
 "use client";
 
+import { useValtrioxStore } from "@/store/brandflow-store";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -13,6 +14,8 @@ import { AnimatePresence, motion } from "framer-motion";
 import { EmptyState } from "@/components/brandflow/shared/EmptyState";
 
 export function WhatsAppIntegrationPage() {
+  const { appTheme } = useValtrioxStore();
+  const isDark = appTheme === "dark" || appTheme === "premium-dark";
   const [activeTab, setActiveTab] = useState("api-settings");
   const [connected, setConnected] = useState(false);
   const [templateOpen, setTemplateOpen] = useState(false);
@@ -39,7 +42,7 @@ export function WhatsAppIntegrationPage() {
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-slate-900">WhatsApp Integration</h1>
+          <h1 className={isDark ? "text-2xl font-bold text-white" : "text-2xl font-bold text-slate-900"}>WhatsApp Integration</h1>
           <p className="text-sm text-slate-500 mt-1">Configure WhatsApp Business API</p>
         </div>
         <Badge className={`text-xs ${connected ? "bg-amber-100 text-amber-700" : "bg-red-100 text-red-700"} border-0`}>
@@ -53,7 +56,7 @@ export function WhatsAppIntegrationPage() {
           { id: "templates", label: "Templates" },
           { id: "analytics", label: "Analytics" },
         ].map((tab) => (
-          <button key={tab.id} onClick={() => setActiveTab(tab.id)} className={`px-4 py-2.5 text-sm font-medium border-b-2 transition-colors ${activeTab === tab.id ? "border-amber-600 text-amber-600" : "border-transparent text-slate-500 hover:text-slate-700"}`}>
+          <button key={tab.id} onClick={() => setActiveTab(tab.id)} className={isDark ? `px-4 py-2.5 text-sm font-medium border-b-2 transition-colors ${activeTab === tab.id ? "border-amber-600 text-amber-600" : "border-transparent text-slate-500 hover:text-slate-300"}` : `px-4 py-2.5 text-sm font-medium border-b-2 transition-colors ${activeTab === tab.id ? "border-amber-600 text-amber-600" : "border-transparent text-slate-500 hover:text-slate-700"}`}>
             {tab.label}
           </button>
         ))}
