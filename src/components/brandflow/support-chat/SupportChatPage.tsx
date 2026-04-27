@@ -5,7 +5,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { useValtrioxStore } from "@/store/brandflow-store";
 import { usePlatformIdentity } from "@/lib/platform-identity";
 import { toast } from "sonner";
-import { fetchWithAuth } from "@/lib/fetch-with-auth";
+
 import {
   Card,
   CardContent,
@@ -1100,7 +1100,10 @@ export function SupportChatPage() {
   // ── Fetch conversations (admin only) ──
   const fetchConversations = useCallback(async () => {
     try {
-      const res = await fetchWithAuth("/api/support-chat?mode=conversations");
+      const directHeaders = getDirectAuthHeaders();
+      const res = await fetch("/api/support-chat?mode=conversations", {
+        headers: directHeaders,
+      });
       if (!res.ok) return;
       const data = await res.json();
       const conversations: ClientConversation[] = (data.conversations || []).map((c: any) => ({
@@ -1118,7 +1121,7 @@ export function SupportChatPage() {
       });
       setConversationIdMap((prev) => ({ ...prev, ...idMap }));
     } catch {}
-  }, []);
+  }, [getDirectAuthHeaders]);
 
   // ── Fetch messages for a specific conversation ──
   const fetchMessages = useCallback(async (convId: string | null) => {
@@ -1133,7 +1136,10 @@ export function SupportChatPage() {
       } else {
         params = `?mode=messages`;
       }
-      const res = await fetchWithAuth(`/api/support-chat${params}`);
+      const directHeaders = getDirectAuthHeaders();
+      const res = await fetch(`/api/support-chat${params}`, {
+        headers: directHeaders,
+      });
       if (!res.ok) return;
       const data = await res.json();
       const messages: SupportMessage[] = (data.messages || []).map((m: any) => ({
@@ -1154,6 +1160,28 @@ export function SupportChatPage() {
     } catch {}
   }, [isAdmin, conversationIdMap]);
 
+  // ── Helper: build auth headers directly from store/localStorage ──
+  // This is a robust fallback that reads auth data the same way the store does,
+  // ensuring headers are always present even if fetchWithAuth misses them.
+  const getDirectAuthHeaders = useCallback((): Record<string, string> => {
+    try {
+      const userStr = localStorage.getItem("valtriox-user");
+      const orgStr = localStorage.getItem("valtriox-org");
+      if (!userStr) return {};
+      const user = JSON.parse(userStr);
+      const org = orgStr ? JSON.parse(orgStr) : null;
+      if (!user?.id) return {};
+      return {
+        "X-User-Id": user.id,
+        "X-User-Email": user.email || "",
+        "X-User-Role": user.role || "member",
+        "X-Org-Id": org?.id || "",
+      };
+    } catch {
+      return {};
+    }
+  }, []);
+
   // ── Send message via API ──
   const sendMessage = useCallback(async (targetConvId: string | null, msg: SupportMessage, orgNameOverride?: string) => {
     if (!targetConvId) return null;
@@ -1170,12 +1198,26 @@ export function SupportChatPage() {
       if (msg.voiceNote) payload.voiceNote = msg.voiceNote;
       if (msg.callInfo) payload.callInfo = msg.callInfo;
 
-      const res = await fetchWithAuth("/api/support-chat", {
+      // Build headers: merge fetchWithAuth with direct localStorage auth as fallback
+      const directHeaders = getDirectAuthHeaders();
+      const mergedHeaders: Record<string, string> = {
+        "Content-Type": "application/json",
+        ...directHeaders,
+      };
+
+      const res = await fetch("/api/support-chat", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: mergedHeaders,
         body: JSON.stringify(payload),
       });
-      if (!res.ok) return null;
+
+      if (!res.ok) {
+        // Log the actual error for debugging
+        const errorBody = await res.text().catch(() => "(could not read error)");
+        console.error("[SupportChat] sendMessage failed:", res.status, errorBody);
+        return null;
+      }
+
       const data = await res.json();
       const savedMsg: SupportMessage = {
         id: data.message.id,
@@ -1191,22 +1233,26 @@ export function SupportChatPage() {
         callInfo: data.message.callInfo,
       };
       // Optimistically add to local state
+      const mapKey = isAdmin ? targetConvId : (targetConvId);
       setMessagesMap((prev) => {
-        const existing = prev[targetConvId] || [];
-        return { ...prev, [targetConvId]: [...existing, savedMsg] };
+        const existing = prev[mapKey] || [];
+        return { ...prev, [mapKey]: [...existing, savedMsg] };
       });
       return savedMsg;
-    } catch {
+    } catch (err) {
+      console.error("[SupportChat] sendMessage exception:", err);
       return null;
     }
-  }, [isAdmin]);
+  }, [isAdmin, getDirectAuthHeaders]);
 
   // ── Delete message via API ──
   const deleteMessage = useCallback(async (targetConvId: string | null, messageId: string) => {
     if (!targetConvId) return;
     try {
-      await fetchWithAuth(`/api/support-chat?messageId=${messageId}&conversationId=${targetConvId}`, {
+      const directHeaders = getDirectAuthHeaders();
+      await fetch(`/api/support-chat?messageId=${messageId}&conversationId=${targetConvId}`, {
         method: "DELETE",
+        headers: directHeaders,
       });
       // Remove from local state and add system message
       setMessagesMap((prev) => {
@@ -1224,7 +1270,7 @@ export function SupportChatPage() {
         return { ...prev, [targetConvId]: [...filtered, systemMsg] };
       });
     } catch {}
-  }, []);
+  }, [getDirectAuthHeaders]);
 
   // ── Initial load ──
   useEffect(() => {
