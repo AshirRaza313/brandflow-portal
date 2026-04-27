@@ -1224,6 +1224,15 @@ export function EventsPage() {
           </motion.div>
         )}
       </AnimatePresence>
+
+      {/* Custom Event Dialog */}
+      <CustomEventDialog
+        open={customDialogOpen}
+        onClose={() => { setCustomDialogOpen(false); setEditingEvent(null); }}
+        editEvent={editingEvent}
+        onSubmit={editingEvent ? handleEditCustom : handleCreateCustom}
+        isDark={isDark}
+      />
     </div>
   );
 }

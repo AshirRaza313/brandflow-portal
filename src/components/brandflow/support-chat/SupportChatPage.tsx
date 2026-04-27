@@ -5,6 +5,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { useValtrioxStore } from "@/store/brandflow-store";
 import { usePlatformIdentity } from "@/lib/platform-identity";
 import { fetchWithAuth } from "@/lib/fetch-with-auth";
+import { toast } from "sonner";
 import {
   Card,
   CardContent,
@@ -1113,7 +1114,9 @@ export function SupportChatPage() {
         if (c.id && c.orgId) idMap[c.orgId] = c.id;
       });
       setConversationIdMap((prev) => ({ ...prev, ...idMap }));
-    } catch {}
+    } catch {
+      console.error("[SupportChat] fetchConversations error");
+    }
   }, []);
 
   // ── Fetch messages for a specific conversation ──
@@ -1147,7 +1150,9 @@ export function SupportChatPage() {
       }));
       // Always key by orgId so currentConversationId lookup works
       setMessagesMap((prev) => ({ ...prev, [convId]: messages }));
-    } catch {}
+    } catch {
+      console.error("[SupportChat] fetchMessages error");
+    }
   }, [isAdmin, conversationIdMap]);
 
   // ── Send message via API ──
@@ -1172,6 +1177,8 @@ export function SupportChatPage() {
         body: JSON.stringify(payload),
       });
       if (!res.ok) {
+        const errData = await res.json().catch(() => ({}));
+        toast.error(errData.error || "Failed to send message");
         console.error("[SupportChat] Send failed:", res.status, res.statusText);
         return null;
       }
@@ -1196,6 +1203,7 @@ export function SupportChatPage() {
       });
       return savedMsg;
     } catch {
+      toast.error("Network error. Check your connection.");
       return null;
     }
   }, [isAdmin]);
@@ -1455,15 +1463,32 @@ export function SupportChatPage() {
   }, [deleteMessage, getTargetOrgId, isAdmin, conversationIdMap]);
 
   // Call handlers
-  const handleStartCall = useCallback(() => {
+  const handleStartCall = useCallback(async () => {
     if (isAdmin && activeClientOrgId) {
       const client = clientList.find((c) => c.orgId === activeClientOrgId);
       setCallTarget(client?.orgName || "Client");
     } else {
       setCallTarget(`${companyName} Support`);
     }
+
+    // Send a call-start message so the other party is notified
+    const targetId = getTargetOrgId();
+    if (targetId) {
+      const dbConvId = isAdmin ? conversationIdMap[targetId] : targetId;
+      const base = createBaseMessage(targetId);
+      const callMsg: SupportMessage = {
+        ...base,
+        id: generateId(),
+        content: "Incoming voice call",
+        timestamp: Date.now(),
+        type: "call",
+        callInfo: { duration: 0, type: "incoming" },
+      };
+      await sendMessage(dbConvId, callMsg, isAdmin ? undefined : orgName);
+    }
+
     setCallActive(true);
-  }, [isAdmin, activeClientOrgId, clientList]);
+  }, [isAdmin, activeClientOrgId, clientList, companyName, getTargetOrgId, conversationIdMap, createBaseMessage, sendMessage, orgName]);
 
   const handleEndCall = useCallback((duration: number) => {
     const targetId = getTargetOrgId();
