@@ -58,8 +58,8 @@ export const PLAN_LEVELS: Record<string, number> = {
   trial: 1, // Trial has growth-level access
 };
 
-// Roles that bypass ALL feature locks (platform-level roles)
-const BYPASS_ROLES = new Set(["platform_owner", "platform_admin", "owner"]);
+// Roles that bypass ALL feature locks (platform-level roles + brand_owner for full admin access)
+const BYPASS_ROLES = new Set(["platform_owner", "platform_admin", "owner", "brand_owner", "brand_admin"]);
 
 /** Check if a role bypasses feature locks (is a platform-level role) */
 export function isPlatformBypassRole(roleName: string): boolean {

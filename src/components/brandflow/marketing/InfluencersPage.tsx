@@ -78,7 +78,8 @@ const emptyForm = (): Omit<Influencer, 'id' | 'addedAt'> => ({
 });
 
 export function InfluencersPage() {
-  const isDark = typeof window !== 'undefined' && document.documentElement.classList.contains('dark');
+  const { appTheme } = useValtrioxStore();
+  const isDark = appTheme === "premium-dark" || appTheme === "dark";
   const cardCls = isDark ? "bg-white/[0.03] border-white/[0.08]" : "bg-white border-slate-200";
   const textPrimary = isDark ? "text-white" : "text-slate-900";
   const textSecondary = isDark ? "text-slate-400" : "text-slate-500";

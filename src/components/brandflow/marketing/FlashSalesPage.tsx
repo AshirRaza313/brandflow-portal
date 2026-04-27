@@ -81,7 +81,8 @@ function CountdownTimer({ targetDate }: { targetDate: string }) {
 }
 
 export function FlashSalesPage() {
-  const isDark = typeof window !== "undefined" && document.documentElement.classList.contains("dark");
+  const { appTheme } = useValtrioxStore();
+  const isDark = appTheme === "premium-dark" || appTheme === "dark";
 
   const [flashSales, setFlashSales] = useState<FlashSale[]>([]);
   const [loading, setLoading] = useState(true);

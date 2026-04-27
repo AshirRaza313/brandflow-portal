@@ -30,7 +30,7 @@ const AuthScreen = dynamic(
 );
 import { AuthModal } from "@/components/brandflow/auth/AuthModal";
 import { cn } from "@/lib/utils";
-import { isFeatureAvailableWithOverrides, getFeatureLock } from "@/lib/feature-lock";
+import { isFeatureAvailableWithOverrides, getFeatureLock, isPlatformBypassRole } from "@/lib/feature-lock";
 
 // ── Dynamic: Layout components (defers framer-motion from landing page bundle) ──
 const Sidebar = dynamic(
@@ -278,10 +278,13 @@ export default function Home() {
     "bg-slate-50";
 
   // Helper to check if a section is locked by subscription plan OR admin toggles
-  // Platform roles (owner / platform_owner / platform_admin) bypass ALL locks
+  // Platform roles (owner / platform_owner / platform_admin / brand_owner / brand_admin) bypass ALL locks.
   const userRole = user?.role || "viewer";
+  const isAdmin = isPlatformBypassRole(userRole);
 
   const checkLock = (sectionId: string, label: string) => {
+    // Admin roles never see feature locks
+    if (isAdmin) return null;
     if (!isFeatureAvailableWithOverrides(sectionId, subscriptionPlan, userRole, adminLockedFeatures)) {
       const lock = getFeatureLock(sectionId);
       return (

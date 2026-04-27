@@ -72,8 +72,8 @@ const SIMULATED_HISTORY: HistoryEntry[] = [
 ];
 
 export function FollowUpPage() {
-  const { user, organization } = useValtrioxStore();
-  const isDark = typeof window !== 'undefined' && document.documentElement.classList.contains('dark');
+  const { user, organization, appTheme } = useValtrioxStore();
+  const isDark = appTheme === "premium-dark" || appTheme === "dark";
 
   // ── State ──
   const [rules, setRules] = useState<FollowUpRule[]>([]);

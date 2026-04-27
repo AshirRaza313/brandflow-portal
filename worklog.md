@@ -99,3 +99,24 @@ Stage Summary:
 - Build successful with no errors
 - Committed and pushed to GitHub (c505b06)
 - Files modified: globals.css, AuthScreen.tsx, AuthModal.tsx, InvoiceGenerator.tsx, SubscriptionInvoiceView.tsx
+---
+Task ID: 2
+Agent: Main Agent
+Task: Fix chunk loading errors on all new feature tabs
+
+Work Log:
+- User reported "Failed to load chunk" errors on all newly added feature tabs (Support Tickets, SLA Engine, etc.)
+- Diagnosed root cause: Missing npm packages — bcryptjs, pdfkit, web-push were not installed
+- These packages are imported in API routes and lib files but were missing from node_modules
+- Vercel build was failing silently or producing incomplete chunks without these dependencies
+- Installed missing packages: npm install bcryptjs pdfkit web-push
+- Installed type definitions: npm install -D @types/bcryptjs @types/web-push
+- Build verification: npx next build → SUCCESS (all 60+ routes compiled cleanly)
+- Verified chunk output: 115 chunk files, 4.4MB total
+- Committed and pushed to GitHub: 525491c
+
+Stage Summary:
+- Root cause: 3 npm packages (bcryptjs, pdfkit, web-push) were not in package.json
+- Fix: Installed all 3 packages + type definitions, verified build
+- Push to GitHub triggers Vercel auto-deploy with correct dependencies
+- All lazy-loaded tabs should now work correctly after deployment

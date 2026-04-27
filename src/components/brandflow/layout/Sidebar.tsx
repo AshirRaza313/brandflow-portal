@@ -20,7 +20,7 @@ import {
 } from "lucide-react";
 import { useTranslation } from "@/lib/i18n";
 import { isSectionAccessible, isPlatformRole, isPlatformOwner, isReadOnlyRole, getRoleBadgeStyle } from "@/lib/roles";
-import { isFeatureAvailableWithOverrides, getFeatureLock, getPlanDisplayName } from "@/lib/feature-lock";
+import { isFeatureAvailableWithOverrides, getFeatureLock, getPlanDisplayName, isPlatformBypassRole } from "@/lib/feature-lock";
 import { useSubscriptionSync } from "@/hooks/useSubscriptionSync";
 
 // ============================================================================
@@ -319,7 +319,7 @@ export function Sidebar() {
                           {groupDef.items.map((item) => {
                             const isActive = item.id === activeSection;
                             const isAccessible = isSectionAccessible(item.id, userRole);
-                            const isSubLocked = isAccessible && !isPlatformOwner(userRole) && !isFeatureAvailableWithOverrides(item.id, subscriptionPlan, userRole, adminLockedFeatures);
+                            const isSubLocked = isAccessible && !isPlatformOwner(userRole) && !isPlatformBypassRole(userRole) && !isFeatureAvailableWithOverrides(item.id, subscriptionPlan, userRole, adminLockedFeatures);
                             const badge = BADGE_MAP[item.id];
 
                             if (!isAccessible) return null;
