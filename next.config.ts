@@ -23,12 +23,10 @@ const nextConfig: NextConfig = {
   },
   // Ensure pdfkit is not bundled by webpack (uses native Node.js features)
   serverExternalPackages: ["pdfkit"],
-  experimental: {
-    // Include font files in serverless function bundles as safety net
-    outputFileTracingIncludes: {
-      "/api/invoices/**": ["./fonts/**"],
-      "/api/reports/**": ["./fonts/**"],
-    },
+  // Include font files in serverless function bundles as safety net
+  outputFileTracingIncludes: {
+    "/api/invoices/**": ["./fonts/**"],
+    "/api/reports/**": ["./fonts/**"],
   },
   // Security headers via Next.js config (backup for middleware)
   async headers() {
