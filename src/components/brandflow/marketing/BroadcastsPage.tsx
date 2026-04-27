@@ -481,7 +481,7 @@ export function BroadcastsPage() {
                         </div>
                       </div>
                       <div className="mt-3 pt-3 border-t border-white/[0.06]">
-                        <p className={`text-xs line-clamp-2 font-mono ${isDark ? "text-slate-500" : "text-slate-400"}`}>
+                        <p className={`text-xs line-clamp-2 font-mono ${isDark ? "text-slate-400" : "text-slate-500"}`}>
                           {template.message.substring(0, 100)}...
                         </p>
                       </div>

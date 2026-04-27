@@ -224,7 +224,7 @@ export function MarketingCalendarPage() {
 
                   {/* Empty cells before first day */}
                   {Array.from({ length: firstDay }, (_, i) => (
-                    <div key={`empty-${i}`} className={`min-h-[110px] p-1.5 ${isDark ? "bg-white/[0.01]" : "bg-slate-50/50"}`} />
+                    <div key={`empty-${i}`} className={`min-h-[110px] p-1.5 ${isDark ? "bg-white/[0.03]" : "bg-slate-50/50"}`} />
                   ))}
 
                   {/* Day cells */}
@@ -236,7 +236,7 @@ export function MarketingCalendarPage() {
                     return (
                       <div
                         key={day}
-                        className={`min-h-[110px] p-1.5 transition-colors ${isDark ? "bg-white/[0.01] hover:bg-white/[0.03]" : "bg-white hover:bg-slate-50"}`}
+                        className={`min-h-[110px] p-1.5 transition-colors ${isDark ? "bg-white/[0.03] hover:bg-white/[0.03]" : "bg-white hover:bg-slate-50"}`}
                       >
                         <div className="flex items-center justify-between mb-1">
                           <span className={`text-xs font-medium ${isToday ? "h-5 w-5 rounded-full bg-amber-500 text-white flex items-center justify-center" : isDark ? "text-slate-400" : "text-slate-600"}`}>

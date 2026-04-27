@@ -242,7 +242,7 @@ export function TasksPage() {
 
   const textPrimary = isDark ? "text-white" : "text-slate-900";
   const textSecondary = isDark ? "text-slate-400" : "text-slate-500";
-  const textMuted = isDark ? "text-slate-500" : "text-muted-foreground";
+  const textMuted = isDark ? "text-slate-400" : "text-muted-foreground";
   const borderColor = isGold ? "border-white/[0.06]" : isDark ? "border-white/[0.06]" : "border-slate-200";
 
   const getColumnCardBg = (colId: TaskStatus) => {
@@ -388,8 +388,8 @@ export function TasksPage() {
                   <div className="flex-1 space-y-2 max-h-[500px] overflow-y-auto" style={{ scrollbarWidth: "thin" }}>
                     {colTasks.length === 0 && (
                       <div className="text-center py-10">
-                        <ClipboardList className={cn("h-8 w-8 mx-auto mb-2", isDark ? "text-slate-600" : "text-slate-300")} />
-                        <p className={cn("text-xs", isDark ? "text-slate-500" : "text-muted-foreground")}>No tasks</p>
+                        <ClipboardList className={cn("h-8 w-8 mx-auto mb-2", isDark ? "text-slate-400" : "text-slate-300")} />
+                        <p className={cn("text-xs", isDark ? "text-slate-400" : "text-muted-foreground")}>No tasks</p>
                       </div>
                     )}
                     {colTasks.map((task) => {
@@ -406,7 +406,7 @@ export function TasksPage() {
                         >
                           <div className="flex items-start justify-between gap-2">
                             <div className="flex items-center gap-1.5 flex-shrink-0">
-                              <GripVertical className={cn("h-3.5 w-3.5", isDark ? "text-slate-600" : "text-slate-300")} />
+                              <GripVertical className={cn("h-3.5 w-3.5", isDark ? "text-slate-400" : "text-slate-300")} />
                               <span className={getPriorityBadgeClasses(task.priority)}>
                                 {priorityConfig[task.priority]?.label || task.priority}
                               </span>
@@ -432,13 +432,13 @@ export function TasksPage() {
 
                           <div className="flex items-center gap-2 mt-2">
                             {due && (
-                              <div className={cn("flex items-center gap-1 text-[10px] font-medium", due.isOverdue ? "text-red-500" : isDark ? "text-slate-500" : "text-slate-400")}>
+                              <div className={cn("flex items-center gap-1 text-[10px] font-medium", due.isOverdue ? "text-red-500" : isDark ? "text-slate-400" : "text-slate-500")}>
                                 <CalendarDays className="h-3 w-3" />
                                 {due.formatted}
                               </div>
                             )}
                             {task.assignedTo && (
-                              <span className={cn("text-[10px]", isDark ? "text-slate-500" : "text-slate-400")}>
+                              <span className={cn("text-[10px]", isDark ? "text-slate-400" : "text-slate-500")}>
                                 <Flag className="h-3 w-3 inline mr-0.5" />
                                 Assigned
                               </span>

@@ -227,8 +227,8 @@ function VoiceNotePlayer({
           />
         </div>
         <div className="flex items-center justify-between mt-0.5">
-          <Volume2 className={`h-2.5 w-2.5 ${isDark ? "text-slate-600" : "text-slate-400"}`} />
-          <span className={`text-[9px] ${isDark ? "text-slate-500" : "text-slate-400"}`}>
+          <Volume2 className={`h-2.5 w-2.5 ${isDark ? "text-slate-400" : "text-slate-400"}`} />
+          <span className={`text-[9px] ${isDark ? "text-slate-400" : "text-slate-500"}`}>
             {formatDuration(voiceNote.duration)}
           </span>
         </div>
@@ -262,7 +262,7 @@ function AttachmentBubble({
           <span className={`text-[9px] truncate max-w-[160px] ${isDark ? "text-slate-400" : "text-slate-500"}`}>
             {attachment.name}
           </span>
-          <span className={`text-[9px] ${isDark ? "text-slate-500" : "text-slate-400"}`}>
+          <span className={`text-[9px] ${isDark ? "text-slate-400" : "text-slate-500"}`}>
             {formatFileSize(attachment.size)}
           </span>
         </div>
@@ -298,11 +298,11 @@ function AttachmentBubble({
         <p className={`text-xs font-medium truncate ${isDark ? "text-slate-200" : "text-slate-700"}`}>
           {attachment.name}
         </p>
-        <p className={`text-[9px] ${isDark ? "text-slate-500" : "text-slate-400"}`}>
+        <p className={`text-[9px] ${isDark ? "text-slate-400" : "text-slate-500"}`}>
           {formatFileSize(attachment.size)}
         </p>
       </div>
-      <Download className={`h-3.5 w-3.5 shrink-0 ${isDark ? "text-slate-500" : "text-slate-400"}`} />
+      <Download className={`h-3.5 w-3.5 shrink-0 ${isDark ? "text-slate-400" : "text-slate-500"}`} />
     </a>
   );
 }
@@ -422,7 +422,7 @@ function SupportMessageBubble({
             <span className={`text-[9px] ${getRoleColor(message.senderRole, isDark)}`}>
               {message.senderRole.replace(/_/g, " ")}
             </span>
-            <span className={`text-[9px] ${isDark ? "text-slate-600" : "text-slate-400"}`}>
+            <span className={`text-[9px] ${isDark ? "text-slate-400" : "text-slate-400"}`}>
               {formatTime(message.timestamp)}
             </span>
           </div>
@@ -666,7 +666,7 @@ function VoiceRecordingBar({
         <p className={`text-xs font-medium ${isDark ? "text-red-300" : "text-red-700"}`}>
           Recording Voice Note
         </p>
-        <p className={`text-[10px] ${isDark ? "text-slate-500" : "text-slate-400"}`}>
+        <p className={`text-[10px] ${isDark ? "text-slate-400" : "text-slate-500"}`}>
           {formatDuration(time)} / {formatDuration(MAX_VOICE_DURATION)}
         </p>
         <div className="flex items-center gap-px mt-1">
@@ -741,7 +741,7 @@ function AttachmentPreview({
         <p className={`text-[10px] font-medium truncate ${isDark ? "text-slate-300" : "text-slate-600"}`}>
           {file.name}
         </p>
-        <p className={`text-[8px] ${isDark ? "text-slate-500" : "text-slate-400"}`}>
+        <p className={`text-[8px] ${isDark ? "text-slate-400" : "text-slate-500"}`}>
           {formatFileSize(file.size)}
         </p>
       </div>
@@ -945,7 +945,7 @@ function CallOverlay({
         </div>
 
         {/* Subtle branding */}
-        <p className={`text-[10px] mt-4 ${isDark ? "text-slate-700" : "text-slate-600"}`}>
+        <p className={`text-[10px] mt-4 ${isDark ? "text-slate-500" : "text-slate-600"}`}>
           {companyName} Secure Call
         </p>
       </div>
@@ -1001,12 +1001,12 @@ function ClientListItem({
           )}
         </div>
         {client.lastMessage && (
-          <p className={`text-[10px] sm:text-xs truncate mt-0.5 ${isDark ? "text-slate-500" : "text-slate-400"}`}>
+          <p className={`text-[10px] sm:text-xs truncate mt-0.5 ${isDark ? "text-slate-400" : "text-slate-500"}`}>
             {client.lastMessage}
           </p>
         )}
         {client.lastMessageTime && (
-          <p className={`text-[9px] mt-0.5 ${isDark ? "text-slate-600" : "text-slate-400"}`}>
+          <p className={`text-[9px] mt-0.5 ${isDark ? "text-slate-400" : "text-slate-400"}`}>
             {formatTime(client.lastMessageTime)}
           </p>
         )}
@@ -1074,89 +1074,182 @@ export function SupportChatPage() {
   }, [companyName]);
 
   // ---------------------------------------------------------------------------
-  // Storage helpers
+  // Server-backed state (API instead of localStorage)
   // ---------------------------------------------------------------------------
 
-  // Get the storage key for a given org's support chat
-  const getStorageKey = useCallback((oid: string) => `valtriox-support-${oid}`, []);
+  const [messagesMap, setMessagesMap] = useState<Record<string, SupportMessage[]>>({});
 
-  // Get the admin index storage key
-  const adminIndexKey = "valtriox-support-admin-index";
-
-  // ---------------------------------------------------------------------------
-  // Load messages for the active conversation
-  // ---------------------------------------------------------------------------
-
-  const currentConversationId = isAdmin ? activeClientOrgId : orgId;
-
-  const [messagesMap, setMessagesMap] = useState<Record<string, SupportMessage[]>>(() => {
-    try {
-      if (typeof window === "undefined") return {};
-      // Load messages for this org (client) or all for admin
-      if (!isAdmin) {
-        const key = getStorageKey(orgId);
-        const raw = localStorage.getItem(key);
-        return { [orgId]: raw ? JSON.parse(raw) : [] };
-      }
-      // Admin: load all known conversations
-      const index = localStorage.getItem(adminIndexKey);
-      if (index) {
-        const orgIds: string[] = JSON.parse(index);
-        const map: Record<string, SupportMessage[]> = {};
-        for (const oid of orgIds) {
-          const raw = localStorage.getItem(getStorageKey(oid));
-          map[oid] = raw ? JSON.parse(raw) : [];
-        }
-        return map;
-      }
-      return {};
-    } catch {
-      return {};
-    }
-  });
-
-  // Admin: client list
-  const [clientList, setClientList] = useState<ClientConversation[]>(() => {
-    try {
-      if (typeof window === "undefined") return [];
-      const raw = localStorage.getItem("valtriox-support-clients");
-      return raw ? JSON.parse(raw) : [];
-    } catch {
-      return [];
-    }
-  });
+  // Admin: client conversation list
+  const [clientList, setClientList] = useState<ClientConversation[]>([]);
+  // Tracks the DB conversation ID for each orgId (admin uses this for API calls)
+  const [conversationIdMap, setConversationIdMap] = useState<Record<string, string>>({});
+  // Client's own conversation ID
+  const [clientConversationId, setClientConversationId] = useState<string | null>(null);
 
   // Current messages
+  const currentConversationId = isAdmin ? activeClientOrgId : orgId;
   const currentMessages = currentConversationId ? (messagesMap[currentConversationId] || []) : [];
 
-  // Save messages
-  const updateMessages = useCallback((convOrgId: string, updater: (prev: SupportMessage[]) => SupportMessage[]) => {
-    setMessagesMap((prev) => {
-      const existing = prev[convOrgId] || [];
-      const next = updater(existing);
-      const updated = { ...prev, [convOrgId]: next.slice(-200) };
-      try {
-        if (typeof window !== "undefined") {
-          localStorage.setItem(getStorageKey(convOrgId), JSON.stringify(updated[convOrgId]));
-        }
-      } catch {}
-      return updated;
-    });
+  // ── Fetch conversations (admin only) ──
+  const fetchConversations = useCallback(async () => {
+    try {
+      const res = await fetch("/api/support-chat?mode=conversations");
+      if (!res.ok) return;
+      const data = await res.json();
+      const conversations: ClientConversation[] = (data.conversations || []).map((c: any) => ({
+        orgId: c.orgId,
+        orgName: c.orgName,
+        lastMessage: c.lastMessage,
+        lastMessageTime: c.lastMessageTime,
+        unreadCount: c.unreadCount,
+      }));
+      setClientList(conversations);
+      // Build conversationIdMap from the API response
+      const idMap: Record<string, string> = {};
+      (data.conversations || []).forEach((c: any) => {
+        if (c.id && c.orgId) idMap[c.orgId] = c.id;
+      });
+      setConversationIdMap((prev) => ({ ...prev, ...idMap }));
+    } catch {}
+  }, []);
 
-    // Admin: update client list index
-    if (isAdmin) {
-      try {
-        if (typeof window !== "undefined") {
-          const raw = localStorage.getItem(adminIndexKey);
-          const orgIds: string[] = raw ? JSON.parse(raw) : [];
-          if (!orgIds.includes(convOrgId)) {
-            orgIds.push(convOrgId);
-            localStorage.setItem(adminIndexKey, JSON.stringify(orgIds));
-          }
-        }
-      } catch {}
+  // ── Fetch messages for a specific conversation ──
+  const fetchMessages = useCallback(async (convId: string | null) => {
+    if (!convId) return;
+    try {
+      const params = isAdmin
+        ? `?conversationId=${convId}`
+        : `?mode=messages`;
+      const res = await fetch(`/api/support-chat${params}`);
+      if (!res.ok) return;
+      const data = await res.json();
+      const messages: SupportMessage[] = (data.messages || []).map((m: any) => ({
+        id: m.id,
+        senderId: m.senderId,
+        senderName: m.senderName,
+        senderAvatar: m.senderAvatar,
+        senderRole: m.senderRole,
+        content: m.content,
+        timestamp: m.timestamp,
+        type: m.type,
+        attachment: m.attachment,
+        voiceNote: m.voiceNote,
+        callInfo: m.callInfo,
+      }));
+      setMessagesMap((prev) => ({ ...prev, [convId]: messages }));
+    } catch {}
+  }, [isAdmin]);
+
+  // ── Send message via API ──
+  const sendMessage = useCallback(async (targetConvId: string | null, msg: SupportMessage, orgNameOverride?: string) => {
+    if (!targetConvId) return null;
+    try {
+      const payload: any = {
+        conversationId: isAdmin ? targetConvId : undefined,
+        content: msg.content,
+        messageType: msg.type,
+        senderName: msg.senderName,
+        senderAvatar: msg.senderAvatar,
+        orgName: orgNameOverride,
+      };
+      if (msg.attachment) payload.attachment = msg.attachment;
+      if (msg.voiceNote) payload.voiceNote = msg.voiceNote;
+      if (msg.callInfo) payload.callInfo = msg.callInfo;
+
+      const res = await fetch("/api/support-chat", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+      if (!res.ok) return null;
+      const data = await res.json();
+      const savedMsg: SupportMessage = {
+        id: data.message.id,
+        senderId: data.message.senderId,
+        senderName: data.message.senderName,
+        senderAvatar: data.message.senderAvatar,
+        senderRole: data.message.senderRole,
+        content: data.message.content,
+        timestamp: data.message.timestamp,
+        type: data.message.type,
+        attachment: data.message.attachment,
+        voiceNote: data.message.voiceNote,
+        callInfo: data.message.callInfo,
+      };
+      // Optimistically add to local state
+      setMessagesMap((prev) => {
+        const existing = prev[targetConvId] || [];
+        return { ...prev, [targetConvId]: [...existing, savedMsg] };
+      });
+      return savedMsg;
+    } catch {
+      return null;
     }
-  }, [isAdmin, getStorageKey]);
+  }, [isAdmin]);
+
+  // ── Delete message via API ──
+  const deleteMessage = useCallback(async (targetConvId: string | null, messageId: string) => {
+    if (!targetConvId) return;
+    try {
+      await fetch(`/api/support-chat?messageId=${messageId}&conversationId=${targetConvId}`, {
+        method: "DELETE",
+      });
+      // Remove from local state and add system message
+      setMessagesMap((prev) => {
+        const existing = prev[targetConvId] || [];
+        const filtered = existing.filter((m) => m.id !== messageId);
+        const systemMsg: SupportMessage = {
+          id: `sys-${Date.now()}`,
+          senderId: "system",
+          senderName: "System",
+          senderRole: "system",
+          content: "A message was deleted",
+          timestamp: Date.now(),
+          type: "system",
+        };
+        return { ...prev, [targetConvId]: [...filtered, systemMsg] };
+      });
+    } catch {}
+  }, []);
+
+  // ── Initial load ──
+  useEffect(() => {
+    if (isAdmin) {
+      fetchConversations();
+    } else if (orgId) {
+      fetchMessages(orgId);
+    }
+  }, [isAdmin, orgId, fetchConversations, fetchMessages]);
+
+  // ── Admin: fetch messages when selecting a client ──
+  useEffect(() => {
+    if (isAdmin && activeClientOrgId) {
+      // The conversationIdMap might not have the ID yet; use the orgId directly
+      // The API will resolve it. First check if we have the conversation ID.
+      const convId = conversationIdMap[activeClientOrgId];
+      if (convId) {
+        fetchMessages(activeClientOrgId);
+      } else {
+        // Fetch conversations again to get the ID, then fetch messages
+        fetchConversations().then(() => {
+          fetchMessages(activeClientOrgId);
+        });
+      }
+    }
+  }, [isAdmin, activeClientOrgId, conversationIdMap, fetchConversations, fetchMessages]);
+
+  // ── Poll for new messages every 5 seconds ──
+  useEffect(() => {
+    const interval = setInterval(() => {
+      if (isAdmin) {
+        fetchConversations();
+        if (activeClientOrgId) fetchMessages(activeClientOrgId);
+      } else if (orgId) {
+        fetchMessages(orgId);
+      }
+    }, 5000);
+    return () => clearInterval(interval);
+  }, [isAdmin, activeClientOrgId, orgId, fetchConversations, fetchMessages]);
 
   // Filtered messages (search)
   const filteredMessages = useMemo(() => {
@@ -1192,31 +1285,11 @@ export function SupportChatPage() {
     });
   }, []);
 
-  // Update client list entry (admin side) — must be declared before handleSend
-  const updateClientListEntry = useCallback((clientOrgId: string, lastMsg: string, time: number) => {
-    setClientList((prev) => {
-      const existing = prev.find((c) => c.orgId === clientOrgId);
-      if (existing) {
-        const updated = prev.map((c) =>
-          c.orgId === clientOrgId ? { ...c, lastMessage: lastMsg, lastMessageTime: time } : c
-        );
-        try {
-          if (typeof window !== "undefined") {
-            localStorage.setItem("valtriox-support-clients", JSON.stringify(updated));
-          }
-        } catch {}
-        return updated;
-      } else {
-        const name = clientOrgId;
-        const newList = [...prev, { orgId: clientOrgId, orgName: name, lastMessage: lastMsg, lastMessageTime: time, unreadCount: 0 }];
-        try {
-          if (typeof window !== "undefined") {
-            localStorage.setItem("valtriox-support-clients", JSON.stringify(newList));
-          }
-        } catch {}
-        return newList;
-      }
-    });
+  // Update client list entry (admin side) — now handled by the API via polling,
+  // but we also update locally for immediate feedback
+  const updateClientListEntry = useCallback((_clientOrgId: string, _lastMsg: string, _time: number) => {
+    // No-op — the conversation list is refreshed via API polling
+    // Kept for backward compatibility with call handlers that reference this
   }, []);
 
   // Handle file selection
@@ -1266,6 +1339,9 @@ export function SupportChatPage() {
 
     const base = createBaseMessage(targetId);
 
+    // Get the DB conversation ID for admin
+    const dbConvId = isAdmin ? conversationIdMap[targetId] : targetId;
+
     if (hasAttachment) {
       try {
         const url = await fileToBase64(pendingAttachment);
@@ -1284,10 +1360,7 @@ export function SupportChatPage() {
           type: "attachment",
           attachment,
         };
-        updateMessages(targetId, (prev) => [...prev, msg]);
-
-        // Update admin client list
-        updateClientListEntry(targetId, messageInput.trim() || "Sent a file", Date.now());
+        await sendMessage(dbConvId, msg, isAdmin ? undefined : orgName);
       } catch {
         // Failed to process file
       }
@@ -1303,14 +1376,11 @@ export function SupportChatPage() {
         timestamp: Date.now(),
         type: "text",
       };
-      updateMessages(targetId, (prev) => [...prev, msg]);
-
-      // Update admin client list
-      updateClientListEntry(targetId, messageInput.trim(), Date.now());
+      await sendMessage(dbConvId, msg, isAdmin ? undefined : orgName);
     }
 
     setMessageInput("");
-  }, [messageInput, pendingAttachment, createBaseMessage, updateMessages, fileToBase64, getTargetOrgId]);
+  }, [messageInput, pendingAttachment, createBaseMessage, sendMessage, fileToBase64, getTargetOrgId, isAdmin, conversationIdMap, orgName]);
 
   // Handle voice note stop
   const handleVoiceStop = useCallback(async (blob: Blob) => {
@@ -1320,8 +1390,22 @@ export function SupportChatPage() {
       return;
     }
 
+    const dbConvId = isAdmin ? conversationIdMap[targetId] : targetId;
+
     const url = await fileToBase64(blob);
     const base = createBaseMessage(targetId);
+
+    // Get duration from audio metadata
+    const getDuration = (): Promise<number> => {
+      return new Promise((resolve) => {
+        const tempAudio = new Audio(url);
+        tempAudio.onloadedmetadata = () => resolve(tempAudio.duration || 0);
+        tempAudio.onerror = () => resolve(0);
+        setTimeout(() => resolve(0), 3000); // Fallback timeout
+      });
+    };
+
+    const dur = await getDuration();
     const msg: SupportMessage = {
       ...base,
       id: generateId(),
@@ -1331,43 +1415,22 @@ export function SupportChatPage() {
       voiceNote: {
         id: generateId(),
         url,
-        duration: 0,
+        duration: dur,
       },
     };
 
-    const tempAudio = new Audio(url);
-    tempAudio.onloadedmetadata = () => {
-      const dur = tempAudio.duration || 0;
-      const finalMsg = { ...msg, voiceNote: { ...msg.voiceNote!, duration: dur } };
-      updateMessages(targetId, (prev) => [...prev, finalMsg]);
-      updateClientListEntry(targetId, "Sent a voice note", Date.now());
-    };
-    tempAudio.onerror = () => {
-      updateMessages(targetId, (prev) => [...prev, msg]);
-      updateClientListEntry(targetId, "Sent a voice note", Date.now());
-    };
+    await sendMessage(dbConvId, msg);
     setIsRecording(false);
-  }, [createBaseMessage, updateMessages, fileToBase64, getTargetOrgId]);
+  }, [createBaseMessage, sendMessage, fileToBase64, getTargetOrgId, isAdmin, conversationIdMap]);
 
   // Delete a message
   const handleDeleteMessage = useCallback((messageId: string) => {
     const targetId = getTargetOrgId();
     if (!targetId) return;
 
-    updateMessages(targetId, (prev) => {
-      const filtered = prev.filter((m) => m.id !== messageId);
-      const deletedMsg: SupportMessage = {
-        id: generateId(),
-        senderId: "system",
-        senderName: "System",
-        senderRole: "system",
-        content: "A message was deleted",
-        timestamp: Date.now(),
-        type: "system",
-      };
-      return [...filtered, deletedMsg];
-    });
-  }, [updateMessages, getTargetOrgId]);
+    const dbConvId = isAdmin ? conversationIdMap[targetId] : targetId;
+    deleteMessage(dbConvId, messageId);
+  }, [deleteMessage, getTargetOrgId, isAdmin, conversationIdMap]);
 
   // Call handlers
   const handleStartCall = useCallback(() => {
@@ -1383,6 +1446,7 @@ export function SupportChatPage() {
   const handleEndCall = useCallback((duration: number) => {
     const targetId = getTargetOrgId();
     if (targetId && duration > 0) {
+      const dbConvId = isAdmin ? conversationIdMap[targetId] : targetId;
       const callMsg: SupportMessage = {
         id: generateId(),
         senderId: "system",
@@ -1393,30 +1457,11 @@ export function SupportChatPage() {
         type: "call",
         callInfo: { duration, type: "outgoing" },
       };
-      updateMessages(targetId, (prev) => [...prev, callMsg]);
-
-      // Save call history
-      try {
-        if (typeof window !== "undefined") {
-          const historyRaw = localStorage.getItem("valtriox-call-history") || "[]";
-          const history = JSON.parse(historyRaw);
-          history.push({
-            id: generateId(),
-            callerId: isAdmin ? ADMIN_ID : (user?.id || "user-1"),
-            callerName: isAdmin ? `${companyName} Support` : (user?.name || "You"),
-            targetOrgId: targetId,
-            targetName: callTarget,
-            duration,
-            type: "outgoing",
-            timestamp: Date.now(),
-          });
-          localStorage.setItem("valtriox-call-history", JSON.stringify(history.slice(-50)));
-        }
-      } catch {}
+      sendMessage(dbConvId, callMsg);
     }
 
     setCallActive(false);
-  }, [getTargetOrgId, updateMessages, isAdmin, user, callTarget]);
+  }, [getTargetOrgId, sendMessage, isAdmin, callTarget, conversationIdMap]);
 
   const handleKeyDown = useCallback(
     (e: React.KeyboardEvent) => {
@@ -1493,7 +1538,7 @@ export function SupportChatPage() {
                   Admin
                 </Badge>
               </div>
-              <p className={`text-[10px] mt-1.5 ${isDark ? "text-slate-600" : "text-slate-400"}`}>
+              <p className={`text-[10px] mt-1.5 ${isDark ? "text-slate-400" : "text-slate-400"}`}>
                 Manage client support conversations
               </p>
             </div>
@@ -1501,13 +1546,13 @@ export function SupportChatPage() {
             {/* Search clients */}
             <div className={`px-3 py-2 border-b ${isDark ? "border-white/[0.06]" : "border-slate-200"}`}>
               <div className={`flex items-center gap-2 px-2.5 py-1.5 rounded-lg ${isDark ? "bg-white/[0.04]" : "bg-slate-50"}`}>
-                <Search className={`h-3.5 w-3.5 ${isDark ? "text-slate-600" : "text-slate-400"}`} />
+                <Search className={`h-3.5 w-3.5 ${isDark ? "text-slate-400" : "text-slate-400"}`} />
                 <input
                   type="text"
                   placeholder="Search clients..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  className={`bg-transparent text-xs outline-none w-full ${isDark ? "text-slate-300 placeholder:text-slate-600" : "text-slate-600 placeholder:text-slate-400"}`}
+                  className={`bg-transparent text-xs outline-none w-full ${isDark ? "text-slate-300 placeholder:text-slate-500" : "text-slate-600 placeholder:text-slate-400"}`}
                 />
               </div>
             </div>
@@ -1515,12 +1560,12 @@ export function SupportChatPage() {
             {/* Client list */}
             <ScrollArea className="flex-1">
               <div className="p-2 space-y-0.5">
-                <p className={`text-[9px] font-semibold uppercase tracking-wider px-3 py-1.5 ${isDark ? "text-slate-600" : "text-slate-400"}`}>
+                <p className={`text-[9px] font-semibold uppercase tracking-wider px-3 py-1.5 ${isDark ? "text-slate-400" : "text-slate-400"}`}>
                   Client Conversations
                 </p>
                 {sortedClientList.length === 0 && (
                   <div className="px-3 py-6 text-center">
-                    <p className={`text-xs ${isDark ? "text-slate-600" : "text-slate-400"}`}>
+                    <p className={`text-xs ${isDark ? "text-slate-400" : "text-slate-400"}`}>
                       No client conversations yet.
                     </p>
                     <p className={`text-[10px] mt-1 ${isDark ? "text-slate-700" : "text-slate-300"}`}>
@@ -1548,8 +1593,8 @@ export function SupportChatPage() {
             {/* Footer */}
             <div className={`px-4 py-2.5 border-t ${isDark ? "border-white/[0.06]" : "border-slate-200"}`}>
               <div className="flex items-center gap-2">
-                <Shield className={`h-3.5 w-3.5 ${isDark ? "text-slate-600" : "text-slate-400"}`} />
-                <span className={`text-[10px] ${isDark ? "text-slate-500" : "text-slate-400"}`}>
+                <Shield className={`h-3.5 w-3.5 ${isDark ? "text-slate-400" : "text-slate-400"}`} />
+                <span className={`text-[10px] ${isDark ? "text-slate-400" : "text-slate-500"}`}>
                   {sortedClientList.length} client conversation{sortedClientList.length !== 1 ? "s" : ""}
                 </span>
               </div>
@@ -1578,7 +1623,7 @@ export function SupportChatPage() {
                       <h3 className={`text-sm font-semibold truncate ${isDark ? "text-white" : "text-slate-900"}`}>
                         {chatPartnerName}
                       </h3>
-                      <p className={`text-[9px] sm:text-[10px] truncate ${isDark ? "text-slate-500" : "text-slate-400"}`}>
+                      <p className={`text-[9px] sm:text-[10px] truncate ${isDark ? "text-slate-400" : "text-slate-500"}`}>
                         Client Support Conversation
                       </p>
                     </div>
@@ -1605,7 +1650,7 @@ export function SupportChatPage() {
                       <h3 className={`text-sm sm:text-base font-bold ${isDark ? "text-white" : "text-slate-900"}`}>
                         {chatPartnerName}
                       </h3>
-                      <p className={`text-[10px] sm:text-xs mt-1 max-w-[280px] text-center ${isDark ? "text-slate-500" : "text-slate-400"}`}>
+                      <p className={`text-[10px] sm:text-xs mt-1 max-w-[280px] text-center ${isDark ? "text-slate-400" : "text-slate-500"}`}>
                         Admin support conversation. Messages are private between you and this client.
                       </p>
                     </div>
@@ -1629,7 +1674,7 @@ export function SupportChatPage() {
 
                     {groupedMessages.length === 0 && (
                       <div className="text-center py-4">
-                        <p className={`text-xs ${isDark ? "text-slate-600" : "text-slate-400"}`}>
+                        <p className={`text-xs ${isDark ? "text-slate-400" : "text-slate-400"}`}>
                           No messages yet. Start the conversation!
                         </p>
                       </div>
@@ -1691,7 +1736,7 @@ export function SupportChatPage() {
                         onKeyDown={handleKeyDown}
                         placeholder={`Message ${chatPartnerName}...`}
                         rows={1}
-                        className={`flex-1 bg-transparent text-xs sm:text-sm outline-none resize-none max-h-24 ${isDark ? "text-slate-200 placeholder:text-slate-600" : "text-slate-700 placeholder:text-slate-400"}`}
+                        className={`flex-1 bg-transparent text-xs sm:text-sm outline-none resize-none max-h-24 ${isDark ? "text-slate-200 placeholder:text-slate-500" : "text-slate-700 placeholder:text-slate-400"}`}
                         style={{ minHeight: "24px" }}
                         onInput={(e) => {
                           const target = e.target as HTMLTextAreaElement;
@@ -1754,7 +1799,7 @@ export function SupportChatPage() {
                   <h3 className={`text-base font-bold mb-2 ${isDark ? "text-white" : "text-slate-900"}`}>
                     Admin Support Panel
                   </h3>
-                  <p className={`text-xs max-w-[300px] mx-auto ${isDark ? "text-slate-500" : "text-slate-400"}`}>
+                  <p className={`text-xs max-w-[300px] mx-auto ${isDark ? "text-slate-400" : "text-slate-500"}`}>
                     Select a client from the list to view and manage their support conversation. You can send messages, attachments, voice notes, and initiate calls.
                   </p>
                 </div>
@@ -1807,7 +1852,7 @@ export function SupportChatPage() {
               </h3>
               <div className="flex items-center gap-1.5">
                 <div className="h-1.5 w-1.5 rounded-full bg-amber-500" />
-                <p className={`text-[9px] sm:text-[10px] ${isDark ? "text-slate-500" : "text-slate-400"}`}>
+                <p className={`text-[9px] sm:text-[10px] ${isDark ? "text-slate-400" : "text-slate-500"}`}>
                   Online &middot; {companyEmail}
                 </p>
               </div>
@@ -1837,7 +1882,7 @@ export function SupportChatPage() {
               <h3 className={`text-base sm:text-lg font-bold ${isDark ? "text-white" : "text-slate-900"}`}>
                 {`${companyName} Support`}
               </h3>
-              <p className={`text-[10px] sm:text-xs mt-1 max-w-[300px] text-center ${isDark ? "text-slate-500" : "text-slate-400"}`}>
+              <p className={`text-[10px] sm:text-xs mt-1 max-w-[300px] text-center ${isDark ? "text-slate-400" : "text-slate-500"}`}>
                 Welcome! Need help with anything? Send us a message and our team will respond shortly. You can also share files, voice notes, or give us a call.
               </p>
               <div className={`flex items-center gap-3 mt-4`}>
@@ -1871,7 +1916,7 @@ export function SupportChatPage() {
 
             {groupedMessages.length === 0 && (
               <div className="text-center py-4">
-                <p className={`text-xs ${isDark ? "text-slate-600" : "text-slate-400"}`}>
+                <p className={`text-xs ${isDark ? "text-slate-400" : "text-slate-400"}`}>
                   No messages yet. Start the conversation!
                 </p>
               </div>
@@ -1933,7 +1978,7 @@ export function SupportChatPage() {
                 onKeyDown={handleKeyDown}
                 placeholder={`Message ${companyName} Support...`}
                 rows={1}
-                className={`flex-1 bg-transparent text-xs sm:text-sm outline-none resize-none max-h-24 ${isDark ? "text-slate-200 placeholder:text-slate-600" : "text-slate-700 placeholder:text-slate-400"}`}
+                className={`flex-1 bg-transparent text-xs sm:text-sm outline-none resize-none max-h-24 ${isDark ? "text-slate-200 placeholder:text-slate-500" : "text-slate-700 placeholder:text-slate-400"}`}
                 style={{ minHeight: "24px" }}
                 onInput={(e) => {
                   const target = e.target as HTMLTextAreaElement;

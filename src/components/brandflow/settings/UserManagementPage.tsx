@@ -216,7 +216,7 @@ export function UserManagementPage() {
 
   const textPrimary = isDark ? "text-white" : "text-slate-900";
   const textSecondary = isDark ? "text-slate-400" : "text-slate-500";
-  const textMuted = isDark ? "text-slate-500" : "text-muted-foreground";
+  const textMuted = isDark ? "text-slate-400" : "text-muted-foreground";
 
   const getBadgeClass = (roleName: string) => {
     const style = getRoleBadgeStyle(roleName);
@@ -482,7 +482,7 @@ export function UserManagementPage() {
                                 {hasAccess ? (
                                   <Check className={cn("h-4 w-4 mx-auto", isGold ? "text-amber-400" : "text-amber-500")} />
                                 ) : (
-                                  <X className={cn("h-4 w-4 mx-auto opacity-30", isDark ? "text-slate-600" : "text-slate-300")} />
+                                  <X className={cn("h-4 w-4 mx-auto opacity-30", isDark ? "text-slate-400" : "text-slate-300")} />
                                 )}
                               </td>
                             );
@@ -708,7 +708,7 @@ export function UserManagementPage() {
                               ? "bg-amber-500/10 border-amber-500/20 text-amber-400"
                               : "bg-amber-50 border-amber-200 text-amber-700"
                             : isDark
-                              ? "bg-white/[0.02] border-white/[0.06] text-slate-600"
+                              ? "bg-white/[0.02] border-white/[0.06] text-slate-400"
                               : "bg-slate-50 border-slate-200 text-slate-400"
                         )}
                       >

@@ -257,7 +257,7 @@ export function CustomersPage() {
 
   const textPrimary = cn(isDark ? "text-white" : "text-slate-900");
   const textSecondary = cn(isDark ? "text-slate-400" : "text-slate-500");
-  const textMuted = cn(isDark ? "text-slate-500" : "text-muted-foreground");
+  const textMuted = cn(isDark ? "text-slate-400" : "text-muted-foreground");
   const inputClass = cn(
     isGold && "bg-white/[0.04] border-white/[0.08] text-white placeholder:text-slate-500 focus:border-amber-500/50",
     isDark && !isGold && "bg-white/[0.04] border-white/[0.08] text-white placeholder:text-slate-500"

@@ -127,7 +127,7 @@ export function ReferralPage() {
             <div className={`p-8 rounded-lg flex items-center justify-center ${isDark ? "bg-slate-800" : "bg-slate-50"}`}>
               <div className="text-center">
                 <QrCode className="h-20 w-20 text-slate-300 mx-auto" />
-                <p className={`text-xs mt-2 ${isDark ? "text-slate-500" : "text-slate-400"}`}>QR code preview will appear here</p>
+                <p className={`text-xs mt-2 ${isDark ? "text-slate-400" : "text-slate-500"}`}>QR code preview will appear here</p>
               </div>
             </div>
           </div>

@@ -291,7 +291,7 @@ export function AdManagerPage() {
             <div className={`border-2 border-dashed rounded-lg p-8 text-center transition-colors cursor-pointer ${isDark ? "border-slate-600 hover:border-amber-500" : "border-slate-200 hover:border-amber-300"}`}>
               <Upload className="h-8 w-8 text-slate-400 mx-auto mb-2" />
               <p className={`text-sm font-medium ${isDark ? "text-slate-300" : "text-slate-600"}`}>Drop file here or click to browse</p>
-              <p className={`text-xs mt-1 ${isDark ? "text-slate-500" : "text-slate-400"}`}>JPG, PNG, MP4, GIF (max 50MB)</p>
+              <p className={`text-xs mt-1 ${isDark ? "text-slate-400" : "text-slate-500"}`}>JPG, PNG, MP4, GIF (max 50MB)</p>
             </div>
           </div>
           <DialogFooter>

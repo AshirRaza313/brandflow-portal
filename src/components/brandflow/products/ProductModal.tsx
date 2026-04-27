@@ -325,7 +325,7 @@ export function ProductModal({ open, onClose, onSaved, organizationId, product }
           </div>
 
           {/* Currency hint */}
-          <p className={cn("text-[11px]", isDark ? "text-slate-500" : "text-muted-foreground")}>
+          <p className={cn("text-[11px]", isDark ? "text-slate-400" : "text-muted-foreground")}>
             All prices are in PKR (Rs.)
           </p>
 

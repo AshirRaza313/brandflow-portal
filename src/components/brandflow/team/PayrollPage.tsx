@@ -193,7 +193,7 @@ export function PayrollPage() {
 
   const textPrimary = isDark ? "text-white" : "text-slate-900";
   const textSecondary = isDark ? "text-slate-400" : "text-slate-500";
-  const textMuted = isDark ? "text-slate-500" : "text-muted-foreground";
+  const textMuted = isDark ? "text-slate-400" : "text-muted-foreground";
   const borderColor = isGold ? "border-white/[0.06]" : isDark ? "border-white/[0.06]" : "border-slate-200";
 
   const getCategoryBadgeClass = (category: string) => {
@@ -431,7 +431,7 @@ export function PayrollPage() {
           <motion.div key="reports" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}>
             <Card className={cardClass}>
               <CardContent className="p-8 text-center">
-                <TrendingUp className={cn("h-12 w-12 mx-auto mb-3", isDark ? "text-slate-500" : "text-muted-foreground")} />
+                <TrendingUp className={cn("h-12 w-12 mx-auto mb-3", isDark ? "text-slate-400" : "text-muted-foreground")} />
                 <h3 className={cn("font-semibold mb-1", textPrimary)}>Payroll Reports</h3>
                 <p className={cn("text-sm mb-4", textMuted)}>Generate comprehensive payroll and expense reports.</p>
                 <div className="flex flex-wrap gap-3 justify-center">

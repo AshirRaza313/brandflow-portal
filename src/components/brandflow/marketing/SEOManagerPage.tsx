@@ -142,21 +142,21 @@ export function SEOManagerPage() {
               <div className="space-y-2">
                 <Label className={`text-sm font-medium ${labelCls}`}>Page URL</Label>
                 <div className="flex items-center gap-2">
-                  <Globe className={`h-4 w-4 ${isDark ? "text-slate-500" : "text-slate-400"} flex-shrink-0`} />
+                  <Globe className={`h-4 w-4 ${isDark ? "text-slate-400" : "text-slate-500"} flex-shrink-0`} />
                   <Input placeholder="https://yoursite.com/page" className={`font-mono text-sm ${inputCls}`} />
                 </div>
               </div>
               <div className="space-y-2">
                 <div className="flex items-center justify-between">
                   <Label className={`text-sm font-medium ${labelCls}`}>Title Tag</Label>
-                  <span className={`text-xs font-medium ${isDark ? "text-slate-500" : "text-slate-400"}`}>0/60</span>
+                  <span className={`text-xs font-medium ${isDark ? "text-slate-400" : "text-slate-500"}`}>0/60</span>
                 </div>
                 <Input placeholder="Enter page title..." className={`text-sm ${inputCls}`} />
               </div>
               <div className="space-y-2">
                 <div className="flex items-center justify-between">
                   <Label className={`text-sm font-medium ${labelCls}`}>Meta Description</Label>
-                  <span className={`text-xs font-medium ${isDark ? "text-slate-500" : "text-slate-400"}`}>0/160</span>
+                  <span className={`text-xs font-medium ${isDark ? "text-slate-400" : "text-slate-500"}`}>0/160</span>
                 </div>
                 <Textarea placeholder="Enter meta description..." rows={3} className={`text-sm ${inputCls}`} />
               </div>

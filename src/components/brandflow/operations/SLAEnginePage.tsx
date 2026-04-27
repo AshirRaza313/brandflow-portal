@@ -134,11 +134,11 @@ export function SLAEnginePage() {
   // Theme classes
   const textPrimary = isDark ? "text-white" : "text-slate-900";
   const textSecondary = isDark ? "text-slate-400" : "text-slate-500";
-  const textMuted = isDark ? "text-slate-500" : "text-slate-400";
+  const textMuted = isDark ? "text-slate-400" : "text-slate-400";
   const cardClass = isDark ? "bg-white/[0.03] border-white/[0.08]" : "bg-white border-slate-200";
   const cardClassHover = isDark ? "bg-white/[0.03] border-white/[0.08] hover:border-amber-500/20" : "bg-white border-slate-200 hover:border-slate-300";
   const borderColor = isDark ? "border-white/[0.08]" : "border-slate-200";
-  const inputClass = isDark ? "border-white/[0.08] bg-white/[0.03] focus-visible:border-amber-500/50 placeholder:text-slate-600" : "";
+  const inputClass = isDark ? "border-white/[0.08] bg-white/[0.03] focus-visible:border-amber-500/50 placeholder:text-slate-500" : "";
   const goldBtn = isGold ? "bg-gradient-to-r from-amber-600 via-yellow-500 to-amber-600 text-black hover:shadow-[0_4px_20px_rgba(212,160,23,0.3)] hover:-translate-y-0.5" : "bg-amber-600 hover:bg-amber-700 text-white";
 
   // ── Tab State ──
@@ -480,7 +480,7 @@ export function SLAEnginePage() {
                     )}>
                       {STATUS_LABELS[rule.fromStatus] || rule.fromStatus}
                     </span>
-                    <ArrowRight className={cn("h-3.5 w-3.5", isDark ? "text-slate-500" : "text-slate-400")} />
+                    <ArrowRight className={cn("h-3.5 w-3.5", isDark ? "text-slate-400" : "text-slate-500")} />
                     <span className={cn(
                       "inline-flex px-2 py-0.5 rounded-md text-[11px] font-medium border",
                       STATUS_COLORS[rule.toStatus] || (isDark ? "bg-slate-500/15 text-slate-400 border-slate-500/20" : "bg-slate-50 text-slate-600 border-slate-200")
@@ -605,7 +605,7 @@ export function SLAEnginePage() {
             <CardContent className={cn("p-4 bg-gradient-to-br", s.color)}>
               <div className="flex items-center justify-between">
                 <div>
-                  <p className={cn("text-[10px] font-medium uppercase tracking-wider", isDark ? "text-slate-500" : "text-slate-400")}>{s.label}</p>
+                  <p className={cn("text-[10px] font-medium uppercase tracking-wider", isDark ? "text-slate-400" : "text-slate-500")}>{s.label}</p>
                   <p className={cn("text-2xl font-bold mt-0.5", isDark ? s.textColor : s.textColor.replace("400", "600"))}>{s.count}</p>
                 </div>
                 <s.icon className={cn("h-6 w-6", isDark ? s.textColor : s.textColor.replace("400", "600"))} />
@@ -660,7 +660,7 @@ export function SLAEnginePage() {
       ) : filteredPriorityOrders.length === 0 ? (
         <Card className={cn(cardClass)}>
           <CardContent className="p-8 text-center">
-            <Target className={cn("h-10 w-10 mx-auto mb-2", isDark ? "text-slate-600" : "text-slate-300")} />
+            <Target className={cn("h-10 w-10 mx-auto mb-2", isDark ? "text-slate-400" : "text-slate-300")} />
             <p className={cn("font-medium", textPrimary)}>No orders found</p>
             <p className={cn("text-sm mt-1", textSecondary)}>Priority scores will appear when orders are created.</p>
           </CardContent>
@@ -877,7 +877,7 @@ export function SLAEnginePage() {
             </h3>
             {slaCheck.teamPerformance.length === 0 ? (
               <div className="text-center py-6">
-                <Users className={cn("h-8 w-8 mx-auto mb-2", isDark ? "text-slate-600" : "text-slate-300")} />
+                <Users className={cn("h-8 w-8 mx-auto mb-2", isDark ? "text-slate-400" : "text-slate-300")} />
                 <p className={cn("text-sm", textSecondary)}>No team performance data yet.</p>
               </div>
             ) : (

@@ -366,7 +366,7 @@ export function DashboardHome() {
               <CardTitle className={`text-base font-semibold flex items-center justify-between ${isDark ? "text-white" : "text-slate-900"}`}>
                 {t("revenueLast7Days")}
                 {hasRevenueData && (
-                  <span className={`text-xs font-normal ${isDark ? "text-slate-500" : "text-muted-foreground"}`}>
+                  <span className={`text-xs font-normal ${isDark ? "text-slate-400" : "text-muted-foreground"}`}>
                     Total: {formatCurrency(stats.revenueChartData.reduce((s, d) => s + d.revenue, 0))}
                   </span>
                 )}
@@ -403,7 +403,7 @@ export function DashboardHome() {
                   <div className="flex flex-col items-center justify-center text-center py-12">
                     <BarChart3 className={`h-10 w-10 mb-3 ${isGold ? "text-amber-500/30" : "text-muted-foreground/30"}`} />
                     <p className={`text-sm ${isDark ? "text-slate-400" : "text-muted-foreground"}`}>{t("noRevenueData")}</p>
-                    <p className={`text-xs ${isDark ? "text-slate-500" : "text-muted-foreground/60"} mt-1`}>{t("noRevenueDesc")}</p>
+                    <p className={`text-xs ${isDark ? "text-slate-400" : "text-muted-foreground/60"} mt-1`}>{t("noRevenueDesc")}</p>
                   </div>
                 )}
               </div>
@@ -540,7 +540,7 @@ export function DashboardHome() {
                             <p className={`text-sm font-medium truncate ${isDark ? "text-white" : "text-slate-900"}`}>
                               #{order.orderNumber}
                             </p>
-                            <p className={`text-xs truncate ${isDark ? "text-slate-500" : "text-muted-foreground"}`}>
+                            <p className={`text-xs truncate ${isDark ? "text-slate-400" : "text-muted-foreground"}`}>
                               {order.customer?.name || t("noOrderNumber")} · {formatOrderDate(order.createdAt)}
                             </p>
                           </div>
@@ -609,7 +609,7 @@ export function DashboardHome() {
                       <span className={`text-[10px] font-medium uppercase tracking-wider ${isDark ? "text-slate-400" : "text-muted-foreground"}`}>{t("thisMonth")}</span>
                     </div>
                     <p className={`text-lg font-bold ${isDark ? "text-white" : "text-slate-900"}`}>{stats.orderCount} {t("ordersLabel")}</p>
-                    <p className={`text-xs ${isDark ? "text-slate-500" : "text-muted-foreground"}`}>
+                    <p className={`text-xs ${isDark ? "text-slate-400" : "text-muted-foreground"}`}>
                       {formatCurrency(stats.totalRevenue)} {t("revenue")}
                     </p>
                   </div>
@@ -619,7 +619,7 @@ export function DashboardHome() {
                       <span className={`text-[10px] font-medium uppercase tracking-wider ${isDark ? "text-slate-400" : "text-muted-foreground"}`}>{t("customerGrowth")}</span>
                     </div>
                     <p className={`text-lg font-bold ${isDark ? "text-white" : "text-slate-900"}`}>+{stats.newCustomers} {t("newLabel")}</p>
-                    <p className={`text-xs ${isDark ? "text-slate-500" : "text-muted-foreground"}`}>
+                    <p className={`text-xs ${isDark ? "text-slate-400" : "text-muted-foreground"}`}>
                       {stats.customerCount} {t("totalCustomers")}
                     </p>
                   </div>
@@ -629,7 +629,7 @@ export function DashboardHome() {
                       <span className={`text-[10px] font-medium uppercase tracking-wider ${isDark ? "text-slate-400" : "text-muted-foreground"}`}>{t("performance")}</span>
                     </div>
                     <p className={`text-lg font-bold ${isDark ? "text-white" : "text-slate-900"}`}>{stats.conversionRate}% {t("conversion")}</p>
-                    <p className={`text-xs ${isDark ? "text-slate-500" : "text-muted-foreground"}`}>
+                    <p className={`text-xs ${isDark ? "text-slate-400" : "text-muted-foreground"}`}>
                       {t("avgOrder")}: {formatCurrency(stats.avgOrderValue)}
                     </p>
                   </div>

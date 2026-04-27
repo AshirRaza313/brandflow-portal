@@ -287,7 +287,7 @@ export function CouponModal({ open, onOpenChange, organizationId, editCoupon, on
           <div className="flex items-center justify-between py-1">
             <div>
               <Label className={cn(isDark && "text-slate-300")}>Active</Label>
-              <p className={cn("text-xs", isDark ? "text-slate-500" : "text-muted-foreground")}>
+              <p className={cn("text-xs", isDark ? "text-slate-400" : "text-muted-foreground")}>
                 {form.isActive ? "Coupon is currently active" : "Coupon is disabled"}
               </p>
             </div>

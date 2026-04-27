@@ -101,7 +101,7 @@ export function StatsCard({ title, value, icon: Icon, change, changeLabel, varia
                   {change >= 0 ? "+" : ""}{change}%
                 </span>
                 {changeLabel && (
-                  <span className={cn("text-xs", isDark ? "text-slate-500" : "text-muted-foreground")}>
+                  <span className={cn("text-xs", isDark ? "text-slate-400" : "text-muted-foreground")}>
                     {changeLabel}
                   </span>
                 )}

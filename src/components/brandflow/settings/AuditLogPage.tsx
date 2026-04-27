@@ -541,7 +541,7 @@ export function AuditLogPage() {
                     {modIcon?.icon}
                   </div>
                   <div>
-                    <p className={cn("text-[10px] uppercase tracking-wider", isDark ? "text-slate-500" : "text-muted-foreground")}>
+                    <p className={cn("text-[10px] uppercase tracking-wider", isDark ? "text-slate-400" : "text-muted-foreground")}>
                       {t(`module${mod.charAt(0).toUpperCase() + mod.slice(1)}`)}
                     </p>
                     <p className={cn("text-sm font-bold", isDark ? "text-white" : "text-slate-900")}>{count}</p>
@@ -567,7 +567,7 @@ export function AuditLogPage() {
             <div className="flex flex-col sm:flex-row gap-3">
               {/* Search */}
               <div className="relative flex-1">
-                <Search className={cn("absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 pointer-events-none", isDark ? "text-slate-500" : "text-slate-400")} />
+                <Search className={cn("absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 pointer-events-none", isDark ? "text-slate-400" : "text-slate-500")} />
                 <Input
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
@@ -575,7 +575,7 @@ export function AuditLogPage() {
                   className={cn(
                     "pl-8 h-9 text-sm",
                     isGold
-                      ? "bg-white/[0.05] border-white/[0.08] text-slate-200 placeholder:text-slate-600 focus-visible:ring-amber-500/30 focus-visible:border-amber-500/30"
+                      ? "bg-white/[0.05] border-white/[0.08] text-slate-200 placeholder:text-slate-500 focus-visible:ring-amber-500/30 focus-visible:border-amber-500/30"
                       : isDark
                       ? "bg-slate-800 border-slate-700 text-slate-200 placeholder:text-slate-500"
                       : ""
@@ -714,13 +714,13 @@ export function AuditLogPage() {
                                 <p className={cn("text-sm font-medium", isDark ? "text-white" : "text-slate-900")}>
                                   {entry.description}
                                 </p>
-                                <p className={cn("text-xs mt-1", isDark ? "text-slate-500" : "text-muted-foreground")}>
+                                <p className={cn("text-xs mt-1", isDark ? "text-slate-400" : "text-muted-foreground")}>
                                   {entry.details}
                                 </p>
                               </div>
                               <Tooltip>
                                 <TooltipTrigger asChild>
-                                  <span className={cn("text-[11px] whitespace-nowrap flex-shrink-0 flex items-center gap-1", isDark ? "text-slate-500" : "text-slate-400")}>
+                                  <span className={cn("text-[11px] whitespace-nowrap flex-shrink-0 flex items-center gap-1", isDark ? "text-slate-400" : "text-slate-500")}>
                                     <Clock className="h-3 w-3" />
                                     {formatTimestamp(entry.timestamp)}
                                   </span>
@@ -781,7 +781,8 @@ export function AuditLogPage() {
                             isGold ? "border-white/[0.04] hover:bg-white/[0.02]" : isDark ? "border-slate-700/50 hover:bg-slate-700/20" : "border-slate-100 hover:bg-slate-50"
                           )}
                         >
-                          <td className={cn("px-4 py-3 whitespace-nowrap", isDark ? "text-slate-300" : "text-slate-600")}>
+                          <td className={cn("px-4 py-3 whitespace-nowrap", isDark ? "text-slate-300" : "text-slate-500")}>
+
                             <Tooltip>
                               <TooltipTrigger asChild>
                                 <span className="flex items-center gap-1 cursor-default">
@@ -800,7 +801,7 @@ export function AuditLogPage() {
                               <div className={cn("p-1 rounded-md border flex-shrink-0", config.colorClass)}>
                                 {config.icon}
                               </div>
-                              <span className={cn("text-xs", isDark ? "text-slate-300" : "text-slate-600")}>
+                              <span className={cn("text-xs", isDark ? "text-slate-300" : "text-slate-500")}>
                                 {entry.description}
                               </span>
                             </div>
@@ -810,7 +811,7 @@ export function AuditLogPage() {
                               {t(`module${entry.module.charAt(0).toUpperCase() + entry.module.slice(1)}`)}
                             </Badge>
                           </td>
-                          <td className={cn("px-4 py-3 hidden lg:table-cell text-xs max-w-xs truncate", isDark ? "text-slate-500" : "text-slate-400")}>
+                          <td className={cn("px-4 py-3 hidden lg:table-cell text-xs max-w-xs truncate", isDark ? "text-slate-400" : "text-slate-500")}>
                             {entry.details}
                           </td>
                         </motion.tr>
@@ -832,7 +833,7 @@ export function AuditLogPage() {
           transition={{ delay: 0.2 }}
           className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3"
         >
-          <p className={cn("text-xs", isDark ? "text-slate-500" : "text-slate-400")}>
+          <p className={cn("text-xs", isDark ? "text-slate-400" : "text-slate-500")}>
             {t("showing")} {(page - 1) * 20 + 1}–{Math.min(page * 20, totalCount)} {t("of")} {totalCount}
           </p>
           <div className="flex items-center gap-1">

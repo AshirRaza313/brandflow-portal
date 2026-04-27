@@ -533,7 +533,7 @@ export function ProductsPage() {
             {/* Filters Bar */}
             <div className="flex flex-col sm:flex-row gap-3">
               <div className="relative flex-1">
-                <Search className={cn("absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4", isDark ? "text-slate-500" : "text-slate-400")} />
+                <Search className={cn("absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4", isDark ? "text-slate-400" : "text-slate-500")} />
                 <Input
                   placeholder="Search by name, SKU, or category..."
                   value={search}
@@ -626,7 +626,7 @@ export function ProductsPage() {
             {/* Product count */}
             {filteredProducts.length > 0 && (
               <div className="flex items-center justify-between">
-                <p className={cn("text-sm", isDark ? "text-slate-500" : "text-muted-foreground")}>
+                <p className={cn("text-sm", isDark ? "text-slate-400" : "text-muted-foreground")}>
                   Showing {((currentPage - 1) * ITEMS_PER_PAGE) + 1}–{Math.min(currentPage * ITEMS_PER_PAGE, filteredProducts.length)} of {filteredProducts.length}
                 </p>
               </div>
@@ -649,7 +649,7 @@ export function ProductsPage() {
               /* No results from search/filter */
               <Card className={cn(isGold ? "premium-card" : isDark ? "premium-card" : "")}>
                 <CardContent className="flex flex-col items-center justify-center py-16 text-center">
-                  <Search className={cn("h-12 w-12 mb-4", isDark ? "text-slate-600" : "text-slate-300")} />
+                  <Search className={cn("h-12 w-12 mb-4", isDark ? "text-slate-400" : "text-slate-300")} />
                   <h3 className={cn("text-lg font-semibold mb-1", isDark ? "text-white" : "")}>No results found</h3>
                   <p className={cn("text-sm max-w-sm", isDark ? "text-slate-400" : "text-muted-foreground")}>
                     Try adjusting your search or filter criteria
@@ -731,7 +731,7 @@ export function ProductsPage() {
                             )}>
                               {product.name}
                             </h3>
-                            <p className={cn("text-xs mt-0.5 truncate", isDark ? "text-slate-500" : "text-slate-400")}>
+                            <p className={cn("text-xs mt-0.5 truncate", isDark ? "text-slate-400" : "text-slate-500")}>
                               {product.sku || product.category || "No SKU"}
                             </p>
                           </div>
@@ -771,7 +771,7 @@ export function ProductsPage() {
                               {product.stock === 0 ? "Out of stock" : `Stock: ${product.stock}`}
                             </span>
                             {product.costPrice != null && product.costPrice > 0 && (
-                              <p className={cn("text-[10px]", isDark ? "text-slate-600" : "text-slate-400")}>
+                              <p className={cn("text-[10px]", isDark ? "text-slate-400" : "text-slate-400")}>
                                 Cost: {formatPrice(product.costPrice)}
                               </p>
                             )}
@@ -854,7 +854,7 @@ export function ProductsPage() {
                                   {product.name}
                                 </p>
                                 {product.description && (
-                                  <p className={cn("text-xs truncate max-w-[200px]", isDark ? "text-slate-500" : "text-muted-foreground")}>
+                                  <p className={cn("text-xs truncate max-w-[200px]", isDark ? "text-slate-400" : "text-muted-foreground")}>
                                     {product.description}
                                   </p>
                                 )}
@@ -915,7 +915,7 @@ export function ProductsPage() {
             {/* ══════════════════ PAGINATION ══════════════════ */}
             {totalPages > 1 && (
               <div className="flex flex-col sm:flex-row items-center justify-between gap-3 pt-2">
-                <p className={cn("text-sm", isDark ? "text-slate-500" : "text-muted-foreground")}>
+                <p className={cn("text-sm", isDark ? "text-slate-400" : "text-muted-foreground")}>
                   Page {currentPage} of {totalPages}
                 </p>
                 <div className="flex items-center gap-1">
@@ -1063,7 +1063,7 @@ export function ProductsPage() {
                         </h3>
                         <div className="flex items-center justify-between mt-3 pt-3 border-t border-white/[0.06]">
                           <div>
-                            <p className={cn("text-[10px] uppercase tracking-wider", isDark ? "text-slate-500" : "text-muted-foreground")}>
+                            <p className={cn("text-[10px] uppercase tracking-wider", isDark ? "text-slate-400" : "text-muted-foreground")}>
                               Revenue
                             </p>
                             <p className={cn(
@@ -1074,7 +1074,7 @@ export function ProductsPage() {
                             </p>
                           </div>
                           <div className="text-right">
-                            <p className={cn("text-[10px] uppercase tracking-wider", isDark ? "text-slate-500" : "text-muted-foreground")}>
+                            <p className={cn("text-[10px] uppercase tracking-wider", isDark ? "text-slate-400" : "text-muted-foreground")}>
                               Total Stock
                             </p>
                             <p className={cn(
@@ -1208,7 +1208,7 @@ export function ProductsPage() {
                                   {product.imageUrl ? (
                                     <img src={product.imageUrl} alt="" className="h-8 w-8 rounded-lg object-cover" />
                                   ) : (
-                                    <Package className={cn("h-3.5 w-3.5", isDark ? "text-slate-500" : "text-slate-400")} />
+                                    <Package className={cn("h-3.5 w-3.5", isDark ? "text-slate-400" : "text-slate-500")} />
                                   )}
                                 </div>
                                 <div className="min-w-0">
@@ -1216,7 +1216,7 @@ export function ProductsPage() {
                                     {product.name}
                                   </p>
                                   {product.category && (
-                                    <p className={cn("text-[10px] truncate max-w-[180px]", isDark ? "text-slate-500" : "text-muted-foreground")}>
+                                    <p className={cn("text-[10px] truncate max-w-[180px]", isDark ? "text-slate-400" : "text-muted-foreground")}>
                                       {product.category}
                                     </p>
                                   )}
@@ -1321,7 +1321,7 @@ export function ProductsPage() {
                         ) : (
                           <div className="w-full h-full flex flex-col items-center justify-center gap-2">
                             <ImageIcon className={cn("h-10 w-10", isDark ? "text-slate-700" : "text-slate-300")} />
-                            <span className={cn("text-[10px] font-medium", isDark ? "text-slate-600" : "text-slate-400")}>
+                            <span className={cn("text-[10px] font-medium", isDark ? "text-slate-400" : "text-slate-400")}>
                               No image
                             </span>
                           </div>
@@ -1362,7 +1362,7 @@ export function ProductsPage() {
                             {formatPrice(product.price)}
                           </span>
                           {product.category && (
-                            <span className={cn("text-[9px] truncate max-w-[80px]", isDark ? "text-slate-500" : "text-muted-foreground")}>
+                            <span className={cn("text-[9px] truncate max-w-[80px]", isDark ? "text-slate-400" : "text-muted-foreground")}>
                               {product.category}
                             </span>
                           )}

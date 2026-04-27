@@ -120,3 +120,27 @@ Stage Summary:
 - Fix: Installed all 3 packages + type definitions, verified build
 - Push to GitHub triggers Vercel auto-deploy with correct dependencies
 - All lazy-loaded tabs should now work correctly after deployment
+---
+Task ID: 3
+Agent: Main Agent
+Task: Fix color contrast, dark mode detection, admin restrictions, chunk loading errors
+
+Work Log:
+- Diagnosed chunk loading errors: Missing npm packages (bcryptjs, pdfkit, web-push) caused incomplete builds on Vercel
+- Installed missing packages + type definitions, verified clean build (115 chunks, 4.4MB)
+- Found TicketsPage had NO dark mode support - all text used hardcoded light colors (text-slate-900, bg-slate-50, border-slate-200) making it invisible on dark/premium-dark themes
+- Found 4 pages using wrong dark mode detection: document.documentElement.classList.contains('dark') which misses 'premium-dark' theme
+  - PenaltyPage.tsx, FlashSalesPage.tsx, FollowUpPage.tsx, InfluencersPage.tsx
+- Fixed all 4 pages to use appTheme from useValtrioxStore() instead of DOM class check
+- Rewrote TicketsPage with full dark mode support (textPrimary, textSecondary, cardClass, inputClass variables)
+- Enhanced admin restrictions bypass:
+  - feature-lock.ts: Added brand_owner and brand_admin to BYPASS_ROLES set
+  - page.tsx: Added isPlatformBypassRole() explicit admin bypass in checkLock function
+  - Sidebar.tsx: Added isPlatformBypassRole check to prevent lock badges for admin users
+- Build: SUCCESS, pushed to GitHub (ecb88f6)
+
+Stage Summary:
+- Fixed color contrast on 5 pages (TicketsPage full rewrite, 4 pages dark detection fix)
+- Admin (platform owner) now has ZERO restrictions - no feature locks, no plan badges
+- Chunk loading errors fixed via package installation (previous commit)
+- All changes pushed to GitHub for Vercel auto-deploy

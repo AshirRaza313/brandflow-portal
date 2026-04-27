@@ -234,7 +234,7 @@ function ChannelListItem({
           )}
         </div>
         {channel.lastMessage && (
-          <p className={`text-[10px] sm:text-xs truncate mt-0.5 ${isDark ? "text-slate-500" : "text-slate-400"}`}>
+          <p className={`text-[10px] sm:text-xs truncate mt-0.5 ${isDark ? "text-slate-400" : "text-slate-500"}`}>
             {channel.lastMessage}
           </p>
         )}
@@ -311,8 +311,8 @@ function VoiceNotePlayer({
           />
         </div>
         <div className="flex items-center justify-between mt-0.5">
-          <Volume2 className={`h-2.5 w-2.5 ${isDark ? "text-slate-600" : "text-slate-400"}`} />
-          <span className={`text-[9px] ${isDark ? "text-slate-500" : "text-slate-400"}`}>
+          <Volume2 className={`h-2.5 w-2.5 ${isDark ? "text-slate-400" : "text-slate-400"}`} />
+          <span className={`text-[9px] ${isDark ? "text-slate-400" : "text-slate-500"}`}>
             {formatDuration(voiceNote.duration)}
           </span>
         </div>
@@ -346,7 +346,7 @@ function AttachmentBubble({
           <span className={`text-[9px] truncate max-w-[160px] ${isDark ? "text-slate-400" : "text-slate-500"}`}>
             {attachment.name}
           </span>
-          <span className={`text-[9px] ${isDark ? "text-slate-500" : "text-slate-400"}`}>
+          <span className={`text-[9px] ${isDark ? "text-slate-400" : "text-slate-500"}`}>
             {formatFileSize(attachment.size)}
           </span>
         </div>
@@ -382,11 +382,11 @@ function AttachmentBubble({
         <p className={`text-xs font-medium truncate ${isDark ? "text-slate-200" : "text-slate-700"}`}>
           {attachment.name}
         </p>
-        <p className={`text-[9px] ${isDark ? "text-slate-500" : "text-slate-400"}`}>
+        <p className={`text-[9px] ${isDark ? "text-slate-400" : "text-slate-500"}`}>
           {formatFileSize(attachment.size)}
         </p>
       </div>
-      <Download className={`h-3.5 w-3.5 shrink-0 ${isDark ? "text-slate-500" : "text-slate-400"}`} />
+      <Download className={`h-3.5 w-3.5 shrink-0 ${isDark ? "text-slate-400" : "text-slate-500"}`} />
     </a>
   );
 }
@@ -482,7 +482,7 @@ function MessageBubble({
             <span className={`text-[9px] ${getRoleColor(message.senderRole, isDark)}`}>
               {message.senderRole.replace(/_/g, " ")}
             </span>
-            <span className={`text-[9px] ${isDark ? "text-slate-600" : "text-slate-400"}`}>
+            <span className={`text-[9px] ${isDark ? "text-slate-400" : "text-slate-400"}`}>
               {formatTime(message.timestamp)}
             </span>
           </div>
@@ -539,7 +539,7 @@ function MessageBubble({
           }`}>
             {message.content}
             {message.edited && (
-              <span className={`text-[8px] ml-1 ${isDark ? "text-slate-600" : "text-slate-400"}`}>
+              <span className={`text-[8px] ml-1 ${isDark ? "text-slate-400" : "text-slate-400"}`}>
                 (edited)
               </span>
             )}
@@ -736,7 +736,7 @@ function VoiceRecordingBar({
         <p className={`text-xs font-medium ${isDark ? "text-red-300" : "text-red-700"}`}>
           Recording Voice Note
         </p>
-        <p className={`text-[10px] ${isDark ? "text-slate-500" : "text-slate-400"}`}>
+        <p className={`text-[10px] ${isDark ? "text-slate-400" : "text-slate-500"}`}>
           {formatDuration(time)} / {formatDuration(MAX_VOICE_DURATION)}
         </p>
         {/* Waveform simulation */}
@@ -817,7 +817,7 @@ function TeamInfoPanel({
               <p className={`text-xs font-medium truncate ${isDark ? "text-slate-300" : "text-slate-700"}`}>
                 {name}
               </p>
-              <p className={`text-[10px] ${isDark ? "text-slate-600" : "text-slate-400"}`}>
+              <p className={`text-[10px] ${isDark ? "text-slate-400" : "text-slate-400"}`}>
                 {name === user?.name ? "You" : "Member"}
               </p>
             </div>
@@ -863,7 +863,7 @@ function AttachmentPreview({
         <p className={`text-[10px] font-medium truncate ${isDark ? "text-slate-300" : "text-slate-600"}`}>
           {file.name}
         </p>
-        <p className={`text-[8px] ${isDark ? "text-slate-500" : "text-slate-400"}`}>
+        <p className={`text-[8px] ${isDark ? "text-slate-400" : "text-slate-500"}`}>
           {formatFileSize(file.size)}
         </p>
       </div>
@@ -1139,7 +1139,7 @@ export function TeamChatPage() {
           <p className={`text-sm mb-1 ${isDark ? "text-slate-400" : "text-slate-500"}`}>
             This feature is for brand owners and their team members.
           </p>
-          <p className={`text-xs mb-6 ${isDark ? "text-slate-600" : "text-slate-400"}`}>
+          <p className={`text-xs mb-6 ${isDark ? "text-slate-400" : "text-slate-400"}`}>
             As the platform administrator, you manage the system through the Admin Panel. Team Chat is designed for your clients to communicate internally within their own brand teams.
           </p>
           <div className={`inline-flex items-center gap-2 px-3 py-2 rounded-xl text-xs ${
@@ -1184,7 +1184,7 @@ export function TeamChatPage() {
               Private
             </Badge>
           </div>
-          <p className={`text-[10px] mt-1.5 ${isDark ? "text-slate-600" : "text-slate-400"}`}>
+          <p className={`text-[10px] mt-1.5 ${isDark ? "text-slate-400" : "text-slate-400"}`}>
             Only your brand team can see this — fully isolated
           </p>
         </div>
@@ -1192,13 +1192,13 @@ export function TeamChatPage() {
         {/* Search */}
         <div className={`px-3 py-2 border-b ${isDark ? "border-white/[0.06]" : "border-slate-200"}`}>
           <div className={`flex items-center gap-2 px-2.5 py-1.5 rounded-lg ${isDark ? "bg-white/[0.04]" : "bg-slate-50"}`}>
-            <Search className={`h-3.5 w-3.5 ${isDark ? "text-slate-600" : "text-slate-400"}`} />
+            <Search className={`h-3.5 w-3.5 ${isDark ? "text-slate-400" : "text-slate-400"}`} />
             <input
               type="text"
               placeholder="Search channels..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className={`bg-transparent text-xs outline-none w-full ${isDark ? "text-slate-300 placeholder:text-slate-600" : "text-slate-600 placeholder:text-slate-400"}`}
+              className={`bg-transparent text-xs outline-none w-full ${isDark ? "text-slate-300 placeholder:text-slate-500" : "text-slate-600 placeholder:text-slate-400"}`}
             />
           </div>
         </div>
@@ -1206,7 +1206,7 @@ export function TeamChatPage() {
         {/* Channel list */}
         <ScrollArea className="flex-1">
           <div className="p-2 space-y-0.5">
-            <p className={`text-[9px] font-semibold uppercase tracking-wider px-3 py-1.5 ${isDark ? "text-slate-600" : "text-slate-400"}`}>
+            <p className={`text-[9px] font-semibold uppercase tracking-wider px-3 py-1.5 ${isDark ? "text-slate-400" : "text-slate-400"}`}>
               Channels
             </p>
             {channels.map((channel) => (
@@ -1228,8 +1228,8 @@ export function TeamChatPage() {
         {/* Team members count */}
         <div className={`px-4 py-2.5 border-t ${isDark ? "border-white/[0.06]" : "border-slate-200"}`}>
           <div className="flex items-center gap-2">
-            <Users className={`h-3.5 w-3.5 ${isDark ? "text-slate-600" : "text-slate-400"}`} />
-            <span className={`text-[10px] ${isDark ? "text-slate-500" : "text-slate-400"}`}>
+            <Users className={`h-3.5 w-3.5 ${isDark ? "text-slate-400" : "text-slate-400"}`} />
+            <span className={`text-[10px] ${isDark ? "text-slate-400" : "text-slate-500"}`}>
               {brandName || "Your Brand"} Team
             </span>
           </div>
@@ -1254,7 +1254,7 @@ export function TeamChatPage() {
               <h3 className={`text-sm font-semibold truncate ${isDark ? "text-white" : "text-slate-900"}`}>
                 {activeChannel.name}
               </h3>
-              <p className={`text-[9px] sm:text-[10px] truncate ${isDark ? "text-slate-500" : "text-slate-400"}`}>
+              <p className={`text-[9px] sm:text-[10px] truncate ${isDark ? "text-slate-400" : "text-slate-500"}`}>
                 {activeChannel.description}
               </p>
             </div>
@@ -1282,7 +1282,7 @@ export function TeamChatPage() {
               <h3 className={`text-sm sm:text-base font-bold ${isDark ? "text-white" : "text-slate-900"}`}>
                 #{activeChannel.name}
               </h3>
-              <p className={`text-[10px] sm:text-xs mt-1 max-w-[280px] text-center ${isDark ? "text-slate-500" : "text-slate-400"}`}>
+              <p className={`text-[10px] sm:text-xs mt-1 max-w-[280px] text-center ${isDark ? "text-slate-400" : "text-slate-500"}`}>
                 {activeChannel.description}. This is a private channel — only your brand team members can see messages here.
               </p>
             </div>
@@ -1306,7 +1306,7 @@ export function TeamChatPage() {
 
             {groupedMessages.length === 0 && (
               <div className="text-center py-4">
-                <p className={`text-xs ${isDark ? "text-slate-600" : "text-slate-400"}`}>
+                <p className={`text-xs ${isDark ? "text-slate-400" : "text-slate-400"}`}>
                   No messages yet. Start the conversation!
                 </p>
               </div>
@@ -1374,7 +1374,7 @@ export function TeamChatPage() {
                 onKeyDown={handleKeyDown}
                 placeholder={`Message #${activeChannel.name}...`}
                 rows={1}
-                className={`flex-1 bg-transparent text-xs sm:text-sm outline-none resize-none max-h-24 ${isDark ? "text-slate-200 placeholder:text-slate-600" : "text-slate-700 placeholder:text-slate-400"}`}
+                className={`flex-1 bg-transparent text-xs sm:text-sm outline-none resize-none max-h-24 ${isDark ? "text-slate-200 placeholder:text-slate-500" : "text-slate-700 placeholder:text-slate-400"}`}
                 style={{ minHeight: "24px" }}
                 onInput={(e) => {
                   const target = e.target as HTMLTextAreaElement;

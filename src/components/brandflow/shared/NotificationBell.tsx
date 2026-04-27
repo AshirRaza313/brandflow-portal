@@ -174,15 +174,15 @@ function NotificationItemCard({
         <p
           className={cn(
             "text-xs mt-1 line-clamp-2 leading-relaxed",
-            isDark ? "text-slate-500" : "text-slate-400"
+            isDark ? "text-slate-400" : "text-slate-500"
           )}
         >
           {notification.message}
         </p>
         <div className="flex items-center gap-2 mt-1.5">
           <div className="flex items-center gap-1">
-            <Clock className={cn("h-3 w-3", isDark ? "text-slate-600" : "text-slate-300")} />
-            <span className={cn("text-[11px]", isDark ? "text-slate-600" : "text-slate-400")}>
+            <Clock className={cn("h-3 w-3", isDark ? "text-slate-400" : "text-slate-300")} />
+            <span className={cn("text-[11px]", isDark ? "text-slate-400" : "text-slate-400")}>
               {getRelativeTime(notification.createdAt)}
             </span>
           </div>
@@ -216,12 +216,12 @@ function EmptyNotifications({ isDark }: { isDark: boolean }) {
           isDark ? "bg-white/[0.04]" : "bg-slate-100"
         )}
       >
-        <BellOff className={cn("h-6 w-6", isDark ? "text-slate-600" : "text-slate-400")} />
+        <BellOff className={cn("h-6 w-6", isDark ? "text-slate-400" : "text-slate-400")} />
       </div>
       <p className={cn("text-sm font-medium", isDark ? "text-slate-300" : "text-slate-700")}>
         All caught up!
       </p>
-      <p className={cn("text-xs mt-1 text-center max-w-[200px]", isDark ? "text-slate-500" : "text-slate-400")}>
+      <p className={cn("text-xs mt-1 text-center max-w-[200px]", isDark ? "text-slate-400" : "text-slate-500")}>
         No new notifications. We&apos;ll let you know when something arrives.
       </p>
     </motion.div>
@@ -471,7 +471,7 @@ export function NotificationBell() {
                       Notifications
                     </h3>
                     {unreadCount > 0 && (
-                      <p className={cn("text-[11px]", isDark ? "text-slate-500" : "text-slate-400")}>
+                      <p className={cn("text-[11px]", isDark ? "text-slate-400" : "text-slate-500")}>
                         {unreadCount} unread notification{unreadCount !== 1 ? "s" : ""}
                       </p>
                     )}
@@ -552,10 +552,10 @@ export function NotificationBell() {
                     <Loader2
                       className={cn(
                         "h-6 w-6 animate-spin",
-                        isGold ? "text-amber-500/50" : isDark ? "text-slate-600" : "text-slate-300"
+                        isGold ? "text-amber-500/50" : isDark ? "text-slate-400" : "text-slate-300"
                       )}
                     />
-                    <p className={cn("text-xs", isDark ? "text-slate-500" : "text-slate-400")}>
+                    <p className={cn("text-xs", isDark ? "text-slate-400" : "text-slate-500")}>
                       Loading notifications...
                     </p>
                   </div>
@@ -582,12 +582,12 @@ export function NotificationBell() {
               {notifications.length > 0 && (
                 <>
                   <Separator className={cn(headerBorder)} />
-                  <div className={cn("px-5 py-3", isDark ? "bg-white/[0.01]" : "bg-slate-50/50")}>
+                  <div className={cn("px-5 py-3", isDark ? "bg-white/[0.03]" : "bg-slate-50/50")}>
                     <div className="flex items-center justify-center gap-1.5">
                       {loading && (
-                        <Loader2 className={cn("h-3 w-3 animate-spin", isDark ? "text-slate-500" : "text-slate-400")} />
+                        <Loader2 className={cn("h-3 w-3 animate-spin", isDark ? "text-slate-400" : "text-slate-500")} />
                       )}
-                      <span className={cn("text-[11px]", isDark ? "text-slate-600" : "text-slate-400")}>
+                      <span className={cn("text-[11px]", isDark ? "text-slate-400" : "text-slate-400")}>
                         Auto-refreshes every 30s
                       </span>
                     </div>

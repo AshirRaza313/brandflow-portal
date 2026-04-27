@@ -193,7 +193,7 @@ function ActiveEventCard({
             </div>
           </div>
           <div className="flex items-center gap-1.5 text-xs">
-            <Calendar className={`h-3 w-3 ${isDark ? "text-slate-500" : "text-slate-400"}`} />
+            <Calendar className={`h-3 w-3 ${isDark ? "text-slate-400" : "text-slate-500"}`} />
             <span className={status === "active" ? "text-emerald-500 font-medium" : isDark ? "text-slate-400" : "text-slate-500"}>
               {countdown}
             </span>
@@ -304,7 +304,7 @@ function AllEventCard({
                     ? "border-emerald-500/50 text-emerald-500"
                     : status === "upcoming"
                       ? isDark ? "text-amber-400 border-amber-500/30" : "text-amber-600 border-amber-200"
-                      : isDark ? "text-slate-600 border-white/[0.08]" : "text-slate-400 border-slate-200"
+                      : isDark ? "text-slate-400 border-white/[0.08]" : "text-slate-400 border-slate-200"
                 }`}
               >
                 {status === "active" ? "Active" : status === "upcoming" ? `${countdown}` : "Past"}
@@ -321,7 +321,7 @@ function AllEventCard({
               <div className="w-5 h-5 rounded-full border border-slate-300" style={{ background: event.theme.gradient }} title="Gradient" />
             </div>
             {event.promotionalMessage && (
-              <p className={`text-[10px] mt-2 ${isDark ? "text-slate-500" : "text-slate-400"}`} style={{ color: event.theme.primary }}>
+              <p className={`text-[10px] mt-2 ${isDark ? "text-slate-400" : "text-slate-500"}`} style={{ color: event.theme.primary }}>
                 {event.promotionalMessage}
               </p>
             )}
@@ -399,25 +399,25 @@ function EventPreviewCard({ event, isDark }: { event: RegionEvent; isDark: boole
         </h4>
         <div className="grid grid-cols-2 gap-2 text-xs">
           <div className={`rounded-lg p-2 ${isDark ? "bg-white/[0.04]" : "bg-slate-50"}`}>
-            <p className={isDark ? "text-slate-500" : "text-slate-400"}>Primary</p>
+            <p className={isDark ? "text-slate-400" : "text-slate-500"}>Primary</p>
             <div className="flex items-center gap-2 mt-1">
               <div className="w-4 h-4 rounded" style={{ backgroundColor: event.theme.primary }} />
               <code className={`text-[10px] ${isDark ? "text-slate-300" : "text-slate-600"}`}>{event.theme.primary}</code>
             </div>
           </div>
           <div className={`rounded-lg p-2 ${isDark ? "bg-white/[0.04]" : "bg-slate-50"}`}>
-            <p className={isDark ? "text-slate-500" : "text-slate-400"}>Secondary</p>
+            <p className={isDark ? "text-slate-400" : "text-slate-500"}>Secondary</p>
             <div className="flex items-center gap-2 mt-1">
               <div className="w-4 h-4 rounded" style={{ backgroundColor: event.theme.secondary }} />
               <code className={`text-[10px] ${isDark ? "text-slate-300" : "text-slate-600"}`}>{event.theme.secondary}</code>
             </div>
           </div>
           <div className={`rounded-lg p-2 ${isDark ? "bg-white/[0.04]" : "bg-slate-50"}`}>
-            <p className={isDark ? "text-slate-500" : "text-slate-400"}>Gradient</p>
+            <p className={isDark ? "text-slate-400" : "text-slate-500"}>Gradient</p>
             <div className="mt-1 h-4 rounded-full" style={{ background: event.theme.gradient }} />
           </div>
           <div className={`rounded-lg p-2 ${isDark ? "bg-white/[0.04]" : "bg-slate-50"}`}>
-            <p className={isDark ? "text-slate-500" : "text-slate-400"}>Category</p>
+            <p className={isDark ? "text-slate-400" : "text-slate-500"}>Category</p>
             <p className={`mt-1 font-medium ${isDark ? "text-white" : "text-slate-700"}`}>
               {event.category.charAt(0).toUpperCase() + event.category.slice(1)}
             </p>
@@ -565,11 +565,11 @@ function CustomEventDialog({
             <Label className={`text-xs font-medium ${isDark ? "text-slate-300" : "text-slate-700"}`}>Theme Colors</Label>
             <div className="mt-1 flex items-center gap-3">
               <div>
-                <p className={`text-[10px] ${isDark ? "text-slate-500" : "text-slate-400"}`}>Primary</p>
+                <p className={`text-[10px] ${isDark ? "text-slate-400" : "text-slate-500"}`}>Primary</p>
                 <input type="color" className="w-8 h-8 rounded cursor-pointer border-0 p-0" value={form.primaryColor} onChange={(e) => setForm({ ...form, primaryColor: e.target.value })} />
               </div>
               <div>
-                <p className={`text-[10px] ${isDark ? "text-slate-500" : "text-slate-400"}`}>Secondary</p>
+                <p className={`text-[10px] ${isDark ? "text-slate-400" : "text-slate-500"}`}>Secondary</p>
                 <input type="color" className="w-8 h-8 rounded cursor-pointer border-0 p-0" value={form.secondaryColor} onChange={(e) => setForm({ ...form, secondaryColor: e.target.value })} />
               </div>
               <div
@@ -596,7 +596,7 @@ function CustomEventDialog({
 // Empty State
 // ============================================================================
 
-function EmptyState({ isDark, title, description }: { isDark: boolean; title: string; description: string; icon?: React.ReactNode }) {
+function EmptyState({ isDark, title, description, icon }: { isDark: boolean; title: string; description: string; icon?: React.ReactNode }) {
   return (
     <motion.div
       initial={{ opacity: 0, y: 10 }}
@@ -604,10 +604,10 @@ function EmptyState({ isDark, title, description }: { isDark: boolean; title: st
       className="text-center py-10 sm:py-14"
     >
       <div className={`mx-auto mb-3 w-12 h-12 rounded-full flex items-center justify-center ${isDark ? "bg-white/[0.04]" : "bg-slate-100"}`}>
-        {icon || <Globe className={`h-5 w-5 ${isDark ? "text-slate-600" : "text-slate-400"}`} />}
+        {icon || <Globe className={`h-5 w-5 ${isDark ? "text-slate-400" : "text-slate-400"}`} />}
       </div>
       <h3 className={`text-sm font-semibold ${isDark ? "text-slate-300" : "text-slate-600"}`}>{title}</h3>
-      <p className={`text-xs mt-1 max-w-xs mx-auto ${isDark ? "text-slate-500" : "text-slate-400"}`}>{description}</p>
+      <p className={`text-xs mt-1 max-w-xs mx-auto ${isDark ? "text-slate-400" : "text-slate-500"}`}>{description}</p>
     </motion.div>
   );
 }
@@ -888,7 +888,7 @@ export function EventsPage() {
                   {religion.charAt(0).toUpperCase() + religion.slice(1)}
                 </Badge>
               )}
-              <span className={`text-[10px] ${isDark ? "text-slate-500" : "text-slate-400"}`}>
+              <span className={`text-[10px] ${isDark ? "text-slate-400" : "text-slate-500"}`}>
                 {allEvents.length} event{allEvents.length !== 1 ? "s" : ""} available
               </span>
             </div>
@@ -993,7 +993,7 @@ export function EventsPage() {
         <TabsContent value="all" className="mt-3 sm:mt-4">
           <div className="flex flex-col sm:flex-row gap-2 sm:gap-3 mb-3">
             <div className="relative flex-1">
-              <Search className={`absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 ${isDark ? "text-slate-500" : "text-slate-400"}`} />
+              <Search className={`absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 ${isDark ? "text-slate-400" : "text-slate-500"}`} />
               <Input
                 placeholder="Search events..."
                 value={searchQuery}
@@ -1150,7 +1150,7 @@ export function EventsPage() {
                         <Badge variant="outline" className={`text-[10px] border ${isDark ? TYPE_CONFIG[previewEvent.category]?.darkColor : TYPE_CONFIG[previewEvent.category]?.color}`}>
                           {TYPE_CONFIG[previewEvent.category]?.label}
                         </Badge>
-                        <span className={`text-[10px] ${isDark ? "text-slate-500" : "text-slate-400"}`}>
+                        <span className={`text-[10px] ${isDark ? "text-slate-400" : "text-slate-500"}`}>
                           {previewEvent.date === "dynamic" ? `Lunar (~${MONTH_NAMES[(previewEvent.month || 1) - 1]})` : formatDateRange(previewEvent.date)}
                         </span>
                       </div>

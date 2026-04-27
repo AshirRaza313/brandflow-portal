@@ -164,7 +164,7 @@ export function StockAlertsPanel() {
 
   const textPrimary = isDark ? "text-white" : "text-slate-900";
   const textSecondary = isDark ? "text-slate-400" : "text-slate-500";
-  const textMuted = isDark ? "text-slate-500" : "text-muted-foreground";
+  const textMuted = isDark ? "text-slate-400" : "text-muted-foreground";
   const accentColor = isGold ? "text-amber-400" : "text-amber-500";
 
   return (

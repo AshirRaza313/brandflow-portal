@@ -405,7 +405,7 @@ export function OrdersPage() {
 
   const textPrimary = isDark ? "text-white" : "text-slate-900";
   const textSecondary = isDark ? "text-slate-400" : "text-slate-500";
-  const textMuted = isDark ? "text-slate-500" : "text-muted-foreground";
+  const textMuted = isDark ? "text-slate-400" : "text-muted-foreground";
   const borderColor = isGold ? "border-white/[0.06]" : isDark ? "border-white/[0.06]" : "border-slate-200";
   const hoverBg = isGold ? "hover:bg-amber-500/5" : isDark ? "hover:bg-white/[0.03]" : "hover:bg-slate-50";
   const headerBg = isGold ? "bg-white/[0.02]" : isDark ? "bg-white/[0.02]" : "bg-slate-50/80";

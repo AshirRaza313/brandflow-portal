@@ -251,7 +251,7 @@ export const SIDEBAR_STRUCTURE: Record<SidebarGroup, { label: string; emoji: str
       { id: "email-marketing", label: "Email Marketing" },
       { id: "ad-manager", label: "Ad Manager" },
       { id: "loyalty", label: "Loyalty Program", subTabs: ["Tiers", "Rewards", "Points History"] },
-      { id: "seasonal-sales", label: "Seasonal Sales", subTabs: ["Active Events", "Upcoming", "Calendar"] },
+      { id: "seasonal-sales", label: "Seasonal Sales", subTabs: ["Active Events", "All Events", "Custom Events", "Preview"] },
       { id: "flash-sales", label: "Flash Sales" },
       { id: "influencers", label: "Influencers" },
       { id: "affiliates", label: "Affiliates" },
@@ -843,7 +843,8 @@ export function useSubTabForSection(section: SidebarSection): string | null {
     case "tasks": return store.tasksSubTab;
     case "products": return store.productsSubTab;
     case "customers": return store.customersSubTab;
-    case "loyalty": case "seasonal-sales": return store.loyaltySubTab;
+    case "loyalty": return store.loyaltySubTab;
+    case "seasonal-sales": case "events": return store.eventsSubTab;
     case "broadcasts": case "campaigns": return store.broadcastsSubTab;
     case "coupons": return store.couponsSubTab;
     case "sales-analytics": case "sales-reports": return store.salesAnalyticsSubTab;

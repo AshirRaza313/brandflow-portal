@@ -94,6 +94,7 @@ export const POST = withAuth(async (req, authCtx) => {
     }
 
     // ── Order limit enforcement (lifetime) ──
+    // Platform roles (platform_owner, platform_admin, owner) bypass order limits.
     const org = await db.organization.findUnique({
       where: { id: organizationId },
       select: { plan: true, paymentRejectionCount: true, isBanned: true },
@@ -101,7 +102,10 @@ export const POST = withAuth(async (req, authCtx) => {
     if (!org) return NextResponse.json({ error: "Organization not found" }, { status: 404 });
     if (org.isBanned) return NextResponse.json({ error: "Organization is suspended" }, { status: 403 });
 
-    if (org.plan === "starter") {
+    // Skip order limit check for platform admin roles
+    const isPlatformAdmin = authCtx.role === "platform_owner" || authCtx.role === "platform_admin" || authCtx.role === "owner";
+
+    if (!isPlatformAdmin && org.plan === "starter") {
       const plan = await db.subscriptionPlan.findFirst({ where: { name: "starter" } });
       if (plan && plan.orderLimit > 0) {
         const currentOrderCount = await db.order.count({ where: { organizationId } });

@@ -243,9 +243,9 @@ export function Sidebar() {
               <div className="min-w-0 flex-1">
                 <h1 className="text-base font-bold tracking-tight text-white truncate">{displayName}</h1>
                 {brandTagline ? (
-                  <p className="truncate text-[11px] font-medium text-slate-500">{brandTagline}</p>
+                  <p className="truncate text-[11px] font-medium text-slate-400">{brandTagline}</p>
                 ) : (
-                  <p className="truncate text-[11px] font-medium text-slate-500">Operations Hub</p>
+                  <p className="truncate text-[11px] font-medium text-slate-400">Operations Hub</p>
                 )}
               </div>
             )}
@@ -260,7 +260,7 @@ export function Sidebar() {
         {!isCollapsed && (
           <div className="px-3 pt-3 pb-1">
             <button onClick={allExpanded ? collapseAll : expandAll}
-              className="flex w-full items-center gap-2 rounded-lg px-2.5 py-1.5 text-[11px] font-medium uppercase tracking-wider text-slate-500 hover:bg-white/[0.04] hover:text-slate-400">
+              className="flex w-full items-center gap-2 rounded-lg px-2.5 py-1.5 text-[11px] font-medium uppercase tracking-wider text-slate-400 hover:bg-white/[0.04] hover:text-slate-300">
               <ChevronsUpDown className="h-3 w-3" />
               <span>{allExpanded ? t("collapseAll") : t("expandAll")}</span>
             </button>
@@ -283,7 +283,7 @@ export function Sidebar() {
                     <Tooltip>
                       <TooltipTrigger asChild>
                         <button
-                          className="flex w-full items-center justify-center py-2 text-slate-500 hover:bg-white/[0.04] hover:text-slate-300"
+                          className="flex w-full items-center justify-center py-2 text-slate-400 hover:bg-white/[0.04] hover:text-slate-200"
                           onClick={() => handleItemClick(accessibleItems[0]?.id || groupDef.items[0].id, groupId)}
                         >
                           <span className="text-sm">{groupDef.emoji}</span>
@@ -298,7 +298,7 @@ export function Sidebar() {
                       <TooltipTrigger asChild>
                         <button onClick={() => toggleGroup(groupId)} className={cn(
                           "flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-left transition-all hover:bg-white/[0.04]",
-                          hasActive ? "text-amber-400" : "text-slate-500 hover:text-slate-300"
+                          hasActive ? "text-amber-400" : "text-slate-400 hover:text-slate-300"
                         )}>
                           <span className="flex-shrink-0 text-sm">{groupDef.emoji}</span>
                           <span className="flex-1 text-[11px] font-semibold uppercase tracking-widest">{groupDef.label}</span>
@@ -337,9 +337,9 @@ export function Sidebar() {
                                         ? "text-yellow-100 bg-gradient-to-r from-amber-600/[0.18] via-amber-500/[0.08] to-transparent"
                                         : "text-amber-50 bg-gradient-to-r from-amber-500/[0.18] via-amber-500/[0.08] to-transparent"
                                       : isSubLocked
-                                        ? "text-slate-500 hover:bg-white/[0.03] hover:text-slate-300"
+                                        ? "text-slate-400 hover:bg-white/[0.03] hover:text-slate-300"
                                         : isReadOnly
-                                          ? "text-slate-500 hover:bg-white/[0.02] hover:text-slate-300"
+                                          ? "text-slate-400 hover:bg-white/[0.02] hover:text-slate-300"
                                           : "text-slate-400 hover:bg-white/[0.04] hover:text-slate-200"
                                   )}>
                                     {isActive && <motion.div layoutId="active-accent" className="absolute left-0 top-1/2 h-5 w-[3px] -translate-y-1/2 rounded-r-full"
@@ -350,8 +350,8 @@ export function Sidebar() {
                                     <span className={cn("flex-shrink-0 transition-colors", isActive
                                       ? appTheme === "premium-dark" ? "text-amber-400" : "text-amber-400"
                                       : isSubLocked
-                                        ? "text-slate-600 group-hover/item:text-slate-500"
-                                        : "text-slate-500 group-hover/item:text-slate-400"
+                                        ? "text-slate-500 group-hover/item:text-slate-400"
+                                        : "text-slate-400 group-hover/item:text-slate-300"
                                     )}>{ICON_MAP[item.id] || <Home className="h-4 w-4" />}</span>
                                     <span className="flex-1 truncate">{item.label}</span>
                                     {isReadOnly && !isSubLocked && (
@@ -417,7 +417,7 @@ export function Sidebar() {
           <div className="hidden lg:flex items-center justify-center px-3 pt-2 pb-1">
             <button
               onClick={toggleSidebarCollapsed}
-              className="flex items-center justify-center gap-1.5 w-full rounded-lg px-2.5 py-1.5 text-[11px] font-medium uppercase tracking-wider text-slate-500 hover:bg-white/[0.04] hover:text-slate-400 transition-colors"
+              className="flex items-center justify-center gap-1.5 w-full rounded-lg px-2.5 py-1.5 text-[11px] font-medium uppercase tracking-wider text-slate-400 hover:bg-white/[0.04] hover:text-slate-300 transition-colors"
             >
               {isCollapsed ? (
                 <>
@@ -463,7 +463,7 @@ export function Sidebar() {
                     <p className="truncate text-sm font-semibold text-slate-200">{user?.name || "User"}</p>
                     {isPlatformUser && <Crown className="h-3 w-3 text-amber-500 flex-shrink-0" />}
                   </div>
-                  <p className="truncate text-[11px] text-slate-500">{getUserRoleLabel()}</p>
+                  <p className="truncate text-[11px] text-slate-400">{getUserRoleLabel()}</p>
                 </div>
               )}
               <button onClick={logout} className={cn(
@@ -479,7 +479,7 @@ export function Sidebar() {
               <Sparkles className="h-3 w-3" style={{ color: appTheme === "premium-dark" ? "rgba(212,160,23,0.6)" : "rgba(16,185,129,0.6)" }} />
               {!isCollapsed && <span>v3.0</span>}
             </span>
-            {!isCollapsed && <span className="text-[10px] font-medium text-slate-500">{visibleGroups.length} groups</span>}
+            {!isCollapsed && <span className="text-[10px] font-medium text-slate-400">{visibleGroups.length} groups</span>}
           </div>
           {/* "Powered by Valtriox" subtle text */}
           <div className="pb-3 flex justify-center">

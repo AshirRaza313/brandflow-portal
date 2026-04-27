@@ -713,7 +713,7 @@ export function Header() {
                   className={cn(
                     "pointer-events-none inline-flex h-5 items-center gap-0.5 rounded border px-1.5 font-mono text-[10px] font-medium",
                     appTheme === "premium-dark"
-                      ? "border-white/10 bg-white/5 text-slate-500"
+                      ? "border-white/10 bg-white/5 text-slate-400"
                       : "border-slate-200 bg-white text-slate-400 shadow-sm"
                   )}
                 >

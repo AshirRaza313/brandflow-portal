@@ -1457,13 +1457,13 @@ export function PlatformSettingsPage() {
                                 )}
                               >
                                 <div className="flex items-center gap-2.5 min-w-0">
-                                  <Lock className={cn("h-3.5 w-3.5 shrink-0", isLocked ? "text-red-400" : isDark ? "text-slate-500" : "text-slate-400")} />
+                                  <Lock className={cn("h-3.5 w-3.5 shrink-0", isLocked ? "text-red-400" : isDark ? "text-slate-400" : "text-slate-500")} />
                                   <span className={cn("text-sm truncate", isLocked ? textSecondary : textPrimary)}>
                                     {feature.label}
                                   </span>
                                 </div>
                                 <div className="flex items-center gap-2 shrink-0">
-                                  <span className={cn("text-[10px] font-medium", isLocked ? "text-red-400" : isDark ? "text-slate-500" : "text-slate-400")}>
+                                  <span className={cn("text-[10px] font-medium", isLocked ? "text-red-400" : isDark ? "text-slate-400" : "text-slate-500")}>
                                     {isLocked ? "Locked" : "Active"}
                                   </span>
                                   <Switch
@@ -1510,13 +1510,13 @@ export function PlatformSettingsPage() {
                                 )}
                               >
                                 <div className="flex items-center gap-2.5 min-w-0">
-                                  <Lock className={cn("h-3.5 w-3.5 shrink-0", isLocked ? "text-red-400" : isDark ? "text-slate-500" : "text-slate-400")} />
+                                  <Lock className={cn("h-3.5 w-3.5 shrink-0", isLocked ? "text-red-400" : isDark ? "text-slate-400" : "text-slate-500")} />
                                   <span className={cn("text-sm truncate", isLocked ? textSecondary : textPrimary)}>
                                     {feature.label}
                                   </span>
                                 </div>
                                 <div className="flex items-center gap-2 shrink-0">
-                                  <span className={cn("text-[10px] font-medium", isLocked ? "text-red-400" : isDark ? "text-slate-500" : "text-slate-400")}>
+                                  <span className={cn("text-[10px] font-medium", isLocked ? "text-red-400" : isDark ? "text-slate-400" : "text-slate-500")}>
                                     {isLocked ? "Locked" : "Active"}
                                   </span>
                                   <Switch

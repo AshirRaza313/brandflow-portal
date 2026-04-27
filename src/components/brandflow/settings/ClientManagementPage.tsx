@@ -1267,7 +1267,7 @@ export function ClientManagementPage() {
                             ].map((item) => (
                               <div key={item.label} className={cn(
                                 "rounded-lg border p-3",
-                                isDark ? "border-white/[0.06] bg-white/[0.01]" : "border-slate-200 bg-slate-50"
+                                isDark ? "border-white/[0.06] bg-white/[0.03]" : "border-slate-200 bg-slate-50"
                               )}>
                                 <p className={cn("text-[11px] uppercase tracking-wider mb-1", textSecondary)}>{item.label}</p>
                                 <p className={cn("text-sm font-semibold", textPrimary)}>
@@ -1307,7 +1307,7 @@ export function ClientManagementPage() {
                           {clientDetail.recentOrders.map((order) => (
                             <div key={order.id} className={cn(
                               "flex items-center justify-between rounded-lg border px-3 py-2",
-                              isDark ? "border-white/[0.06] bg-white/[0.01]" : "border-slate-200 bg-slate-50"
+                              isDark ? "border-white/[0.06] bg-white/[0.03]" : "border-slate-200 bg-slate-50"
                             )}>
                               <div className="flex items-center gap-3">
                                 <Badge variant="outline" className={cn("text-[10px] border", getOrderStatusBadge(order.status))}>
@@ -1377,7 +1377,7 @@ export function ClientManagementPage() {
                 {supportClients.map((client) => (
                   <div key={client.id} className={cn(
                     "flex flex-col sm:flex-row sm:items-center justify-between gap-3 rounded-lg border p-4 transition-colors",
-                    isDark ? "border-white/[0.06] bg-white/[0.01] hover:bg-white/[0.03]" : "border-slate-200 bg-slate-50 hover:bg-slate-100"
+                    isDark ? "border-white/[0.06] bg-white/[0.03] hover:bg-white/[0.03]" : "border-slate-200 bg-slate-50 hover:bg-slate-100"
                   )}>
                     <div className="flex items-center gap-3">
                       <div className="h-10 w-10 rounded-lg bg-gradient-to-br from-red-500 to-red-700 flex items-center justify-center text-sm font-bold text-white shrink-0">

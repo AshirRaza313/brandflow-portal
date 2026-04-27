@@ -161,7 +161,7 @@ export function FeatureLockedOverlay({
         {/* Back Link */}
         <button
           onClick={() => setActiveSection("dashboard")}
-          className="mt-4 text-xs text-slate-500 hover:text-slate-300 transition-colors inline-flex items-center gap-1"
+          className="mt-4 text-xs text-slate-400 hover:text-slate-200 transition-colors inline-flex items-center gap-1"
         >
           <ArrowRight className="w-3 h-3 rotate-180" />
           Back to Dashboard
