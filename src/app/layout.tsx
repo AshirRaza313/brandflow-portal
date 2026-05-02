@@ -29,9 +29,18 @@ export const metadata: Metadata = {
   keywords: ["Valtriox", "brand management", "universal brand management portal", "order management", "inventory", "team collaboration", "business operations", "SaaS"],
   authors: [{ name: "Valtriox" }],
   icons: {
-    icon: "/valtriox-logo.png",
+    icon: [
+      { url: "/valtriox-icon-32.png", sizes: "32x32", type: "image/png" },
+      { url: "/valtriox-icon-192.png", sizes: "192x192", type: "image/png" },
+    ],
+    apple: "/apple-touch-icon.png",
   },
   manifest: "/manifest.json",
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: "black-translucent",
+    title: "Valtriox",
+  },
   openGraph: {
     title: "Valtriox — Command Your Brand Universe",
     description: "The universal brand management portal for modern businesses — command every aspect of your brand from a single, powerful platform",
@@ -53,6 +62,11 @@ export default function RootLayout({
           href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;500;600;700;800;900&display=swap"
           rel="stylesheet"
         />
+        <meta name="mobile-web-app-capable" content="yes" />
+        <meta name="apple-mobile-web-app-capable" content="yes" />
+        <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+        <meta name="apple-mobile-web-app-title" content="Valtriox" />
+        <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
         <style
           dangerouslySetInnerHTML={{
             __html: `.font-cinzel, h1.font-cinzel, .brand-title { font-family: 'Cinzel', serif !important; }`,

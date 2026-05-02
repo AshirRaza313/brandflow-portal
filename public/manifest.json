@@ -1,14 +1,69 @@
 {
-  "name": "Valtriox Portal",
+  "name": "Valtriox — Command Your Brand Universe",
   "short_name": "Valtriox",
-  "description": "The Universal Brand Management Portal",
+  "description": "The Universal Brand Management Portal — Manage orders, customers, products, team, and analytics from one powerful PWA.",
   "start_url": "/",
+  "scope": "/",
   "display": "standalone",
   "background_color": "#0A0A0A",
   "theme_color": "#C9A227",
   "orientation": "any",
+  "categories": ["business", "productivity", "utilities"],
+  "lang": "en",
+  "dir": "ltr",
   "icons": [
-    { "src": "/valtriox-icon-32.png", "sizes": "32x32", "type": "image/png" },
-    { "src": "/valtriox-icon-32.png", "sizes": "192x192", "type": "image/png", "purpose": "any maskable" }
+    {
+      "src": "/valtriox-icon-32.png",
+      "sizes": "32x32",
+      "type": "image/png"
+    },
+    {
+      "src": "/valtriox-icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "/valtriox-icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    },
+    {
+      "src": "/valtriox-icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/valtriox-icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ],
+  "screenshots": [
+    {
+      "src": "/dashboard-preview.png",
+      "sizes": "1280x800",
+      "type": "image/png",
+      "form_factor": "wide",
+      "label": "Valtriox Dashboard Overview"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Dashboard",
+      "url": "/",
+      "icons": [{ "src": "/valtriox-icon-32.png", "sizes": "32x32" }]
+    },
+    {
+      "name": "Orders",
+      "url": "/",
+      "icons": [{ "src": "/valtriox-icon-32.png", "sizes": "32x32" }]
+    },
+    {
+      "name": "Customers",
+      "url": "/",
+      "icons": [{ "src": "/valtriox-icon-32.png", "sizes": "32x32" }]
+    }
   ]
 }
