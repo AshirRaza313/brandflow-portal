@@ -8,6 +8,13 @@ import { create } from "zustand";
 
 export type AppView = "landing" | "auth" | "dashboard";
 
+export type AuthStatus =
+  | "idle"
+  | "checking"
+  | "authenticated"
+  | "unauthenticated"
+  | "error";
+
 export type Feature =
   // ── Group 1: MAIN ──
   | "dashboard"
@@ -480,6 +487,9 @@ export interface OrganizationInfo {
 interface ValtrioxStore {
   view: AppView;
   setView: (view: AppView) => void;
+  authStatus: AuthStatus;
+  authError: string | null;
+  sessionHint: boolean;
   activeSection: SidebarSection;
   setActiveSection: (section: SidebarSection) => void;
 
@@ -551,9 +561,9 @@ interface ValtrioxStore {
 
   // User & Org
   user: UserInfo | null;
-  setUser: (user: UserInfo | null) => void;
   organization: OrganizationInfo | null;
   setOrganization: (org: OrganizationInfo | null) => void;
+  setAuthSession: (user: UserInfo, organization: OrganizationInfo | null) => void;
 
   // Sidebar (Mobile Overlay)
   sidebarOpen: boolean;
@@ -681,10 +691,18 @@ function setSessionActive(v: boolean) {
   } catch {}
 }
 
+const AUTH_BOOTSTRAP_TIMEOUT_MS = 15_000;
+const AUTH_LOGOUT_TIMEOUT_MS = 10_000;
+let authOperationVersion = 0;
+
+function getUnauthenticatedView(view: AppView): AppView {
+  return view === "auth" ? "auth" : "landing";
+}
+
 // NOTE: Auth cookies are now httpOnly + HMAC-signed, so they cannot be read or
-// set from client-side JS. The store initializes from a boolean session flag
-// (no PII) for fast view selection, then syncs with the server via
-// /api/auth/me to validate/refresh.
+// set from client-side JS. After mount, the boolean session hint (no PII)
+// decides whether to show the neutral verification screen while /api/auth/me
+// validates and refreshes the real session.
 function getSavedBrandName(): string {
   try {
     return typeof window !== 'undefined' ? localStorage.getItem('valtriox-brandname') || '' : '';
@@ -707,10 +725,13 @@ function getSavedBrandConfigured(): boolean {
 }
 
 export const useValtrioxStore = create<ValtrioxStore>((set, get) => ({
-  // Initial view: dashboard only if the session-active flag is set.
-  // Real auth state is hydrated from /api/auth/me in initializeAuth().
-  view: getSessionActive() ? "dashboard" : "landing",
+  // Keep the server and first browser render deterministic. The non-sensitive
+  // session hint is read after mount by initializeAuth(), never during SSR.
+  view: "landing",
   setView: (view) => set({ view }),
+  authStatus: "idle",
+  authError: null,
+  sessionHint: false,
   activeSection: "dashboard",
   setActiveSection: (section) => set({ activeSection: section, sidebarOpen: false }),
 
@@ -799,16 +820,24 @@ export const useValtrioxStore = create<ValtrioxStore>((set, get) => ({
 
   // User & Org - in-memory ONLY (never persisted to localStorage — see Phase 17 PII purge)
   user: getSavedUser(),
-  setUser: (user) => {
-    // SECURITY: Only update in-memory state. Set the boolean session flag
-    // for view-selection on next refresh — no PII hits localStorage.
-    setSessionActive(!!user);
-    set({ user, view: user ? 'dashboard' : 'landing' });
-  },
   organization: getSavedOrg(),
   setOrganization: (org) => {
     // SECURITY: Org data (including id) stays in-memory only.
     set({ organization: org });
+  },
+  setAuthSession: (user, organization) => {
+    // Login responses already contain the verified user and organization.
+    // Apply them together so the dashboard never sees a half-hydrated session.
+    authOperationVersion += 1;
+    setSessionActive(true);
+    set({
+      user,
+      organization,
+      view: "dashboard",
+      authStatus: "authenticated",
+      authError: null,
+      sessionHint: true,
+    });
   },
 
   // Sidebar (Mobile Overlay)
@@ -864,6 +893,12 @@ export const useValtrioxStore = create<ValtrioxStore>((set, get) => ({
 
   // Logout - clear persisted state, clear httpOnly cookies via API
   logout: async () => {
+    // Keep the authenticated shell and login controls unavailable until the
+    // server has finished clearing its httpOnly cookies. This prevents a late
+    // logout response from erasing cookies created by a new login.
+    const operationVersion = ++authOperationVersion;
+    set({ authStatus: "checking", authError: null, sessionHint: true });
+
     try {
       // SECURITY: No PII to clear anymore — just the boolean flag + branding prefs.
       localStorage.removeItem('valtriox-session-active');
@@ -874,12 +909,29 @@ export const useValtrioxStore = create<ValtrioxStore>((set, get) => ({
     } catch (err) {
       if (process.env.NODE_ENV === 'development') console.warn('[Store] Error clearing localStorage on logout:', err);
     }
-    // Clear httpOnly auth cookies via server endpoint
-    fetch('/api/auth/logout', { method: 'POST' }).catch(() => {
-      // Silently fail - localStorage is already cleared
-    });
+    // Clear httpOnly auth cookies via server endpoint before exposing login.
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), AUTH_LOGOUT_TIMEOUT_MS);
+    try {
+      await fetch('/api/auth/logout', {
+        method: 'POST',
+        cache: 'no-store',
+        credentials: 'same-origin',
+        signal: controller.signal,
+      });
+    } catch (err) {
+      if (process.env.NODE_ENV === 'development') console.warn('[Store] Error clearing server auth cookies:', err);
+    } finally {
+      clearTimeout(timeoutId);
+    }
+
+    if (operationVersion !== authOperationVersion) return;
+
     set({
       view: "landing",
+      authStatus: "unauthenticated",
+      authError: null,
+      sessionHint: false,
       user: null,
       organization: null,
       activeSection: "dashboard",
@@ -922,30 +974,98 @@ export const useValtrioxStore = create<ValtrioxStore>((set, get) => ({
   // Initialize auth from server-side httpOnly cookies
   // Call this once on app load to sync server auth state into the store
   initializeAuth: async () => {
+    // React Strict Mode can invoke mount effects twice in development. Reuse
+    // the in-flight check instead of issuing a second session request.
+    if (get().authStatus === "checking") return;
+
+    const operationVersion = ++authOperationVersion;
+    const userAtStart = get().user;
+    const sessionHint = getSessionActive();
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), AUTH_BOOTSTRAP_TIMEOUT_MS);
+    set({
+      authStatus: "checking",
+      authError: null,
+      sessionHint,
+    });
+
     try {
-      const res = await fetch('/api/auth/me');
-      if (!res.ok) return;
-      const data = await res.json();
-      if (data.user) {
-        // Server confirms valid session - update store from server data
-        const store = get();
-        // Always update user from server to ensure role is correct (e.g. valtriox_team override)
-        store.setUser(data.user);
-        if (data.organization && (!store.organization || store.organization.id !== data.organization.id || store.organization.plan !== data.organization.plan)) {
-          store.setOrganization(data.organization);
-        }
-      } else {
-        // No valid server session - clear local state if it exists
-        const store = get();
-        if (store.user) {
-          store.setUser(null);
-          store.setOrganization(null);
-          store.setView('landing');
-        }
+      const res = await fetch("/api/auth/me", {
+        cache: "no-store",
+        credentials: "same-origin",
+        signal: controller.signal,
+      });
+
+      // A login, logout, or newer auth action completed while this request was
+      // in flight. Never let the stale response overwrite the newer state.
+      if (operationVersion !== authOperationVersion || get().authStatus !== "checking") return;
+
+      if (res.status === 401 || res.status === 403) {
+        setSessionActive(false);
+        set((state) => ({
+          user: null,
+          organization: null,
+          view: getUnauthenticatedView(state.view),
+          authStatus: "unauthenticated",
+          authError: null,
+          sessionHint: false,
+        }));
+        return;
       }
+
+      if (!res.ok) {
+        throw new Error(`Session verification failed (${res.status})`);
+      }
+
+      const data = await res.json();
+
+      if (operationVersion !== authOperationVersion || get().authStatus !== "checking") return;
+
+      if (!data?.user) {
+        setSessionActive(false);
+        set((state) => ({
+          user: null,
+          organization: null,
+          view: getUnauthenticatedView(state.view),
+          authStatus: "unauthenticated",
+          authError: null,
+          sessionHint: false,
+        }));
+        return;
+      }
+
+      // Server confirms a valid session. Hydrate every auth-dependent field in
+      // one update so no render can observe a user without its organization.
+      setSessionActive(true);
+      set({
+        user: data.user,
+        organization: data.organization ?? null,
+        view: "dashboard",
+        authStatus: "authenticated",
+        authError: null,
+        sessionHint: true,
+      });
     } catch (err) {
-      // Network error - keep existing localStorage state (works offline)
+      if (operationVersion !== authOperationVersion || get().authStatus !== "checking") return;
+
+      // A transient revalidation failure must not destroy an already hydrated
+      // session. Fresh page loads remain behind the neutral retry screen.
+      if (userAtStart && get().user?.id === userAtStart.id) {
+        set({ authStatus: "authenticated", authError: null, sessionHint: true });
+        return;
+      }
+
+      set({
+        user: null,
+        organization: null,
+        authStatus: "error",
+        authError: "sessionVerificationFailed",
+        sessionHint,
+      });
+
       if (process.env.NODE_ENV === 'development') console.warn('[Store] Error during auth initialization:', err);
+    } finally {
+      clearTimeout(timeoutId);
     }
   },
 }));

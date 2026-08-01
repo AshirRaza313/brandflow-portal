@@ -28,11 +28,9 @@ export function AuthModal() {
     setAuthModalOpen,
     authModalMode,
     setAuthModalMode,
-    setUser,
-    setOrganization,
+    setAuthSession,
     setBrandName,
     setBrandConfigured,
-    setView,
     brandName,
     brandTagline,
   } = useValtrioxStore();
@@ -69,13 +67,11 @@ export function AuthModal() {
 
   const { handleLogin: doLogin, handlePinLogin: doPinLogin, isLoading: loading } = useAuthHandlers({
     onSuccess: (data) => {
-      setUser(data.user);
+      setAuthSession(data.user, data.organization ?? null);
       if (data.organization) {
-        setOrganization(data.organization);
         setBrandName(data.organization.name);
         setBrandConfigured(true);
       }
-      setView("dashboard");
       closeModal();
       toast.success(`Welcome, ${data.user.name}!`);
     },

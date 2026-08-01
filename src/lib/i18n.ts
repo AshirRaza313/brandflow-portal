@@ -185,6 +185,12 @@ const translations: Record<Language, Record<string, string>> = {
 
     // ── Common States ──
     loading: "Loading...",
+    somethingWentWrong: "Something went wrong",
+    workspaceUnavailable: "Your workspace could not be loaded. Please try again.",
+    sessionVerificationFailed: "We could not verify your session. Please try again.",
+    verifyingSecureSession: "Verifying your secure session...",
+    signInInstead: "Sign in instead",
+    userPlaceholder: "user@portal.com",
     noData: "No data found",
     noResults: "No results found",
     noItems: "No items",
@@ -670,6 +676,12 @@ const translations: Record<Language, Record<string, string>> = {
 
     // ── Common States ──
     loading: "Load ho raha hai...",
+    somethingWentWrong: "Kuch masla ho gaya",
+    workspaceUnavailable: "Aap ka workspace load nahi ho saka. Dobara koshish karein.",
+    sessionVerificationFailed: "Aap ka session verify nahi ho saka. Dobara koshish karein.",
+    verifyingSecureSession: "Aap ka secure session verify ho raha hai...",
+    signInInstead: "Is ke bajaye sign in karein",
+    userPlaceholder: "user@portal.com",
     noData: "Koi data nahi mila",
     noResults: "Koi result nahi mila",
     noItems: "Koi item nahi",

@@ -22,6 +22,9 @@ export const useAuth = () =>
   useValtrioxStore(
     useShallow((state) => ({
       user: state.user,
+      authStatus: state.authStatus,
+      authError: state.authError,
+      sessionHint: state.sessionHint,
     }))
   );
 
@@ -124,7 +127,7 @@ export const useAuthModal = () =>
 export const useAuthActions = () =>
   useValtrioxStore(
     useShallow((state) => ({
-      setUser: state.setUser,
+      setAuthSession: state.setAuthSession,
       login: state.initializeAuth, // alias for convenience
       logout: state.logout,
     }))

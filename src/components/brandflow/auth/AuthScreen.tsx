@@ -16,7 +16,7 @@ import { toast } from "sonner";
 import { Loader2, Eye, EyeOff, Sparkles, Shield, ArrowRight, ArrowLeft, KeyRound } from "lucide-react";
 
 export function AuthScreen() {
-  const { setView, setUser, setOrganization, setBrandName, setBrandConfigured, brandName, brandTagline, authModalMode } = useValtrioxStore();
+  const { setView, setAuthSession, setBrandName, setBrandConfigured, brandName, brandTagline, authModalMode } = useValtrioxStore();
   const [defaultTab, setDefaultTab] = useState<string>("login");
 
   // Sync default tab with store's authModalMode
@@ -39,13 +39,11 @@ export function AuthScreen() {
 
   const { handleLogin: doLogin, handlePinLogin: doPinLogin, isLoading: loading } = useAuthHandlers({
     onSuccess: (data) => {
-      setUser(data.user);
+      setAuthSession(data.user, data.organization ?? null);
       if (data.organization) {
-        setOrganization(data.organization);
         setBrandName(data.organization.name);
         setBrandConfigured(true);
       }
-      setView("dashboard");
       toast.success(`Welcome, ${data.user.name}!`);
     },
     onError: (msg) => {

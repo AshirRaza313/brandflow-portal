@@ -6,6 +6,7 @@ import dynamic from "next/dynamic";
 import { useValtrioxStore } from "@/store/brandflow-store";
 import { useAuth, useUI, useOrganization, useUIActions } from "@/hooks/useStoreSelectors";
 import { fetchWithAuth } from "@/lib/fetch-with-auth";
+import { useTranslation } from "@/lib/i18n";
 import { useSubscriptionSync } from "@/hooks/useSubscriptionSync";
 
 // ── Lazy-Loaded Page Components (code-split for performance) ──
@@ -160,21 +161,90 @@ function SafeRender({ children, name }: { children: ReactNode; name: string }) {
   return <PageErrorBoundary name={name}>{children}</PageErrorBoundary>;
 }
 
+function AuthBootstrapScreen({
+  appTheme,
+  error,
+  onRetry,
+  onSignIn,
+}: {
+  appTheme: "light" | "dark" | "premium-dark";
+  error?: string | null;
+  onRetry: () => void;
+  onSignIn: () => void;
+}) {
+  const isLight = appTheme === "light";
+  const t = useTranslation();
+
+  return (
+    <div
+      className={cn(
+        "flex min-h-screen w-full items-center justify-center px-4",
+        isLight ? "bg-slate-50" : "bg-[#10151E]"
+      )}
+    >
+      <div
+        role={error ? "alert" : "status"}
+        aria-live="polite"
+        className="flex w-full max-w-sm flex-col items-center text-center"
+      >
+        <div className="mb-4 flex h-14 w-14 items-center justify-center rounded-2xl border border-amber-400/25 bg-amber-400/10 shadow-[0_0_32px_rgba(212,167,58,0.12)]">
+          <span className="text-2xl font-bold text-amber-400">V</span>
+        </div>
+        <h1 className={cn("text-xl font-semibold", isLight ? "text-slate-900" : "text-white")}>
+          Valtriox
+        </h1>
+        {error ? (
+          <>
+            <p className={cn("mt-2 text-sm leading-6", isLight ? "text-slate-600" : "text-slate-400")}>
+              {t(error, error)}
+            </p>
+            <button
+              type="button"
+              onClick={onRetry}
+              className="mt-5 rounded-xl bg-amber-500 px-5 py-2.5 text-sm font-semibold text-slate-950 transition-colors hover:bg-amber-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-400 focus-visible:ring-offset-2 focus-visible:ring-offset-[#10151E]"
+            >
+              {t("retry")}
+            </button>
+            <button
+              type="button"
+              onClick={onSignIn}
+              className={cn(
+                "mt-3 px-3 py-2 text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-400",
+                isLight ? "text-slate-600 hover:text-slate-900" : "text-slate-400 hover:text-white"
+              )}
+            >
+              {t("signInInstead")}
+            </button>
+          </>
+        ) : (
+          <>
+            <div className="mt-5 h-9 w-9 animate-spin rounded-full border-[3px] border-amber-400/20 border-t-amber-400" />
+            <p className={cn("mt-4 text-sm", isLight ? "text-slate-600" : "text-slate-400")}>
+              {t("verifyingSecureSession")}
+            </p>
+          </>
+        )}
+      </div>
+    </div>
+  );
+}
+
 export default function Home() {
   // ── Optimized store selectors (useShallow) — prevents re-render on unrelated state changes
-  const { user } = useAuth();
+  const { user, authStatus, authError, sessionHint } = useAuth();
   const { view, activeSection, appTheme, sidebarCollapsed } = useUI();
   const { organization } = useOrganization();
   const { setView, setAppTheme, setAuthModalOpen, setAuthModalMode } = useUIActions();
   // Single-action selectors don't need useShallow — zustand returns stable function references
   const initializeAuth = useValtrioxStore((state) => state.initializeAuth);
+  const logout = useValtrioxStore((state) => state.logout);
   const [legalPage, setLegalPage] = useState<string | null>(null);
   const [adminLockedFeatures, setAdminLockedFeatures] = useState<Set<string>>(new Set());
 
   // ── Initialize auth from server-side httpOnly cookies on mount ──
   useEffect(() => {
-    initializeAuth();
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+    void initializeAuth();
+  }, [initializeAuth]);
 
   // ── Suppress known benign React errors from third-party scripts / Vercel runtime ──
   useEffect(() => {
@@ -297,6 +367,23 @@ export default function Home() {
     if (appTheme === "dark") root.classList.add("dark");
     else if (appTheme === "premium-dark") root.classList.add("premium-dark");
   }, [appTheme]);
+
+  // Returning sessions must be verified before any role-based UI or dashboard
+  // query mounts. Anonymous SSR still renders the full landing page for SEO.
+  const isCheckingAuth = authStatus === "idle" || authStatus === "checking";
+  const shouldGateReturningSession = sessionHint && (isCheckingAuth || authStatus === "error");
+  const shouldGateDashboard = view === "dashboard" && (authStatus !== "authenticated" || !user);
+
+  if (shouldGateReturningSession || shouldGateDashboard) {
+    return (
+      <AuthBootstrapScreen
+        appTheme={appTheme}
+        error={authStatus === "error" ? authError : null}
+        onRetry={() => void initializeAuth()}
+        onSignIn={() => void logout().then(() => setView("auth"))}
+      />
+    );
+  }
 
   // ── LANDING PAGE ──
   if (view === "landing") {

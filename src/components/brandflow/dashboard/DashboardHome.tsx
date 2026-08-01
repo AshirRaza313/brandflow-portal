@@ -155,7 +155,7 @@ function AnimatedCounter({ value, prefix = "", suffix = "" }: { value: number; p
 }
 
 export function DashboardHome() {
-  const { setActiveSection, appTheme, brandName, organization } = useValtrioxStore();
+  const { setActiveSection, appTheme, brandName, organization, authStatus, initializeAuth } = useValtrioxStore();
   const t = useTranslation();
   const [stats, setStats] = useState<DashboardStats | null>(null);
   const [loading, setLoading] = useState(true);
@@ -167,8 +167,13 @@ export function DashboardHome() {
   const fetchStats = useCallback(async () => {
     const orgId = organization?.id;
     if (!orgId) {
+      if (authStatus === "idle" || authStatus === "checking") {
+        setLoading(true);
+        setError(null);
+        return;
+      }
       setLoading(false);
-      setError(t("somethingWentWrong"));
+      setError(t("workspaceUnavailable"));
       return;
     }
 
@@ -191,7 +196,7 @@ export function DashboardHome() {
     } finally {
       setLoading(false);
     }
-  }, [organization?.id]);
+  }, [organization?.id, authStatus]);
 
   useEffect(() => {
     fetchStats();
@@ -199,13 +204,17 @@ export function DashboardHome() {
 
   // Retry handler
   const handleRetry = () => {
-    fetchStats();
+    if (!organization?.id) {
+      void initializeAuth();
+      return;
+    }
+    void fetchStats();
   };
 
   if (loading) return <LoadingSkeleton />;
 
   // Error state
-  const isDbConfigError = error?.includes('DATABASE_URL') || error?.includes('Service temporarily unavailable') || error?.includes('503');
+  const isDbConfigError = error?.includes("DB_NOT_CONFIGURED") || error?.includes("DATABASE_URL environment variable is missing");
 
   if (error) {
     return (

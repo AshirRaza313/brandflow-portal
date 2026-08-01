@@ -38,6 +38,7 @@
   ],
   "exclude": [
     "node_modules",
+    "backups",
     "skills",
     "prisma/seed.ts",
     "src/__tests__"

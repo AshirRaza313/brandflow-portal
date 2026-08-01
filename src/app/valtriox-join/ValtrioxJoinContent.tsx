@@ -107,10 +107,9 @@ export default function ValtrioxJoinContent() {
             const { useValtrioxStore } = await import("@/store/brandflow-store");
             const store = useValtrioxStore.getState();
             if (loginData.user) {
-              store.setUser(loginData.user);
+              store.setAuthSession(loginData.user, loginData.organization ?? null);
             }
             if (loginData.organization) {
-              store.setOrganization(loginData.organization);
               store.setBrandName(loginData.organization.name);
               store.setBrandConfigured(true);
             }
