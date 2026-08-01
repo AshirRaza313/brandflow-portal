@@ -173,7 +173,7 @@ export default function BetaClaimContent() {
         initial={{ opacity: 0, y: 30 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.6, ease: "easeOut" }}
-        className="w-full max-w-[480px] relative z-10"
+        className="w-[calc(100vw-2rem)] min-w-0 max-w-[480px] relative z-10"
       >
         {/* Back link */}
         <div className="mb-6">
@@ -190,7 +190,7 @@ export default function BetaClaimContent() {
         <div className="rounded-2xl bg-[#12121a]/95 backdrop-blur-xl border border-white/[0.06] overflow-hidden shadow-2xl shadow-black/40">
 
           {/* ── HEADER ── */}
-          <div className="relative p-8 pb-0 text-center overflow-hidden">
+          <div className="relative p-5 pb-0 sm:p-8 sm:pb-0 text-center overflow-hidden">
             {/* Gold gradient bg */}
             <div className="absolute inset-0 bg-gradient-to-br from-amber-500/[0.08] via-transparent to-purple-500/[0.03]" />
             {/* Decorative corners */}
@@ -203,9 +203,9 @@ export default function BetaClaimContent() {
                 initial={{ scale: 0.8, opacity: 0 }}
                 animate={{ scale: 1, opacity: 1 }}
                 transition={{ delay: 0.2, duration: 0.5 }}
-                className="w-24 h-24 mx-auto mb-5 flex items-center justify-center overflow-hidden"
+                className="relative w-24 h-24 mx-auto mb-5 flex items-center justify-center overflow-hidden"
               >
-                <Image src="/valtriox-logo.png" alt="Valtriox" fill className="w-full h-full object-contain" priority />
+                <Image src="/valtriox-logo-vertical.png" alt="Valtriox" fill sizes="96px" className="object-contain" priority />
               </motion.div>
 
               <motion.div
@@ -231,7 +231,7 @@ export default function BetaClaimContent() {
           </div>
 
           {/* ── CONTENT ── */}
-          <div className="p-8">
+          <div className="p-5 sm:p-8">
             <AnimatePresence mode="wait">
 
               {/* ═══ STEP: VERIFY ═══ */}
@@ -546,7 +546,7 @@ export default function BetaClaimContent() {
           </div>
 
           {/* Footer */}
-          <div className="px-8 pb-6 pt-0 text-center">
+          <div className="px-5 pb-5 pt-0 sm:px-8 sm:pb-6 text-center">
             <div className="border-t border-white/[0.04] pt-4">
               <div className="flex items-center justify-center gap-1.5 mb-1">
                 <span className="text-sm font-bold text-amber-500/60">Valtriox</span>

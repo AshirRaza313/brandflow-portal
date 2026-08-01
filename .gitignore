@@ -66,6 +66,7 @@ agent-ctx/
 # Private Codex conversation context and user-provided working assets
 /chat.md
 /upload-assets/
+/backups/
 
 # Download files (generated)
 download/

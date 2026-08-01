@@ -8,6 +8,8 @@
  *  4. Printable HTML document (for download as PDF or print)
  */
 
+import { BRAND_LOGO_DATA_URI } from "./brand-logo";
+
 // ═══════════════════════════════════════════════════════════════
 //  ULTRA PREMIUM HTML EMAIL TEMPLATE
 // ═══════════════════════════════════════════════════════════════
@@ -116,8 +118,8 @@ export function getUltraPremiumInviteHtml(data: UltraPremiumInviteData): string 
                       </div>
                     </td>
                     <td align="right" valign="top">
-                      <div style="display:inline-block;width:52px;height:52px;text-align:center;line-height:52px;overflow:hidden;">
-                        <img src="https://valtriox.com/valtriox-logo.png" alt="V" style="width:100%;height:100%;object-fit:contain;">
+                      <div style="display:inline-block;width:86px;height:71px;text-align:center;overflow:hidden;border-radius:10px;">
+                        <img src="${BRAND_LOGO_DATA_URI}" alt="Valtriox" width="86" height="71" style="display:block;width:86px;height:71px;object-fit:contain;border:0;">
                       </div>
                     </td>
                   </tr>
@@ -457,11 +459,14 @@ export function getPrintableInvitationHtml(data: UltraPremiumInviteData): string
       margin-top: 8px;
     }
     .logo-box {
-      width: 56px;
-      height: 56px;
+      width: 104px;
+      height: 86px;
       display: flex;
       align-items: center;
       justify-content: center;
+      flex-shrink: 0;
+      overflow: hidden;
+      border-radius: 10px;
     }
     .vip-section {
       padding: 28px 44px 0;
@@ -652,7 +657,7 @@ export function getPrintableInvitationHtml(data: UltraPremiumInviteData): string
         <div class="brand-name">${data.platformName}</div>
         <div class="brand-sub">COMMAND YOUR BRAND UNIVERSE</div>
       </div>
-      <div class="logo-box"><img src="https://valtriox.com/valtriox-logo.png" alt="V" style="width:100%;height:100%;object-fit:contain;"></div>
+      <div class="logo-box"><img src="${BRAND_LOGO_DATA_URI}" alt="Valtriox" width="104" height="86" style="display:block;width:104px;height:86px;object-fit:contain;border:0;"></div>
     </div>
 
     <div class="vip-section">
