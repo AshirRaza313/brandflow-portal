@@ -7,6 +7,7 @@
 // ============================================================================
 
 import { z } from "zod";
+import { isCalendlyHttpsUrl } from "@/lib/calendly";
 
 // ── Reusable primitives ──────────────────────────────────────────────────────
 
@@ -230,12 +231,20 @@ export const updateFeedbackSchema = z.object({
 // ── Lead schemas ─────────────────────────────────────────────────────────────
 
 export const createLeadSchema = z.object({
-  name: z.string().min(1).max(200),
-  email: email.optional(),
+  fullName: z.string().trim().min(2).max(200),
+  email,
   phone: phone.optional(),
+  company: z.string().trim().max(200).optional(),
+  companySize: z.string().max(50).optional(),
+  industry: z.string().max(100).optional(),
   source: z.string().max(100).optional(),
   interest: z.string().max(300).optional(),
-  notes: optionalString,
+  message: z.string().trim().max(5000).optional(),
+  consultationType: z.enum(["video_call", "phone_call", "in_person"]).optional().or(z.literal("")),
+  calendlyBookingLink: z.string().url().max(2048)
+    .refine(isCalendlyHttpsUrl, "Invalid Calendly booking link")
+    .optional()
+    .or(z.literal("")),
 });
 
 // ── Proposal schemas ─────────────────────────────────────────────────────────

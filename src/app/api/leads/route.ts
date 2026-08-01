@@ -93,7 +93,19 @@ async function leadsPostHandler(req: NextRequest) {
       const errors = parseResult.error.issues.map(i => `${i.path.join(".")}: ${i.message}`).join(", ");
       return NextResponse.json({ error: `Validation failed: ${errors}` }, { status: 422 });
     }
-    const { fullName, email, phone, company, companySize, industry, interest, message, consultationType, calendlyBookingLink } = sanitized;
+    const {
+      fullName,
+      email,
+      phone,
+      company,
+      companySize,
+      industry,
+      interest,
+      message,
+      consultationType,
+      calendlyBookingLink,
+      source,
+    } = parseResult.data;
 
     // Validation
     if (!fullName || typeof fullName !== "string" || fullName.trim().length < 2) {
@@ -138,7 +150,7 @@ async function leadsPostHandler(req: NextRequest) {
           consultationType: consultationType || null,
           calendlyBookingLink: calendlyBookingLink?.trim() || null,
           status: "new",
-          source: sanitized.source || "website",
+          source: source || "website",
         },
       })
       }, 2, 500);

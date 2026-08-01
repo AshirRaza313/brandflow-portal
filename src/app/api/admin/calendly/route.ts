@@ -3,6 +3,7 @@ import { db, withRetry} from "@/lib/db";
 import { withAuth } from "@/lib/auth-middleware";
 import logger from "@/lib/logger";
 import { withRateLimit } from "@/lib/rate-limit";
+import { isCalendlyHttpsUrl } from "@/lib/calendly";
 
 // ═══════════════════════════════════════════════════════════════════════════
 //  Calendly Settings - stored in SystemSetting table as JSON
@@ -46,10 +47,26 @@ export const PUT = withRateLimit(withAuth(async (req: NextRequest, authCtx) => {
 
   try {
     const body = await req.json();
+    const enabled = Boolean(body.enabled);
+    const calendlyUrl = typeof body.calendlyUrl === "string" ? body.calendlyUrl.trim() : "";
+
+    if (enabled && !calendlyUrl) {
+      return NextResponse.json(
+        { error: "A Calendly scheduling URL is required when the widget is enabled" },
+        { status: 400 },
+      );
+    }
+
+    if (calendlyUrl && !isCalendlyHttpsUrl(calendlyUrl)) {
+      return NextResponse.json(
+        { error: "Enter a valid HTTPS Calendly event URL" },
+        { status: 400 },
+      );
+    }
 
     const settings = {
-      enabled: Boolean(body.enabled),
-      calendlyUrl: typeof body.calendlyUrl === "string" ? body.calendlyUrl.trim() : "",
+      enabled,
+      calendlyUrl,
       widgetHeight: typeof body.widgetHeight === "number" ? Math.min(1000, Math.max(300, body.widgetHeight)) : 630,
     };
 

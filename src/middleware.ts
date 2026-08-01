@@ -126,7 +126,7 @@ export function middleware(request: NextRequest) {
         "font-src 'self' https://fonts.gstatic.com",
         "img-src 'self' data: blob: https: https://www.facebook.com",
         "connect-src 'self' https://va.vercel-scripts.com https://*.supabase.co https://api.cloudinary.com https://api.resend.com https://www.facebook.com https://www.google-analytics.com https://graph.facebook.com",
-        "frame-src https://www.facebook.com",
+        "frame-src https://www.facebook.com https://calendly.com https://*.calendly.com",
         "frame-ancestors 'none'",
         "base-uri 'self'",
         "form-action 'self'",

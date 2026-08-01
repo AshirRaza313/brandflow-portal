@@ -1,7 +1,7 @@
 // @ts-nocheck — Phase 8: pre-existing TS errors (Decimal/Prisma types, etc.) pending migration
 "use client";
 
-import { useState, FormEvent, useEffect, useCallback, useRef } from "react";
+import { useState, FormEvent, useEffect, useMemo } from "react";
 import { motion } from "framer-motion";
 import {
   Send, Phone, Mail, MapPin, Clock, MessageCircle, CheckCircle2,
@@ -14,6 +14,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { usePlatformIdentity } from "@/lib/platform-identity";
+import { isCalendlyHttpsUrl, isCalendlyMessageOrigin } from "@/lib/calendly";
 import { toast } from "sonner";
 import Link from "next/link";
 
@@ -77,6 +78,7 @@ export function ContactPage() {
   useEffect(() => {
     if (!calendlyEnabled || !form.consultationType) return;
     function handleCalendlyEvent(e: MessageEvent) {
+      if (!isCalendlyMessageOrigin(e.origin)) return;
       if (e.data?.event === "calendly.event_scheduled") {
         const uri = e.data?.payload?.event?.uri;
         const inviteeUri = e.data?.payload?.invitee?.uri;
@@ -90,45 +92,15 @@ export function ContactPage() {
     return () => window.removeEventListener("message", handleCalendlyEvent);
   }, [calendlyEnabled, form.consultationType]);
 
-  // Load Calendly script when needed
   const calendlyWidgetVisible = calendlyEnabled && !!form.consultationType;
-  const calendlyInitialized = useRef(false);
+  const calendlyEmbedUrl = useMemo(() => {
+    if (!calendlyWidgetVisible || !isCalendlyHttpsUrl(calendlyUrl)) return "";
 
-  useEffect(() => {
-    if (!calendlyWidgetVisible) return;
-    if (document.querySelector('script[src*="calendly"]')) return;
-    const script = document.createElement("script");
-    script.src = "https://assets.calendly.com/assets/external/widget.js";
-    script.async = true;
-    script.onload = () => {
-      if (calendlyUrl) {
-        requestAnimationFrame(() => {
-          initCalendlyWidget(calendlyUrl);
-        });
-      }
-    };
-    document.head.appendChild(script);
+    const embedUrl = new URL(calendlyUrl);
+    embedUrl.searchParams.set("embed_domain", window.location.host);
+    embedUrl.searchParams.set("embed_type", "Inline");
+    return embedUrl.toString();
   }, [calendlyWidgetVisible, calendlyUrl]);
-
-  const initCalendlyWidget = useCallback((url: string) => {
-    if (calendlyInitialized.current) return;
-    const win = window as any;
-    if (!win.Calendly || !win.Calendly.initInlineWidget) return;
-    const widgetEl = document.querySelector(".calendly-inline-widget");
-    if (!widgetEl) return;
-    try {
-      win.Calendly.initInlineWidget({ url, parentElement: widgetEl });
-      calendlyInitialized.current = true;
-    } catch {}
-  }, []);
-
-  useEffect(() => {
-    if (!calendlyWidgetVisible || !calendlyUrl) return;
-    const timer = setTimeout(() => {
-      initCalendlyWidget(calendlyUrl);
-    }, 200);
-    return () => clearTimeout(timer);
-  }, [calendlyWidgetVisible, calendlyUrl, initCalendlyWidget]);
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
@@ -894,7 +866,7 @@ export function ContactPage() {
                 </div>
 
                 {/* Row 6: Calendly Widget (replaces manual date/time/availability) */}
-                {calendlyWidgetVisible && calendlyUrl && (
+                {calendlyWidgetVisible && calendlyEmbedUrl && (
                   <div className="space-y-2">
                     <div className="flex items-center gap-2">
                       <CalendarDays className="h-4 w-4 text-amber-400" />
@@ -903,9 +875,10 @@ export function ContactPage() {
                       </label>
                     </div>
                     <div className="rounded-2xl overflow-hidden border border-amber-500/20 bg-[#1a1a2e]">
-                      <div
-                        className="calendly-inline-widget"
-                        data-url={calendlyUrl}
+                      <iframe
+                        src={calendlyEmbedUrl}
+                        title="Schedule a Valtriox consultation"
+                        className="calendly-inline-widget w-full border-0"
                         style={{ minWidth: "320px", height: "630px" }}
                       />
                     </div>
