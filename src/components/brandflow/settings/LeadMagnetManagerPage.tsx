@@ -142,7 +142,7 @@ export function LeadMagnetManagerPage() {
   };
 
   const handleDownloadPdf = () => {
-    const url = pdfUrl || "/downloads/valtriox-introduction.pdf";
+    const url = pdfUrl || "/api/lead-magnet";
     const link = document.createElement("a");
     link.href = url;
     link.download = "valtriox-platform-guide.pdf";
@@ -246,7 +246,7 @@ export function LeadMagnetManagerPage() {
                   <Input
                     value={pdfUrl}
                     onChange={(e) => setPdfUrl(e.target.value)}
-                    placeholder="/downloads/valtriox-introduction.pdf"
+                    placeholder="/api/lead-magnet"
                     className="flex-1"
                   />
                   <Button variant="outline" onClick={handleDownloadPdf} className="gap-2 flex-shrink-0">

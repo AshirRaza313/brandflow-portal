@@ -64,6 +64,44 @@ export interface LeadMagnetSettings {
   primaryBrandColor?: string;
 }
 
+const DEFAULT_GUIDE_TAGLINE = "A unified workspace for modern brand operations";
+
+function getGuideTagline(value?: string | null): string {
+  const normalized = (value || "").replace(/\s+/g, " ").trim();
+  const unsupportedClaim = /(?:#\s*1|no\.?\s*1|number\s*one|\b(?:best|leading|fastest|largest|top-rated)\b|\b\d+(?:\.\d+)?\s*%|\b\d+\s*[kKmM]\+?)/i;
+
+  if (!normalized || normalized.length > 90 || unsupportedClaim.test(normalized)) {
+    return DEFAULT_GUIDE_TAGLINE;
+  }
+
+  return normalized;
+}
+
+function formatContactNumber(value?: string | null): string {
+  const original = (value || "").trim();
+  const digits = original.replace(/\D/g, "");
+
+  if (digits.length === 12 && digits.startsWith("92")) {
+    return `+92 ${digits.slice(2, 5)} ${digits.slice(5, 8)} ${digits.slice(8)}`;
+  }
+
+  if (digits.length === 11 && digits.startsWith("0")) {
+    return `+92 ${digits.slice(1, 4)} ${digits.slice(4, 7)} ${digits.slice(7)}`;
+  }
+
+  return original;
+}
+
+function formatSupportHours(value?: string | null): string {
+  const normalized = (value || "").replace(/\s+/g, " ").trim();
+
+  if (/^Mon-Fri:\s*9AM-6PM\s*PKT$/i.test(normalized)) {
+    return "Monday–Friday, 9:00 AM–6:00 PM PKT";
+  }
+
+  return normalized;
+}
+
 // ── Colors - Valtriox Brand 2026 (Charcoal / Modern Gold / White) ──
 
 const C = {
@@ -261,12 +299,12 @@ function addPageFooter(doc: any, settings: LeadMagnetSettings, W: number, H: num
   doc.font(FONT.regular).fontSize(7).fillColor(C.textLight);
   const leftParts: string[] = [];
   if (settings.companyEmail) leftParts.push(settings.companyEmail);
-  if (settings.companyPhone) leftParts.push(settings.companyPhone);
+  if (settings.companyPhone) leftParts.push(formatContactNumber(settings.companyPhone));
   if (settings.companyWebsite) leftParts.push(settings.companyWebsite);
   doc.text(leftParts.join("  |  "), 44, footerY + 8, { width: W - 88 });
 
   doc.font(FONT.italic).fontSize(7).fillColor(C.textLight);
-  doc.text(`${settings.companyName} | Confidential`, 44, footerY + 20, { width: W / 2 - 44 });
+  doc.text(`${settings.companyName} | Introduction Guide`, 44, footerY + 20, { width: W / 2 - 44 });
 
   doc.font(FONT.regular).fontSize(7).fillColor(C.textLight);
   doc.text(`Page ${pageNum}`, W - 44, footerY + 20, { width: 40, align: "right" });
@@ -299,8 +337,7 @@ export async function generateLeadMagnetPDF(settings: LeadMagnetSettings): Promi
     const CW = W - P * 2;
 
     const companyName = settings.companyName || "Valtriox";
-    const tagline = settings.tagline || "COMMAND YOUR BRAND UNIVERSE";
-    const brandColor = settings.primaryBrandColor || C.gold;
+    const tagline = getGuideTagline(settings.tagline);
 
     let pageNum = 0;
 
@@ -346,8 +383,8 @@ export async function generateLeadMagnetPDF(settings: LeadMagnetSettings): Promi
 
       // Subtitle
       doc.font(FONT.regular).fontSize(11).fillColor(C.textMuted);
-      doc.text("Everything you need to know about our platform,", P, 380, { width: CW, align: "center" });
-      doc.text("what it does, and how it can help your brand grow.", P, 396, { width: CW, align: "center" });
+      doc.text("A clear overview of the platform, its core modules,", P, 380, { width: CW, align: "center" });
+      doc.text("and how it can support day-to-day brand operations.", P, 396, { width: CW, align: "center" });
 
       // Gold divider
       goldLine(doc, W / 2 - 80, 440, W / 2 + 80, 440, 1);
@@ -357,38 +394,13 @@ export async function generateLeadMagnetPDF(settings: LeadMagnetSettings): Promi
       doc.font(FONT.regular).fontSize(9).fillColor(C.textLight);
       doc.text(currentDate, P, 460, { width: CW, align: "center" });
 
-      // Confidential badge
+      // Public document badge
       doc.save();
       doc.lineWidth(0.5);
-      doc.roundedRect(W / 2 - 50, 500, 100, 26, 6).fillAndStroke(C.goldBg3, C.goldBorder);
+      doc.roundedRect(W / 2 - 60, 500, 120, 26, 6).fillAndStroke(C.goldBg3, C.goldBorder);
       doc.font(FONT.bold).fontSize(8).fillColor(C.charcoal);
-      doc.text("CONFIDENTIAL", W / 2 - 50, 508, { width: 100, align: "center" });
+      doc.text("PLATFORM OVERVIEW", W / 2 - 60, 508, { width: 120, align: "center" });
       doc.restore();
-
-      // Contact info at bottom
-      let contactY = H - 110;
-      const contactParts: string[] = [];
-      if (settings.companyEmail) contactParts.push(settings.companyEmail);
-      if (settings.companyPhone) contactParts.push(settings.companyPhone);
-      if (settings.companyWebsite) contactParts.push(settings.companyWebsite);
-      if (contactParts.length > 0) {
-        doc.font(FONT.regular).fontSize(9).fillColor(C.textSecondary);
-        doc.text(contactParts.join("  |  "), P, contactY, { width: CW, align: "center" });
-        contactY += 16;
-      }
-
-      // Social links
-      const socialParts: string[] = [];
-      if (settings.instagramUrl) socialParts.push("Instagram");
-      if (settings.facebookUrl) socialParts.push("Facebook");
-      if (settings.linkedinUrl) socialParts.push("LinkedIn");
-      if (settings.twitterUrl) socialParts.push("X / Twitter");
-      if (settings.discordUrl) socialParts.push("Discord");
-      if (settings.redditUrl) socialParts.push("Reddit");
-      if (socialParts.length > 0) {
-        doc.font(FONT.regular).fontSize(8).fillColor(C.textLight);
-        doc.text(socialParts.join("   |   "), P, contactY, { width: CW, align: "center" });
-      }
 
       addPageFooter(doc, settings, W, H, pageNum);
 
@@ -406,10 +418,10 @@ export async function generateLeadMagnetPDF(settings: LeadMagnetSettings): Promi
       const tocItems = [
         { num: "01", title: "What is " + companyName + "?", desc: "An overview of the platform and its mission" },
         { num: "02", title: "Core Features", desc: "The key capabilities that power your brand operations" },
-        { num: "03", title: "Benefits for Your Brand", desc: "How the platform transforms your business" },
+        { num: "03", title: "Benefits for Your Brand", desc: "Practical ways the platform can support your operations" },
         { num: "04", title: "How It Works", desc: "Getting started in simple steps" },
-        { num: "05", title: "Platform Modules", desc: "Detailed breakdown of each operational module" },
-        { num: "06", title: "What to Expect", desc: "Your onboarding journey with us" },
+        { num: "05", title: "Overview of Key Modules", desc: "A concise view of the main operational areas" },
+        { num: "06", title: "What to Expect", desc: "A flexible onboarding journey shaped by your scope" },
         { num: "07", title: "Contact Information", desc: "Get in touch with our team" },
       ];
 
@@ -452,7 +464,7 @@ export async function generateLeadMagnetPDF(settings: LeadMagnetSettings): Promi
       drawCardBright(doc, P, y, CW, 120);
       doc.font(FONT.regular).fontSize(10).fillColor(C.textSecondary);
       doc.text(
-        `${companyName} is a comprehensive, all-in-one brand management platform designed to help businesses streamline their operations from a single, powerful dashboard. Whether you are running an e-commerce store, managing a multi-brand portfolio, or scaling your team, ${companyName} provides the tools you need to command every aspect of your brand.`,
+        `${companyName} is a unified brand operations platform that brings orders, products, customers, marketing, team coordination, reporting, and day-to-day workflows into one workspace. It is designed for growing businesses that want clearer visibility, more consistent processes, and role-aware access across their teams.`,
         P + 18, y + 16, { width: CW - 36, lineGap: 4 }
       );
       doc.font(FONT.italic).fontSize(9).fillColor(C.goldDim);
@@ -462,20 +474,20 @@ export async function generateLeadMagnetPDF(settings: LeadMagnetSettings): Promi
       );
       y += 136;
 
-      // Key stats
+      // Verified capability pillars (no unsupported usage or performance statistics)
       y = ensureSpace(doc, y, 100, W, H, P);
       const stats = [
-        { label: "Orders Managed", value: "100K+" },
-        { label: "Active Brands", value: "200+" },
-        { label: "Team Members", value: "5,000+" },
-        { label: "Uptime", value: "99.9%" },
+        { label: "Operations", value: "Unified" },
+        { label: "Access", value: "Role-Aware" },
+        { label: "Reporting", value: "Actionable" },
+        { label: "Workflows", value: "Configurable" },
       ];
 
       drawCard(doc, P, y, CW, 80);
       const statW = CW / 4;
       stats.forEach((stat, i) => {
         const sx = P + i * statW;
-        doc.font(FONT.bold).fontSize(22).fillColor(C.gold);
+        doc.font(FONT.bold).fontSize(14).fillColor(C.gold);
         doc.text(stat.value, sx, y + 14, { width: statW, align: "center" });
         doc.font(FONT.regular).fontSize(8).fillColor(C.textMuted);
         doc.text(stat.label, sx, y + 46, { width: statW, align: "center" });
@@ -487,14 +499,14 @@ export async function generateLeadMagnetPDF(settings: LeadMagnetSettings): Promi
       });
       y += 96;
 
-      // Built for Pakistani brands
+      // Platform positioning
       y = ensureSpace(doc, y, 80, W, H, P);
-      drawCard(doc, P, y, CW, 60);
+      drawCard(doc, P, y, CW, 74);
       doc.font(FONT.bold).fontSize(10).fillColor(C.textPrimary);
-      doc.text("Built in Pakistan, for Pakistani Brands", P + 18, y + 12, { width: CW - 36 });
+      doc.text("Designed for Growing Brand Teams", P + 18, y + 12, { width: CW - 36 });
       doc.font(FONT.regular).fontSize(9).fillColor(C.textSecondary);
       doc.text(
-        `${companyName} is proudly developed with the unique needs of Pakistani businesses in mind. From local payment integrations to regional market insights, every feature is designed to help local brands compete and grow in the digital economy.`,
+        `${companyName} brings core operational workflows into one workspace so teams can work with clearer ownership, consistent processes, and shared visibility. Available modules can be configured around the organization’s needs and permissions.`,
         P + 18, y + 30, { width: CW - 36, lineGap: 3 }
       );
 
@@ -512,14 +524,14 @@ export async function generateLeadMagnetPDF(settings: LeadMagnetSettings): Promi
       y += 4;
 
       const features = [
-        { icon: "O", title: "Order Management", desc: "Track, manage, and fulfill orders with real-time status updates, auto-status rules, priority tagging, and comprehensive order lifecycle management." },
-        { icon: "P", title: "Product & Inventory", desc: "Manage your entire product catalog with variants, pricing rules, stock alerts, reviews, and multi-warehouse inventory tracking." },
-        { icon: "T", title: "Team Collaboration", desc: "Built-in team chat, attendance tracking, payroll management, task assignments, and role-based access control for your entire organization." },
-        { icon: "M", title: "Marketing Hub", desc: "Launch campaigns across social media, manage influencers, run flash sales, track SEO performance, and automate email marketing." },
-        { icon: "A", title: "Advanced Analytics", desc: "Comprehensive dashboards with revenue charts, traffic analytics, customer reports, product performance tracking, and sales forecasting." },
-        { icon: "C", title: "Customer Management", desc: "360-degree customer profiles with purchase history, loyalty programs, WhatsApp integration, and automated follow-up sequences." },
-        { icon: "S", title: "Subscription Billing", desc: "Automated recurring billing, payment approvals, invoice generation, plan management, and multi-currency support." },
-        { icon: "W", title: "Warehouse & Shipping", desc: "Multi-warehouse management, packaging optimization, shipping label generation, supplier management, and SLA tracking." },
+        { icon: "O", title: "Order Management", desc: "Track orders through configurable statuses, priority levels, notes, invoices, returns, and fulfillment workflows from one workspace." },
+        { icon: "P", title: "Product & Inventory", desc: "Organize products, categories, variants, pricing rules, stock alerts, reviews, and catalog records." },
+        { icon: "T", title: "Team & Access", desc: "Manage members, roles, permissions, attendance, payroll records, tasks, and team conversations." },
+        { icon: "M", title: "Marketing Workflows", desc: "Plan campaigns, email content, social activity, influencers, coupons, loyalty programs, and promotional sales." },
+        { icon: "A", title: "Analytics & Reports", desc: "Review revenue, sales, product, and customer reporting to understand performance and operational trends." },
+        { icon: "C", title: "Customer Management", desc: "Maintain customer profiles, purchase history, segments, notes, loyalty activity, and communication records." },
+        { icon: "D", title: "Billing & Documents", desc: "Manage plans, payment approvals, invoices, proposals, and branded PDF documents in one coordinated workflow." },
+        { icon: "W", title: "Operations Hub", desc: "Coordinate returns, shipping, packaging, suppliers, warehouse records, support tickets, follow-ups, and SLA tracking." },
       ];
 
       for (const feature of features) {
@@ -538,28 +550,28 @@ export async function generateLeadMagnetPDF(settings: LeadMagnetSettings): Promi
       addPageBg(doc, W, H);
 
       y = P + 10;
-      y = drawSectionHeader(doc, y, "Benefits for Your Brand", "How " + companyName + " transforms your business", W, P);
+      y = drawSectionHeader(doc, y, "Benefits for Your Brand", "Practical ways " + companyName + " can support your operations", W, P);
       y += 4;
 
       const benefits = [
-        { title: "Save 15+ Hours Per Week", desc: "Automate repetitive tasks like order processing, inventory tracking, and team coordination. Our platform eliminates manual work so you can focus on growing your brand." },
-        { title: "Increase Revenue by 30%", desc: "With built-in analytics, marketing automation, and customer retention tools, our clients typically see a significant boost in revenue within the first 3 months of onboarding." },
-        { title: "Reduce Errors by 90%", desc: "Automated status rules, inventory syncing, and order management workflows dramatically reduce human errors that cost your business time and money." },
-        { title: "Scale Without Limits", desc: "Whether you have 5 orders or 50,000, " + companyName + " scales with you. Our infrastructure handles growth seamlessly without performance degradation." },
-        { title: "Make Data-Driven Decisions", desc: "Comprehensive dashboards and reporting tools give you real-time visibility into every aspect of your business, empowering you to make informed decisions quickly." },
-        { title: "Enhance Customer Experience", desc: "Loyalty programs, WhatsApp integration, personalized follow-ups, and 360-degree customer profiles help you deliver exceptional experiences at scale." },
+        { title: "Centralize Daily Operations", desc: "Bring orders, products, customers, marketing, team coordination, and operational records into one shared workspace." },
+        { title: "Reduce Repetitive Work", desc: "Configurable rules, templates, and bulk actions can simplify recurring tasks and reduce duplicated effort." },
+        { title: "Improve Operational Visibility", desc: "Dashboards and reports help teams review activity, spot trends, and make informed decisions with clearer context." },
+        { title: "Support Clear Team Ownership", desc: "Roles, permissions, tasks, and activity records help each team member understand their responsibilities." },
+        { title: "Strengthen Customer Follow-Up", desc: "Customer profiles, history, segments, notes, and loyalty records keep useful context together." },
+        { title: "Grow with Configurable Workflows", desc: "Enable relevant modules and adapt permissions and processes as operational needs change." },
       ];
 
       for (const benefit of benefits) {
         y = ensureSpace(doc, y, 56, W, H, P);
         drawCard(doc, P, y, CW, 50);
 
-        // Green check
+        // Green vector check (avoids font-dependent missing glyphs)
         doc.save();
         doc.circle(P + 18, y + 25, 10).fill(C.greenBg);
         doc.circle(P + 18, y + 25, 10).lineWidth(0.5).strokeColor(C.green).stroke();
-        doc.font(FONT.bold).fontSize(12).fillColor(C.green);
-        doc.text("✓", P + 18 - 4, y + 25 - 6, { width: 8, align: "center" });
+        doc.moveTo(P + 13, y + 25).lineTo(P + 17, y + 29).lineTo(P + 24, y + 21);
+        doc.lineWidth(1.8).lineCap("round").lineJoin("round").strokeColor(C.green).stroke();
         doc.restore();
 
         doc.font(FONT.bold).fontSize(10).fillColor(C.textPrimary);
@@ -586,23 +598,23 @@ export async function generateLeadMagnetPDF(settings: LeadMagnetSettings): Promi
       const steps = [
         {
           num: "1",
-          title: "Schedule Your Free Consultation",
-          desc: `Fill out our contact form with your preferred consultation method (video call, phone call, or in-person meeting), select your availability, and pick a convenient date and time slot. Our team will confirm your consultation within 24 hours.`,
+          title: "Request a Consultation",
+          desc: `Use the contact form to share your goals, preferred contact method, and an available date and time. Our team will review the request and follow up with the next steps.`,
         },
         {
           num: "2",
-          title: "Personalized Demo & Strategy Session",
-          desc: `During your consultation, we will conduct a personalized demo of ${companyName} tailored to your specific industry and business needs. We will analyze your current operations and identify key areas for improvement.`,
+          title: "Platform Walkthrough & Needs Review",
+          desc: `Explore the ${companyName} modules that are most relevant to your team, discuss current workflows, and identify the operational priorities the setup should address.`,
         },
         {
           num: "3",
-          title: "Custom Proposal & Implementation Plan",
-          desc: `Based on the consultation, we will prepare a detailed proposal with a customized implementation plan, clear pricing, and timeline. You will receive a professional proposal document outlining the complete scope of work.`,
+          title: "Recommended Setup Plan",
+          desc: `Following the review, the proposed scope can outline relevant modules, configuration priorities, pricing, and an implementation timeline based on your requirements.`,
         },
         {
           num: "4",
-          title: "Onboard Your Team & Launch",
-          desc: `Once approved, our dedicated onboarding specialist will set up your account, configure workflows, and train your team. You will be up and running with ${companyName} within weeks, with ongoing support every step of the way.`,
+          title: "Configure, Review & Launch",
+          desc: `After approval, account settings, permissions, and agreed workflows are configured. Your team can review the setup before launch, with support provided according to the agreed plan.`,
         },
       ];
 
@@ -636,20 +648,20 @@ export async function generateLeadMagnetPDF(settings: LeadMagnetSettings): Promi
       addPageBg(doc, W, H);
 
       y = P + 10;
-      y = drawSectionHeader(doc, y, "Platform Modules", "Detailed breakdown of each operational module", W, P);
+      y = drawSectionHeader(doc, y, "Overview of Key Modules", "A concise view of the main operational areas", W, P);
       y += 4;
 
       const modules = [
-        { name: "Dashboard", desc: "Real-time overview with KPI cards, revenue charts, daily summary, activity feed, and quick actions." },
-        { name: "Orders", desc: "Full order lifecycle management with auto-status, priority levels, bulk actions, and invoice generation." },
-        { name: "Products & Catalog", desc: "Product management with variants, pricing rules, stock alerts, reviews, and catalog organization." },
-        { name: "Customers", desc: "Customer profiles, loyalty programs, WhatsApp integration, and automated engagement tracking." },
-        { name: "Marketing", desc: "Campaign management, influencer tracking, flash sales, SEO tools, social media, and email marketing." },
-        { name: "Team", desc: "Attendance, payroll, task management, team chat, and role-based access control." },
-        { name: "Finance", desc: "Subscription billing, payment approvals, invoices, expense tracking, and financial reports." },
-        { name: "Operations", desc: "Warehouse management, shipping, packaging, supplier tracking, tickets, and SLA engine." },
-        { name: "Analytics", desc: "Revenue analytics, traffic analytics, customer reports, product reports, and sales reports." },
-        { name: "Events", desc: "Event management with regional themes, ticket sales, and promotional event creation." },
+        { name: "Dashboard", desc: "KPI cards, revenue charts, daily summaries, activity, and quick actions." },
+        { name: "Orders", desc: "Statuses, priorities, bulk actions, invoices, fulfillment, and returns." },
+        { name: "Products & Catalog", desc: "Products, categories, variants, pricing rules, alerts, and reviews." },
+        { name: "Customers", desc: "Profiles, history, segments, notes, loyalty activity, and communication records." },
+        { name: "Marketing", desc: "Campaigns, email, social activity, influencers, coupons, and promotional sales." },
+        { name: "Team & Access", desc: "Members, roles, permissions, attendance, payroll records, tasks, and chat." },
+        { name: "Finance & Documents", desc: "Plans, approvals, invoices, expenses, proposals, and reports." },
+        { name: "Operations", desc: "Returns, warehouse, shipping, packaging, suppliers, tickets, and SLA tracking." },
+        { name: "Analytics & Reports", desc: "Revenue, sales, customer, and product reporting." },
+        { name: "Events", desc: "Event records, themes, schedules, settings, and promotional workflows." },
       ];
 
       // Two column layout
@@ -687,18 +699,18 @@ export async function generateLeadMagnetPDF(settings: LeadMagnetSettings): Promi
       addPageBg(doc, W, H);
 
       y = P + 10;
-      y = drawSectionHeader(doc, y, "What to Expect", "Your onboarding journey with us", W, P);
+      y = drawSectionHeader(doc, y, "What to Expect", "A flexible onboarding journey shaped by your scope", W, P);
       y += 4;
 
       // Timeline card
-      drawCardBright(doc, P, y, CW, 260);
+      drawCardBright(doc, P, y, CW, 276);
 
       const timeline = [
-        { phase: "Week 1", title: "Discovery & Setup", desc: "We learn about your brand, configure your platform, and set up core modules based on your requirements." },
-        { phase: "Week 2", title: "Team Onboarding", desc: "Your team gets access, we conduct training sessions, and configure roles and permissions for each member." },
-        { phase: "Week 3", title: "Integration & Testing", desc: "We integrate your existing tools, test all workflows, and ensure everything runs smoothly before going live." },
-        { phase: "Week 4", title: "Go Live & Optimization", desc: "Your platform goes live! We monitor performance, optimize settings, and provide ongoing support." },
-        { phase: "Ongoing", title: "Growth & Support", desc: `Continuous support with regular check-ins, feature updates, and strategic guidance to help your brand grow with ${companyName}.` },
+        { phase: "Discovery", title: "Goals & Priorities", desc: "Review your current processes, team structure, and the modules most relevant to your operations." },
+        { phase: "Configuration", title: "Workspace Setup", desc: "Configure agreed settings, branding, modules, and workflows around the approved scope." },
+        { phase: "Team Setup", title: "Access & Guidance", desc: "Create team access, apply roles and permissions, and introduce the workflows each role will use." },
+        { phase: "Review", title: "Workflow Check & Launch", desc: "Review the configured experience, address agreed adjustments, and confirm launch readiness." },
+        { phase: "Ongoing", title: "Support & Improvement", desc: "Continue refining the workspace as business needs, processes, and available features evolve." },
       ];
 
       let ty = y + 16;
@@ -720,29 +732,37 @@ export async function generateLeadMagnetPDF(settings: LeadMagnetSettings): Promi
         doc.font(FONT.regular).fontSize(8.5).fillColor(C.textSecondary);
         doc.text(item.desc, P + badgeW + 30, ty + 16, { width: CW - badgeW - 48, lineGap: 2 });
 
-        ty += 46;
+        ty += 45;
       }
 
-      y += 276;
+      doc.font(FONT.italic).fontSize(7.5).fillColor(C.textMuted);
+      doc.text(
+        "Timelines vary based on scope, integrations, data readiness, and configuration requirements.",
+        P + 18,
+        y + 250,
+        { width: CW - 36, align: "center" },
+      );
+
+      y += 292;
 
       // Expectation highlights
-      y = ensureSpace(doc, y, 100, W, H, P);
-      drawCard(doc, P, y, CW, 80);
+      y = ensureSpace(doc, y, 116, W, H, P);
+      drawCard(doc, P, y, CW, 100);
       doc.font(FONT.bold).fontSize(11).fillColor(C.textPrimary);
-      doc.text("What Makes Us Different", P + 18, y + 14, { width: CW - 36 });
+      doc.text("What You Can Expect", P + 18, y + 14, { width: CW - 36 });
 
       const diffs = [
-        "Dedicated onboarding specialist assigned to your brand",
-        "Unlimited support during your first 30 days",
-        "Custom configuration tailored to your business needs",
-        "Regular platform updates with new features every month",
+        "A setup plan based on agreed priorities and requirements",
+        "Role-aware access configured for the people using the workspace",
+        "A workflow review before the agreed launch point",
+        "Support and future adjustments according to the selected plan",
       ];
       let diffY = y + 34;
       for (const diff of diffs) {
         doc.font(FONT.regular).fontSize(8.5).fillColor(C.textSecondary);
         doc.circle(P + 26, diffY + 4, 2.5).fill(C.gold);
         doc.text(diff, P + 36, diffY - 2, { width: CW - 54 });
-        diffY += 14;
+        diffY += 15;
       }
 
       addPageFooter(doc, settings, W, H, pageNum);
@@ -758,65 +778,35 @@ export async function generateLeadMagnetPDF(settings: LeadMagnetSettings): Promi
       y = drawSectionHeader(doc, y, "Contact Information", "We would love to hear from you", W, P);
       y += 4;
 
-      // Main contact card
-      drawCardBright(doc, P, y, CW, 180);
+      const contactItems = [
+        { label: "EMAIL", value: settings.companyEmail || "N/A", color: C.gold },
+        { label: "PHONE", value: formatContactNumber(settings.companyPhone), color: C.textPrimary },
+        { label: "WHATSAPP", value: formatContactNumber(settings.whatsappNumber), color: C.green },
+        { label: "WEBSITE", value: settings.companyWebsite || "", color: C.gold },
+        { label: "ADDRESS", value: settings.companyAddress || "", color: C.textPrimary },
+        { label: "SUPPORT HOURS", value: formatSupportHours(settings.supportHours), color: C.textSecondary },
+      ].filter((item) => item.value);
 
-      let cy = y + 16;
-      // Email
-      doc.font(FONT.bold).fontSize(8).fillColor(C.textMuted);
-      doc.text("EMAIL", P + 20, cy);
-      doc.font(FONT.regular).fontSize(12).fillColor(C.gold);
-      doc.text(settings.companyEmail || "N/A", P + 20, cy + 12);
-      cy += 34;
+      const contactRows = Math.ceil(contactItems.length / 2);
+      const contactCardH = 20 + contactRows * 54;
+      const contactColW = CW / 2;
+      drawCardBright(doc, P, y, CW, contactCardH);
 
-      // Phone
-      if (settings.companyPhone) {
+      contactItems.forEach((item, index) => {
+        const col = index % 2;
+        const row = Math.floor(index / 2);
+        const cx = P + col * contactColW + 20;
+        const cy = y + 16 + row * 54;
+
         doc.font(FONT.bold).fontSize(8).fillColor(C.textMuted);
-        doc.text("PHONE", P + 20, cy);
-        doc.font(FONT.regular).fontSize(12).fillColor(C.textPrimary);
-        doc.text(settings.companyPhone, P + 20, cy + 12);
-        cy += 34;
-      }
+        doc.text(item.label, cx, cy, { width: contactColW - 40 });
+        doc.font(FONT.regular).fontSize(10).fillColor(item.color);
+        doc.text(item.value, cx, cy + 13, { width: contactColW - 40, lineGap: 1 });
+      });
 
-      // WhatsApp
-      if (settings.whatsappNumber) {
-        doc.font(FONT.bold).fontSize(8).fillColor(C.textMuted);
-        doc.text("WHATSAPP", P + 20, cy);
-        doc.font(FONT.regular).fontSize(12).fillColor(C.green);
-        doc.text(settings.whatsappNumber, P + 20, cy + 12);
-        cy += 34;
-      }
-
-      // Website
-      if (settings.companyWebsite) {
-        doc.font(FONT.bold).fontSize(8).fillColor(C.textMuted);
-        doc.text("WEBSITE", P + 20, cy);
-        doc.font(FONT.regular).fontSize(12).fillColor(C.gold);
-        doc.text(settings.companyWebsite, P + 20, cy + 12);
-        cy += 34;
-      }
-
-      // Address
-      if (settings.companyAddress) {
-        doc.font(FONT.bold).fontSize(8).fillColor(C.textMuted);
-        doc.text("ADDRESS", P + 20, cy);
-        doc.font(FONT.regular).fontSize(10).fillColor(C.textPrimary);
-        doc.text(settings.companyAddress, P + 20, cy + 12, { width: CW - 40 });
-        cy += 34;
-      }
-
-      // Support hours
-      if (settings.supportHours) {
-        doc.font(FONT.bold).fontSize(8).fillColor(C.textMuted);
-        doc.text("SUPPORT HOURS", P + 20, cy);
-        doc.font(FONT.regular).fontSize(10).fillColor(C.textSecondary);
-        doc.text(settings.supportHours, P + 20, cy + 12);
-      }
-
-      y += 196;
+      y += contactCardH + 16;
 
       // Social media section
-      y = ensureSpace(doc, y, 80, W, H, P);
       const socialLinks = [
         { label: "Instagram", url: settings.instagramUrl },
         { label: "Facebook", url: settings.facebookUrl },
@@ -829,25 +819,34 @@ export async function generateLeadMagnetPDF(settings: LeadMagnetSettings): Promi
       ].filter((s) => s.url);
 
       if (socialLinks.length > 0) {
-        drawCard(doc, P, y, CW, 30 + Math.ceil(socialLinks.length / 4) * 28);
+        const socialRows = Math.ceil(socialLinks.length / 4);
+        const socialCardH = 38 + socialRows * 32;
+        y = ensureSpace(doc, y, socialCardH + 12, W, H, P);
+        drawCard(doc, P, y, CW, socialCardH);
 
         doc.font(FONT.bold).fontSize(9).fillColor(C.textPrimary);
         doc.text("Follow Us on Social Media", P + 18, y + 10, { width: CW - 36 });
 
-        let sy = y + 30;
+        const sy = y + 30;
         const socialColW = (CW - 36) / 4;
 
         for (let i = 0; i < socialLinks.length; i++) {
           const col = i % 4;
           const row = Math.floor(i / 4);
           const sx = P + 18 + col * socialColW;
-          const sRowY = sy + row * 28;
+          const sRowY = sy + row * 32;
 
           doc.font(FONT.bold).fontSize(8).fillColor(C.gold);
           doc.text(socialLinks[i].label, sx, sRowY);
-          doc.font(FONT.regular).fontSize(7).fillColor(C.textLight);
-          doc.text(socialLinks[i].url!, sx, sRowY + 12, { width: socialColW - 4, lineBreak: true });
+          doc.font(FONT.regular).fontSize(7.5).fillColor(C.goldDim);
+          doc.text("Visit profile", sx, sRowY + 12, {
+            width: socialColW - 4,
+            link: socialLinks[i].url!,
+            underline: true,
+          });
         }
+
+        y += socialCardH + 12;
       }
 
       // CTA at bottom
@@ -855,7 +854,7 @@ export async function generateLeadMagnetPDF(settings: LeadMagnetSettings): Promi
       doc.save();
       doc.roundedRect(W / 2 - 140, ctaY, 280, 44, 10).fill(C.gold);
       doc.font(FONT.bold).fontSize(12).fillColor("#ffffff");
-      doc.text("Ready to Transform Your Brand?", W / 2 - 140, ctaY + 10, { width: 280, align: "center" });
+      doc.text("Ready to Organize Your Brand Operations?", W / 2 - 140, ctaY + 10, { width: 280, align: "center" });
       doc.font(FONT.regular).fontSize(9).fillColor("#ffffff");
       doc.text(settings.companyWebsite || "Visit our website to get started", W / 2 - 140, ctaY + 28, { width: 280, align: "center" });
       doc.restore();

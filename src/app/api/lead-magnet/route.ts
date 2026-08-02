@@ -62,7 +62,7 @@ export const GET = withRateLimit(async () => {
       redditUrl: settings?.redditUrl || null,
       youtubeUrl: settings?.youtubeUrl || null,
       tiktokUrl: settings?.tiktokUrl || null,
-      supportHours: settings?.supportHours || "Mon-Fri: 9AM-6PM PKT",
+      supportHours: settings?.supportHours || "Monday–Friday, 9:00 AM–6:00 PM PKT",
       primaryBrandColor: settings?.primaryBrandColor || "#D4A73A",
     });
 
@@ -146,7 +146,7 @@ export const POST = withRateLimit(withAuth(async (_req: NextRequest) => {
       redditUrl: settings?.redditUrl || null,
       youtubeUrl: settings?.youtubeUrl || null,
       tiktokUrl: settings?.tiktokUrl || null,
-      supportHours: settings?.supportHours || "Mon-Fri: 9AM-6PM PKT",
+      supportHours: settings?.supportHours || "Monday–Friday, 9:00 AM–6:00 PM PKT",
       primaryBrandColor: settings?.primaryBrandColor || "#D4A73A",
     });
 

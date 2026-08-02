@@ -140,7 +140,7 @@ export function DownloadsPage() {
   const handleDownloadLeadMagnet = () => {
     try {
       const link = document.createElement("a");
-      link.href = "/downloads/valtriox-introduction.pdf";
+      link.href = "/api/lead-magnet";
       link.download = "valtriox-platform-guide.pdf";
       document.body.appendChild(link);
       link.click();
