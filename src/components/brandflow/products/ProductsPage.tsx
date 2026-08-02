@@ -488,7 +488,7 @@ export function ProductsPage({
   if (!orgId) return null;
 
   // ── Loading Skeleton ──
-  if (loading) {
+  if (loading && !openCreateOnMount) {
     return (
       <div className="space-y-4 sm:space-y-6 animate-pulse">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
@@ -518,7 +518,7 @@ export function ProductsPage({
   }
 
   // ── Error State ──
-  if (error) {
+  if (error && !openCreateOnMount) {
     return (
       <div className="space-y-4">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">

@@ -50,6 +50,7 @@ vi.mock("@/components/brandflow/products/ProductModal", () => ({
 }));
 
 import { ProductsPage } from "@/components/brandflow/products/ProductsPage";
+import { CatalogPage } from "@/components/brandflow/products/CatalogPage";
 
 describe("product section navigation", () => {
   let container: HTMLDivElement;
@@ -75,7 +76,6 @@ describe("product section navigation", () => {
     await act(async () => {
       root.render(<ProductsPage openCreateOnMount />);
     });
-    await act(async () => new Promise((done) => window.setTimeout(done, 10)));
 
     const modal = container.querySelector<HTMLElement>("[data-product-modal]");
     expect(modal?.dataset.open).toBe("true");
@@ -86,13 +86,25 @@ describe("product section navigation", () => {
     await act(async () => {
       root.render(<ProductsPage openCreateOnMount />);
     });
-    await act(async () => new Promise((done) => window.setTimeout(done, 10)));
 
     await act(async () => {
       container.querySelector<HTMLButtonElement>("[data-product-modal] button")?.click();
     });
 
     expect(navigationMocks.setActiveSection).toHaveBeenCalledWith("products");
+  });
+
+  it("sends the Catalog empty-state button to the Add Product section", async () => {
+    await act(async () => {
+      root.render(<CatalogPage />);
+    });
+
+    const addButton = Array.from(container.querySelectorAll("button"))
+      .find((button) => button.textContent?.includes("Add Product"));
+
+    expect(addButton).toBeTruthy();
+    await act(async () => addButton?.click());
+    expect(navigationMocks.setActiveSection).toHaveBeenCalledWith("add-product");
   });
 
   it("keeps Catalog distinct and maps product subsections to their intended views", () => {
