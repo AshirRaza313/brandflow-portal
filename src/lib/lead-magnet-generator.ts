@@ -94,17 +94,18 @@ const C = {
   slate200: "#E2E8F0",
 };
 
-// ── Brand Logo Helpers (founder-uploaded icon, SQUARE golden border) ──
+// ── Brand Logo Helpers (complete founder logo, aspect-matched golden frame) ──
 // Per founder directive, this logo is the SOLE brand mark on every PDF.
 
 interface BrandLogoOptions {
+  boxHeight?: number;
   bgColor?: string;
   borderColor?: string;
   borderWidth?: number;
   padding?: number;
 }
 
-function drawBrandLogoSquare(
+function drawBrandLogoFrame(
   doc: any,
   x: number,
   y: number,
@@ -115,34 +116,36 @@ function drawBrandLogoSquare(
   const borderColor = opts?.borderColor ?? C.gold;
   const borderWidth = opts?.borderWidth ?? 1.2;
   const padding = opts?.padding ?? Math.max(2, boxSize * 0.08);
+  const boxHeight = opts?.boxHeight ?? boxSize;
   const buffer = getBrandLogoBuffer();
 
   doc.save();
-  doc.rect(x, y, boxSize, boxSize).fill(bgColor);
-  doc.rect(x, y, boxSize, boxSize).lineWidth(borderWidth).strokeColor(borderColor).stroke();
+  doc.rect(x, y, boxSize, boxHeight).fill(bgColor);
+  doc.rect(x, y, boxSize, boxHeight).lineWidth(borderWidth).strokeColor(borderColor).stroke();
 
   if (buffer) {
     try {
-      const innerSize = boxSize - padding * 2;
-      let drawW = innerSize;
-      let drawH = innerSize * BRAND_LOGO_ASPECT;
-      if (drawH > innerSize) {
-        drawH = innerSize;
-        drawW = innerSize / BRAND_LOGO_ASPECT;
+      const innerWidth = Math.max(0, boxSize - padding * 2);
+      const innerHeight = Math.max(0, boxHeight - padding * 2);
+      let drawW = innerWidth;
+      let drawH = innerWidth * BRAND_LOGO_ASPECT;
+      if (drawH > innerHeight) {
+        drawH = innerHeight;
+        drawW = innerHeight / BRAND_LOGO_ASPECT;
       }
       const imgX = x + (boxSize - drawW) / 2;
-      const imgY = y + (boxSize - drawH) / 2;
+      const imgY = y + (boxHeight - drawH) / 2;
       doc.image(buffer, imgX, imgY, { width: drawW, height: drawH });
     } catch {}
   } else {
     doc.fontSize(boxSize * 0.35).fillColor("#ffffff");
-    doc.font(FONT.bold).text("VTX", x, y + boxSize * 0.3, { width: boxSize, align: "center" });
+    doc.font(FONT.bold).text("VTX", x, y + boxHeight * 0.3, { width: boxSize, align: "center" });
   }
   doc.restore();
   return boxSize;
 }
 
-function drawBrandLogoSquareCentered(
+function drawBrandLogoFrameCentered(
   doc: any,
   centerX: number,
   y: number,
@@ -150,8 +153,8 @@ function drawBrandLogoSquareCentered(
   opts?: BrandLogoOptions,
 ): number {
   const x = centerX - boxSize / 2;
-  drawBrandLogoSquare(doc, x, y, boxSize, opts);
-  return y + boxSize;
+  drawBrandLogoFrame(doc, x, y, boxSize, opts);
+  return y + (opts?.boxHeight ?? boxSize);
 }
 
 // ── Helpers ──
@@ -320,8 +323,9 @@ export async function generateLeadMagnetPDF(settings: LeadMagnetSettings): Promi
       doc.rect(0, 0, W, H * 0.6).fill(coverGrad);
       doc.restore();
 
-      // Logo — Phase 15 (rev 3): founder brand logo, SQUARE golden border, padding=0.
-      drawBrandLogoSquareCentered(doc, W / 2, 120, 80, {
+      // Complete founder logo in an aspect-matched golden frame.
+      drawBrandLogoFrameCentered(doc, W / 2, 120, 80, {
+        boxHeight: 80 * BRAND_LOGO_ASPECT,
         bgColor: C.goldBg,
         borderColor: C.gold,
         borderWidth: 1.2,

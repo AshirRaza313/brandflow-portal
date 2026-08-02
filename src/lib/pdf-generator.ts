@@ -265,19 +265,23 @@ function parseBase64DataUri(dataUri: string): { mimeType: string; base64: string
 
 // Helper: render default Valtriox logo and return right X position
 async function renderDefaultLogo(doc: PDFKit.PDFDocument, x: number, y: number): Promise<number> {
-  // Phase 15 (rev 3): ALWAYS use the founder-uploaded brand logo with a
-  // SQUARE golden border, padding=0 (no white space inside border).
-  drawBrandLogoSquare(doc, x, y, 44, { bgColor: C.goldBg2, padding: 0 });
+  // Always use the complete founder-uploaded logo in an aspect-matched frame.
+  drawBrandLogoFrame(doc, x, y, 44, {
+    boxHeight: 44 * BRAND_LOGO_ASPECT,
+    bgColor: C.goldBg2,
+    padding: 0,
+  });
   return x + 56;
 }
 
-// ── Brand Logo Helpers (founder-uploaded icon, SQUARE golden border) ──
+// ── Brand Logo Helpers (complete founder logo, aspect-matched golden frame) ──
 // Per founder directive, this logo is the SOLE brand mark on every PDF
 // (invoices, reports, proposals, lead magnets) regardless of which org
-// the document belongs to. The border is a SOLID SQUARE (not rounded)
-// in Modern Gold #D4A73A.
+// the document belongs to. The border is solid (not rounded) in Modern Gold.
 
 interface BrandLogoOptions {
+  /** Optional frame height. Defaults to boxSize for legacy square layouts. */
+  boxHeight?: number;
   /** Background fill inside the border. Defaults to C.goldBg2 (cream). */
   bgColor?: string;
   /** Border color. Defaults to C.gold (#D4A73A — Modern Gold). */
@@ -289,10 +293,10 @@ interface BrandLogoOptions {
 }
 
 /**
- * Render the brand logo with a SQUARE golden border at the given top-left corner.
+ * Render the brand logo with a golden frame at the given top-left corner.
  * @returns The width consumed (boxSize) for layout advancement.
  */
-function drawBrandLogoSquare(
+function drawBrandLogoFrame(
   doc: PDFKit.PDFDocument,
   x: number,
   y: number,
@@ -303,46 +307,46 @@ function drawBrandLogoSquare(
   const borderColor = opts?.borderColor ?? C.gold;
   const borderWidth = opts?.borderWidth ?? 1.2;
   const padding = opts?.padding ?? Math.max(2, boxSize * 0.08);
+  const boxHeight = opts?.boxHeight ?? boxSize;
   const buffer = getBrandLogoBuffer();
 
   doc.save();
-  // Square background fill
-  doc.rect(x, y, boxSize, boxSize).fill(bgColor);
-  // Square golden border (drawn on top of background, single op = no dangling path)
-  doc.rect(x, y, boxSize, boxSize).lineWidth(borderWidth).strokeColor(borderColor).stroke();
+  // Match the frame to the complete logo's aspect ratio so no empty bands appear.
+  doc.rect(x, y, boxSize, boxHeight).fill(bgColor);
+  doc.rect(x, y, boxSize, boxHeight).lineWidth(borderWidth).strokeColor(borderColor).stroke();
 
   if (buffer) {
     try {
-      // Center the logo inside the box, preserving aspect ratio.
-      // Source aspect ratio h/w = 282/235 ≈ 1.2 (slightly taller than wide).
-      const innerSize = boxSize - padding * 2;
-      let drawW = innerSize;
-      let drawH = innerSize * BRAND_LOGO_ASPECT;
-      if (drawH > innerSize) {
-        drawH = innerSize;
-        drawW = innerSize / BRAND_LOGO_ASPECT;
+      // Center the complete 1209x999 logo inside the frame without distortion.
+      const innerWidth = Math.max(0, boxSize - padding * 2);
+      const innerHeight = Math.max(0, boxHeight - padding * 2);
+      let drawW = innerWidth;
+      let drawH = innerWidth * BRAND_LOGO_ASPECT;
+      if (drawH > innerHeight) {
+        drawH = innerHeight;
+        drawW = innerHeight / BRAND_LOGO_ASPECT;
       }
       const imgX = x + (boxSize - drawW) / 2;
-      const imgY = y + (boxSize - drawH) / 2;
+      const imgY = y + (boxHeight - drawH) / 2;
       doc.image(buffer, imgX, imgY, { width: drawW, height: drawH });
     } catch {
       // border + bg already drawn; ignore image errors
     }
   } else {
-    // Fallback: gold square with VTX text
+    // Fallback: framed VTX text.
     doc.fontSize(boxSize * 0.35).fillColor("#ffffff");
-    doc.font(FONT.bold).text("VTX", x, y + boxSize * 0.3, { width: boxSize, align: "center" });
+    doc.font(FONT.bold).text("VTX", x, y + boxHeight * 0.3, { width: boxSize, align: "center" });
   }
   doc.restore();
   return boxSize;
 }
 
 /**
- * Render the brand logo centered horizontally with a SQUARE golden border.
+ * Render the brand logo centered horizontally with a golden frame.
  * Used on cover pages (report / proposal / lead magnet).
  * @returns The Y position just below the logo (for layout advancement).
  */
-function drawBrandLogoSquareCentered(
+function drawBrandLogoFrameCentered(
   doc: PDFKit.PDFDocument,
   centerX: number,
   y: number,
@@ -350,8 +354,8 @@ function drawBrandLogoSquareCentered(
   opts?: BrandLogoOptions,
 ): number {
   const x = centerX - boxSize / 2;
-  drawBrandLogoSquare(doc, x, y, boxSize, opts);
-  return y + boxSize;
+  drawBrandLogoFrame(doc, x, y, boxSize, opts);
+  return y + (opts?.boxHeight ?? boxSize);
 }
 
 // ── NEW: Empty Data Check ──
@@ -803,8 +807,9 @@ export async function generateInvoicePDF(invoice: InvoiceData): Promise<Buffer> 
       let headerRightStartX = P + 200;
 
       // LEFT: Logo + Company Name
-      // Phase 15 (rev 3): padding=0 so logo fills the square edge-to-edge.
-      drawBrandLogoSquare(doc, P, y, 44, {
+      // Complete logo fills its aspect-matched frame edge-to-edge.
+      drawBrandLogoFrame(doc, P, y, 44, {
+        boxHeight: 44 * BRAND_LOGO_ASPECT,
         bgColor: C.goldBg2,
         borderColor: C.gold,
         borderWidth: 1.2,
@@ -1253,11 +1258,12 @@ export async function generateCustomInvoicePDF(invoice: InvoiceData): Promise<Bu
       doc.restore();
 
       // ── LOGO + BRAND NAME (white text on charcoal) ──
-      // Phase 15 (rev 3): padding=0 so logo fills the square edge-to-edge.
+      // Complete logo fills its aspect-matched frame edge-to-edge.
       let y = 36;
       let headerRightStartX = P + 60;
 
-      drawBrandLogoSquare(doc, P, y, 48, {
+      drawBrandLogoFrame(doc, P, y, 48, {
+        boxHeight: 48 * BRAND_LOGO_ASPECT,
         bgColor: "#FFFFFF", // white card so charcoal logo shows on dark header
         borderColor: C.gold,
         borderWidth: 1.4,
@@ -1652,12 +1658,12 @@ export async function generateReportPDF(report: ReportData): Promise<Buffer> {
       doc.rect(-4, -4, 8, 8).fill(accentColor);
       doc.restore();
 
-      // ── LOGO (founder brand icon, large, SQUARE golden border) ──
-      // Phase 15 (rev 3): Founder directive — remove the white space inside
-      // the golden border. Logo now fills the square edge-to-edge (padding=0).
+      // ── LOGO (complete founder brand mark, aspect-matched golden frame) ──
+      // The frame follows the embedded logo ratio so it fills edge-to-edge.
       let logoCenterY = topDecoY + 24;
       const coverLogoSize = 96;
-      logoCenterY = drawBrandLogoSquareCentered(doc, W / 2, logoCenterY, coverLogoSize, {
+      logoCenterY = drawBrandLogoFrameCentered(doc, W / 2, logoCenterY, coverLogoSize, {
+        boxHeight: coverLogoSize * BRAND_LOGO_ASPECT,
         bgColor: C.goldBg2,
         borderColor: C.gold,
         borderWidth: 1.5,
@@ -1805,9 +1811,10 @@ export async function generateReportPDF(report: ReportData): Promise<Buffer> {
       let tableY = P + 6;
 
       // ── CONTENT HEADER ──
-      // Phase 15 (rev 3): padding=0 so logo fills the square edge-to-edge.
+      // Complete logo fills its aspect-matched frame edge-to-edge.
       let contentLogoRightX = P;
-      drawBrandLogoSquare(doc, P, tableY, 32, {
+      drawBrandLogoFrame(doc, P, tableY, 32, {
+        boxHeight: 32 * BRAND_LOGO_ASPECT,
         bgColor: C.goldBg2,
         borderColor: C.gold,
         borderWidth: 0.8,
