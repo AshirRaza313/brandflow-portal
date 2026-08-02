@@ -475,9 +475,9 @@ export default function Home() {
       case "calendar": return <SafeRender name="Calendar"><CalendarPage /></SafeRender>;
 
       // ── PRODUCTS (always available) ──
-      case "add-product": return <SafeRender name="Catalog"><CatalogPage /></SafeRender>;
-      case "categories": return <SafeRender name="Products"><ProductsPage /></SafeRender>;
-      case "inventory": return <SafeRender name="Products"><ProductsPage /></SafeRender>;
+      case "add-product": return <SafeRender name="Add Product"><ProductsPage initialTab="all" openCreateOnMount /></SafeRender>;
+      case "categories": return <SafeRender name="Categories"><ProductsPage initialTab="categories" /></SafeRender>;
+      case "inventory": return <SafeRender name="Inventory"><ProductsPage initialTab="inventory" /></SafeRender>;
       case "pricing-rules": return <SafeRender name="Pricing Rules"><PricingRulesPage /></SafeRender>;
       case "variants": return <SafeRender name="Variants"><VariantsPage /></SafeRender>;
       case "catalog": return <SafeRender name="Catalog"><CatalogPage /></SafeRender>;

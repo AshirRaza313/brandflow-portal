@@ -136,6 +136,8 @@ describe("product category assignment invariant", () => {
       where: { id: "product-1" },
       data: expect.objectContaining({ category: "Electronics", costPrice: null }),
     });
+    const updateData = dbMocks.product.update.mock.calls[0]?.[0]?.data;
+    expect(updateData).not.toHaveProperty("status");
   });
 
   it("rejects stale category assignment from an already-open edit dialog", async () => {

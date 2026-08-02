@@ -93,7 +93,11 @@ export const createProductSchema = z.object({
   imageUrl: url,
 });
 
-export const updateProductSchema = createProductSchema.partial();
+export const updateProductSchema = createProductSchema.partial().extend({
+  // A PATCH that omits status must preserve the stored value. Replacing the
+  // create-time default avoids silently reactivating draft/archived products.
+  status: z.enum(["active", "draft", "archived"]).optional(),
+});
 
 // ── Order schemas ────────────────────────────────────────────────────────────
 

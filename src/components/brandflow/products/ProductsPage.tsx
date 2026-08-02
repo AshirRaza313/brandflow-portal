@@ -40,6 +40,13 @@ import { ConfirmDialog } from "@/components/brandflow/shared/ConfirmDialog";
 import { ProductModal } from "./ProductModal";
 import { StockAlertsPanel } from "./StockAlertsPanel";
 
+type ProductsTab = "all" | "categories" | "inventory" | "gallery";
+
+interface ProductsPageProps {
+  initialTab?: ProductsTab;
+  openCreateOnMount?: boolean;
+}
+
 // ── Types ────────────────────────────────────────────────────────────────────
 
 interface Product {
@@ -107,8 +114,11 @@ async function getApiError(response: Response, fallback: string): Promise<string
 
 import { useTranslation } from "@/lib/i18n";
 
-export function ProductsPage() {
-  const { organization, appTheme } = useValtrioxStore();
+export function ProductsPage({
+  initialTab = "all",
+  openCreateOnMount = false,
+}: ProductsPageProps = {}) {
+  const { organization, appTheme, setActiveSection } = useValtrioxStore();
   const t = useTranslation();
   const isGold = appTheme === "premium-dark";
   const isDark = appTheme === "dark" || isGold;
@@ -123,7 +133,7 @@ export function ProductsPage() {
 
   const [search, setSearch] = useState("");
   const [viewMode, setViewMode] = useState<"grid" | "table">("grid");
-  const [activeTab, setActiveTab] = useState("all");
+  const [activeTab, setActiveTab] = useState<ProductsTab>(initialTab);
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [categoryFilter, setCategoryFilter] = useState<string>("all");
 
@@ -131,7 +141,7 @@ export function ProductsPage() {
   const [currentPage, setCurrentPage] = useState(1);
 
   // Modal state
-  const [productModalOpen, setProductModalOpen] = useState(false);
+  const [productModalOpen, setProductModalOpen] = useState(openCreateOnMount);
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
 
   // Delete confirmation
@@ -311,8 +321,20 @@ export function ProductsPage() {
   const handleSaved = () => {
     setProductModalOpen(false);
     setEditingProduct(null);
+    if (openCreateOnMount) {
+      setActiveSection("products");
+      return;
+    }
     fetchProducts();
     fetchCategories();
+  };
+
+  const handleCloseProductModal = () => {
+    setProductModalOpen(false);
+    setEditingProduct(null);
+    if (openCreateOnMount) {
+      setActiveSection("products");
+    }
   };
 
   const handleDeleteSingle = async () => {
@@ -1681,7 +1703,7 @@ export function ProductsPage() {
       {/* ══════════════════ PRODUCT MODAL (Create/Edit) ══════════════════ */}
       <ProductModal
         open={productModalOpen}
-        onClose={() => { setProductModalOpen(false); setEditingProduct(null); }}
+        onClose={handleCloseProductModal}
         onSaved={handleSaved}
         product={editingProduct}
         categories={assignableCategories}
