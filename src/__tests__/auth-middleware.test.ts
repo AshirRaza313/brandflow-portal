@@ -39,6 +39,9 @@ function createMockRequest(headers: Record<string, string> = {}): any {
     headers: {
       get: (name: string) => headers[name.toLowerCase()] || null,
     },
+    cookies: {
+      get: () => undefined,
+    },
   };
 }
 
@@ -59,8 +62,8 @@ describe("isPlatformRole", () => {
     expect(isPlatformRole("platform_admin")).toBe(true);
   });
 
-  it("returns true for owner", () => {
-    expect(isPlatformRole("owner")).toBe(true);
+  it("returns false for organization owner", () => {
+    expect(isPlatformRole("owner")).toBe(false);
   });
 
   it("returns false for regular member", () => {
@@ -100,8 +103,8 @@ describe("isOrgAdmin", () => {
     expect(isOrgAdmin("brand_owner")).toBe(true);
   });
 
-  it("returns true for manager", () => {
-    expect(isOrgAdmin("manager")).toBe(true);
+  it("returns false for manager", () => {
+    expect(isOrgAdmin("manager")).toBe(false);
   });
 
   it("returns false for regular member", () => {
@@ -159,7 +162,7 @@ describe("getAuthContext", () => {
     expect(result!.role).toBe("member");
   });
 
-  it("returns AuthContext from valid Bearer token", async () => {
+  it("rejects legacy Bearer-token authentication", async () => {
     mockedGetServerSession.mockResolvedValue(null);
     const token = createBearerToken({
       userId: "tok-user-1",
@@ -170,11 +173,7 @@ describe("getAuthContext", () => {
     const req = createMockRequest({ authorization: token });
     const result = await getAuthContext(req);
 
-    expect(result).not.toBeNull();
-    expect(result!.userId).toBe("tok-user-1");
-    expect(result!.email).toBe("token@test.com");
-    expect(result!.role).toBe("brand_owner");
-    expect(result!.organizationId).toBe("tok-org-1");
+    expect(result).toBeNull();
   });
 
   it("returns null for invalid Bearer token (not base64 JSON)", async () => {
@@ -200,7 +199,7 @@ describe("getAuthContext", () => {
     expect(result).toBeNull();
   });
 
-  it("returns AuthContext from x-user-id header", async () => {
+  it("rejects forged x-user authentication headers", async () => {
     mockedGetServerSession.mockResolvedValue(null);
     const req = createMockRequest({
       "x-user-id": "header-user-1",
@@ -210,25 +209,21 @@ describe("getAuthContext", () => {
     });
     const result = await getAuthContext(req);
 
-    expect(result).not.toBeNull();
-    expect(result!.userId).toBe("header-user-1");
-    expect(result!.email).toBe("header@test.com");
-    expect(result!.role).toBe("manager");
-    expect(result!.organizationId).toBe("header-org-1");
+    expect(result).toBeNull();
   });
 
-  it("defaults role to 'member' when x-user-role is missing", async () => {
+  it("rejects x-user-id even when x-user-role is missing", async () => {
     mockedGetServerSession.mockResolvedValue(null);
     const req = createMockRequest({ "x-user-id": "user-1" });
     const result = await getAuthContext(req);
-    expect(result!.role).toBe("member");
+    expect(result).toBeNull();
   });
 
-  it("returns empty email when x-user-email is missing", async () => {
+  it("rejects x-user-id even when x-user-email is missing", async () => {
     mockedGetServerSession.mockResolvedValue(null);
     const req = createMockRequest({ "x-user-id": "user-1" });
     const result = await getAuthContext(req);
-    expect(result!.email).toBe("");
+    expect(result).toBeNull();
   });
 
   it("prefers NextAuth session over Bearer token", async () => {
@@ -245,7 +240,7 @@ describe("getAuthContext", () => {
     expect(result!.userId).toBe("session-user");
   });
 
-  it("prefers Bearer token over x-user-id header", async () => {
+  it("rejects Bearer and x-user headers when no signed session exists", async () => {
     mockedGetServerSession.mockResolvedValue(null);
     const token = createBearerToken({
       userId: "bearer-user",
@@ -256,7 +251,7 @@ describe("getAuthContext", () => {
       "x-user-id": "header-user",
     });
     const result = await getAuthContext(req);
-    expect(result!.userId).toBe("bearer-user");
+    expect(result).toBeNull();
   });
 });
 

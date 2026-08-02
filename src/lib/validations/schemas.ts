@@ -86,7 +86,7 @@ export const createProductSchema = z.object({
   description: optionalString,
   sku: z.string().max(50).optional(),
   price: price,
-  costPrice: price.optional(),
+  costPrice: price.nullable().optional(),
   stock: positiveInt,
   category: z.string().max(100).optional(),
   status: z.enum(["active", "draft", "archived"]).default("active"),

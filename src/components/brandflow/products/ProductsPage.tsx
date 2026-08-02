@@ -22,7 +22,7 @@ import {
 import {
   Plus, Search, Package, LayoutGrid, List, Trash2, Pencil,
   ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight,
-  Loader2, AlertCircle, ImageIcon, MoreHorizontal, Tag, RefreshCw, TrendingDown,
+  Loader2, AlertCircle, ImageIcon, MoreHorizontal, Tag, RefreshCw,
 } from "lucide-react";
 import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger,
@@ -31,6 +31,10 @@ import { toast } from "sonner";
 import { motion, AnimatePresence } from "framer-motion";
 import { cn } from "@/lib/utils";
 import { fetchWithAuth } from "@/lib/fetch-with-auth";
+import {
+  isUncategorizedProductCategory,
+  type ProductCategorySummary,
+} from "@/lib/product-categories";
 import { EmptyState } from "@/components/brandflow/shared/EmptyState";
 import { ConfirmDialog } from "@/components/brandflow/shared/ConfirmDialog";
 import { ProductModal } from "./ProductModal";
@@ -91,6 +95,14 @@ function formatPrice(price: number): string {
   return `Rs. ${price.toLocaleString("en-PK", { minimumFractionDigits: 0, maximumFractionDigits: 2 })}`;
 }
 
+async function getApiError(response: Response, fallback: string): Promise<string> {
+  const data = await response.json().catch(() => null) as {
+    error?: string;
+    errors?: Array<{ message?: string }>;
+  } | null;
+  return data?.errors?.[0]?.message || data?.error || fallback;
+}
+
 // ── Component ────────────────────────────────────────────────────────────────
 
 import { useTranslation } from "@/lib/i18n";
@@ -136,24 +148,34 @@ export function ProductsPage() {
   const [categoryName, setCategoryName] = useState("");
   const [editingCategory, setEditingCategory] = useState<string | null>(null);
   const [deleteCategoryTarget, setDeleteCategoryTarget] = useState<string | null>(null);
-  const [categories, setCategories] = useState<{ id: number; name: string }[]>([]);
+  const [categories, setCategories] = useState<ProductCategorySummary[]>([]);
+  const [categoriesLoading, setCategoriesLoading] = useState(true);
+  const [categoryError, setCategoryError] = useState<string | null>(null);
+  const [categorySaving, setCategorySaving] = useState(false);
+  const [categoryDeleting, setCategoryDeleting] = useState(false);
 
   // ── Fetch products ──
   const fetchProducts = useCallback(async () => {
+    if (!orgId) {
+      setLoading(false);
+      return;
+    }
     setLoading(true);
     setError(null);
     try {
-      const res = await fetchWithAuth(`/api/products?orgId=${encodeURIComponent(orgId)}`);
+      const res = await fetchWithAuth(`/api/products?orgId=${encodeURIComponent(orgId)}&limit=100`);
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const data = await res.json();
+      if (data.fallback) {
+        throw new Error("Product data is temporarily unavailable");
+      }
       if (data.products) {
         setProducts(data.products);
       }
       if (data.stats) {
         setStats(data.stats);
       }
-    } catch (err) {
-      console.error("Failed to fetch products:", err);
+    } catch {
       setError("Failed to load products. Please try again.");
     } finally {
       setLoading(false);
@@ -161,22 +183,47 @@ export function ProductsPage() {
   }, [orgId]);
 
   useEffect(() => {
-    fetchProducts();
+    const timer = window.setTimeout(() => { void fetchProducts(); }, 0);
+    return () => window.clearTimeout(timer);
   }, [fetchProducts]);
+
+  const fetchCategories = useCallback(async () => {
+    if (!orgId) {
+      setCategoriesLoading(false);
+      return;
+    }
+
+    setCategoriesLoading(true);
+    setCategoryError(null);
+    try {
+      const res = await fetchWithAuth("/api/product-categories", { cache: "no-store" });
+      if (!res.ok) throw new Error(await getApiError(res, "Failed to load categories"));
+      const data = await res.json();
+      setCategories(Array.isArray(data.categories) ? data.categories : []);
+    } catch (err) {
+      setCategoryError(err instanceof Error ? err.message : "Failed to load categories");
+    } finally {
+      setCategoriesLoading(false);
+    }
+  }, [orgId]);
+
+  useEffect(() => {
+    const timer = window.setTimeout(() => { void fetchCategories(); }, 0);
+    return () => window.clearTimeout(timer);
+  }, [fetchCategories]);
 
   // ── Category counts ──
   const categoryCounts = useMemo(() => {
-    const counts: Record<string, number> = {};
-    products.forEach((p) => {
-      const cat = p.category || "Uncategorized";
-      counts[cat] = (counts[cat] || 0) + 1;
-    });
-    return counts;
-  }, [products]);
+    return Object.fromEntries(categories.map((category) => [category.name, category.count]));
+  }, [categories]);
 
   const uniqueCategories = useMemo(() => {
-    return Object.keys(categoryCounts).sort((a, b) => categoryCounts[b] - categoryCounts[a]);
-  }, [categoryCounts]);
+    return categories.map((category) => category.name);
+  }, [categories]);
+
+  const assignableCategories = useMemo(() => {
+    return uniqueCategories.filter((category) => !isUncategorizedProductCategory(category));
+  }, [uniqueCategories]);
 
   // ── Filtered products ──
   const filteredProducts = useMemo(() => {
@@ -218,7 +265,8 @@ export function ProductsPage() {
 
   // Reset page when filters change
   useEffect(() => {
-    setCurrentPage(1);
+    const timer = window.setTimeout(() => setCurrentPage(1), 0);
+    return () => window.clearTimeout(timer);
   }, [search, statusFilter, categoryFilter]);
 
   // ── Selection logic ──
@@ -264,6 +312,7 @@ export function ProductsPage() {
     setProductModalOpen(false);
     setEditingProduct(null);
     fetchProducts();
+    fetchCategories();
   };
 
   const handleDeleteSingle = async () => {
@@ -274,7 +323,7 @@ export function ProductsPage() {
       if (res.ok) {
         toast.success(`"${deleteTarget.name}" deleted`);
         setSelectedIds((prev) => { const next = new Set(prev); next.delete(deleteTarget.id); return next; });
-        fetchProducts();
+        await Promise.all([fetchProducts(), fetchCategories()]);
       } else {
         const data = await res.json().catch(() => ({}));
         toast.error(data.error || "Failed to delete product");
@@ -313,77 +362,82 @@ export function ProductsPage() {
     setSelectedIds(new Set());
     setBulkDeleteOpen(false);
     setBulkDeleting(false);
-    fetchProducts();
+    if (successCount > 0) {
+      await Promise.all([fetchProducts(), fetchCategories()]);
+    } else {
+      await fetchProducts();
+    }
   };
 
   // ── Category management handlers ──
   const handleCreateCategory = async (name: string) => {
     if (!name.trim()) { toast.error("Category name is required"); return; }
     const trimmed = name.trim();
-    // Check if category already exists (from product categories)
-    const existingCats = new Set(products.map(p => p.category || "Uncategorized").filter(Boolean));
-    if (existingCats.has(trimmed)) {
-      toast.error(`Category "${trimmed}" already exists`);
-      return;
-    }
-    // Find a product without category and assign it to create the category
-    // Or create a placeholder: update first product to have this category temporarily
+    setCategorySaving(true);
     try {
-      // Just store in local state for now since categories are string-based
-      setCategories(prev => [...prev.filter(c => c.name !== trimmed), { id: Date.now(), name: trimmed }]);
+      const res = await fetchWithAuth("/api/product-categories", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name: trimmed }),
+      });
+      if (!res.ok) throw new Error(await getApiError(res, "Failed to create category"));
+      await fetchCategories();
       setCategoryName("");
       setCategoryOpen(false);
       setEditingCategory(null);
       toast.success(`Category "${trimmed}" created! Assign it to products via product edit.`);
-    } catch {
-      toast.error("Failed to create category");
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Failed to create category");
+    } finally {
+      setCategorySaving(false);
     }
   };
 
   const handleRenameCategory = async (oldName: string, newName: string) => {
     if (!newName.trim()) { toast.error("Category name is required"); return; }
-    if (oldName === "Uncategorized") { toast.error("Cannot rename Uncategorized"); return; }
+    if (isUncategorizedProductCategory(oldName)) { toast.error("Cannot rename Uncategorized"); return; }
     const trimmed = newName.trim();
     if (trimmed === oldName) { setCategoryOpen(false); setEditingCategory(null); return; }
     
-    // Update all products with the old category to the new one
+    setCategorySaving(true);
     try {
-      const productsWithCat = products.filter(p => p.category === oldName);
-      for (const product of productsWithCat) {
-        await fetchWithAuth(`/api/products/${product.id}`, {
-          method: "PATCH",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ category: trimmed }),
-        });
-      }
+      const res = await fetchWithAuth("/api/product-categories", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ oldName, newName: trimmed }),
+      });
+      if (!res.ok) throw new Error(await getApiError(res, "Failed to rename category"));
+      await Promise.all([fetchCategories(), fetchProducts()]);
       setCategoryName("");
       setCategoryOpen(false);
       setEditingCategory(null);
       toast.success(`Category renamed to "${trimmed}"`);
-      fetchProducts();
-    } catch {
-      toast.error("Failed to rename category");
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Failed to rename category");
+    } finally {
+      setCategorySaving(false);
     }
   };
 
   const handleDeleteCategory = async (catName: string) => {
-    if (catName === "Uncategorized") { toast.error("Cannot delete Uncategorized"); return; }
-    // Set all products in this category to null (uncategorized)
+    if (categoryDeleting) return;
+    if (isUncategorizedProductCategory(catName)) { toast.error("Cannot delete Uncategorized"); return; }
+    setCategoryDeleting(true);
     try {
-      const productsWithCat = products.filter(p => p.category === catName);
-      for (const product of productsWithCat) {
-        await fetchWithAuth(`/api/products/${product.id}`, {
-          method: "PATCH",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ category: "" }),
-        });
-      }
-      setCategories(prev => prev.filter(c => c.name !== catName));
+      const res = await fetchWithAuth("/api/product-categories", {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name: catName }),
+      });
+      if (!res.ok) throw new Error(await getApiError(res, "Failed to delete category"));
+      const data = await res.json();
+      await Promise.all([fetchCategories(), fetchProducts()]);
       setDeleteCategoryTarget(null);
-      toast.success(`Category "${catName}" deleted. ${productsWithCat.length} product(s) moved to Uncategorized.`);
-      fetchProducts();
-    } catch {
-      toast.error("Failed to delete category");
+      toast.success(`Category "${catName}" deleted. ${data.movedProducts || 0} product(s) moved to Uncategorized.`);
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Failed to delete category");
+    } finally {
+      setCategoryDeleting(false);
     }
   };
 
@@ -406,14 +460,6 @@ export function ProductsPage() {
     if (stock === 0) return { label: "Out of Stock", dotClass: "bg-red-500", textClass: "text-red-500" };
     if (stock <= 5) return { label: "Low Stock", dotClass: "bg-amber-500", textClass: "text-amber-500" };
     return { label: "In Stock", dotClass: "bg-emerald-500", textClass: isDark ? "text-emerald-400" : "text-emerald-600" };
-  };
-
-  // ── Stock badge ──
-  const stockBadge = (stock: number) => {
-    if (stock === 0) return "text-red-400";
-    if (stock <= 5) return "text-amber-400";
-    if (stock <= 20) return "text-yellow-400";
-    return isDark ? "text-slate-300" : "text-slate-600";
   };
 
   // ── Early return if no org ──
@@ -1202,36 +1248,41 @@ export function ProductsPage() {
         {/* ═══════════════════════ CATEGORIES TAB ═══════════════════════ */}
         {activeTab === "categories" && (
           <motion.div key="categories" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} className="space-y-4">
-            <div className="flex items-center justify-between">
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
               <p className={cn("text-sm", isDark ? "text-slate-400" : "text-muted-foreground")}>
-                {products.length} product{products.length !== 1 ? "s" : ""} across {(() => {
-                  const cats = new Set(products.map(p => p.category || "Uncategorized"));
-                  return cats.size;
-                })()} categor{(() => {
-                  const cats = new Set(products.map(p => p.category || "Uncategorized"));
-                  return cats.size === 1 ? "y" : "ies";
-                })()}
+                {stats?.total ?? products.length} product{(stats?.total ?? products.length) !== 1 ? "s" : ""} across {categories.length} categor{categories.length === 1 ? "y" : "ies"}
               </p>
               <Button
-                className={isGold ? "btn-gold" : "bg-amber-600 hover:bg-amber-700 text-white"}
+                className={cn(
+                  "w-full sm:w-auto",
+                  isGold ? "btn-gold" : "bg-amber-600 hover:bg-amber-700 text-white",
+                )}
                 onClick={() => { setCategoryName(""); setEditingCategory(null); setCategoryOpen(true); }}
+                disabled={categoriesLoading}
               >
                 <Plus className="mr-2 h-4 w-4" /> Create Category
               </Button>
             </div>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-              {(() => {
-                const catMap = new Map<string, { name: string; count: number; revenue: number; stock: number }>();
-                products.forEach(p => {
-                  const key = p.category || "Uncategorized";
-                  const existing = catMap.get(key) || { name: key, count: 0, revenue: 0, stock: 0 };
-                  existing.count++;
-                  existing.revenue += p.price * p.stock;
-                  existing.stock += p.stock;
-                  catMap.set(key, existing);
-                });
-                return Array.from(catMap.values()).sort((a, b) => b.revenue - a.revenue);
-              })().map((cat, idx) => {
+            {categoriesLoading ? (
+              <Card className={cn(isGold ? "premium-card" : isDark ? "premium-card" : "")}>
+                <CardContent className="flex items-center justify-center py-16">
+                  <Loader2 className="h-6 w-6 animate-spin text-amber-500" />
+                  <span className={cn("ml-2 text-sm", isDark ? "text-slate-400" : "text-slate-500")}>Loading categories...</span>
+                </CardContent>
+              </Card>
+            ) : categoryError ? (
+              <Card className={cn(isGold ? "premium-card" : isDark ? "premium-card" : "")}>
+                <CardContent className="flex flex-col items-center justify-center py-14 text-center">
+                  <AlertCircle className="h-9 w-9 text-red-400 mb-3" />
+                  <p className={cn("text-sm font-medium", isDark ? "text-white" : "text-slate-900")}>{categoryError}</p>
+                  <Button variant="outline" size="sm" className="mt-4" onClick={fetchCategories}>
+                    <RefreshCw className="mr-2 h-3.5 w-3.5" /> Try Again
+                  </Button>
+                </CardContent>
+              </Card>
+            ) : categories.length > 0 ? (
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+              {categories.map((cat, idx) => {
                 const color = CATEGORY_COLORS[idx % CATEGORY_COLORS.length];
                 return (
                   <motion.div
@@ -1266,7 +1317,7 @@ export function ProductsPage() {
                             >
                               {cat.count} item{cat.count !== 1 ? "s" : ""}
                             </Badge>
-                            {cat.name !== "Uncategorized" && (
+                            {!isUncategorizedProductCategory(cat.name) && (
                               <DropdownMenu>
                                 <DropdownMenuTrigger asChild>
                                   <button className={cn(
@@ -1306,13 +1357,13 @@ export function ProductsPage() {
                         <div className="flex items-center justify-between mt-3 pt-3 border-t border-white/[0.06]">
                           <div>
                             <p className={cn("text-[10px] uppercase tracking-wider", isDark ? "text-slate-400" : "text-muted-foreground")}>
-                              Revenue
+                              Products
                             </p>
                             <p className={cn(
                               "text-sm font-bold mt-0.5",
                               isGold ? color.text : isDark ? color.text : "text-foreground"
                             )}>
-                              {formatPKR(cat.revenue)}
+                              {cat.count.toLocaleString()}
                             </p>
                           </div>
                           <div className="text-right">
@@ -1332,14 +1383,14 @@ export function ProductsPage() {
                   </motion.div>
                 );
               })}
-            </div>
-            {products.length === 0 && (
+              </div>
+            ) : (
               <Card className={cn(isGold ? "premium-card" : isDark ? "premium-card" : "")}>
                 <CardContent>
                   <EmptyState
                     icon={Package}
                     title="No categories yet"
-                    description="Add products with categories to see them here."
+                    description="Create your first category, then assign it from Add or Edit Product."
                   />
                 </CardContent>
               </Card>
@@ -1632,8 +1683,8 @@ export function ProductsPage() {
         open={productModalOpen}
         onClose={() => { setProductModalOpen(false); setEditingProduct(null); }}
         onSaved={handleSaved}
-        organizationId={orgId}
         product={editingProduct}
+        categories={assignableCategories}
       />
 
       {/* ══════════════════ DELETE CONFIRMATION DIALOG ══════════════════ */}
@@ -1664,13 +1715,22 @@ export function ProductsPage() {
         onOpenChange={(open) => { if (!open) setDeleteCategoryTarget(null); }}
         title="Delete Category"
         description={`Are you sure you want to delete "${deleteCategoryTarget}"? Products in this category will show as "Uncategorized".`}
-        confirmLabel="Delete"
+        confirmLabel={categoryDeleting ? "Deleting..." : "Delete"}
         variant="destructive"
         onConfirm={() => { if (deleteCategoryTarget) handleDeleteCategory(deleteCategoryTarget); }}
       />
 
       {/* ══════════════════ CATEGORY CREATION/EDIT DIALOG ══════════════════ */}
-      <Dialog open={categoryOpen} onOpenChange={setCategoryOpen}>
+      <Dialog
+        open={categoryOpen}
+        onOpenChange={(open) => {
+          setCategoryOpen(open);
+          if (!open && !categorySaving) {
+            setCategoryName("");
+            setEditingCategory(null);
+          }
+        }}
+      >
         <DialogContent className={cn(
           "sm:max-w-md",
           isGold && "bg-[#1D2437] border-white/[0.08]"
@@ -1699,6 +1759,7 @@ export function ProductsPage() {
                 onChange={(e) => setCategoryName(e.target.value)}
                 placeholder="e.g. T-Shirts, Electronics..."
                 autoFocus
+                disabled={categorySaving}
                 className={cn(
                   isGold && "bg-white/5 border-white/10 text-white",
                   isDark && !isGold && "bg-white/5 border-white/10 text-white"
@@ -1710,6 +1771,7 @@ export function ProductsPage() {
                 type="button"
                 variant="outline"
                 onClick={() => { setCategoryOpen(false); setEditingCategory(null); }}
+                disabled={categorySaving}
                 className={cn(
                   "flex-1",
                   isGold && "bg-white/5 border-white/10 text-slate-300 hover:bg-white/10 hover:text-white"
@@ -1719,12 +1781,15 @@ export function ProductsPage() {
               </Button>
               <Button
                 type="submit"
+                disabled={categorySaving}
                 className={cn(
                   "flex-1",
                   isGold ? "btn-gold" : "bg-amber-600 hover:bg-amber-700 text-white"
                 )}
               >
-                {editingCategory ? "Rename Category" : "Create Category"}
+                {categorySaving
+                  ? editingCategory ? "Renaming..." : "Creating..."
+                  : editingCategory ? "Rename Category" : "Create Category"}
               </Button>
             </div>
           </form>

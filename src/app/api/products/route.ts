@@ -1,10 +1,14 @@
-import { NextRequest, NextResponse } from "next/server";
-import { db, isDbUnavailable, withRetry } from "@/lib/db";
+import { NextResponse } from "next/server";
+import { db, dbErrorResponse, isDbUnavailable, withRetry } from "@/lib/db";
 import { withAuth } from "@/lib/auth-middleware";
 import { validateBody, validateQuery, createProductSchema, paginationQuerySchema } from "@/lib/validations";
 import logger from "@/lib/logger";
 import { z } from "zod";
 import { withRateLimit } from "@/lib/rate-limit";
+import {
+  canWriteProductCatalog,
+  resolveAssignableProductCategory,
+} from "@/lib/product-category-store";
 
 // Phase 3: Query validation schema for GET /products
 const productsQuerySchema = paginationQuerySchema.extend({
@@ -76,11 +80,7 @@ export const GET = withRateLimit(withAuth(async (req, authCtx) => {
   } catch (error: unknown) {
     logger.error("Products API error", error, { orgId: authCtx?.organizationId });
     if (isDbUnavailable(error)) {
-      return NextResponse.json({
-        products: [],
-        stats: { total: 0, active: 0, lowStock: 0, totalValue: 0 },
-        fallback: true,
-      });
+      return dbErrorResponse(error);
     }
     return NextResponse.json({ error: "Failed to fetch products" }, { status: 500 });
   }
@@ -88,14 +88,22 @@ export const GET = withRateLimit(withAuth(async (req, authCtx) => {
 
 export const POST = withRateLimit(withAuth(async (req, authCtx) => {
   try {
+    const orgId = authCtx.organizationId;
+    if (!orgId) {
+      return NextResponse.json({ error: "Organization context required" }, { status: 403 });
+    }
+    if (!canWriteProductCatalog(authCtx.role)) {
+      return NextResponse.json({ error: "Read-only users cannot create products" }, { status: 403 });
+    }
+
     // Phase 3: Zod validation replaces raw req.json() + manual checks
     const bodyResult = await validateBody(req, createProductSchema);
     if (!bodyResult.success) return bodyResult.response;
     const { name, sku, description, price, costPrice, stock, category, status } = bodyResult.data;
 
-    const orgId = authCtx.organizationId;
-    if (!orgId) {
-      return NextResponse.json({ error: "Organization context required" }, { status: 400 });
+    const resolvedCategory = await resolveAssignableProductCategory(db, orgId, category);
+    if (!resolvedCategory.ok) {
+      return NextResponse.json({ error: resolvedCategory.error }, { status: 409 });
     }
 
     const product = await withRetry(async () => {
@@ -106,9 +114,9 @@ export const POST = withRateLimit(withAuth(async (req, authCtx) => {
           sku: sku || null,
           description: description || null,
           price: price,
-          costPrice: costPrice || null,
+          costPrice: costPrice ?? null,
           stock: stock,
-          category: category || null,
+          category: resolvedCategory.name,
           status: status || "active",
         },
       });

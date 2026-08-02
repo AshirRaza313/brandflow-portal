@@ -1,11 +1,15 @@
 import { NextRequest, NextResponse } from "next/server";
-import { db, dbErrorResponse, withRetry } from "@/lib/db";
+import { db, dbErrorResponse, isDbUnavailable, withRetry } from "@/lib/db";
 import { notFoundOrUnauthorizedResponse } from "@/lib/api-utils";
 import { withAuth, RouteContext } from "@/lib/auth-middleware";
 import { validateBody } from "@/lib/validations/api";
 import { updateProductSchema } from "@/lib/validations/schemas";
 import logger from "@/lib/logger";
 import { withRateLimit } from "@/lib/rate-limit";
+import {
+  canWriteProductCatalog,
+  resolveAssignableProductCategory,
+} from "@/lib/product-category-store";
 
 // GET /api/products/[id] - Fetch a single product by ID
 export const GET = withRateLimit(withAuth(async (
@@ -16,7 +20,10 @@ export const GET = withRateLimit(withAuth(async (
   try {
     logger.info("[Products] GET request", { userId: authCtx.userId, orgId: authCtx.organizationId });
     const { id } = await ctx.params;
-    const orgId = authCtx.organizationId!;
+    const orgId = authCtx.organizationId;
+    if (!orgId) {
+      return NextResponse.json({ error: "Organization context required" }, { status: 403 });
+    }
 
     const product = await withRetry(async () => {
       return db.product.findFirst({
@@ -31,6 +38,7 @@ export const GET = withRateLimit(withAuth(async (
     return NextResponse.json({ product });
   } catch (error: unknown) {
     logger.error("[GET /api/products/[id]]", error);
+    if (isDbUnavailable(error)) return dbErrorResponse(error);
     return NextResponse.json({ error: "Failed to fetch product" }, { status: 500 });
   }
 }), { maxRequests: 60, windowSeconds: 60 });
@@ -44,7 +52,13 @@ export const PATCH = withRateLimit(withAuth(async (
   try {
     logger.info("[Products] PATCH request", { userId: authCtx.userId, orgId: authCtx.organizationId });
     const { id } = await ctx.params;
-    const orgId = authCtx.organizationId!;
+    const orgId = authCtx.organizationId;
+    if (!orgId) {
+      return NextResponse.json({ error: "Organization context required" }, { status: 403 });
+    }
+    if (!canWriteProductCatalog(authCtx.role)) {
+      return NextResponse.json({ error: "Read-only users cannot update products" }, { status: 403 });
+    }
 
     // Verify product exists and belongs to this organization
     const existing = await withRetry(async () => {
@@ -58,6 +72,13 @@ export const PATCH = withRateLimit(withAuth(async (
     if (!result.success) return result.response;
     const body = result.data;
 
+    const resolvedCategory = body.category !== undefined
+      ? await resolveAssignableProductCategory(db, orgId, body.category)
+      : null;
+    if (resolvedCategory && !resolvedCategory.ok) {
+      return NextResponse.json({ error: resolvedCategory.error }, { status: 409 });
+    }
+
     const product = await withRetry(async () => {
       return db.product.update({
       where: { id },
@@ -70,7 +91,7 @@ export const PATCH = withRateLimit(withAuth(async (
           costPrice: body.costPrice ?? null,
         }),
         ...(body.stock !== undefined && { stock: body.stock ?? 0 }),
-        ...(body.category !== undefined && { category: body.category || null }),
+        ...(body.category !== undefined && { category: resolvedCategory?.name ?? null }),
         ...(body.status !== undefined && { status: body.status }),
         ...(body.imageUrl !== undefined && { imageUrl: body.imageUrl || null }),
       },
@@ -80,6 +101,7 @@ export const PATCH = withRateLimit(withAuth(async (
     return NextResponse.json({ product });
   } catch (error: unknown) {
     logger.error("[PATCH /api/products/[id]]", error);
+    if (isDbUnavailable(error)) return dbErrorResponse(error);
     return NextResponse.json({ error: "Failed to update product" }, { status: 500 });
   }
 }), { maxRequests: 30, windowSeconds: 60 });
@@ -93,7 +115,13 @@ export const DELETE = withRateLimit(withAuth(async (
   try {
     logger.info("[Products] DELETE request", { userId: authCtx.userId, orgId: authCtx.organizationId });
     const { id } = await ctx.params;
-    const orgId = authCtx.organizationId!;
+    const orgId = authCtx.organizationId;
+    if (!orgId) {
+      return NextResponse.json({ error: "Organization context required" }, { status: 403 });
+    }
+    if (!canWriteProductCatalog(authCtx.role)) {
+      return NextResponse.json({ error: "Read-only users cannot delete products" }, { status: 403 });
+    }
 
     // Verify product exists and belongs to this organization
     const existing = await withRetry(async () => {
@@ -112,6 +140,7 @@ export const DELETE = withRateLimit(withAuth(async (
     return NextResponse.json({ success: true });
   } catch (error: unknown) {
     logger.error("[DELETE /api/products/[id]]", error);
+    if (isDbUnavailable(error)) return dbErrorResponse(error);
     return NextResponse.json({ error: "Failed to delete product" }, { status: 500 });
   }
 }), { maxRequests: 30, windowSeconds: 60 });

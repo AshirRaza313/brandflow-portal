@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useCallback, useState, useRef } from "react";
+import { useEffect, useCallback, useMemo, useState, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -20,9 +20,10 @@ import {
 } from "@/components/ui/select";
 import { toast } from "sonner";
 import { useValtrioxStore } from "@/store/brandflow-store";
-import { getCurrencyForCountry, resolveOrgCurrency } from "@/lib/currency";
+import { resolveOrgCurrency } from "@/lib/currency";
 import { cn } from "@/lib/utils";
 import { fetchWithAuth } from "@/lib/fetch-with-auth";
+import { UNASSIGNED_PRODUCT_CATEGORY_VALUE } from "@/lib/product-categories";
 
 interface Product {
   id: string;
@@ -42,17 +43,18 @@ interface ProductModalProps {
   open: boolean;
   onClose: () => void;
   onSaved: () => void;
-  organizationId: string;
   product?: Product | null;
+  categories: string[];
 }
 
 interface FormErrors {
   name?: string;
   price?: string;
+  costPrice?: string;
   stock?: string;
 }
 
-export function ProductModal({ open, onClose, onSaved, organizationId, product }: ProductModalProps) {
+export function ProductModal({ open, onClose, onSaved, product, categories }: ProductModalProps) {
   const { appTheme, organization } = useValtrioxStore();
   const orgCurrency = resolveOrgCurrency(organization?.currency, organization?.country);
   const isGold = appTheme === "premium-dark";
@@ -75,9 +77,22 @@ export function ProductModal({ open, onClose, onSaved, organizationId, product }
 
   const isEdit = !!product;
 
+  const categoryOptions = useMemo(() => {
+    const options = new Map<string, string>();
+    for (const value of [...categories, product?.category || ""]) {
+      const name = value.trim();
+      if (!name) continue;
+      const key = name.toLocaleLowerCase("en-US");
+      if (!options.has(key)) options.set(key, name);
+    }
+    return Array.from(options.values()).sort((a, b) => a.localeCompare(b));
+  }, [categories, product?.category]);
+
   // Reset form when product changes or modal opens
   useEffect(() => {
-    if (open) {
+    if (!open) return;
+
+    const resetTimer = window.setTimeout(() => {
       if (product) {
         setForm({
           name: product.name || "",
@@ -93,9 +108,13 @@ export function ProductModal({ open, onClose, onSaved, organizationId, product }
         setForm({ name: "", sku: "", description: "", price: "", costPrice: "", stock: "", category: "", status: "active" });
       }
       setErrors({});
-      // Focus name field after dialog animation
-      setTimeout(() => nameRef.current?.focus(), 100);
-    }
+    }, 0);
+    const focusTimer = window.setTimeout(() => nameRef.current?.focus(), 100);
+
+    return () => {
+      window.clearTimeout(resetTimer);
+      window.clearTimeout(focusTimer);
+    };
   }, [product, open]);
 
   // Close on Escape key
@@ -132,6 +151,12 @@ export function ProductModal({ open, onClose, onSaved, organizationId, product }
       newErrors.price = "Price cannot be negative";
     }
 
+    if (form.costPrice !== "" && isNaN(Number(form.costPrice))) {
+      newErrors.costPrice = "Cost price must be a valid number";
+    } else if (form.costPrice !== "" && Number(form.costPrice) < 0) {
+      newErrors.costPrice = "Cost price cannot be negative";
+    }
+
     if (form.stock !== "" && isNaN(Number(form.stock))) {
       newErrors.stock = "Stock must be a valid number";
     } else if (Number(form.stock) < 0) {
@@ -155,15 +180,27 @@ export function ProductModal({ open, onClose, onSaved, organizationId, product }
       const res = await fetchWithAuth(url, {
         method: isEdit ? "PATCH" : "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ ...form, organizationId }),
+        body: JSON.stringify({
+          name: form.name.trim(),
+          sku: form.sku.trim(),
+          description: form.description.trim(),
+          price: form.price === "" ? 0 : Number(form.price),
+          costPrice: form.costPrice === "" ? null : Number(form.costPrice),
+          stock: form.stock === "" ? 0 : Number(form.stock),
+          category: form.category,
+          status: form.status,
+        }),
       });
 
       if (res.ok) {
         toast.success(isEdit ? "Product updated successfully" : "Product created successfully");
         onSaved();
       } else {
-        const data = await res.json().catch(() => ({}));
-        toast.error(data.error || "Failed to save product");
+        const data = await res.json().catch(() => ({})) as {
+          error?: string;
+          errors?: Array<{ message?: string }>;
+        };
+        toast.error(data.errors?.[0]?.message || data.error || "Failed to save product");
       }
     } catch {
       toast.error("Network error. Please try again.");
@@ -214,7 +251,7 @@ export function ProductModal({ open, onClose, onSaved, organizationId, product }
           </div>
 
           {/* SKU + Category */}
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
             <div className="space-y-2">
               <Label className={cn(isDark && "text-slate-300")}>SKU</Label>
               <Input
@@ -229,7 +266,10 @@ export function ProductModal({ open, onClose, onSaved, organizationId, product }
             </div>
             <div className="space-y-2">
               <Label className={cn(isDark && "text-slate-300")}>Category</Label>
-              <Select value={form.category} onValueChange={(v) => updateField("category", v)}>
+              <Select
+                value={form.category || UNASSIGNED_PRODUCT_CATEGORY_VALUE}
+                onValueChange={(value) => updateField("category", value === UNASSIGNED_PRODUCT_CATEGORY_VALUE ? "" : value)}
+              >
                 <SelectTrigger className={cn(
                   isGold && "bg-white/5 border-white/10 text-white",
                   isDark && !isGold && "bg-white/5 border-white/10 text-white"
@@ -237,20 +277,17 @@ export function ProductModal({ open, onClose, onSaved, organizationId, product }
                   <SelectValue placeholder="Select" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="Skincare">Skincare</SelectItem>
-                  <SelectItem value="Oils">Oils</SelectItem>
-                  <SelectItem value="Lip Care">Lip Care</SelectItem>
-                  <SelectItem value="Sun Care">Sun Care</SelectItem>
-                  <SelectItem value="Eye Care">Eye Care</SelectItem>
-                  <SelectItem value="Body Care">Body Care</SelectItem>
-                  <SelectItem value="Masks">Masks</SelectItem>
-                  <SelectItem value="Hair Care">Hair Care</SelectItem>
-                  <SelectItem value="Fragrances">Fragrances</SelectItem>
-                  <SelectItem value="Makeup">Makeup</SelectItem>
-                  <SelectItem value="Accessories">Accessories</SelectItem>
-                  <SelectItem value="Other">Other</SelectItem>
+                  <SelectItem value={UNASSIGNED_PRODUCT_CATEGORY_VALUE}>Uncategorized</SelectItem>
+                  {categoryOptions.map((category) => (
+                    <SelectItem key={category} value={category}>{category}</SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
+              {categoryOptions.length === 0 && (
+                <p className={cn("text-[11px]", isDark ? "text-slate-400" : "text-slate-500")}>
+                  Create a category from the Categories tab to assign one here.
+                </p>
+              )}
             </div>
           </div>
 
@@ -303,9 +340,13 @@ export function ProductModal({ open, onClose, onSaved, organizationId, product }
                 placeholder="0.00"
                 className={cn(
                   isGold && "bg-white/5 border-white/10 text-white",
-                  isDark && !isGold && "bg-white/5 border-white/10 text-white"
+                  isDark && !isGold && "bg-white/5 border-white/10 text-white",
+                  errors.costPrice && "border-red-500"
                 )}
               />
+              {errors.costPrice && (
+                <p className="text-xs text-red-400">{errors.costPrice}</p>
+              )}
             </div>
             <div className="space-y-2">
               <Label className={cn(isDark && "text-slate-300")}>Stock</Label>

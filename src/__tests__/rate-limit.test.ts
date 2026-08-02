@@ -61,10 +61,10 @@ describe("getClientIp", () => {
     expect(getClientIp(req)).toBe("1.1.1.1");
   });
 
-  it("returns 'unknown-' + timestamp when no headers present", () => {
+  it("returns a stable anonymous identifier when no proxy IP headers are present", () => {
     const req = createMockRequest({});
     const ip = getClientIp(req);
-    expect(ip).toMatch(/^unknown-\d+$/);
+    expect(ip).toBe("anonymous-no-ip");
   });
 });
 
@@ -80,80 +80,80 @@ describe("rateLimit", () => {
     vi.useRealTimers();
   });
 
-  it("allows the first request", () => {
+  it("allows the first request", async () => {
     const req = createMockRequest({ "x-real-ip": "10.0.0.1" });
-    const result = rateLimit(req, { maxRequests: 5, windowSeconds: 60 });
+    const result = await rateLimit(req, { maxRequests: 5, windowSeconds: 60 });
     expect(result.success).toBe(true);
     expect(result.remaining).toBe(4);
     expect(result.limit).toBe(5);
   });
 
-  it("allows requests up to the limit", () => {
+  it("allows requests up to the limit", async () => {
     // Use unique IP to avoid store pollution from other tests
     const req = createMockRequest({ "x-real-ip": "10.0.1.1" });
     const opts = { maxRequests: 3, windowSeconds: 60 };
 
-    expect(rateLimit(req, opts).success).toBe(true);
-    expect(rateLimit(req, opts).success).toBe(true);
-    expect(rateLimit(req, opts).success).toBe(true);
-    expect(rateLimit(req, opts).success).toBe(false); // 4th is blocked
+    expect((await rateLimit(req, opts)).success).toBe(true);
+    expect((await rateLimit(req, opts)).success).toBe(true);
+    expect((await rateLimit(req, opts)).success).toBe(true);
+    expect((await rateLimit(req, opts)).success).toBe(false); // 4th is blocked
   });
 
-  it("returns remaining: 0 and success: false when limit exceeded", () => {
+  it("returns remaining: 0 and success: false when limit exceeded", async () => {
     const req = createMockRequest({ "x-real-ip": "10.0.2.1" });
     const opts = { maxRequests: 2, windowSeconds: 60 };
 
-    rateLimit(req, opts);
-    rateLimit(req, opts);
-    const result = rateLimit(req, opts);
+    await rateLimit(req, opts);
+    await rateLimit(req, opts);
+    const result = await rateLimit(req, opts);
 
     expect(result.success).toBe(false);
     expect(result.remaining).toBe(0);
   });
 
-  it("resets the window after time passes", () => {
+  it("resets the window after time passes", async () => {
     const req = createMockRequest({ "x-real-ip": "10.0.3.1" });
     const opts = { maxRequests: 1, windowSeconds: 60 };
 
     // Use up the limit
-    const first = rateLimit(req, opts);
+    const first = await rateLimit(req, opts);
     expect(first.success).toBe(true);
 
     // Blocked
-    expect(rateLimit(req, opts).success).toBe(false);
+    expect((await rateLimit(req, opts)).success).toBe(false);
 
     // Advance time past window
     vi.advanceTimersByTime(61_000);
 
     // Should work again
-    const afterReset = rateLimit(req, opts);
+    const afterReset = await rateLimit(req, opts);
     expect(afterReset.success).toBe(true);
     expect(afterReset.remaining).toBe(0);
   });
 
-  it("uses custom identifier when provided", () => {
+  it("uses custom identifier when provided", async () => {
     const req = createMockRequest({});
     const opts = { maxRequests: 1, windowSeconds: 60, identifier: "test-custom-id" };
 
-    expect(rateLimit(req, opts).success).toBe(true);
-    expect(rateLimit(req, opts).success).toBe(false);
+    expect((await rateLimit(req, opts)).success).toBe(true);
+    expect((await rateLimit(req, opts)).success).toBe(false);
   });
 
-  it("tracks different clients independently", () => {
+  it("tracks different clients independently", async () => {
     const req1 = createMockRequest({ "x-real-ip": "10.1.1.1" });
     const req2 = createMockRequest({ "x-real-ip": "10.2.2.2" });
     const opts = { maxRequests: 1, windowSeconds: 60 };
 
-    expect(rateLimit(req1, opts).success).toBe(true);
-    expect(rateLimit(req1, opts).success).toBe(false);
+    expect((await rateLimit(req1, opts)).success).toBe(true);
+    expect((await rateLimit(req1, opts)).success).toBe(false);
 
     // Different IP should have its own quota
-    expect(rateLimit(req2, opts).success).toBe(true);
+    expect((await rateLimit(req2, opts)).success).toBe(true);
   });
 
-  it("uses default options (maxRequests: 10, windowSeconds: 60)", () => {
+  it("uses default options (maxRequests: 10, windowSeconds: 60)", async () => {
     const req = createMockRequest({ "x-real-ip": "10.0.4.1" });
-    const result = rateLimit(req);
+    const result = await rateLimit(req);
     expect(result.limit).toBe(10);
     expect(result.remaining).toBe(9);
   });
@@ -202,9 +202,8 @@ describe("withRateLimit", () => {
     // Second call should be blocked
     const response = await wrapped(req);
     expect(response.status).toBe(429);
-    expect(mockNextResponseJson).toHaveBeenCalledWith(
-      expect.objectContaining({ error: expect.stringContaining("Too many requests") }),
-      expect.objectContaining({ status: 429 })
+    await expect(response.json()).resolves.toEqual(
+      expect.objectContaining({ error: expect.stringContaining("Too many requests") })
     );
   });
 

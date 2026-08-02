@@ -1,3 +1,4 @@
+import { describe, expect, it } from "vitest";
 import {
   sanitizeString,
   sanitizeObject,
@@ -56,8 +57,8 @@ describe("sanitizeString", () => {
     expect(sanitizeString("vbscript:MsgBox(1)")).toBe("MsgBox(1)");
   });
 
-  it("removes expression() CSS attack", () => {
-    expect(sanitizeString("expression(alert(1))")).toBe("alert(1))");
+  it("removes expression() CSS attack content", () => {
+    expect(sanitizeString("expression(alert(1))")).toBe(")");
   });
 
   it("removes null bytes", () => {

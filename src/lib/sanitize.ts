@@ -15,6 +15,11 @@ export function sanitizeString(input: unknown): string {
   const str = String(input);
 
   return str
+    // Remove executable script blocks together with their contents before
+    // stripping ordinary tags, otherwise the script source remains as text.
+    .replace(/<script\b[^>]*>[\s\S]*?<\/script\s*>/gi, "")
+    // Remove the complete executable HTML data-scheme marker.
+    .replace(/data\s*:\s*text\/html/gi, "")
     // Remove ALL HTML tags (including img, svg, iframe, object, embed, etc.)
     .replace(/<[^>]*>/g, "")
     // Remove ALL event handlers (on* attributes with various patterns)
