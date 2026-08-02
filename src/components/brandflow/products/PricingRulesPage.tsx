@@ -1,7 +1,7 @@
 "use client";
 
 import { useValtrioxStore } from "@/store/brandflow-store";
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -13,6 +13,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { DollarSign, TrendingUp, Package, Percent, Plus, BarChart3 } from "lucide-react";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from "recharts";
+import { cn } from "@/lib/utils";
 
 const pricingRules = [
   { id: 1, name: "Summer Glow Markup", type: "Percentage Markup", condition: "Category = Skincare", value: "+15%", status: true, priority: 1, products: 24 },
@@ -57,7 +58,13 @@ export function PricingRulesPage() {
   const { appTheme } = useValtrioxStore();
   const isDark = appTheme === "dark" || appTheme === "premium-dark";
   const [rules, setRules] = useState(pricingRules);
-  const [showBuilder, setShowBuilder] = useState(false);
+  const [activeTab, setActiveTab] = useState("rules");
+  const tabsSectionRef = useRef<HTMLDivElement>(null);
+
+  const openTabFromHeader = (tab: string) => {
+    setActiveTab(tab);
+    tabsSectionRef.current?.scrollIntoView?.({ behavior: "smooth", block: "start" });
+  };
 
   const toggleRule = (id: number) => {
     setRules(rules.map(r => r.id === id ? { ...r, status: !r.status } : r));
@@ -65,8 +72,38 @@ export function PricingRulesPage() {
 
   const activeRules = rules.filter(r => r.status).length;
   const revenueImpact = "+PKR 245,800";
-  const productsCovered = [...new Set(rules.filter(r => r.status).flatMap(r => Array(r.products).fill(0)))].length;
   const avgMargin = (marginData.reduce((s, m) => s + m.margin, 0) / marginData.length).toFixed(1);
+
+  const cardClass = isDark
+    ? "border-white/[0.08] bg-white/[0.03]"
+    : "border-slate-200 bg-white";
+  const tabsListClass = cn(
+    "tab-bar-scroll h-auto w-full max-w-full flex-nowrap justify-start overflow-x-auto p-1 sm:w-fit",
+    isDark ? "border border-white/[0.06] bg-white/[0.04]" : "bg-slate-100"
+  );
+  const tabTriggerClass = cn(
+    "min-h-8 flex-none shrink-0 px-3",
+    isDark
+      ? "text-slate-400 hover:text-slate-200 data-[state=active]:border-amber-500/30 data-[state=active]:bg-amber-500/20 data-[state=active]:text-amber-300 dark:text-slate-400 dark:hover:text-slate-200 dark:data-[state=active]:border-amber-500/30 dark:data-[state=active]:bg-amber-500/20 dark:data-[state=active]:text-amber-300"
+      : "text-slate-600 data-[state=active]:bg-amber-600 data-[state=active]:text-white"
+  );
+  const tableHeaderRowClass = isDark
+    ? "border-white/[0.06] bg-white/[0.03] hover:bg-white/[0.03]"
+    : "bg-slate-50 hover:bg-slate-50";
+  const tableHeaderClass = isDark ? "[&_th]:text-slate-400" : "[&_th]:text-slate-600";
+  const tableBodyRowClass = isDark
+    ? "border-white/[0.05] hover:bg-white/[0.02]"
+    : "hover:bg-slate-50/70";
+  const fieldClass = isDark
+    ? "border-white/10 bg-white/[0.03] text-slate-200 placeholder:text-slate-500"
+    : "border-slate-300";
+  const chartGridColor = isDark ? "rgba(148, 163, 184, 0.18)" : "#e2e8f0";
+  const chartTooltipStyle = {
+    borderRadius: 8,
+    border: `1px solid ${isDark ? "rgba(255, 255, 255, 0.1)" : "#e2e8f0"}`,
+    backgroundColor: isDark ? "#1D2437" : "#ffffff",
+    color: isDark ? "#e2e8f0" : "#0f172a",
+  };
 
   return (
     <div className="space-y-6">
@@ -75,14 +112,14 @@ export function PricingRulesPage() {
           <h1 className={isDark ? "text-2xl font-bold text-slate-200" : "text-2xl font-bold text-slate-800"}>Pricing Rules</h1>
           <p className="text-sm text-slate-500 mt-1">Manage dynamic pricing engine for your cosmetics & skincare catalog</p>
         </div>
-        <Button onClick={() => setShowBuilder(!showBuilder)} className="bg-amber-600 hover:bg-amber-700">
+        <Button type="button" onClick={() => openTabFromHeader("builder")} className="bg-amber-600 hover:bg-amber-700">
           <Plus className="h-4 w-4 mr-2" /> New Rule
         </Button>
       </div>
 
       {/* Stats */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <Card className="border-slate-200 hover:shadow-md transition-shadow">
+        <Card className={cn(cardClass, "hover:shadow-md transition-shadow")}>
           <CardContent className="p-4">
             <div className="flex items-center justify-between">
               <div>
@@ -96,7 +133,7 @@ export function PricingRulesPage() {
             </div>
           </CardContent>
         </Card>
-        <Card className="border-slate-200 hover:shadow-md transition-shadow">
+        <Card className={cn(cardClass, "hover:shadow-md transition-shadow")}>
           <CardContent className="p-4">
             <div className="flex items-center justify-between">
               <div>
@@ -110,7 +147,7 @@ export function PricingRulesPage() {
             </div>
           </CardContent>
         </Card>
-        <Card className="border-slate-200 hover:shadow-md transition-shadow">
+        <Card className={cn(cardClass, "hover:shadow-md transition-shadow")}>
           <CardContent className="p-4">
             <div className="flex items-center justify-between">
               <div>
@@ -124,7 +161,7 @@ export function PricingRulesPage() {
             </div>
           </CardContent>
         </Card>
-        <Card className="border-slate-200 hover:shadow-md transition-shadow">
+        <Card className={cn(cardClass, "hover:shadow-md transition-shadow")}>
           <CardContent className="p-4">
             <div className="flex items-center justify-between">
               <div>
@@ -140,25 +177,26 @@ export function PricingRulesPage() {
         </Card>
       </div>
 
-      <Tabs defaultValue="rules" className="space-y-4">
-        <TabsList className="bg-slate-100 overflow-x-auto flex-wrap">
-          <TabsTrigger value="rules" className="data-[state=active]:bg-amber-600 data-[state=active]:text-white">Pricing Rules</TabsTrigger>
-          <TabsTrigger value="builder" className="data-[state=active]:bg-amber-600 data-[state=active]:text-white">Rule Builder</TabsTrigger>
-          <TabsTrigger value="history" className="data-[state=active]:bg-amber-600 data-[state=active]:text-white">Price History</TabsTrigger>
-          <TabsTrigger value="margins" className="data-[state=active]:bg-amber-600 data-[state=active]:text-white">Margin Analysis</TabsTrigger>
+      <div ref={tabsSectionRef} className="scroll-mt-4">
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
+        <TabsList className={tabsListClass}>
+          <TabsTrigger value="rules" className={tabTriggerClass}>Pricing Rules</TabsTrigger>
+          <TabsTrigger value="builder" className={tabTriggerClass}>Rule Builder</TabsTrigger>
+          <TabsTrigger value="history" className={tabTriggerClass}>Price History</TabsTrigger>
+          <TabsTrigger value="margins" className={tabTriggerClass}>Margin Analysis</TabsTrigger>
         </TabsList>
 
         {/* Pricing Rules Table */}
         <TabsContent value="rules">
-          <Card className="border-slate-200">
+          <Card className={cardClass}>
             <CardHeader className="pb-3">
               <CardTitle className={isDark ? "text-lg font-semibold text-slate-200" : "text-lg font-semibold text-slate-800"}>Active Pricing Rules</CardTitle>
             </CardHeader>
             <CardContent className="p-0">
               <div className="overflow-x-auto -mx-3 sm:mx-0 max-h-[480px] overflow-y-auto">
                 <Table>
-                  <TableHeader>
-                    <TableRow className="bg-slate-50 hover:bg-slate-50">
+                  <TableHeader className={tableHeaderClass}>
+                    <TableRow className={tableHeaderRowClass}>
                       <TableHead className="w-[200px]">Rule Name</TableHead>
                       <TableHead>Type</TableHead>
                       <TableHead>Condition</TableHead>
@@ -170,12 +208,12 @@ export function PricingRulesPage() {
                   </TableHeader>
                   <TableBody>
                     {rules.map((rule) => (
-                      <TableRow key={rule.id} className={!rule.status ? "opacity-50" : ""}>
+                      <TableRow key={rule.id} className={cn(tableBodyRowClass, !rule.status && "opacity-50")}>
                         <TableCell className={isDark ? "font-medium text-slate-300" : "font-medium text-slate-700"}>{rule.name}</TableCell>
                         <TableCell>
                           <Badge variant="secondary" className={typeColors[rule.type]}>{rule.type}</Badge>
                         </TableCell>
-                        <TableCell className="text-sm text-slate-600">{rule.condition}</TableCell>
+                        <TableCell className={cn("text-sm", isDark ? "text-slate-400" : "text-slate-600")}>{rule.condition}</TableCell>
                         <TableCell>
                           <span className={`font-semibold ${rule.value.startsWith("+") ? "text-amber-600" : "text-orange-600"}`}>
                             {rule.value}
@@ -185,11 +223,11 @@ export function PricingRulesPage() {
                           <Switch checked={rule.status} onCheckedChange={() => toggleRule(rule.id)} className="data-[state=checked]:bg-amber-600" />
                         </TableCell>
                         <TableCell className="text-center">
-                          <span className={isDark ? "inline-flex h-6 w-6 items-center justify-center rounded-full bg-slate-100 text-xs font-bold text-slate-300" : "inline-flex h-6 w-6 items-center justify-center rounded-full bg-slate-100 text-xs font-bold text-slate-700"}>
+                          <span className={isDark ? "inline-flex h-6 w-6 items-center justify-center rounded-full bg-white/10 text-xs font-bold text-slate-300" : "inline-flex h-6 w-6 items-center justify-center rounded-full bg-slate-100 text-xs font-bold text-slate-700"}>
                             {rule.priority}
                           </span>
                         </TableCell>
-                        <TableCell className="text-center text-sm text-slate-600">{rule.products}</TableCell>
+                        <TableCell className={cn("text-center text-sm", isDark ? "text-slate-400" : "text-slate-600")}>{rule.products}</TableCell>
                       </TableRow>
                     ))}
                   </TableBody>
@@ -201,7 +239,7 @@ export function PricingRulesPage() {
 
         {/* Rule Builder */}
         <TabsContent value="builder">
-          <Card className="border-slate-200">
+          <Card className={cardClass}>
             <CardHeader className="pb-3">
               <CardTitle className={isDark ? "text-lg font-semibold text-slate-200" : "text-lg font-semibold text-slate-800"}>Create New Pricing Rule</CardTitle>
             </CardHeader>
@@ -209,12 +247,12 @@ export function PricingRulesPage() {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label className={isDark ? "text-sm font-medium text-slate-300" : "text-sm font-medium text-slate-700"}>Rule Name</Label>
-                  <Input placeholder="e.g., Eid Collection Markup" className="border-slate-300 focus:border-amber-500" />
+                  <Input placeholder="e.g., Eid Collection Markup" className={cn(fieldClass, "focus:border-amber-500")} />
                 </div>
                 <div className="space-y-2">
                   <Label className={isDark ? "text-sm font-medium text-slate-300" : "text-sm font-medium text-slate-700"}>Rule Type</Label>
                   <Select>
-                    <SelectTrigger className="border-slate-300"><SelectValue placeholder="Select type" /></SelectTrigger>
+                    <SelectTrigger className={fieldClass}><SelectValue placeholder="Select type" /></SelectTrigger>
                     <SelectContent>
                       <SelectItem value="percentage-markup">Percentage Markup</SelectItem>
                       <SelectItem value="bulk-discount">Bulk Discount</SelectItem>
@@ -226,16 +264,16 @@ export function PricingRulesPage() {
                 </div>
                 <div className="space-y-2">
                   <Label className={isDark ? "text-sm font-medium text-slate-300" : "text-sm font-medium text-slate-700"}>Condition</Label>
-                  <Input placeholder="e.g., Category = Skincare" className="border-slate-300 focus:border-amber-500" />
+                  <Input placeholder="e.g., Category = Skincare" className={cn(fieldClass, "focus:border-amber-500")} />
                 </div>
                 <div className="space-y-2">
                   <Label className={isDark ? "text-sm font-medium text-slate-300" : "text-sm font-medium text-slate-700"}>Value (%)</Label>
-                  <Input placeholder="e.g., -15 or +10" className="border-slate-300 focus:border-amber-500" />
+                  <Input placeholder="e.g., -15 or +10" className={cn(fieldClass, "focus:border-amber-500")} />
                 </div>
                 <div className="space-y-2">
                   <Label className={isDark ? "text-sm font-medium text-slate-300" : "text-sm font-medium text-slate-700"}>Priority</Label>
                   <Select>
-                    <SelectTrigger className="border-slate-300"><SelectValue placeholder="Select priority" /></SelectTrigger>
+                    <SelectTrigger className={fieldClass}><SelectValue placeholder="Select priority" /></SelectTrigger>
                     <SelectContent>
                       {[1,2,3,4,5].map(p => <SelectItem key={p} value={String(p)}>{p}</SelectItem>)}
                     </SelectContent>
@@ -244,7 +282,7 @@ export function PricingRulesPage() {
                 <div className="space-y-2">
                   <Label className={isDark ? "text-sm font-medium text-slate-300" : "text-sm font-medium text-slate-700"}>Applicable Products</Label>
                   <Select>
-                    <SelectTrigger className="border-slate-300"><SelectValue placeholder="Select products" /></SelectTrigger>
+                    <SelectTrigger className={fieldClass}><SelectValue placeholder="Select products" /></SelectTrigger>
                     <SelectContent>
                       <SelectItem value="all">All Products</SelectItem>
                       <SelectItem value="skincare">Skincare</SelectItem>
@@ -258,12 +296,12 @@ export function PricingRulesPage() {
               <div className="flex flex-wrap items-center gap-3 pt-2">
                 <div className="flex items-center gap-2">
                   <Switch defaultChecked className="data-[state=checked]:bg-amber-600" />
-                  <Label className="text-sm text-slate-600">Enable rule immediately</Label>
+                  <Label className={cn("text-sm", isDark ? "text-slate-400" : "text-slate-600")}>Enable rule immediately</Label>
                 </div>
               </div>
               <div className="flex flex-wrap gap-3">
                 <Button className="bg-amber-600 hover:bg-amber-700"><DollarSign className="h-4 w-4 mr-2" /> Create Rule</Button>
-                <Button variant="outline" className="border-slate-300">Save as Draft</Button>
+                <Button variant="outline" className={isDark ? "border-white/10 bg-white/[0.03] text-slate-300 hover:bg-white/[0.06] hover:text-white" : "border-slate-300"}>Save as Draft</Button>
               </div>
             </CardContent>
           </Card>
@@ -271,7 +309,7 @@ export function PricingRulesPage() {
 
         {/* Price History Chart */}
         <TabsContent value="history">
-          <Card className="border-slate-200">
+          <Card className={cardClass}>
             <CardHeader className="pb-3">
               <CardTitle className={isDark ? "text-lg font-semibold text-slate-200" : "text-lg font-semibold text-slate-800"}>Price History (6 Months)</CardTitle>
             </CardHeader>
@@ -279,10 +317,10 @@ export function PricingRulesPage() {
               <div className="h-[400px]">
                 <ResponsiveContainer width="100%" height="100%">
                   <LineChart data={priceHistoryData}>
-                    <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
+                    <CartesianGrid strokeDasharray="3 3" stroke={chartGridColor} />
                     <XAxis dataKey="month" tick={{ fill: "#64748b", fontSize: 12 }} />
                     <YAxis tick={{ fill: "#64748b", fontSize: 12 }} tickFormatter={(v) => `PKR ${v}`} />
-                    <Tooltip contentStyle={{ borderRadius: 8, border: "1px solid #e2e8f0" }} formatter={(v: number) => [`PKR ${v}`, ""]} />
+                    <Tooltip contentStyle={chartTooltipStyle} formatter={(v: number) => [`PKR ${v}`, ""]} />
                     <Legend />
                     <Line type="monotone" dataKey="Glow Serum" stroke="#D4A73A" strokeWidth={2} dot={{ r: 4 }} />
                     <Line type="monotone" dataKey="Vitamin C Cream" stroke="#6366f1" strokeWidth={2} dot={{ r: 4 }} />
@@ -297,15 +335,15 @@ export function PricingRulesPage() {
 
         {/* Margin Analysis */}
         <TabsContent value="margins">
-          <Card className="border-slate-200">
+          <Card className={cardClass}>
             <CardHeader className="pb-3">
               <CardTitle className={isDark ? "text-lg font-semibold text-slate-200" : "text-lg font-semibold text-slate-800"}>Margin Analysis</CardTitle>
             </CardHeader>
             <CardContent className="p-0">
               <div className="overflow-x-auto -mx-3 sm:mx-0 max-h-[480px] overflow-y-auto">
                 <Table>
-                  <TableHeader>
-                    <TableRow className="bg-slate-50 hover:bg-slate-50">
+                  <TableHeader className={tableHeaderClass}>
+                    <TableRow className={tableHeaderRowClass}>
                       <TableHead>Product</TableHead>
                       <TableHead className="text-right">Cost Price</TableHead>
                       <TableHead className="text-right">Retail Price</TableHead>
@@ -315,11 +353,11 @@ export function PricingRulesPage() {
                   </TableHeader>
                   <TableBody>
                     {marginData.map((item) => (
-                      <TableRow key={item.product}>
+                      <TableRow key={item.product} className={tableBodyRowClass}>
                         <TableCell className={isDark ? "font-medium text-slate-300" : "font-medium text-slate-700"}>{item.product}</TableCell>
-                        <TableCell className="text-right text-slate-600">PKR {item.costPrice}</TableCell>
+                        <TableCell className={cn("text-right", isDark ? "text-slate-400" : "text-slate-600")}>PKR {item.costPrice}</TableCell>
                         <TableCell className={isDark ? "text-right font-medium text-slate-200" : "text-right font-medium text-slate-800"}>PKR {item.retailPrice}</TableCell>
-                        <TableCell className="text-right text-slate-600">PKR {item.wholesalePrice}</TableCell>
+                        <TableCell className={cn("text-right", isDark ? "text-slate-400" : "text-slate-600")}>PKR {item.wholesalePrice}</TableCell>
                         <TableCell className="text-right">
                           <Badge variant="secondary" className={item.margin >= 60 ? "bg-amber-100 text-amber-700" : "bg-amber-100 text-amber-700"}>
                             {item.margin}%
@@ -334,6 +372,7 @@ export function PricingRulesPage() {
           </Card>
         </TabsContent>
       </Tabs>
+      </div>
     </div>
   );
 }
