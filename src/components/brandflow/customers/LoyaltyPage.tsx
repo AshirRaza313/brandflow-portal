@@ -96,9 +96,9 @@ export function LoyaltyPage() {
         <Card><CardContent className="p-3"><p className="text-xs text-muted-foreground">Engagement</p><p className={`text-xl font-bold ${isDark ? "text-white" : ""}`}>0%</p></CardContent></Card>
       </div>
 
-      <div className={`flex flex-wrap gap-1 border-b ${isDark ? "border-white/[0.06]" : "border-slate-200"}`}>
+      <div className={`flex flex-nowrap gap-1 overflow-x-auto border-b ${isDark ? "border-white/[0.06]" : "border-slate-200"}`}>
         {subTabs.map((tab) => (
-          <button key={tab.id} onClick={() => setActiveTab(tab.id)} className={`px-4 py-2.5 text-sm font-medium border-b-2 transition-colors ${activeTab === tab.id ? "border-amber-600 text-amber-600" : "border-transparent text-slate-500 hover:text-slate-700"}`}>
+          <button key={tab.id} onClick={() => setActiveTab(tab.id)} className={`shrink-0 border-b-2 px-4 py-2.5 text-sm font-medium transition-colors ${activeTab === tab.id ? "border-amber-500 text-amber-500" : isDark ? "border-transparent text-slate-400 hover:bg-white/[0.04] hover:text-slate-200" : "border-transparent text-slate-500 hover:bg-slate-50 hover:text-slate-700"}`}>
             {tab.label}
           </button>
         ))}

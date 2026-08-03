@@ -198,7 +198,7 @@ export function MarketingCalendarPage() {
 
       <div className="flex flex-col lg:flex-row gap-6">
         {/* ═══ CALENDAR GRID ═══ */}
-        <div className="flex-1">
+        <div className="min-w-0 flex-1">
           <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}>
             <Card className={cardClass}>
               <CardContent className="p-4">
@@ -216,62 +216,64 @@ export function MarketingCalendarPage() {
                 </div>
 
                 {/* Week day headers */}
-                <div className="grid grid-cols-7 gap-px rounded-lg overflow-hidden">
-                  {WEEK_DAYS.map((day) => (
-                    <div key={day} className={`py-2 text-center text-xs font-medium ${isDark ? "bg-white/[0.02] text-slate-500" : "bg-slate-50 text-slate-500"}`}>
-                      {day}
-                    </div>
-                  ))}
-
-                  {/* Empty cells before first day */}
-                  {Array.from({ length: firstDay }, (_, i) => (
-                    <div key={`empty-${i}`} className={`min-h-[110px] p-1.5 ${isDark ? "bg-white/[0.03]" : "bg-slate-50/50"}`} />
-                  ))}
-
-                  {/* Day cells */}
-                  {Array.from({ length: daysInMonth }, (_, i) => {
-                    const day = i + 1;
-                    const dayEvents = getEventsForDay(day);
-                    const today = new Date();
-                    const isToday = day === today.getDate() && currentMonth === today.getMonth() && currentYear === today.getFullYear();
-                    return (
-                      <div
-                        key={day}
-                        className={`min-h-[110px] p-1.5 transition-colors ${isDark ? "bg-white/[0.03] hover:bg-white/[0.03]" : "bg-white hover:bg-slate-50"}`}
-                      >
-                        <div className="flex items-center justify-between mb-1">
-                          <span className={`text-xs font-medium ${isToday ? "h-5 w-5 rounded-full bg-amber-500 text-white flex items-center justify-center" : isDark ? "text-slate-400" : "text-slate-600"}`}>
-                            {day}
-                          </span>
-                          {dayEvents.length > 2 && (
-                            <span className={`text-[9px] ${secondaryText}`}>+{dayEvents.length - 2}</span>
-                          )}
-                        </div>
-                        <div className="space-y-0.5">
-                          {dayEvents.slice(0, 2).map((e) => {
-                            const catCfg = CATEGORY_CONFIG[e.category];
-                            const member = getMember(e.assignedTo);
-                            return (
-                              <div
-                                key={e.id}
-                                className={`group relative px-1.5 py-0.5 rounded text-[10px] text-white cursor-pointer hover:opacity-90 transition-opacity flex items-center gap-1 ${catCfg.color}`}
-                                onClick={() => {
-                                  setRescheduleEventId(e.id);
-                                  setRescheduleDate(e.date);
-                                }}
-                              >
-                                <GripVertical className="h-2 w-2 opacity-0 group-hover:opacity-60 transition-opacity shrink-0" />
-                                <span className="truncate flex-1">{e.title}</span>
-                                {e.assignedTo !== "none" && (
-                                  <span className="h-2.5 w-2.5 rounded-full bg-white/40 shrink-0" title={member.name} />
-                                )}
-                              </div>
-                            );
-                          })}
-                        </div>
+                <div className="overflow-x-auto rounded-lg">
+                  <div className="grid min-w-[700px] grid-cols-7 gap-px overflow-hidden rounded-lg">
+                    {WEEK_DAYS.map((day) => (
+                      <div key={day} className={`py-2 text-center text-xs font-medium ${isDark ? "bg-white/[0.02] text-slate-500" : "bg-slate-50 text-slate-500"}`}>
+                        {day}
                       </div>
-                    );
-                  })}
+                    ))}
+
+                    {/* Empty cells before first day */}
+                    {Array.from({ length: firstDay }, (_, i) => (
+                      <div key={`empty-${i}`} className={`min-h-[110px] p-1.5 ${isDark ? "bg-white/[0.03]" : "bg-slate-50/50"}`} />
+                    ))}
+
+                    {/* Day cells */}
+                    {Array.from({ length: daysInMonth }, (_, i) => {
+                      const day = i + 1;
+                      const dayEvents = getEventsForDay(day);
+                      const today = new Date();
+                      const isToday = day === today.getDate() && currentMonth === today.getMonth() && currentYear === today.getFullYear();
+                      return (
+                        <div
+                          key={day}
+                          className={`min-h-[110px] p-1.5 transition-colors ${isDark ? "bg-white/[0.03] hover:bg-white/[0.03]" : "bg-white hover:bg-slate-50"}`}
+                        >
+                          <div className="flex items-center justify-between mb-1">
+                            <span className={`text-xs font-medium ${isToday ? "h-5 w-5 rounded-full bg-amber-500 text-white flex items-center justify-center" : isDark ? "text-slate-400" : "text-slate-600"}`}>
+                              {day}
+                            </span>
+                            {dayEvents.length > 2 && (
+                              <span className={`text-[9px] ${secondaryText}`}>+{dayEvents.length - 2}</span>
+                            )}
+                          </div>
+                          <div className="space-y-0.5">
+                            {dayEvents.slice(0, 2).map((e) => {
+                              const catCfg = CATEGORY_CONFIG[e.category];
+                              const member = getMember(e.assignedTo);
+                              return (
+                                <div
+                                  key={e.id}
+                                  className={`group relative px-1.5 py-0.5 rounded text-[10px] text-white cursor-pointer hover:opacity-90 transition-opacity flex items-center gap-1 ${catCfg.color}`}
+                                  onClick={() => {
+                                    setRescheduleEventId(e.id);
+                                    setRescheduleDate(e.date);
+                                  }}
+                                >
+                                  <GripVertical className="h-2 w-2 opacity-0 group-hover:opacity-60 transition-opacity shrink-0" />
+                                  <span className="truncate flex-1">{e.title}</span>
+                                  {e.assignedTo !== "none" && (
+                                    <span className="h-2.5 w-2.5 rounded-full bg-white/40 shrink-0" title={member.name} />
+                                  )}
+                                </div>
+                              );
+                            })}
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
                 </div>
               </CardContent>
             </Card>

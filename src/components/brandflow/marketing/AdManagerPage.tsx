@@ -63,7 +63,7 @@ export function AdManagerPage() {
     toast.success("Creative uploaded successfully!");
   };
 
-  const inputCls = isDark ? "bg-slate-800 border-slate-600 text-white" : "";
+  const inputCls = isDark ? "bg-white/[0.05] border-white/[0.1] text-white placeholder:text-slate-500" : "";
   const labelCls = isDark ? "text-slate-300" : "";
 
   return (
@@ -90,11 +90,11 @@ export function AdManagerPage() {
             <CardContent className="p-4">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-xs font-medium text-slate-500 uppercase tracking-wider">{stat.title}</p>
+                  <p className={`text-xs font-medium uppercase tracking-wider ${isDark ? "text-slate-400" : "text-slate-500"}`}>{stat.title}</p>
                   <p className={`text-2xl font-bold mt-1 ${isDark ? "text-white" : "text-slate-900"}`}>{stat.value}</p>
                 </div>
-                <div className="h-10 w-10 rounded-lg bg-amber-50 flex items-center justify-center">
-                  <stat.icon className="h-5 w-5 text-amber-600" />
+                <div className={`h-10 w-10 rounded-lg flex items-center justify-center ${isDark ? "bg-amber-500/10" : "bg-amber-50"}`}>
+                  <stat.icon className={`h-5 w-5 ${isDark ? "text-amber-400" : "text-amber-600"}`} />
                 </div>
               </div>
             </CardContent>
@@ -103,16 +103,16 @@ export function AdManagerPage() {
       </div>
 
       <Tabs defaultValue="campaigns" className="space-y-6">
-        <TabsList className="bg-slate-100 overflow-x-auto flex-wrap">
-          <TabsTrigger value="campaigns">Campaigns</TabsTrigger>
-          <TabsTrigger value="creatives">Creative Library</TabsTrigger>
-          <TabsTrigger value="audience">Audience Targeting</TabsTrigger>
+        <TabsList className={`h-auto w-full max-w-full flex-nowrap justify-start overflow-x-auto border p-1 ${isDark ? "border-white/[0.06] bg-white/[0.04]" : "border-slate-200 bg-slate-100"}`}>
+          <TabsTrigger value="campaigns" className={`flex-none shrink-0 ${isDark ? "data-[state=active]:bg-amber-500/20 data-[state=active]:text-amber-300 dark:data-[state=active]:bg-amber-500/20 dark:data-[state=active]:text-amber-300" : ""}`}>Campaigns</TabsTrigger>
+          <TabsTrigger value="creatives" className={`flex-none shrink-0 ${isDark ? "data-[state=active]:bg-amber-500/20 data-[state=active]:text-amber-300 dark:data-[state=active]:bg-amber-500/20 dark:data-[state=active]:text-amber-300" : ""}`}>Creative Library</TabsTrigger>
+          <TabsTrigger value="audience" className={`flex-none shrink-0 ${isDark ? "data-[state=active]:bg-amber-500/20 data-[state=active]:text-amber-300 dark:data-[state=active]:bg-amber-500/20 dark:data-[state=active]:text-amber-300" : ""}`}>Audience Targeting</TabsTrigger>
         </TabsList>
 
         <TabsContent value="campaigns">
           <Card>
             <CardHeader className="pb-3">
-              <div className="flex items-center justify-between">
+              <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                 <CardTitle className={`text-lg font-semibold ${isDark ? "text-white" : ""}`}>All Campaigns</CardTitle>
                 <div className="relative w-full sm:w-64">
                   <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
@@ -129,7 +129,7 @@ export function AdManagerPage() {
                         <h4 className={`font-semibold ${isDark ? "text-white" : "text-slate-900"}`}>{c.name}</h4>
                         <p className={`text-xs capitalize ${isDark ? "text-slate-400" : "text-slate-500"}`}>{c.platform} · Budget: ${c.budget}</p>
                       </div>
-                      <span className="text-xs bg-amber-100 text-amber-700 px-2 py-1 rounded-full">{c.status}</span>
+                      <span className={`text-xs px-2 py-1 rounded-full ${isDark ? "bg-amber-500/15 text-amber-300" : "bg-amber-100 text-amber-700"}`}>{c.status}</span>
                     </div>
                   ))}
                 </div>
@@ -148,7 +148,7 @@ export function AdManagerPage() {
         <TabsContent value="creatives">
           <Card>
             <CardHeader className="pb-3">
-              <div className="flex items-center justify-between">
+              <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                 <CardTitle className={`text-lg font-semibold flex items-center gap-2 ${isDark ? "text-white" : ""}`}>
                   <ImageIcon className="h-5 w-5 text-amber-600" /> Creative Library
                 </CardTitle>
@@ -163,8 +163,8 @@ export function AdManagerPage() {
                   {creatives.map((c) => (
                     <div key={c.id} className={`p-4 rounded-lg border flex items-center justify-between ${isDark ? "border-slate-700 bg-slate-800/50" : "border-slate-200 bg-white"}`}>
                       <div className="flex items-center gap-3">
-                        <div className="h-10 w-10 rounded-lg bg-amber-50 flex items-center justify-center">
-                          <ImageIcon className="h-5 w-5 text-amber-600" />
+                        <div className={`h-10 w-10 rounded-lg flex items-center justify-center ${isDark ? "bg-amber-500/10" : "bg-amber-50"}`}>
+                          <ImageIcon className={`h-5 w-5 ${isDark ? "text-amber-400" : "text-amber-600"}`} />
                         </div>
                         <div>
                           <h4 className={`font-semibold ${isDark ? "text-white" : "text-slate-900"}`}>{c.name}</h4>

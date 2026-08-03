@@ -77,7 +77,7 @@ export function SEOManagerPage() {
     }
   };
 
-  const inputCls = isDark ? "bg-slate-800 border-slate-600 text-white" : "";
+  const inputCls = isDark ? "bg-white/[0.05] border-white/[0.1] text-white placeholder:text-slate-500" : "";
   const labelCls = isDark ? "text-slate-300" : "";
 
   return (
@@ -105,11 +105,11 @@ export function SEOManagerPage() {
             <CardContent className="p-4">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-xs font-medium text-slate-500 uppercase tracking-wider">{stat.title}</p>
+                  <p className={`text-xs font-medium uppercase tracking-wider ${isDark ? "text-slate-400" : "text-slate-500"}`}>{stat.title}</p>
                   <p className={`text-2xl font-bold mt-1 ${isDark ? "text-white" : "text-slate-900"}`}>{stat.value}</p>
                 </div>
-                <div className="h-10 w-10 rounded-lg bg-amber-50 flex items-center justify-center">
-                  <stat.icon className="h-5 w-5 text-amber-600" />
+                <div className={`h-10 w-10 rounded-lg flex items-center justify-center ${isDark ? "bg-amber-500/10" : "bg-amber-50"}`}>
+                  <stat.icon className={`h-5 w-5 ${isDark ? "text-amber-400" : "text-amber-600"}`} />
                 </div>
               </div>
             </CardContent>
@@ -118,11 +118,11 @@ export function SEOManagerPage() {
       </div>
 
       <Tabs defaultValue="keywords" className="space-y-6">
-        <TabsList className="bg-slate-100 overflow-x-auto flex-wrap">
-          <TabsTrigger value="keywords">Keyword Tracker</TabsTrigger>
-          <TabsTrigger value="meta">Meta Tag Editor</TabsTrigger>
-          <TabsTrigger value="audit">SEO Audit</TabsTrigger>
-          <TabsTrigger value="speed">Page Speed</TabsTrigger>
+        <TabsList className={`h-auto w-full max-w-full flex-nowrap justify-start overflow-x-auto border p-1 ${isDark ? "border-white/[0.06] bg-white/[0.04]" : "border-slate-200 bg-slate-100"}`}>
+          <TabsTrigger value="keywords" className={`flex-none shrink-0 ${isDark ? "data-[state=active]:bg-amber-500/20 data-[state=active]:text-amber-300 dark:data-[state=active]:bg-amber-500/20 dark:data-[state=active]:text-amber-300" : ""}`}>Keyword Tracker</TabsTrigger>
+          <TabsTrigger value="meta" className={`flex-none shrink-0 ${isDark ? "data-[state=active]:bg-amber-500/20 data-[state=active]:text-amber-300 dark:data-[state=active]:bg-amber-500/20 dark:data-[state=active]:text-amber-300" : ""}`}>Meta Tag Editor</TabsTrigger>
+          <TabsTrigger value="audit" className={`flex-none shrink-0 ${isDark ? "data-[state=active]:bg-amber-500/20 data-[state=active]:text-amber-300 dark:data-[state=active]:bg-amber-500/20 dark:data-[state=active]:text-amber-300" : ""}`}>SEO Audit</TabsTrigger>
+          <TabsTrigger value="speed" className={`flex-none shrink-0 ${isDark ? "data-[state=active]:bg-amber-500/20 data-[state=active]:text-amber-300 dark:data-[state=active]:bg-amber-500/20 dark:data-[state=active]:text-amber-300" : ""}`}>Page Speed</TabsTrigger>
         </TabsList>
 
         <TabsContent value="keywords">
@@ -200,7 +200,7 @@ export function SEOManagerPage() {
               <div className="space-y-2">
                 <Label className={`text-sm font-medium ${labelCls}`}>Search Engine Preview</Label>
                 <div className={`border rounded-lg p-4 space-y-1 ${isDark ? "bg-slate-800 border-slate-700" : "bg-white border-slate-200"}`}>
-                  <p className="text-lg text-blue-700 font-normal truncate">{metaUrl || "https://yoursite.com/page"}</p>
+                  <p className={`text-lg font-normal truncate ${isDark ? "text-blue-400" : "text-blue-700"}`}>{metaUrl || "https://yoursite.com/page"}</p>
                   <p className={`text-xl font-medium truncate ${isDark ? "text-white" : "text-slate-900"}`}>{metaTitle || "Your Page Title"}</p>
                   <p className={`text-sm line-clamp-2 ${isDark ? "text-slate-400" : "text-slate-500"}`}>{metaDescription || "Your meta description will appear here..."}</p>
                 </div>

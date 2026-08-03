@@ -174,10 +174,10 @@ export function InfluencersPage() {
       </div>
 
       <Tabs defaultValue="directory" className="space-y-6">
-        <TabsList className={`w-full ${isDark ? "bg-slate-800/50" : "bg-slate-100"}`}>
-          <TabsTrigger value="directory" className="flex-1"><Users className="mr-2 h-4 w-4" />Directory</TabsTrigger>
-          <TabsTrigger value="campaigns" className="flex-1"><Handshake className="mr-2 h-4 w-4" />Campaigns</TabsTrigger>
-          <TabsTrigger value="roi" className="flex-1"><BarChart3 className="mr-2 h-4 w-4" />ROI Dashboard</TabsTrigger>
+        <TabsList className={`h-auto w-full max-w-full flex-nowrap justify-start overflow-x-auto border p-1 ${isDark ? "border-white/[0.06] bg-white/[0.04]" : "border-slate-200 bg-slate-100"}`}>
+          <TabsTrigger value="directory" className="flex-none shrink-0 data-[state=active]:bg-amber-600 data-[state=active]:text-white dark:data-[state=active]:bg-amber-600 dark:data-[state=active]:text-white sm:flex-1"><Users className="mr-2 h-4 w-4" />Directory</TabsTrigger>
+          <TabsTrigger value="campaigns" className="flex-none shrink-0 data-[state=active]:bg-amber-600 data-[state=active]:text-white dark:data-[state=active]:bg-amber-600 dark:data-[state=active]:text-white sm:flex-1"><Handshake className="mr-2 h-4 w-4" />Campaigns</TabsTrigger>
+          <TabsTrigger value="roi" className="flex-none shrink-0 data-[state=active]:bg-amber-600 data-[state=active]:text-white dark:data-[state=active]:bg-amber-600 dark:data-[state=active]:text-white sm:flex-1"><BarChart3 className="mr-2 h-4 w-4" />ROI Dashboard</TabsTrigger>
         </TabsList>
 
         {/* ── DIRECTORY TAB ── */}
@@ -240,7 +240,7 @@ export function InfluencersPage() {
                             <p className={`text-xs ${textSecondary}`}>{inf.handle}</p>
                           </div>
                         </div>
-                        <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity shrink-0">
+                        <div className="flex shrink-0 gap-1 opacity-100 transition-opacity sm:opacity-0 sm:group-hover:opacity-100 sm:group-focus-within:opacity-100">
                           <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => openEdit(inf)}><Pencil className="h-3 w-3" /></Button>
                           <Button variant="ghost" size="icon" className="h-7 w-7 text-red-400" onClick={() => handleDelete(inf)}><Trash2 className="h-3 w-3" /></Button>
                         </div>
@@ -428,7 +428,7 @@ export function InfluencersPage() {
           </DialogHeader>
           <ScrollArea className="max-h-[60vh]">
             <div className="space-y-4 pr-3">
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                 <div className="space-y-2">
                   <Label className={labelCls}>Name *</Label>
                   <Input placeholder="Influencer name" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} className={inputCls} />
@@ -438,7 +438,7 @@ export function InfluencersPage() {
                   <Input placeholder="@username" value={form.handle} onChange={(e) => setForm({ ...form, handle: e.target.value })} className={inputCls} />
                 </div>
               </div>
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                 <div className="space-y-2">
                   <Label className={labelCls}>Platform</Label>
                   <Select value={form.platform} onValueChange={(v) => setForm({ ...form, platform: v as Influencer["platform"] })}>
@@ -453,7 +453,7 @@ export function InfluencersPage() {
                   <Input type="number" placeholder="10000" value={form.followers} onChange={(e) => setForm({ ...form, followers: Number(e.target.value) || 0 })} className={inputCls} />
                 </div>
               </div>
-              <div className="grid grid-cols-3 gap-4">
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
                 <div className="space-y-2">
                   <Label className={labelCls}>Tier</Label>
                   <Select value={form.tier} onValueChange={(v) => setForm({ ...form, tier: v as Influencer["tier"] })}>
@@ -482,7 +482,7 @@ export function InfluencersPage() {
                   </Select>
                 </div>
               </div>
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                 <div className="space-y-2">
                   <Label className={labelCls}>Compensation ($)</Label>
                   <Input type="number" placeholder="0" value={form.compensation} onChange={(e) => setForm({ ...form, compensation: Number(e.target.value) || 0 })} className={inputCls} />
@@ -496,7 +496,7 @@ export function InfluencersPage() {
                 <Label className={labelCls}>Deliverables</Label>
                 <Input placeholder="e.g., 3 posts + 1 reel" value={form.deliverables} onChange={(e) => setForm({ ...form, deliverables: e.target.value })} className={inputCls} />
               </div>
-              <div className="grid grid-cols-3 gap-4">
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
                 <div className="space-y-2">
                   <Label className={labelCls}>Reach</Label>
                   <Input type="number" placeholder="0" value={form.reach} onChange={(e) => setForm({ ...form, reach: Number(e.target.value) || 0 })} className={inputCls} />

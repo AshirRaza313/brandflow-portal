@@ -137,7 +137,7 @@ export function SocialMediaPage() {
     toast.success("Event created successfully!");
   };
 
-  const inputCls = isDark ? "bg-slate-800 border-slate-600 text-white" : "";
+  const inputCls = isDark ? "bg-white/[0.05] border-white/[0.1] text-white placeholder:text-slate-500" : "";
   const labelCls = isDark ? "text-slate-300" : "";
 
   return (
@@ -164,11 +164,11 @@ export function SocialMediaPage() {
             <CardContent className="p-4">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-xs font-medium text-slate-500 uppercase tracking-wider">{stat.title}</p>
+                  <p className={`text-xs font-medium uppercase tracking-wider ${isDark ? "text-slate-400" : "text-slate-500"}`}>{stat.title}</p>
                   <p className={`text-2xl font-bold mt-1 ${isDark ? "text-white" : "text-slate-900"}`}>{stat.value}</p>
                 </div>
-                <div className="h-10 w-10 rounded-lg bg-amber-50 flex items-center justify-center">
-                  <stat.icon className="h-5 w-5 text-amber-600" />
+                <div className={`h-10 w-10 rounded-lg flex items-center justify-center ${isDark ? "bg-amber-500/10" : "bg-amber-50"}`}>
+                  <stat.icon className={`h-5 w-5 ${isDark ? "text-amber-400" : "text-amber-600"}`} />
                 </div>
               </div>
             </CardContent>
@@ -177,17 +177,17 @@ export function SocialMediaPage() {
       </div>
 
       <Tabs defaultValue="accounts" className="space-y-6">
-        <TabsList className="bg-slate-100 overflow-x-auto flex-wrap">
-          <TabsTrigger value="accounts">Connected Accounts</TabsTrigger>
-          <TabsTrigger value="calendar">Content Calendar</TabsTrigger>
-          <TabsTrigger value="posts">Recent Posts</TabsTrigger>
-          <TabsTrigger value="scheduler">Post Scheduler</TabsTrigger>
+        <TabsList className={`h-auto w-full max-w-full flex-nowrap justify-start overflow-x-auto border p-1 ${isDark ? "border-white/[0.06] bg-white/[0.04]" : "border-slate-200 bg-slate-100"}`}>
+          <TabsTrigger value="accounts" className={`flex-none shrink-0 ${isDark ? "data-[state=active]:bg-amber-500/20 data-[state=active]:text-amber-300 dark:data-[state=active]:bg-amber-500/20 dark:data-[state=active]:text-amber-300" : ""}`}>Connected Accounts</TabsTrigger>
+          <TabsTrigger value="calendar" className={`flex-none shrink-0 ${isDark ? "data-[state=active]:bg-amber-500/20 data-[state=active]:text-amber-300 dark:data-[state=active]:bg-amber-500/20 dark:data-[state=active]:text-amber-300" : ""}`}>Content Calendar</TabsTrigger>
+          <TabsTrigger value="posts" className={`flex-none shrink-0 ${isDark ? "data-[state=active]:bg-amber-500/20 data-[state=active]:text-amber-300 dark:data-[state=active]:bg-amber-500/20 dark:data-[state=active]:text-amber-300" : ""}`}>Recent Posts</TabsTrigger>
+          <TabsTrigger value="scheduler" className={`flex-none shrink-0 ${isDark ? "data-[state=active]:bg-amber-500/20 data-[state=active]:text-amber-300 dark:data-[state=active]:bg-amber-500/20 dark:data-[state=active]:text-amber-300" : ""}`}>Post Scheduler</TabsTrigger>
         </TabsList>
 
         <TabsContent value="accounts">
           <Card>
             <CardHeader className="pb-3">
-              <div className="flex items-center justify-between">
+              <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                 <CardTitle className={`text-lg font-semibold ${isDark ? "text-white" : ""}`}>Connected Accounts</CardTitle>
                 <Button size="sm" className="bg-amber-600 hover:bg-amber-700" onClick={() => setConnectOpen(true)}>
                   <Plus className="mr-1 h-3 w-3" /> Connect
@@ -200,7 +200,7 @@ export function SocialMediaPage() {
                   {accounts.map((a) => (
                     <div key={a.id} className={`p-4 rounded-lg border flex items-center justify-between ${isDark ? "border-slate-700 bg-slate-800/50" : "border-slate-200 bg-white"}`}>
                       <div className="flex items-center gap-3">
-                        <div className="h-10 w-10 rounded-full bg-amber-100 flex items-center justify-center">
+                        <div className={`h-10 w-10 rounded-full flex items-center justify-center ${isDark ? "bg-amber-500/10" : "bg-amber-100"}`}>
                           {a.platform === "instagram" ? <Instagram className="h-5 w-5 text-amber-600" /> : a.platform === "facebook" ? <Facebook className="h-5 w-5 text-amber-600" /> : <Youtube className="h-5 w-5 text-amber-600" />}
                         </div>
                         <div>
@@ -227,7 +227,7 @@ export function SocialMediaPage() {
         <TabsContent value="calendar">
           <Card>
             <CardHeader className="pb-3">
-              <div className="flex items-center justify-between">
+              <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                 <CardTitle className={`text-lg font-semibold flex items-center gap-2 ${isDark ? "text-white" : ""}`}>
                   <Calendar className="h-5 w-5 text-amber-600" /> Content Calendar
                 </CardTitle>
@@ -263,7 +263,7 @@ export function SocialMediaPage() {
         <TabsContent value="posts">
           <Card>
             <CardHeader className="pb-3">
-              <div className="flex items-center justify-between">
+              <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                 <CardTitle className={`text-lg font-semibold ${isDark ? "text-white" : ""}`}>Recent Posts</CardTitle>
                 <div className="relative w-full sm:w-64">
                   <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />

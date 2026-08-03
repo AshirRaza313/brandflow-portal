@@ -187,7 +187,7 @@ export function CouponModal({ open, onOpenChange, organizationId, editCoupon, on
 
   return (
     <Dialog open={open} onOpenChange={(v) => { if (!loading) onOpenChange(v); }}>
-      <DialogContent className={cn("sm:max-w-md", isGold && "bg-[#1D2437] border-white/[0.08]")}>
+      <DialogContent className={cn("max-h-[calc(100dvh-2rem)] overflow-y-auto sm:max-w-md", isGold && "bg-[#1D2437] border-white/[0.08]")}>
         <DialogHeader>
           <DialogTitle className={cn(isDark && "text-white")}>
             {editCoupon ? "Edit Coupon" : "Create Coupon"}

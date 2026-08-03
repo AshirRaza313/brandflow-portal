@@ -115,7 +115,7 @@ export function EmailMarketingPage() {
     toast.success("Email scheduled successfully!");
   };
 
-  const inputCls = isDark ? "bg-slate-800 border-slate-600 text-white" : "";
+  const inputCls = isDark ? "bg-white/[0.05] border-white/[0.1] text-white placeholder:text-slate-500" : "";
   const labelCls = isDark ? "text-slate-300" : "";
 
   return (
@@ -143,11 +143,11 @@ export function EmailMarketingPage() {
             <CardContent className="p-4">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-xs font-medium text-slate-500 uppercase tracking-wider">{stat.title}</p>
+                  <p className={`text-xs font-medium uppercase tracking-wider ${isDark ? "text-slate-400" : "text-slate-500"}`}>{stat.title}</p>
                   <p className={`text-2xl font-bold mt-1 ${isDark ? "text-white" : "text-slate-900"}`}>{stat.value}</p>
                 </div>
-                <div className="h-10 w-10 rounded-lg bg-amber-50 flex items-center justify-center">
-                  <stat.icon className="h-5 w-5 text-amber-600" />
+                <div className={`h-10 w-10 rounded-lg flex items-center justify-center ${isDark ? "bg-amber-500/10" : "bg-amber-50"}`}>
+                  <stat.icon className={`h-5 w-5 ${isDark ? "text-amber-400" : "text-amber-600"}`} />
                 </div>
               </div>
             </CardContent>
@@ -156,10 +156,10 @@ export function EmailMarketingPage() {
       </div>
 
       <Tabs defaultValue="campaigns" className="space-y-6">
-        <TabsList className="bg-slate-100 overflow-x-auto flex-wrap">
-          <TabsTrigger value="campaigns">Campaigns</TabsTrigger>
-          <TabsTrigger value="subscribers">Subscribers</TabsTrigger>
-          <TabsTrigger value="compose">Compose Email</TabsTrigger>
+        <TabsList className={`h-auto w-full max-w-full flex-nowrap justify-start overflow-x-auto border p-1 ${isDark ? "border-white/[0.06] bg-white/[0.04]" : "border-slate-200 bg-slate-100"}`}>
+          <TabsTrigger value="campaigns" className={`flex-none shrink-0 ${isDark ? "data-[state=active]:bg-amber-500/20 data-[state=active]:text-amber-300 dark:data-[state=active]:bg-amber-500/20 dark:data-[state=active]:text-amber-300" : ""}`}>Campaigns</TabsTrigger>
+          <TabsTrigger value="subscribers" className={`flex-none shrink-0 ${isDark ? "data-[state=active]:bg-amber-500/20 data-[state=active]:text-amber-300 dark:data-[state=active]:bg-amber-500/20 dark:data-[state=active]:text-amber-300" : ""}`}>Subscribers</TabsTrigger>
+          <TabsTrigger value="compose" className={`flex-none shrink-0 ${isDark ? "data-[state=active]:bg-amber-500/20 data-[state=active]:text-amber-300 dark:data-[state=active]:bg-amber-500/20 dark:data-[state=active]:text-amber-300" : ""}`}>Compose Email</TabsTrigger>
         </TabsList>
 
         <TabsContent value="campaigns">
@@ -178,7 +178,7 @@ export function EmailMarketingPage() {
                         <h3 className={`font-semibold ${isDark ? "text-white" : "text-slate-900"}`}>{c.name}</h3>
                         <p className={`text-sm ${isDark ? "text-slate-400" : "text-slate-500"}`}>{c.subject}</p>
                       </div>
-                      <span className="text-xs bg-amber-100 text-amber-700 px-2 py-1 rounded-full">{c.status}</span>
+                      <span className={`text-xs px-2 py-1 rounded-full ${isDark ? "bg-amber-500/15 text-amber-300" : "bg-amber-100 text-amber-700"}`}>{c.status}</span>
                     </div>
                   ))}
                 </div>
@@ -197,7 +197,7 @@ export function EmailMarketingPage() {
         <TabsContent value="subscribers">
           <Card>
             <CardHeader className="pb-3">
-              <div className="flex items-center justify-between">
+              <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                 <CardTitle className={`text-lg font-semibold flex items-center gap-2 ${isDark ? "text-white" : ""}`}>
                   <Users className="h-5 w-5 text-amber-600" /> Subscriber Lists
                 </CardTitle>
@@ -363,7 +363,7 @@ export function EmailMarketingPage() {
                     <h4 className={`font-semibold text-sm ${isDark ? "text-white" : "text-slate-900"}`}>{t.name}</h4>
                     <p className={`text-xs ${isDark ? "text-slate-400" : "text-slate-500"}`}>{t.subject}</p>
                   </div>
-                  <span className="text-xs bg-amber-100 text-amber-700 px-2 py-1 rounded-full">{t.category}</span>
+                  <span className={`text-xs px-2 py-1 rounded-full ${isDark ? "bg-amber-500/15 text-amber-300" : "bg-amber-100 text-amber-700"}`}>{t.category}</span>
                 </div>
               </div>
             ))}

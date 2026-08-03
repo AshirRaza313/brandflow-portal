@@ -1,7 +1,8 @@
 "use client";
 
-import { useState, useMemo, useCallback, useEffect } from "react";
+import { useState, useMemo, useCallback, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
+import { useQueryClient } from "@tanstack/react-query";
 import { useValtrioxStore } from "@/store/brandflow-store";
 import { applyEventTheme, type SeasonalEvent } from "@/lib/event-themes";
 import { getEventsForRegion, getCountryName, getCountryFlag, type RegionEvent } from "@/lib/events-library";
@@ -40,21 +41,22 @@ import {
   CalendarDays,
   X,
   Timer,
-  ZapOff,
   MapPin,
   Heart,
 } from "lucide-react";
 import { toast } from "sonner";
 import { fetchWithAuth } from "@/lib/fetch-with-auth";
+import {
+  addDaysToDateKey,
+  getDateKeyInTimeZone,
+  getEventCountdownLabel,
+  resolveRegionEventOccurrence,
+} from "@/lib/event-scheduling";
+import { activeSeasonalEventQueryKey } from "@/hooks/useActiveSeasonalEvent";
 
 // ============================================================================
 // Constants & Helpers
 // ============================================================================
-
-const MONTH_NAMES = [
-  "January", "February", "March", "April", "May", "June",
-  "July", "August", "September", "October", "November", "December",
-];
 
 const TYPE_CONFIG: Record<string, { label: string; color: string; darkColor: string }> = {
   religious: { label: "Religious", color: "bg-amber-100 text-amber-700 border-amber-200", darkColor: "bg-amber-500/15 text-amber-300 border-amber-500/30" },
@@ -78,48 +80,21 @@ function normalizeCountryCode(input: string): string {
   return aliases[input.trim().toLowerCase()] || input.trim().toUpperCase();
 }
 
-function formatDateRange(date: string, dateEnd?: string): string {
-  const [m1, d1] = date.split("-").map(Number);
-  const startStr = `${MONTH_NAMES[m1 - 1]} ${d1}`;
-  if (!dateEnd) return startStr;
-  const [m2, d2] = dateEnd.split("-").map(Number);
-  if (m1 === m2) return `${startStr} - ${d2}`;
-  return `${startStr} - ${MONTH_NAMES[m2 - 1]} ${d2}`;
+function formatDateKey(date: string): string {
+  const parsed = new Date(`${date}T12:00:00.000Z`);
+  if (Number.isNaN(parsed.getTime())) return date;
+  return new Intl.DateTimeFormat("en", {
+    timeZone: "UTC",
+    month: "long",
+    day: "numeric",
+    year: "numeric",
+  }).format(parsed);
 }
 
-function getDaysUntilEvent(dateStr: string): number {
-  if (dateStr === "dynamic") return -1;
-  const now = new Date();
-  const year = now.getFullYear();
-  const [m, d] = dateStr.split("-").map(Number);
-  const eventDate = new Date(year, m - 1, d);
-  if (eventDate < now) {
-    eventDate.setFullYear(year + 1);
-  }
-  const diff = eventDate.getTime() - now.getTime();
-  return Math.ceil(diff / (1000 * 60 * 60 * 24));
-}
-
-function getCountdownLabel(days: number): string {
-  if (days < 0) return "Date varies";
-  if (days === 0) return "Today!";
-  if (days === 1) return "Tomorrow";
-  return `${days} days away`;
-}
-
-function getRegionEventCountdown(event: RegionEvent): string {
-  if (event.date === "dynamic" && event.month) {
-    return `~${MONTH_NAMES[event.month - 1]} (lunar)`;
-  }
-  return getCountdownLabel(getDaysUntilEvent(event.date));
-}
-
-function getActiveStatus(event: RegionEvent): "active" | "upcoming" | "past" {
-  if (event.date === "dynamic") return "upcoming";
-  const days = getDaysUntilEvent(event.date);
-  if (days <= event.autoDetectDaysBefore && days >= 0) return "active";
-  if (days > 0) return "upcoming";
-  return "past";
+function getEventDateLabel(event: RegionEvent): string {
+  if (!event.resolvedDate) return "Date requires confirmation";
+  const prefix = event.dateConfidence === "estimated" ? "Estimated " : "";
+  return `${prefix}${formatDateKey(event.resolvedDate)}`;
 }
 
 // ============================================================================
@@ -128,21 +103,21 @@ function getActiveStatus(event: RegionEvent): "active" | "upcoming" | "past" {
 
 function ActiveEventCard({
   event,
-  isActive,
   isDark,
-  onForceActivate,
+  today,
+  onSchedule,
   onDeactivate,
   onPreview,
 }: {
   event: RegionEvent;
-  isActive: boolean;
   isDark: boolean;
-  onForceActivate: () => void;
+  today: string;
+  onSchedule: () => void;
   onDeactivate: () => void;
   onPreview: () => void;
 }) {
-  const status = isActive ? "active" : getActiveStatus(event);
-  const countdown = getRegionEventCountdown(event);
+  const status = event.scheduleStatus || "unscheduled";
+  const countdown = getEventCountdownLabel(event, today);
   const typeConfig = TYPE_CONFIG[event.category];
 
   return (
@@ -189,7 +164,7 @@ function ActiveEventCard({
               </h3>
               <p className={`text-xs mt-0.5 flex items-center gap-1 ${isDark ? "text-slate-400" : "text-slate-500"}`}>
                 <Timer className="h-3 w-3" />
-                {event.date === "dynamic" ? `~${MONTH_NAMES[(event.month || 1) - 1]} (lunar)` : formatDateRange(event.date)}
+                {getEventDateLabel(event)}
               </p>
             </div>
           </div>
@@ -215,13 +190,9 @@ function ActiveEventCard({
                     : "border-emerald-200 text-emerald-700 hover:bg-emerald-50"
                   : "bg-amber-600 hover:bg-amber-700 text-white"
               }`}
-              onClick={onForceActivate}
+              onClick={onSchedule}
             >
-              {status === "active" ? (
-                <><Zap className="h-3 w-3 mr-1" /> Active</>
-              ) : (
-                <><ZapOff className="h-3 w-3 mr-1" /> Activate</>
-              )}
+              <><CalendarDays className="h-3 w-3 mr-1" /> Edit Schedule</>
             </Button>
             {status === "active" && (
               <Button
@@ -256,14 +227,18 @@ function ActiveEventCard({
 function AllEventCard({
   event,
   isDark,
+  today,
   onPreview,
+  onSchedule,
 }: {
   event: RegionEvent;
   isDark: boolean;
+  today: string;
   onPreview: () => void;
+  onSchedule: () => void;
 }) {
-  const status = getActiveStatus(event);
-  const countdown = getRegionEventCountdown(event);
+  const status = event.scheduleStatus || "unscheduled";
+  const countdown = getEventCountdownLabel(event, today);
   const typeConfig = TYPE_CONFIG[event.category];
 
   return (
@@ -295,7 +270,7 @@ function AllEventCard({
                 </h4>
                 <p className={`text-xs mt-0.5 flex items-center gap-1 ${isDark ? "text-slate-400" : "text-slate-500"}`}>
                   <Calendar className="h-3 w-3" />
-                  {event.date === "dynamic" ? `~${MONTH_NAMES[(event.month || 1) - 1]} (lunar)` : formatDateRange(event.date)}
+                  {getEventDateLabel(event)}
                 </p>
               </div>
               <Badge
@@ -305,10 +280,12 @@ function AllEventCard({
                     ? "border-emerald-500/50 text-emerald-500"
                     : status === "upcoming"
                       ? isDark ? "text-amber-400 border-amber-500/30" : "text-amber-600 border-amber-200"
-                      : isDark ? "text-slate-400 border-white/[0.08]" : "text-slate-400 border-slate-200"
+                      : status === "paused"
+                        ? isDark ? "text-orange-300 border-orange-500/30" : "text-orange-600 border-orange-200"
+                        : isDark ? "text-slate-400 border-white/[0.08]" : "text-slate-400 border-slate-200"
                 }`}
               >
-                {status === "active" ? "Active" : status === "upcoming" ? `${countdown}` : "Past"}
+                {status === "active" ? "Active" : status === "upcoming" ? countdown : status === "ended" ? "Ended" : status === "paused" ? "Paused" : "Not scheduled"}
               </Badge>
             </div>
             <div className="flex items-center gap-1.5 mt-1.5">
@@ -326,6 +303,30 @@ function AllEventCard({
                 {event.promotionalMessage}
               </p>
             )}
+            <div className="mt-2 flex items-center gap-2">
+              <Button
+                size="sm"
+                className="h-7 bg-amber-600 px-2.5 text-[11px] text-white hover:bg-amber-700"
+                onClick={(clickEvent) => {
+                  clickEvent.stopPropagation();
+                  onSchedule();
+                }}
+              >
+                <CalendarDays className="mr-1 h-3 w-3" />
+                {event.scheduled ? "Edit Sale" : "Schedule Sale"}
+              </Button>
+              <Button
+                size="sm"
+                variant="ghost"
+                className={`h-7 px-2 text-[11px] ${isDark ? "text-slate-400 hover:bg-white/[0.06] hover:text-white" : "text-slate-500"}`}
+                onClick={(clickEvent) => {
+                  clickEvent.stopPropagation();
+                  onPreview();
+                }}
+              >
+                <Eye className="h-3 w-3" />
+              </Button>
+            </div>
           </div>
         </div>
       </div>
@@ -433,29 +434,66 @@ function EventPreviewCard({ event, isDark }: { event: RegionEvent; isDark: boole
 // Custom Event Form Dialog
 // ============================================================================
 
+interface EventFormPayload {
+  name: string;
+  description: string;
+  emoji: string;
+  category: RegionEvent["category"];
+  occurrenceDate: string;
+  saleStart: string;
+  saleEnd: string;
+  activationMode: "automatic" | "manual";
+  manualActive: boolean;
+  promotionalMessage: string;
+  primaryColor: string;
+  secondaryColor: string;
+}
+
+function createEventForm(event: RegionEvent | null | undefined, today: string): EventFormPayload {
+  // A built-in event whose variable date has not been confirmed must stay
+  // blank so an editor cannot accidentally persist today's date as the
+  // festival date. Brand-new custom events may still start with today.
+  const occurrenceDate = event?.occurrenceDate || event?.resolvedDate || (event ? "" : today);
+  const suggestedStart = event?.saleStart || (
+    occurrenceDate > today
+      ? addDaysToDateKey(occurrenceDate, -Math.max(1, event?.autoDetectDaysBefore || 7))
+      : today
+  );
+  const suggestedEnd = event?.saleEnd || addDaysToDateKey(occurrenceDate, 1);
+  return {
+    name: event?.name || "",
+    description: event?.description || "",
+    emoji: event?.emoji || "🎉",
+    category: event?.category || "cultural",
+    occurrenceDate,
+    saleStart: suggestedStart < today ? today : suggestedStart,
+    saleEnd: suggestedEnd < today ? addDaysToDateKey(today, 1) : suggestedEnd,
+    activationMode: event?.activationMode || "automatic",
+    manualActive: event?.manualActive || false,
+    promotionalMessage: event?.promotionalMessage || "",
+    primaryColor: event?.theme?.primary || "#D4A73A",
+    secondaryColor: event?.theme?.secondary || "#F59E0B",
+  };
+}
+
 function CustomEventDialog({
   open,
   onClose,
   editEvent,
   onSubmit,
   isDark,
+  today,
 }: {
   open: boolean;
   onClose: () => void;
   editEvent?: RegionEvent | null;
-  onSubmit: (data: Partial<RegionEvent>) => void;
+  onSubmit: (data: EventFormPayload) => Promise<boolean>;
   isDark: boolean;
+  today: string;
 }) {
-  const [form, setForm] = useState({
-    name: editEvent?.name || "",
-    date: editEvent?.date || "",
-    emoji: editEvent?.emoji || "🎉",
-    description: editEvent?.description || "",
-    category: editEvent?.category || "cultural" as RegionEvent["category"],
-    primaryColor: editEvent?.theme?.primary || "#D4A73A",
-    secondaryColor: editEvent?.theme?.secondary || "#f59e0b",
-    promotionalMessage: editEvent?.promotionalMessage || "",
-  });
+  const [form, setForm] = useState<EventFormPayload>(() => createEventForm(editEvent, today));
+  const [isSaving, setIsSaving] = useState(false);
+  const isCustomEvent = !editEvent || editEvent.source === "custom";
 
   const categories: Array<{ value: RegionEvent["category"]; label: string }> = [
     { value: "religious", label: "Religious" },
@@ -468,36 +506,26 @@ function CustomEventDialog({
   useEffect(() => {
     if (open) {
       setForm({
-        name: editEvent?.name || "",
-        date: editEvent?.date || "",
-        emoji: editEvent?.emoji || "🎉",
-        description: editEvent?.description || "",
-        category: editEvent?.category || "cultural" as RegionEvent["category"],
-        primaryColor: editEvent?.theme?.primary || "#D4A73A",
-        secondaryColor: editEvent?.theme?.secondary || "#f59e0b",
-        promotionalMessage: editEvent?.promotionalMessage || "",
+        ...createEventForm(editEvent, today),
       });
+      setIsSaving(false);
     }
-  }, [open, editEvent]);
+  }, [open, editEvent, today]);
   /* eslint-enable react-hooks/set-state-in-effect */
 
-  const handleSubmit = () => {
-    if (!form.name.trim() || !form.date.trim()) return;
-    onSubmit({
-      name: form.name,
-      date: form.date,
-      emoji: form.emoji,
-      description: form.description,
-      category: form.category,
-      promotionalMessage: form.promotionalMessage,
-      theme: {
-        primary: form.primaryColor,
-        secondary: form.secondaryColor,
-        gradient: `linear-gradient(135deg, ${form.primaryColor}, ${form.secondaryColor})`,
-        bgPattern: `${form.primaryColor}08`,
-      },
-    });
-    onClose();
+  const handleSubmit = async () => {
+    if (!form.name.trim() || !form.occurrenceDate || !form.saleStart || !form.saleEnd) {
+      toast.error("Complete the event date and sale window");
+      return;
+    }
+    if (form.saleStart > form.saleEnd) {
+      toast.error("Sale end must be on or after sale start");
+      return;
+    }
+    setIsSaving(true);
+    const saved = await onSubmit(form);
+    setIsSaving(false);
+    if (saved) onClose();
   };
 
   const inputClass = isDark
@@ -506,36 +534,40 @@ function CustomEventDialog({
 
   return (
     <Dialog open={open} onOpenChange={(v) => !v && onClose()}>
-      <DialogContent className={`max-w-md ${isDark ? "bg-slate-900 border-white/[0.06]" : "bg-white"} sm:max-w-[480px]`}>
+      <DialogContent className={`max-h-[90vh] max-w-[calc(100vw-1.5rem)] overflow-y-auto ${isDark ? "bg-slate-900 border-white/[0.06]" : "bg-white"} sm:max-w-[560px]`}>
         <DialogHeader>
           <DialogTitle className={`text-base font-semibold ${isDark ? "text-white" : "text-slate-900"}`}>
-            {editEvent ? "Edit Custom Event" : "Create Custom Event"}
+            {editEvent
+              ? editEvent.source === "custom" ? `Edit ${editEvent.name}` : `Schedule ${editEvent.name}`
+              : "Create Custom Event"}
           </DialogTitle>
           <DialogDescription className={isDark ? "text-slate-400" : "text-slate-500"}>
-            Add brand-specific events like anniversaries, brand launches, or local holidays
+            Set the exact event date and the sale period. Automatic schedules start and end without a manual refresh.
           </DialogDescription>
         </DialogHeader>
         <div className="space-y-3 mt-2">
-          <div className="grid grid-cols-4 gap-3">
-            <div className="col-span-3">
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-4">
+            <div className="sm:col-span-3">
               <Label className={`text-xs font-medium ${isDark ? "text-slate-300" : "text-slate-700"}`}>Event Name</Label>
-              <Input className={`mt-1 ${inputClass}`} value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} placeholder="e.g., Brand Anniversary" />
+              <Input disabled={!isCustomEvent} className={`mt-1 ${inputClass}`} value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} placeholder="e.g., Brand Anniversary" />
             </div>
             <div>
               <Label className={`text-xs font-medium ${isDark ? "text-slate-300" : "text-slate-700"}`}>Emoji</Label>
-              <Input className={`mt-1 ${inputClass} text-center text-xl`} value={form.emoji} onChange={(e) => setForm({ ...form, emoji: e.target.value })} placeholder="🎉" maxLength={4} />
+              <Input disabled={!isCustomEvent} className={`mt-1 ${inputClass} text-center text-xl`} value={form.emoji} onChange={(e) => setForm({ ...form, emoji: e.target.value })} placeholder="🎉" maxLength={8} />
             </div>
           </div>
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
             <div>
-              <Label className={`text-xs font-medium ${isDark ? "text-slate-300" : "text-slate-700"}`}>Date (MM-DD)</Label>
-              <Input className={`mt-1 ${inputClass}`} value={form.date} onChange={(e) => setForm({ ...form, date: e.target.value })} placeholder="06-15" />
+              <Label className={`text-xs font-medium ${isDark ? "text-slate-300" : "text-slate-700"}`}>Event Date</Label>
+              <Input type="date" className={`mt-1 ${inputClass}`} value={form.occurrenceDate} onChange={(e) => setForm({ ...form, occurrenceDate: e.target.value })} />
             </div>
             <div>
               <Label className={`text-xs font-medium ${isDark ? "text-slate-300" : "text-slate-700"}`}>Category</Label>
               <div className="mt-1 flex flex-wrap gap-1">
                 {categories.map((cat) => (
                   <button
+                    type="button"
+                    disabled={!isCustomEvent}
                     key={cat.value}
                     onClick={() => setForm({ ...form, category: cat.value })}
                     className={`px-2.5 py-1 rounded-md text-[11px] border transition-colors ${
@@ -554,13 +586,55 @@ function CustomEventDialog({
               </div>
             </div>
           </div>
+          <div className={`rounded-xl border p-3 ${isDark ? "border-white/[0.08] bg-white/[0.03]" : "border-slate-200 bg-slate-50"}`}>
+            <div className="mb-2 flex items-center gap-2">
+              <CalendarDays className="h-4 w-4 text-amber-500" />
+              <p className={`text-xs font-semibold ${isDark ? "text-white" : "text-slate-900"}`}>Sale Window</p>
+            </div>
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+              <div>
+                <Label className={`text-xs font-medium ${isDark ? "text-slate-300" : "text-slate-700"}`}>Sale Starts</Label>
+                <Input type="date" className={`mt-1 ${inputClass}`} value={form.saleStart} onChange={(e) => setForm({ ...form, saleStart: e.target.value })} />
+              </div>
+              <div>
+                <Label className={`text-xs font-medium ${isDark ? "text-slate-300" : "text-slate-700"}`}>Sale Ends</Label>
+                <Input type="date" className={`mt-1 ${inputClass}`} value={form.saleEnd} onChange={(e) => setForm({ ...form, saleEnd: e.target.value })} />
+              </div>
+              <div>
+                <Label className={`text-xs font-medium ${isDark ? "text-slate-300" : "text-slate-700"}`}>Activation</Label>
+                <select
+                  value={form.activationMode}
+                  onChange={(e) => setForm({ ...form, activationMode: e.target.value as EventFormPayload["activationMode"], manualActive: false })}
+                  className={`mt-1 h-9 w-full rounded-md border px-3 text-sm ${inputClass}`}
+                >
+                  <option value="automatic">Automatic by dates</option>
+                  <option value="manual">Manual control</option>
+                </select>
+              </div>
+              {form.activationMode === "manual" && (
+                <div className="flex items-end">
+                  <button
+                    type="button"
+                    onClick={() => setForm({ ...form, manualActive: !form.manualActive, saleStart: form.manualActive ? form.saleStart : today })}
+                    className={`h-9 w-full rounded-md border px-3 text-xs font-semibold transition-colors ${
+                      form.manualActive
+                        ? "border-emerald-500/40 bg-emerald-500/15 text-emerald-300"
+                        : isDark ? "border-white/[0.1] bg-white/[0.04] text-slate-300" : "border-slate-200 bg-white text-slate-700"
+                    }`}
+                  >
+                    {form.manualActive ? "Active now" : "Keep paused"}
+                  </button>
+                </div>
+              )}
+            </div>
+          </div>
           <div>
             <Label className={`text-xs font-medium ${isDark ? "text-slate-300" : "text-slate-700"}`}>Description</Label>
             <Textarea className={`mt-1 ${inputClass} resize-none`} rows={2} value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} placeholder="Brief description..." />
           </div>
           <div>
             <Label className={`text-xs font-medium ${isDark ? "text-slate-300" : "text-slate-700"}`}>Promotional Message</Label>
-            <Input className={`mt-1 ${inputClass}`} value={form.promotionalMessage} onChange={(e) => setForm({ ...form, promotionalMessage: e.target.value })} placeholder="e.g., Special 25% off!" />
+              <Input maxLength={240} className={`mt-1 ${inputClass}`} value={form.promotionalMessage} onChange={(e) => setForm({ ...form, promotionalMessage: e.target.value })} placeholder="e.g., Happy New Year — 25% off!" />
           </div>
           <div>
             <Label className={`text-xs font-medium ${isDark ? "text-slate-300" : "text-slate-700"}`}>Theme Colors</Label>
@@ -583,8 +657,8 @@ function CustomEventDialog({
             <Button variant="ghost" size="sm" onClick={onClose} className={isDark ? "text-slate-400 hover:text-white hover:bg-white/[0.06]" : ""}>
               Cancel
             </Button>
-            <Button size="sm" onClick={handleSubmit} className="bg-amber-600 hover:bg-amber-700 text-white text-xs">
-              {editEvent ? "Save Changes" : "Create Event"}
+            <Button disabled={isSaving} size="sm" onClick={() => void handleSubmit()} className="bg-amber-600 hover:bg-amber-700 text-white text-xs">
+              {isSaving ? "Saving..." : editEvent?.source === "custom" ? "Save Event" : editEvent ? "Save Schedule" : "Create Event"}
             </Button>
           </div>
         </div>
@@ -623,7 +697,6 @@ export function EventsPage() {
     setActiveEventTheme,
     eventThemingEnabled,
     setEventThemingEnabled,
-    floatingIconsEnabled,
     setFloatingIconsEnabled,
     selectedCountry,
     selectedReligion,
@@ -633,7 +706,6 @@ export function EventsPage() {
 
   const isDark = appTheme === "premium-dark" || appTheme === "dark";
   const isGold = appTheme === "premium-dark";
-  const accentClass = isGold ? "text-amber-500" : "text-amber-500";
 
   // State
   const [regionEvents, setRegionEvents] = useState<RegionEvent[]>([]);
@@ -644,65 +716,85 @@ export function EventsPage() {
   const [previewEvent, setPreviewEvent] = useState<RegionEvent | null>(null);
   const [customDialogOpen, setCustomDialogOpen] = useState(false);
   const [editingEvent, setEditingEvent] = useState<RegionEvent | null>(null);
-  const [forceActivatedIds, setForceActivatedIds] = useState<Set<string>>(new Set());
-  const [deactivatedIds, setDeactivatedIds] = useState<Set<string>>(new Set());
+  const [activeTab, setActiveTab] = useState("active");
+  const [today, setToday] = useState(() => getDateKeyInTimeZone(new Date(), organization?.timezone || "UTC"));
+  const requestIdRef = useRef(0);
+  const queryClient = useQueryClient();
 
   // Country/religion from store or org
   const country = selectedCountry || organization?.country || "";
   const religion = selectedReligion || organization?.religion || "";
+  const organizationId = organization?.id;
 
-  // Fetch events
-  /* eslint-disable react-hooks/set-state-in-effect -- data fetching pattern is standard */
-  useEffect(() => {
-    const controller = new AbortController();
-    const signal = controller.signal;
-
-    if (!country && !religion) {
-      // Use library directly on client
-      const events = getEventsForRegion("", "");
-      if (!signal.aborted) {
-        setRegionEvents(events);
-        setIsLoading(false);
-      }
-      return () => controller.abort();
-    }
-
-    setIsLoading(true);
+  const loadEvents = useCallback(async (background = false) => {
+    const requestId = ++requestIdRef.current;
+    if (!background) setIsLoading(true);
     const params = new URLSearchParams();
     if (country) params.set("country", country);
     if (religion) params.set("religion", religion);
-
-    fetchWithAuth(`/api/events/region?${params.toString()}`, { signal })
-      .then((res) => res.json())
-      .then((data) => {
-        if (!signal.aborted) {
-          setRegionEvents(data.regionEvents || data.events?.filter((e: RegionEvent) => !e.id.startsWith("custom-")) || []);
-          setCustomEvents(data.customEvents || data.events?.filter((e: RegionEvent) => e.id.startsWith("custom-")) || []);
-        }
-      })
-      .catch((err) => {
-        if (err.name !== "AbortError" && !signal.aborted) {
-          setRegionEvents(getEventsForRegion(country, religion));
-        }
-      })
-      .finally(() => {
-        if (!signal.aborted) setIsLoading(false);
+    try {
+      const response = await fetchWithAuth(`/api/events/region?${params.toString()}`, {
+        cache: "no-store",
+        headers: { Accept: "application/json" },
       });
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok) throw new Error(typeof data.error === "string" ? data.error : "Failed to load seasonal events");
+      if (requestId !== requestIdRef.current) return;
+      const nextRegionEvents = Array.isArray(data.regionEvents) ? data.regionEvents : [];
+      const nextCustomEvents = Array.isArray(data.customEvents) ? data.customEvents : [];
+      setRegionEvents(nextRegionEvents);
+      setCustomEvents(nextCustomEvents);
+      if (typeof data.today === "string") setToday(data.today);
+      setPreviewEvent((current) => current
+        ? [...nextRegionEvents, ...nextCustomEvents].find((event: RegionEvent) => event.id === current.id) || current
+        : null);
+    } catch (error) {
+      if (requestId !== requestIdRef.current) return;
+      const fallbackToday = getDateKeyInTimeZone(new Date(), organization?.timezone || "UTC");
+      setToday(fallbackToday);
+      setRegionEvents(getEventsForRegion(country, religion).map((event) => {
+        const occurrence = resolveRegionEventOccurrence({ ...event, source: "library" }, fallbackToday);
+        return {
+          ...event,
+          source: "library" as const,
+          resolvedDate: occurrence.date,
+          dateConfidence: occurrence.confidence,
+          dateNote: occurrence.note,
+          scheduled: false,
+          scheduleStatus: "unscheduled" as const,
+        };
+      }));
+      toast.error(error instanceof Error ? error.message : "Failed to load seasonal events");
+    } finally {
+      if (requestId === requestIdRef.current && !background) setIsLoading(false);
+    }
+  }, [country, religion, organization?.timezone]);
 
-    return () => controller.abort();
-  }, [country, religion]);
+  /* eslint-disable react-hooks/set-state-in-effect -- server-backed page hydration */
+  useEffect(() => {
+    void loadEvents();
+    return () => {
+      requestIdRef.current += 1;
+    };
+  }, [loadEvents]);
   /* eslint-enable react-hooks/set-state-in-effect */
+
+  useEffect(() => {
+    const refresh = () => void loadEvents(true);
+    const interval = window.setInterval(refresh, 60_000);
+    window.addEventListener("focus", refresh);
+    return () => {
+      window.clearInterval(interval);
+      window.removeEventListener("focus", refresh);
+    };
+  }, [loadEvents]);
 
   // Derived data
   const allEvents = useMemo(() => [...regionEvents, ...customEvents], [regionEvents, customEvents]);
 
   const activeEvents = useMemo(() => {
-    return allEvents.filter((e) => {
-      if (deactivatedIds.has(e.id)) return false;
-      if (forceActivatedIds.has(e.id)) return true;
-      return getActiveStatus(e) === "active" || getActiveStatus(e) === "upcoming";
-    });
-  }, [allEvents, forceActivatedIds, deactivatedIds]);
+    return allEvents.filter((event) => event.scheduleStatus === "active");
+  }, [allEvents]);
 
   const filteredAllEvents = useMemo(() => {
     let filtered = allEvents;
@@ -722,40 +814,61 @@ export function EventsPage() {
   }, [allEvents, categoryFilter, searchQuery]);
 
   // Handlers
-  const handleForceActivate = useCallback((eventId: string) => {
-    setForceActivatedIds((prev) => {
-      const next = new Set(prev);
-      next.add(eventId);
-      if (deactivatedIds.has(eventId)) {
-        setDeactivatedIds((prev) => {
-          const n = new Set(prev);
-          n.delete(eventId);
-          return n;
-        });
-      }
-      return next;
-    });
-    toast.success("Event activated!");
-  }, [deactivatedIds]);
+  const invalidateActiveEvent = useCallback(async () => {
+    if (!organizationId) return;
+    await queryClient.invalidateQueries({ queryKey: activeSeasonalEventQueryKey(organizationId) });
+  }, [organizationId, queryClient]);
 
-  const handleDeactivate = useCallback((eventId: string) => {
-    setDeactivatedIds((prev) => {
-      const next = new Set(prev);
-      next.add(eventId);
-      if (forceActivatedIds.has(eventId)) {
-        setForceActivatedIds((prev) => {
-          const n = new Set(prev);
-          n.delete(eventId);
-          return n;
-        });
-      }
-      return next;
-    });
-    toast.info("Event deactivated");
-  }, [forceActivatedIds]);
+  const handleSaveEvent = useCallback(async (payload: EventFormPayload): Promise<boolean> => {
+    try {
+      const isEditing = Boolean(editingEvent);
+      const response = await fetchWithAuth("/api/events/region", {
+        method: isEditing ? "PATCH" : "POST",
+        headers: { "Content-Type": "application/json", Accept: "application/json" },
+        body: JSON.stringify(isEditing ? { id: editingEvent?.id, ...payload } : payload),
+      });
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok) throw new Error(typeof data.error === "string" ? data.error : "Unable to save the event");
+      await Promise.all([loadEvents(), invalidateActiveEvent()]);
+      if (!isEditing) setActiveTab("custom");
+      toast.success(isEditing ? `Updated "${editingEvent?.name}"` : `Created "${payload.name}"`);
+      return true;
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Unable to save the event");
+      return false;
+    }
+  }, [editingEvent, invalidateActiveEvent, loadEvents]);
+
+  const handleDeactivate = useCallback(async (event: RegionEvent) => {
+    if (!event.saleStart || !event.saleEnd) return;
+    try {
+      const response = await fetchWithAuth("/api/events/region", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json", Accept: "application/json" },
+        body: JSON.stringify({
+          id: event.id,
+          saleStart: event.saleStart,
+          saleEnd: event.saleEnd,
+          activationMode: "manual",
+          manualActive: false,
+          promotionalMessage: event.promotionalMessage,
+          primaryColor: event.theme.primary,
+          secondaryColor: event.theme.secondary,
+          occurrenceDate: event.occurrenceDate || event.resolvedDate,
+        }),
+      });
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok) throw new Error(typeof data.error === "string" ? data.error : "Unable to pause the sale");
+      await Promise.all([loadEvents(), invalidateActiveEvent()]);
+      toast.info("Seasonal sale paused");
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Unable to pause the sale");
+    }
+  }, [invalidateActiveEvent, loadEvents]);
 
   const handlePreview = useCallback((event: RegionEvent) => {
     setPreviewEvent(event);
+    setActiveTab("preview");
   }, []);
 
   const handleApplyPreview = useCallback(() => {
@@ -765,7 +878,7 @@ export function EventsPage() {
       id: previewEvent.id,
       name: previewEvent.name,
       emoji: previewEvent.emoji,
-      date: previewEvent.date === "dynamic" ? "03-15" : previewEvent.date,
+      date: previewEvent.resolvedDate?.slice(5) || (previewEvent.date === "dynamic" ? "01-01" : previewEvent.date),
       type: previewEvent.category === "commercial" ? "commercial" : previewEvent.category,
       religions: [religion || "all"],
       countries: [country || "all"],
@@ -786,7 +899,7 @@ export function EventsPage() {
     setActiveEventTheme(theme);
     setFloatingIconsEnabled(true);
     setEventThemingEnabled(true);
-    toast.success(`${previewEvent.emoji} ${previewEvent.name} theme applied!`);
+    toast.success(`${previewEvent.emoji} ${previewEvent.name} preview applied for this session`);
   }, [previewEvent, religion, country, setActiveEventTheme, setFloatingIconsEnabled, setEventThemingEnabled]);
 
   const handleClearTheme = useCallback(() => {
@@ -794,56 +907,26 @@ export function EventsPage() {
     setEventThemingEnabled(false);
     setFloatingIconsEnabled(false);
     setPreviewEvent(null);
-    toast.info("Theme cleared");
+    toast.info("Session preview cleared");
   }, [setActiveEventTheme, setEventThemingEnabled, setFloatingIconsEnabled]);
 
-  const handleCreateCustom = useCallback(
-    (data: Partial<RegionEvent>) => {
-      if (!country) {
-        toast.error("Set country in Settings first");
-        return;
-      }
-      fetchWithAuth("/api/events/region", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(data),
-      })
-        .then((res) => res.json())
-        .then((data) => {
-          if (data.event) {
-            setCustomEvents((prev) => [...prev, data.event]);
-            toast.success(`Created "${data.event.name}"`);
-          }
-        })
-        .catch(() => toast.error("Failed to create event"));
-    },
-    [country],
-  );
-
-  const handleEditCustom = useCallback(
-    (data: Partial<RegionEvent>) => {
-      if (!editingEvent) return;
-      setCustomEvents((prev) =>
-        prev.map((e) => (e.id === editingEvent.id ? { ...e, ...data } : e)),
-      );
-      toast.success(`Updated "${editingEvent.name}"`);
-      setEditingEvent(null);
-    },
-    [editingEvent],
-  );
-
   const handleDeleteCustom = useCallback(
-    (eventId: string) => {
-      if (!country) return;
-      fetchWithAuth(`/api/events/region?id=${eventId}`, { method: "DELETE" })
-        .then((res) => res.json())
-        .then(() => {
-          setCustomEvents((prev) => prev.filter((e) => e.id !== eventId));
-          toast.success("Event deleted");
-        })
-        .catch(() => toast.error("Failed to delete event"));
+    async (eventId: string) => {
+      try {
+        const response = await fetchWithAuth("/api/events/region", {
+          method: "DELETE",
+          headers: { "Content-Type": "application/json", Accept: "application/json" },
+          body: JSON.stringify({ id: eventId }),
+        });
+        const data = await response.json().catch(() => ({}));
+        if (!response.ok) throw new Error(typeof data.error === "string" ? data.error : "Unable to delete the event");
+        await Promise.all([loadEvents(), invalidateActiveEvent()]);
+        toast.success("Event deleted");
+      } catch (error) {
+        toast.error(error instanceof Error ? error.message : "Unable to delete the event");
+      }
     },
-    [country],
+    [invalidateActiveEvent, loadEvents],
   );
 
   const accentColor = isGold ? "text-amber-500" : "text-amber-500";
@@ -899,10 +982,10 @@ export function EventsPage() {
           {activeEventTheme && (
             <Button variant="outline" size="sm" onClick={handleClearTheme} className={`text-xs h-7 ${isDark ? "border-white/[0.1] text-slate-300" : ""}`}>
               <EyeOff className="h-3.5 w-3.5 mr-1.5" />
-              Clear Theme
+              Clear Preview
             </Button>
           )}
-          <Button size="sm" onClick={() => setCustomDialogOpen(true)} className="bg-amber-600 hover:bg-amber-700 text-white text-xs">
+          <Button size="sm" onClick={() => { setEditingEvent(null); setCustomDialogOpen(true); }} className="bg-amber-600 hover:bg-amber-700 text-white text-xs">
             <Plus className="h-3.5 w-3.5 mr-1.5" />
             Custom Event
           </Button>
@@ -926,7 +1009,7 @@ export function EventsPage() {
               <div className="flex items-center gap-2 min-w-0">
                 <Sparkles className="h-4 w-4 text-white shrink-0" />
                 <p className="text-xs font-semibold text-white truncate">
-                  {eventThemingEnabled ? "Event theme is live" : "Preview ready - click Enable in header"}
+                  {eventThemingEnabled ? "Session preview is active" : "Preview ready"}
                 </p>
               </div>
               <Button size="sm" variant="ghost" onClick={handleClearTheme} className="h-7 text-xs text-white/80 hover:text-white hover:bg-white/10">
@@ -938,21 +1021,21 @@ export function EventsPage() {
       </AnimatePresence>
 
       {/* Main Tabs */}
-      <Tabs defaultValue="active" className="w-full">
-        <TabsList className={`${isDark ? "bg-white/[0.04] border-white/[0.06]" : ""} overflow-x-auto flex-nowrap w-full justify-start`}>
-          <TabsTrigger value="active" className={`text-xs ${isDark ? "data-[state=active]:bg-amber-500/20 data-[state=active]:text-amber-300 data-[state=active]:border-amber-500/30" : ""}`}>
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+        <TabsList className={`h-auto w-full max-w-full flex-nowrap justify-start overflow-x-auto border p-1 ${isDark ? "border-white/[0.06] bg-white/[0.04]" : "border-slate-200 bg-slate-100"}`}>
+          <TabsTrigger value="active" className={`flex-none shrink-0 text-xs ${isDark ? "data-[state=active]:border-amber-500/30 data-[state=active]:bg-amber-500/20 data-[state=active]:text-amber-300 dark:data-[state=active]:border-amber-500/30 dark:data-[state=active]:bg-amber-500/20 dark:data-[state=active]:text-amber-300" : ""}`}>
             <CalendarDays className="h-3.5 w-3.5 mr-1" />
             Active Events
           </TabsTrigger>
-          <TabsTrigger value="all" className={`text-xs ${isDark ? "data-[state=active]:bg-amber-500/20 data-[state=active]:text-amber-300 data-[state=active]:border-amber-500/30" : ""}`}>
+          <TabsTrigger value="all" className={`flex-none shrink-0 text-xs ${isDark ? "data-[state=active]:border-amber-500/30 data-[state=active]:bg-amber-500/20 data-[state=active]:text-amber-300 dark:data-[state=active]:border-amber-500/30 dark:data-[state=active]:bg-amber-500/20 dark:data-[state=active]:text-amber-300" : ""}`}>
             <Filter className="h-3.5 w-3.5 mr-1" />
             All Events
           </TabsTrigger>
-          <TabsTrigger value="custom" className={`text-xs ${isDark ? "data-[state=active]:bg-amber-500/20 data-[state=active]:text-amber-300 data-[state=active]:border-amber-500/30" : ""}`}>
+          <TabsTrigger value="custom" className={`flex-none shrink-0 text-xs ${isDark ? "data-[state=active]:border-amber-500/30 data-[state=active]:bg-amber-500/20 data-[state=active]:text-amber-300 dark:data-[state=active]:border-amber-500/30 dark:data-[state=active]:bg-amber-500/20 dark:data-[state=active]:text-amber-300" : ""}`}>
             <Plus className="h-3.5 w-3.5 mr-1" />
             Custom Events
           </TabsTrigger>
-          <TabsTrigger value="preview" className={`text-xs ${isDark ? "data-[state=active]:bg-amber-500/20 data-[state=active]:text-amber-300 data-[state=active]:border-amber-500/30" : ""}`}>
+          <TabsTrigger value="preview" className={`flex-none shrink-0 text-xs ${isDark ? "data-[state=active]:border-amber-500/30 data-[state=active]:bg-amber-500/20 data-[state=active]:text-amber-300 dark:data-[state=active]:border-amber-500/30 dark:data-[state=active]:bg-amber-500/20 dark:data-[state=active]:text-amber-300" : ""}`}>
             <Eye className="h-3.5 w-3.5 mr-1" />
             Preview
           </TabsTrigger>
@@ -979,10 +1062,10 @@ export function EventsPage() {
                 <ActiveEventCard
                   key={event.id}
                   event={event}
-                  isActive={forceActivatedIds.has(event.id) || getActiveStatus(event) === "active"}
                   isDark={isDark}
-                  onForceActivate={() => handleForceActivate(event.id)}
-                  onDeactivate={() => handleDeactivate(event.id)}
+                  today={today}
+                  onSchedule={() => { setEditingEvent(event); setCustomDialogOpen(true); }}
+                  onDeactivate={() => void handleDeactivate(event)}
                   onPreview={() => handlePreview(event)}
                 />
               ))}
@@ -1007,7 +1090,7 @@ export function EventsPage() {
                 onClick={() => setCategoryFilter("all")}
                 className={`px-2.5 py-1.5 rounded-md text-[11px] border transition-colors ${
                   categoryFilter === "all"
-                    ? isGold
+                    ? isDark
                       ? "bg-amber-500/20 border-amber-500/40 text-amber-300"
                       : "bg-amber-50 border-amber-200 text-amber-700"
                     : isDark
@@ -1045,7 +1128,14 @@ export function EventsPage() {
           ) : (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4 max-h-[600px] overflow-y-auto">
               {filteredAllEvents.map((event) => (
-                <AllEventCard key={event.id} event={event} isDark={isDark} onPreview={() => handlePreview(event)} />
+                <AllEventCard
+                  key={event.id}
+                  event={event}
+                  isDark={isDark}
+                  today={today}
+                  onPreview={() => handlePreview(event)}
+                  onSchedule={() => { setEditingEvent(event); setCustomDialogOpen(true); }}
+                />
               ))}
             </div>
           )}
@@ -1096,13 +1186,14 @@ export function EventsPage() {
                       </h4>
                       <p className={`text-[10px] flex items-center gap-1 ${isDark ? "text-slate-400" : "text-slate-500"}`}>
                         <Calendar className="h-2.5 w-2.5" />
-                        {event.date === "dynamic" ? "Lunar" : formatDateRange(event.date)} • {TYPE_CONFIG[event.category]?.label}
+                        {getEventDateLabel(event)} • {TYPE_CONFIG[event.category]?.label} • {event.scheduleStatus === "unscheduled" ? "Not scheduled" : event.scheduleStatus}
                       </p>
                     </div>
                     <div className="flex items-center gap-1 shrink-0">
                       <Button
                         variant="ghost"
                         size="sm"
+                        aria-label={`Edit ${event.name}`}
                         className={`h-7 w-7 p-0 ${isDark ? "text-slate-400 hover:text-white hover:bg-white/[0.06]" : "text-slate-500 hover:text-slate-700 hover:bg-slate-50"}`}
                         onClick={() => { setEditingEvent(event); setCustomDialogOpen(true); }}
                       >
@@ -1111,6 +1202,7 @@ export function EventsPage() {
                       <Button
                         variant="ghost"
                         size="sm"
+                        aria-label={`Delete ${event.name}`}
                         className={`h-7 w-7 p-0 text-red-500 hover:text-red-400 hover:bg-red-500/10`}
                         onClick={() => handleDeleteCustom(event.id)}
                       >
@@ -1152,7 +1244,7 @@ export function EventsPage() {
                           {TYPE_CONFIG[previewEvent.category]?.label}
                         </Badge>
                         <span className={`text-[10px] ${isDark ? "text-slate-400" : "text-slate-500"}`}>
-                          {previewEvent.date === "dynamic" ? `Lunar (~${MONTH_NAMES[(previewEvent.month || 1) - 1]})` : formatDateRange(previewEvent.date)}
+                          {getEventDateLabel(previewEvent)}
                         </span>
                       </div>
                       {previewEvent.promotionalMessage && (
@@ -1170,7 +1262,7 @@ export function EventsPage() {
             <EmptyState
               isDark={isDark}
               title="Select an event to preview"
-              description="Click the eye icon on any event card to see how the theme would look on your storefront."
+              description="Click the eye icon on any event card to review its promotional colors and message."
               icon={<Eye className="h-5 w-5" />}
             />
           )}
@@ -1195,7 +1287,7 @@ export function EventsPage() {
               <div className="min-w-0">
                 <p className="font-semibold text-xs sm:text-sm text-white truncate">{previewEvent.name}</p>
                 <p className="text-[10px] text-white/80">
-                  {eventThemingEnabled ? "Theme is active on your storefront" : "Click below to apply this theme"}
+                  {eventThemingEnabled ? "Preview active in this browser session" : "Apply a temporary local preview"}
                 </p>
               </div>
             </div>
@@ -1214,17 +1306,29 @@ export function EventsPage() {
               <Button
                 size="sm"
                 onClick={handleApplyPreview}
-                className={`h-7 text-[11px font-semibold text-white ${
+                className={`h-7 text-[11px] font-semibold text-white ${
                   isGold ? "bg-amber-600 hover:bg-amber-700" : "bg-white/20 hover:bg-white/30"
                 }`}
               >
                 <Palette className="h-3.5 w-3.5 mr-1.5" />
-                Apply Theme
+                Apply Preview
               </Button>
             </div>
           </motion.div>
         )}
       </AnimatePresence>
+
+      <CustomEventDialog
+        open={customDialogOpen}
+        editEvent={editingEvent}
+        isDark={isDark}
+        today={today}
+        onSubmit={handleSaveEvent}
+        onClose={() => {
+          setCustomDialogOpen(false);
+          setEditingEvent(null);
+        }}
+      />
     </div>
   );
 }

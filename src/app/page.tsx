@@ -105,6 +105,7 @@ const FloatingEventIcons = dynamic(
 );
 import { DashboardErrorBoundary } from "@/components/brandflow/shared/DashboardErrorBoundary";
 import { TrialBannerConnected } from "@/components/brandflow/trial/TrialBanner";
+import { SeasonalEventExperience } from "@/components/brandflow/events/ActiveSeasonalEventBanner";
 
 // ── Error boundary class for catching render errors
 class PageErrorBoundary extends Component<{ children: ReactNode; name: string }, { hasError: boolean; error: Error | null }> {
@@ -658,6 +659,7 @@ export default function Home() {
           // Mobile: no margin (sidebar overlays)
         )}>
           <Header />
+          <SeasonalEventExperience organizationId={organization?.id} />
           <main className="flex-1 overflow-y-auto p-3 sm:p-4 md:p-5 lg:p-6">
             <DashboardErrorBoundary>
               {/* Trial Banner - shown when subscription is in trial mode */}

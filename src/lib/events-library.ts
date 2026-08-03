@@ -3,6 +3,11 @@
 // Returns curated events based on a brand's country and religion selection.
 // ============================================================================
 
+export type RegionEventSource = "library" | "custom";
+export type EventActivationMode = "automatic" | "manual";
+export type EventScheduleStatus = "unscheduled" | "upcoming" | "active" | "ended" | "paused";
+export type EventDateConfidence = "exact" | "estimated" | "requires-confirmation";
+
 export interface RegionEvent {
   id: string;
   name: string;
@@ -11,7 +16,8 @@ export interface RegionEvent {
   lunar?: boolean;
   month?: number; // for lunar events, approximate Gregorian month (1-12)
   day?: number; // day of month for fixed events
-  dateRule?: "fixed" | "lunar-islamic" | "dynamic";
+  dateEnd?: string;
+  dateRule?: "fixed" | "nth-weekday" | "easter" | "relative-easter" | "islamic-umalqura" | "annual-table" | "dynamic";
   emoji: string;
   theme: {
     primary: string;
@@ -23,6 +29,18 @@ export interface RegionEvent {
   autoDetectDaysBefore: number;
   promotionalMessage: string;
   category: "religious" | "cultural" | "national" | "commercial";
+  source?: RegionEventSource;
+  occurrenceDate?: string | null;
+  resolvedDate?: string | null;
+  dateConfidence?: EventDateConfidence;
+  dateNote?: string;
+  saleStart?: string | null;
+  saleEnd?: string | null;
+  activationMode?: EventActivationMode;
+  manualActive?: boolean;
+  scheduleStatus?: EventScheduleStatus;
+  scheduled?: boolean;
+  updatedAt?: string;
 }
 
 // ============================================================================

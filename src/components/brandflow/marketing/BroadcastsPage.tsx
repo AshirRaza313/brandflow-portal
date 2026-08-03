@@ -290,14 +290,14 @@ export function BroadcastsPage() {
 
       {/* Tabs */}
       <Tabs value={activeTab} onValueChange={setActiveTab}>
-        <TabsList className={`w-full sm:w-auto ${isDark ? "bg-white/[0.05]" : "bg-slate-100"}`}>
-          <TabsTrigger value="campaigns" className="data-[state=active]:bg-amber-600 data-[state=active]:text-white">
+        <TabsList className={`h-auto w-full max-w-full flex-nowrap justify-start overflow-x-auto border p-1 sm:w-auto ${isDark ? "border-white/[0.06] bg-white/[0.04]" : "border-slate-200 bg-slate-100"}`}>
+          <TabsTrigger value="campaigns" className="flex-none shrink-0 data-[state=active]:bg-amber-600 data-[state=active]:text-white dark:data-[state=active]:bg-amber-600 dark:data-[state=active]:text-white">
             <Megaphone className="mr-1.5 h-3.5 w-3.5" /> Campaigns
           </TabsTrigger>
-          <TabsTrigger value="templates" className="data-[state=active]:bg-amber-600 data-[state=active]:text-white">
+          <TabsTrigger value="templates" className="flex-none shrink-0 data-[state=active]:bg-amber-600 data-[state=active]:text-white dark:data-[state=active]:bg-amber-600 dark:data-[state=active]:text-white">
             <Copy className="mr-1.5 h-3.5 w-3.5" /> Templates
           </TabsTrigger>
-          <TabsTrigger value="analytics" className="data-[state=active]:bg-amber-600 data-[state=active]:text-white">
+          <TabsTrigger value="analytics" className="flex-none shrink-0 data-[state=active]:bg-amber-600 data-[state=active]:text-white dark:data-[state=active]:bg-amber-600 dark:data-[state=active]:text-white">
             <BarChart3 className="mr-1.5 h-3.5 w-3.5" /> Analytics
           </TabsTrigger>
         </TabsList>

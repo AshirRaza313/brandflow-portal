@@ -584,7 +584,7 @@ export function CouponsPage() {
 
                     {/* Hover Actions */}
                     <div className={cn(
-                      "flex items-center gap-1 mt-3 pt-2 opacity-0 group-hover:opacity-100 transition-opacity",
+                      "mt-3 flex items-center gap-1 pt-2 opacity-100 transition-opacity sm:opacity-0 sm:group-hover:opacity-100 sm:group-focus-within:opacity-100",
                       isDark ? "border-t border-white/[0.04]" : "border-t border-slate-100"
                     )}>
                       <button

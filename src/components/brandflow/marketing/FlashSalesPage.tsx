@@ -287,14 +287,14 @@ export function FlashSalesPage() {
 
       {/* Tabs */}
       <Tabs value={activeTab} onValueChange={setActiveTab}>
-        <TabsList className={`w-full sm:w-auto ${isDark ? "bg-white/[0.05]" : "bg-slate-100"}`}>
-          <TabsTrigger value="active" className="data-[state=active]:bg-amber-600 data-[state=active]:text-white">
+        <TabsList className={`h-auto w-full max-w-full flex-nowrap justify-start overflow-x-auto border p-1 sm:w-auto ${isDark ? "border-white/[0.06] bg-white/[0.04]" : "border-slate-200 bg-slate-100"}`}>
+          <TabsTrigger value="active" className="flex-none shrink-0 data-[state=active]:bg-amber-600 data-[state=active]:text-white dark:data-[state=active]:bg-amber-600 dark:data-[state=active]:text-white">
             <Flame className="mr-1.5 h-3.5 w-3.5" /> Active
           </TabsTrigger>
-          <TabsTrigger value="all" className="data-[state=active]:bg-amber-600 data-[state=active]:text-white">
+          <TabsTrigger value="all" className="flex-none shrink-0 data-[state=active]:bg-amber-600 data-[state=active]:text-white dark:data-[state=active]:bg-amber-600 dark:data-[state=active]:text-white">
             <Zap className="mr-1.5 h-3.5 w-3.5" /> All Sales
           </TabsTrigger>
-          <TabsTrigger value="performance" className="data-[state=active]:bg-amber-600 data-[state=active]:text-white">
+          <TabsTrigger value="performance" className="flex-none shrink-0 data-[state=active]:bg-amber-600 data-[state=active]:text-white dark:data-[state=active]:bg-amber-600 dark:data-[state=active]:text-white">
             <BarChart3 className="mr-1.5 h-3.5 w-3.5" /> Performance
           </TabsTrigger>
         </TabsList>
