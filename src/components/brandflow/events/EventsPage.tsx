@@ -16,6 +16,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import {
   Dialog,
   DialogContent,
@@ -558,8 +559,8 @@ function CustomEventDialog({
           </div>
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
             <div>
-              <Label className={`text-xs font-medium ${isDark ? "text-slate-300" : "text-slate-700"}`}>Event Date</Label>
-              <Input type="date" className={`mt-1 ${inputClass}`} value={form.occurrenceDate} onChange={(e) => setForm({ ...form, occurrenceDate: e.target.value })} />
+              <Label htmlFor="event-occurrence-date" className={`text-xs font-medium ${isDark ? "text-slate-300" : "text-slate-700"}`}>Event Date</Label>
+              <Input id="event-occurrence-date" type="date" style={{ colorScheme: isDark ? "dark" : "light" }} className={`mt-1 ${inputClass}`} value={form.occurrenceDate} onChange={(e) => setForm({ ...form, occurrenceDate: e.target.value })} />
             </div>
             <div>
               <Label className={`text-xs font-medium ${isDark ? "text-slate-300" : "text-slate-700"}`}>Category</Label>
@@ -593,28 +594,52 @@ function CustomEventDialog({
             </div>
             <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
               <div>
-                <Label className={`text-xs font-medium ${isDark ? "text-slate-300" : "text-slate-700"}`}>Sale Starts</Label>
-                <Input type="date" className={`mt-1 ${inputClass}`} value={form.saleStart} onChange={(e) => setForm({ ...form, saleStart: e.target.value })} />
+                <Label htmlFor="event-sale-start" className={`text-xs font-medium ${isDark ? "text-slate-300" : "text-slate-700"}`}>Sale Starts</Label>
+                <Input id="event-sale-start" type="date" style={{ colorScheme: isDark ? "dark" : "light" }} className={`mt-1 ${inputClass}`} value={form.saleStart} onChange={(e) => setForm({ ...form, saleStart: e.target.value })} />
               </div>
               <div>
-                <Label className={`text-xs font-medium ${isDark ? "text-slate-300" : "text-slate-700"}`}>Sale Ends</Label>
-                <Input type="date" className={`mt-1 ${inputClass}`} value={form.saleEnd} onChange={(e) => setForm({ ...form, saleEnd: e.target.value })} />
+                <Label htmlFor="event-sale-end" className={`text-xs font-medium ${isDark ? "text-slate-300" : "text-slate-700"}`}>Sale Ends</Label>
+                <Input id="event-sale-end" type="date" style={{ colorScheme: isDark ? "dark" : "light" }} className={`mt-1 ${inputClass}`} value={form.saleEnd} onChange={(e) => setForm({ ...form, saleEnd: e.target.value })} />
               </div>
               <div>
-                <Label className={`text-xs font-medium ${isDark ? "text-slate-300" : "text-slate-700"}`}>Activation</Label>
-                <select
+                <Label htmlFor="event-activation" className={`text-xs font-medium ${isDark ? "text-slate-300" : "text-slate-700"}`}>Activation</Label>
+                <Select
                   value={form.activationMode}
-                  onChange={(e) => setForm({ ...form, activationMode: e.target.value as EventFormPayload["activationMode"], manualActive: false })}
-                  className={`mt-1 h-9 w-full rounded-md border px-3 text-sm ${inputClass}`}
+                  onValueChange={(value) => setForm({
+                    ...form,
+                    activationMode: value as EventFormPayload["activationMode"],
+                    manualActive: false,
+                  })}
                 >
-                  <option value="automatic">Automatic by dates</option>
-                  <option value="manual">Manual control</option>
-                </select>
+                  <SelectTrigger id="event-activation" className={`mt-1 w-full ${inputClass}`}>
+                    <SelectValue aria-label={form.activationMode === "automatic" ? "Automatic by dates" : "Manual control"} />
+                  </SelectTrigger>
+                  <SelectContent
+                    position="item-aligned"
+                    className={isDark
+                      ? "border-white/[0.1] bg-[#111827] text-slate-100"
+                      : "border-slate-200 bg-white text-slate-900"}
+                  >
+                    <SelectItem
+                      value="automatic"
+                      className={isDark ? "focus:bg-amber-500/15 focus:text-amber-200" : "focus:bg-amber-50 focus:text-amber-800"}
+                    >
+                      Automatic by dates
+                    </SelectItem>
+                    <SelectItem
+                      value="manual"
+                      className={isDark ? "focus:bg-amber-500/15 focus:text-amber-200" : "focus:bg-amber-50 focus:text-amber-800"}
+                    >
+                      Manual control
+                    </SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
               {form.activationMode === "manual" && (
                 <div className="flex items-end">
                   <button
                     type="button"
+                    aria-pressed={form.manualActive}
                     onClick={() => setForm({ ...form, manualActive: !form.manualActive, saleStart: form.manualActive ? form.saleStart : today })}
                     className={`h-9 w-full rounded-md border px-3 text-xs font-semibold transition-colors ${
                       form.manualActive

@@ -137,9 +137,24 @@ describe("seasonal event page integration", () => {
     expect(source).toContain(">Event Date</Label>");
     expect(source).toContain(">Sale Starts</Label>");
     expect(source).toContain(">Sale Ends</Label>");
-    expect(source).toContain('<option value="automatic">Automatic by dates</option>');
-    expect(source).toContain('<option value="manual">Manual control</option>');
+    expect(source).toContain("Automatic by dates");
+    expect(source).toContain("Manual control");
     expect(source).toContain('event ? "" : today');
+  });
+
+  it("uses the themed Select primitive for Activation instead of a native white popup", () => {
+    const source = readFileSync(
+      join(process.cwd(), "src/components/brandflow/events/EventsPage.tsx"),
+      "utf8",
+    );
+
+    expect(source).toContain('<SelectTrigger id="event-activation"');
+    expect(source).toContain('position="item-aligned"');
+    expect(source).toContain('bg-[#111827] text-slate-100');
+    expect(source).toContain('<SelectItem');
+    expect(source).not.toContain('<select\n');
+    expect(source).toContain('style={{ colorScheme: isDark ? "dark" : "light" }}');
+    expect(source).toContain('aria-pressed={form.manualActive}');
   });
 
   it("keeps the dialog open after a failed save and only closes after success", () => {
