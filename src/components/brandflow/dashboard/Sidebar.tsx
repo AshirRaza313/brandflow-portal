@@ -162,55 +162,72 @@ export function Sidebar({ collapsed, onToggle, onLogout, activeItem, onItemClick
         {/* Navigation */}
         <ScrollArea className="flex-1 py-4">
           <div className="px-3 space-y-1">
-            {navGroups.map((group) => (
-              <div key={group.label} className="mb-2">
-                {/* Group header */}
-                <button
-                  onClick={() => toggleGroup(group.label)}
-                  className="flex items-center justify-between w-full px-2 py-1.5 text-xs font-semibold text-slate-400 uppercase tracking-wider hover:text-slate-300 transition-colors"
-                >
-                  {!collapsed && <span>{group.label}</span>}
-                  {!collapsed && (
-                    <span className="text-[10px]">
-                      {expandedGroups[group.label] ? (
-                        <ChevronDown className="w-3 h-3" />
-                      ) : (
-                        <ChevronRight className="w-3 h-3" />
-                      )}
-                    </span>
-                  )}
-                </button>
+            {navGroups.map((group) => {
+              const isOperationsGroup = group.label === "Operations";
 
-                {/* Group items */}
-                <AnimatePresence>
-                  {expandedGroups[group.label] && (
-                    <motion.div
-                      initial={{ height: 0, opacity: 0 }}
-                      animate={{ height: "auto", opacity: 1 }}
-                      exit={{ height: 0, opacity: 0 }}
-                      transition={{ duration: 0.2 }}
-                      className="overflow-hidden"
-                    >
-                      {group.items.map((item) => (
-                        <button
-                          key={item.id}
-                          onClick={() => onItemClick(item.id)}
-                          className={cn(
-                            "flex items-center gap-3 w-full px-3 py-2 rounded-lg text-sm transition-all duration-200",
-                            activeItem === item.id
-                              ? "bg-amber-600/20 text-amber-400"
-                              : "text-slate-400 hover:bg-slate-800 hover:text-white"
-                          )}
-                        >
-                          <item.icon className="w-4 h-4 shrink-0" />
-                          {!collapsed && <span>{item.label}</span>}
-                        </button>
-                      ))}
-                    </motion.div>
-                  )}
-                </AnimatePresence>
-              </div>
-            ))}
+              return (
+                <div key={group.label} className={cn("mb-2", isOperationsGroup && "operations-group")}>
+                  {/* Group header */}
+                  <button
+                    onClick={() => toggleGroup(group.label)}
+                    className={cn(
+                      "flex items-center justify-between w-full px-2 py-1.5 text-xs font-semibold uppercase tracking-wider transition-colors",
+                      // Use brand/gold text for Operations group header to match main page
+                      isOperationsGroup ? "text-amber-600 hover:text-amber-500" : "text-slate-400 hover:text-slate-300"
+                    )}
+                  >
+                    {!collapsed && <span>{group.label}</span>}
+                    {!collapsed && (
+                      <span className="text-[10px]">
+                        {expandedGroups[group.label] ? (
+                          <ChevronDown className="w-3 h-3" />
+                        ) : (
+                          <ChevronRight className="w-3 h-3" />
+                        )}
+                      </span>
+                    )}
+                  </button>
+
+                  {/* Group items */}
+                  <AnimatePresence>
+                    {expandedGroups[group.label] && (
+                      <motion.div
+                        initial={{ height: 0, opacity: 0 }}
+                        animate={{ height: "auto", opacity: 1 }}
+                        exit={{ height: 0, opacity: 0 }}
+                        transition={{ duration: 0.2 }}
+                        className="overflow-hidden"
+                      >
+                        {group.items.map((item) => {
+                          const isActive = activeItem === item.id;
+
+                          // For the Operations group we emphasise the brand/gold colors for hover/active states
+                          const itemActiveClass = isActive
+                            ? "bg-amber-600/20 text-amber-400"
+                            : isOperationsGroup
+                            ? "text-amber-600 hover:bg-amber-50 hover:text-amber-700"
+                            : "text-slate-400 hover:bg-slate-800 hover:text-white";
+
+                          return (
+                            <button
+                              key={item.id}
+                              onClick={() => onItemClick(item.id)}
+                              className={cn(
+                                "flex items-center gap-3 w-full px-3 py-2 rounded-lg text-sm transition-all duration-200",
+                                itemActiveClass
+                              )}
+                            >
+                              <item.icon className="w-4 h-4 shrink-0" />
+                              {!collapsed && <span>{item.label}</span>}
+                            </button>
+                          );
+                        })}
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+                </div>
+              );
+            })}
           </div>
         </ScrollArea>
 
