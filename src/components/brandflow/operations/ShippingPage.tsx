@@ -168,7 +168,6 @@ export function ShippingPage() {
     const trackingNum = generateTrackingNumber();
     const carrierNames = ["DHL Express", "FedEx", "Aramex", "UPS"];
     const carrier = carrierNames[Math.floor(Math.random() * carrierNames.length)];
-    const estDays = ["2-3 business days", "3-5 business days", "5-7 business days"];
     const estDelivery = new Date(Date.now() + (3 + Math.floor(Math.random() * 5)) * 24 * 60 * 60 * 1000).toISOString();
 
     const newShipment: Shipment = {
@@ -229,7 +228,7 @@ export function ShippingPage() {
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <h1 className={cn("text-2xl font-bold", textPrimary)}>Shipping Management</h1>
-          <p className="text-sm text-slate-500 mt-1">Track shipments, manage carriers, and calculate rates</p>
+          <p className={cn("text-sm mt-1", textSecondary)}>Track shipments, manage carriers, and calculate rates</p>
         </div>
         <Button className="bg-amber-600 hover:bg-amber-700 text-white shadow-lg shadow-amber-600/20" onClick={() => setShipmentOpen(true)}>
           <Truck className="mr-2 h-4 w-4" /> Create Shipment
@@ -287,7 +286,7 @@ export function ShippingPage() {
                     </div>
                     <div>
                       <p className={cn("text-sm font-semibold", textPrimary)}>{carrier.name}</p>
-                      <p className="text-xs text-slate-500">{carrier.serviceType} · Est. {carrier.estimatedDays}</p>
+                      <p className={cn("text-xs", textSecondary)}>{carrier.serviceType} · Est. {carrier.estimatedDays}</p>
                     </div>
                   </div>
                   <span className={cn(
@@ -358,7 +357,7 @@ export function ShippingPage() {
                                     {shipment.status.replace("_", " ")}
                                   </span>
                                 </div>
-                                <p className="text-xs text-slate-500 mt-0.5">{shipment.destination} · {shipment.weight} kg</p>
+                                <p className={cn("text-xs mt-0.5", textSecondary)}>{shipment.destination} · {shipment.weight} kg</p>
                                 {shipment.carrier && (
                                   <p className="text-xs text-slate-400 mt-0.5">via {shipment.carrier}</p>
                                 )}
@@ -464,7 +463,7 @@ export function ShippingPage() {
                 </Button>
                 {calculatedRate && (
                   <div className={cn("p-3 rounded-xl border text-center", isDark ? "bg-amber-500/5 border-amber-500/15" : "bg-amber-50 border-amber-200")}>
-                    <p className="text-xs text-slate-500 uppercase tracking-wider">Note</p>
+                    <p className={cn("text-xs uppercase tracking-wider", textSecondary)}>Note</p>
                     <p className={cn("text-sm font-medium mt-1", textPrimary)}>{calculatedRate}</p>
                   </div>
                 )}

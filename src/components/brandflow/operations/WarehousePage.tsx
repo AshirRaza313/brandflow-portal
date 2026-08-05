@@ -67,8 +67,8 @@ export function WarehousePage() {
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-slate-900">Warehouse Management</h1>
-          <p className="text-sm text-slate-500 mt-1">Monitor inventory, zones, picking, and capacity</p>
+          <h1 className={isDark ? "text-2xl font-bold text-white" : "text-2xl font-bold text-slate-900"}>Warehouse Management</h1>
+          <p className={isDark ? "text-sm text-slate-400 mt-1" : "text-sm text-slate-500 mt-1"}>Monitor inventory, zones, picking, and capacity</p>
         </div>
         <div className="flex flex-wrap gap-2">
           <Button variant="outline" className="text-xs" onClick={() => setTransferOpen(true)}>
@@ -90,8 +90,8 @@ export function WarehousePage() {
         ].map((stat) => (
           <Card key={stat.title} className="border-slate-200">
             <CardContent className="p-4">
-              <p className="text-xs font-medium text-slate-500 uppercase tracking-wider">{stat.title}</p>
-              <p className="text-2xl font-bold text-slate-900 mt-1">{stat.value}</p>
+              <p className={isDark ? "text-xs font-medium text-slate-400 uppercase tracking-wider" : "text-xs font-medium text-slate-500 uppercase tracking-wider"}>{stat.title}</p>
+              <p className={isDark ? "text-2xl font-bold text-white mt-1" : "text-2xl font-bold text-slate-900 mt-1"}>{stat.value}</p>
             </CardContent>
           </Card>
         ))}
@@ -99,14 +99,14 @@ export function WarehousePage() {
 
       {/* Zones */}
       <div>
-        <h2 className="text-lg font-semibold text-slate-900 mb-3">Zones & Racks</h2>
+        <h2 className={isDark ? "text-lg font-semibold text-white mb-3" : "text-lg font-semibold text-slate-900 mb-3"}>Zones & Racks</h2>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
           {[{ zone: "Zone A", label: "Skincare" }, { zone: "Zone B", label: "Cosmetics" }, { zone: "Zone C", label: "Packaging" }, { zone: "Zone D", label: "Materials" }].map((z) => (
             <Card key={z.zone} className="border-slate-200">
               <CardContent className="p-4">
-                <p className="text-sm font-bold text-slate-900">{z.zone}</p>
-                <p className="text-xs text-slate-600 mb-2">{z.label}</p>
-                <div className="text-xs text-slate-400">0/0 capacity · 0 items</div>
+                <p className={isDark ? "text-sm font-bold text-white" : "text-sm font-bold text-slate-900"}>{z.zone}</p>
+                <p className={isDark ? "text-xs text-slate-400 mb-2" : "text-xs text-slate-600 mb-2"}>{z.label}</p>
+                <div className={isDark ? "text-xs text-slate-500" : "text-xs text-slate-400"}>0/0 capacity · 0 items</div>
               </CardContent>
             </Card>
           ))}
@@ -116,18 +116,18 @@ export function WarehousePage() {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <Card className="border-slate-200">
           <CardContent className="p-4">
-            <p className="text-base font-semibold text-slate-900 mb-4 flex items-center gap-2"><Move className="h-4 w-4 text-amber-600" /> Stock Movement Log</p>
+            <p className={isDark ? "text-base font-semibold text-white mb-4 flex items-center gap-2" : "text-base font-semibold text-slate-900 mb-4 flex items-center gap-2"}><Move className="h-4 w-4 text-amber-600" /> Stock Movement Log</p>
             {movements.length > 0 ? (
               <div className="space-y-2">
                 {movements.map((m) => (
-                  <div key={m.id} className="flex items-center justify-between p-3 bg-slate-50 rounded-lg">
+                  <div key={m.id} className={isDark ? "flex items-center justify-between p-3 bg-white/[0.03] rounded-lg" : "flex items-center justify-between p-3 bg-slate-50 rounded-lg"}>
                     <div>
-                      <p className="text-sm font-medium text-slate-900">{m.productName || m.sku}</p>
-                      <p className="text-xs text-slate-500">
+                      <p className={isDark ? "text-sm font-medium text-white" : "text-sm font-medium text-slate-900"}>{m.productName || m.sku}</p>
+                      <p className={isDark ? "text-xs text-slate-400" : "text-xs text-slate-500"}>
                         {m.type === "transfer" ? `${m.fromZone} → ${m.toZone}` : `Received into ${m.toZone}`} · Qty: {m.quantity}
                       </p>
                     </div>
-                    <span className={`px-2 py-1 text-xs font-medium rounded-full ${m.type === "transfer" ? "bg-blue-100 text-blue-700" : "bg-amber-100 text-amber-700"}`}>
+                    <span className={`px-2 py-1 text-xs font-medium rounded-full ${m.type === "transfer" ? isDark ? "bg-blue-500/15 text-blue-400" : "bg-blue-100 text-blue-700" : isDark ? "bg-amber-500/15 text-amber-400" : "bg-amber-100 text-amber-700"}`}>
                       {m.type === "transfer" ? "Transfer" : "Received"}
                     </span>
                   </div>
@@ -140,7 +140,7 @@ export function WarehousePage() {
         </Card>
         <Card className="border-slate-200">
           <CardContent className="p-4">
-            <p className="text-base font-semibold text-slate-900 mb-4 flex items-center gap-2"><ShoppingCart className="h-4 w-4 text-amber-600" /> Picking Queue</p>
+            <p className={isDark ? "text-base font-semibold text-white mb-4 flex items-center gap-2" : "text-base font-semibold text-slate-900 mb-4 flex items-center gap-2"}><ShoppingCart className="h-4 w-4 text-amber-600" /> Picking Queue</p>
             <EmptyState icon={ShoppingCart} title="No picking orders" description="Orders will appear here once they are ready for warehouse picking." />
           </CardContent>
         </Card>
@@ -149,8 +149,8 @@ export function WarehousePage() {
       <Card className="border-slate-200">
         <CardContent className="p-4">
           <div className="flex items-center justify-between mb-4">
-            <p className="text-base font-semibold text-slate-900 flex items-center gap-2"><AlertTriangle className="h-4 w-4 text-amber-600" /> Low Stock Alerts</p>
-            <span className="text-xs text-slate-400">0 alerts</span>
+            <p className={isDark ? "text-base font-semibold text-white flex items-center gap-2" : "text-base font-semibold text-slate-900 flex items-center gap-2"}><AlertTriangle className="h-4 w-4 text-amber-600" /> Low Stock Alerts</p>
+            <span className={isDark ? "text-xs text-slate-500" : "text-xs text-slate-400"}>0 alerts</span>
           </div>
           <EmptyState icon={AlertTriangle} title="No low stock alerts" description="Low stock alerts will appear when inventory falls below minimum thresholds." />
         </CardContent>
