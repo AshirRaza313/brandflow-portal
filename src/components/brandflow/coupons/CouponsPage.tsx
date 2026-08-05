@@ -514,7 +514,7 @@ export function CouponsPage() {
                     )}>
                       {coupon.type === "percentage"
                         ? `${typeof coupon.value === 'number' ? coupon.value : 0}%`
-                        : `Rs. ${fmtNumber(coupon.value)`}
+                        : `Rs. ${fmtNumber(coupon.value)}`
                       }
                     </div>
 
