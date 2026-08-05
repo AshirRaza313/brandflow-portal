@@ -19,7 +19,7 @@ import { EmptyState } from "@/components/brandflow/shared/EmptyState";
 import { cn } from "@/lib/utils";
 import { fetchWithAuth } from "@/lib/fetch-with-auth";
 
-// ── Types ──────────────────────────────────────────────────────────────────
+// ── Types ────────────────────────────────────────────────────────────[...]
 
 interface Coupon {
   id: string;
@@ -35,14 +35,16 @@ interface Coupon {
   updatedAt: string;
 }
 
-// ── Constants ──────────────────────────────────────────────────────────────
+// ── Constants ──────────────────────────────────────────────────────────��[...]
 
 const subTabs = [
   { id: "active", label: "Active" },
+  { id: "usedup", label: "Used Up" },
   { id: "expired", label: "Expired" },
+  { id: "inactive", label: "Inactive" },
 ];
 
-// ── Component ──────────────────────────────────────────────────────────────
+// ── Component ──────────────────────────────────────────────────────────��[...]
 
 export function CouponsPage() {
   const { organization, appTheme } = useValtrioxStore();
@@ -91,6 +93,11 @@ export function CouponsPage() {
 
   useEffect(() => { fetchCoupons(); }, [fetchCoupons]);
 
+  // ── Clean up debounce on unmount ──────────────────────────────────────
+  useEffect(() => {
+    return () => { if (searchTimeoutRef.current) clearTimeout(searchTimeoutRef.current); };
+  }, []);
+
   // ── Debounced Search ──────────────────────────────────────────────────
 
   const handleSearchChange = (value: string) => {
@@ -99,17 +106,39 @@ export function CouponsPage() {
     searchTimeoutRef.current = setTimeout(() => { setSearch(value); }, 300);
   };
 
+  // ── Helpers for status checks (use epoch compare to avoid TZ issues) --
+  const isCouponExpired = (c: Coupon) => {
+    if (!c.expiresAt) return false;
+    const ts = Date.parse(c.expiresAt);
+    if (Number.isNaN(ts)) return false;
+    return ts < Date.now();
+  };
+
+  const isCouponUsedUp = (c: Coupon) => {
+    return typeof c.usageLimit === 'number' && c.usageLimit > 0 && c.usageCount >= c.usageLimit;
+  };
+
   // ── Filtered Coupons ──────────────────────────────────────────────────
 
   const filteredCoupons = useMemo(() => {
-    const now = new Date();
+    const now = Date.now();
     let filtered = coupons;
 
-    // Tab filter
-    if (activeTab === "active") {
-      filtered = coupons.filter((c) => c.isActive && (!c.expiresAt || new Date(c.expiresAt) >= now));
-    } else {
-      filtered = coupons.filter((c) => !c.isActive || (c.expiresAt && new Date(c.expiresAt) < now));
+    switch (activeTab) {
+      case 'active':
+        filtered = coupons.filter((c) => c.isActive && (!c.expiresAt || Date.parse(c.expiresAt) >= now) && !isCouponUsedUp(c));
+        break;
+      case 'usedup':
+        filtered = coupons.filter((c) => isCouponUsedUp(c));
+        break;
+      case 'expired':
+        filtered = coupons.filter((c) => c.expiresAt && Date.parse(c.expiresAt) < now);
+        break;
+      case 'inactive':
+        filtered = coupons.filter((c) => !c.isActive);
+        break;
+      default:
+        filtered = coupons;
     }
 
     // Search filter
@@ -121,78 +150,72 @@ export function CouponsPage() {
     return filtered;
   }, [coupons, activeTab, search]);
 
-  // ── Stats ─────────────────────────────────────────────────────────────
+  // ── Stats ───────────────────────────────────────────────────────────[...]
 
   const stats = useMemo(() => {
-    const now = new Date();
-    const active = coupons.filter((c) => c.isActive && (!c.expiresAt || new Date(c.expiresAt) >= now));
-    const totalRedeemed = coupons.reduce((s, c) => s + c.usageCount, 0);
-    const totalSavings = coupons.reduce((s, c) => s + (c.type === "percentage" ? 0 : c.value * c.usageCount), 0);
+    const now = Date.now();
+    const active = coupons.filter((c) => c.isActive && (!c.expiresAt || Date.parse(c.expiresAt) >= now) && !isCouponUsedUp(c));
+    const usedUp = coupons.filter((c) => isCouponUsedUp(c));
+    const expired = coupons.filter((c) => c.expiresAt && Date.parse(c.expiresAt) < now);
+    const inactive = coupons.filter((c) => !c.isActive);
+    const totalRedeemed = coupons.reduce((s, c) => s + (c.usageCount || 0), 0);
+    const totalSavings = coupons.reduce((s, c) => s + (c.type === "percentage" ? 0 : (c.value || 0) * (c.usageCount || 0)), 0);
     return {
       active: active.length,
+      usedUp: usedUp.length,
+      expired: expired.length,
+      inactive: inactive.length,
       total: coupons.length,
       totalRedeemed,
       totalSavings,
     };
   }, [coupons]);
 
-  // ── Delete ────────────────────────────────────────────────────────────
+  // ── Delete (optimistic) ─────────────────────────────────────────────
 
   const handleDelete = async () => {
     if (!deletingCouponId) return;
     setDeleting(true);
+    const prev = coupons;
+    // optimistic remove
+    setCoupons((prevList) => prevList.filter((c) => c.id !== deletingCouponId));
+
     try {
       const res = await fetchWithAuth(`/api/coupons/${deletingCouponId}`, { method: "DELETE" });
       if (!res.ok) throw new Error("Failed to delete");
       toast.success("Coupon deleted");
       setDeletingCouponId(null);
-      fetchCoupons();
-    } catch {
+    } catch (err) {
+      // revert
+      setCoupons(prev);
       toast.error("Failed to delete coupon");
     } finally {
       setDeleting(false);
     }
   };
 
-  // ── Helpers ───────────────────────────────────────────────────────────
+  // ── Toggle Active (optimistic) ──────────────────────────────────────
 
-  const getCouponStatus = (coupon: typeof filteredCoupons[number]) => {
-    const now = new Date();
-    if (!coupon.isActive) return { label: "Inactive", variant: "inactive" as const };
-    if (coupon.expiresAt && new Date(coupon.expiresAt) < now) return { label: "Expired", variant: "expired" as const };
-    if (coupon.usageLimit && coupon.usageCount >= coupon.usageLimit) return { label: "Used Up", variant: "usedup" as const };
-    return { label: "Active", variant: "active" as const };
-  };
-
-  const getStatusBadgeClasses = (variant: "active" | "expired" | "usedup" | "inactive") => {
-    switch (variant) {
-      case "active":
-        return isGold
-          ? "bg-emerald-500/15 text-emerald-400 border border-emerald-500/20"
-          : isDark
-            ? "bg-emerald-500/15 text-emerald-400 border border-emerald-500/20"
-            : "bg-emerald-50 text-emerald-700 border border-emerald-200";
-      case "expired":
-        return isGold
-          ? "bg-slate-500/15 text-slate-400 border border-slate-500/20"
-          : isDark
-            ? "bg-slate-500/15 text-slate-400 border border-slate-500/20"
-            : "bg-slate-100 text-slate-500 border border-slate-200";
-      case "usedup":
-        return isGold
-          ? "bg-red-500/15 text-red-400 border border-red-500/20"
-          : isDark
-            ? "bg-red-500/15 text-red-400 border border-red-500/20"
-            : "bg-red-50 text-red-600 border border-red-200";
-      case "inactive":
-        return isGold
-          ? "bg-white/5 text-slate-500 border border-white/10"
-          : isDark
-            ? "bg-white/5 text-slate-500 border border-white/10"
-            : "bg-slate-50 text-slate-500 border border-slate-200";
+  const toggleActive = async (coupon: Coupon) => {
+    const prev = coupons;
+    // optimistic update
+    setCoupons((prevList) => prevList.map(c => c.id === coupon.id ? { ...c, isActive: !c.isActive } : c));
+    try {
+      const res = await fetchWithAuth(`/api/coupons/${coupon.id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ isActive: !coupon.isActive }),
+      });
+      if (!res.ok) throw new Error("Failed to toggle");
+      toast.success(coupon.isActive ? "Coupon deactivated" : "Coupon activated");
+    } catch (err) {
+      // revert on error
+      setCoupons(prev);
+      toast.error("Failed to update coupon");
     }
   };
 
+  // ── Modal helpers ───────────────────────────────────────────────────
   const openEdit = (coupon: Coupon) => {
     setEditingCoupon(coupon);
     setCouponModalOpen(true);
@@ -208,22 +231,7 @@ export function CouponsPage() {
     if (!open) setEditingCoupon(null);
   };
 
-  const toggleActive = async (coupon: Coupon) => {
-    try {
-      const res = await fetchWithAuth(`/api/coupons/${coupon.id}`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ isActive: !coupon.isActive }),
-      });
-      if (!res.ok) throw new Error("Failed to toggle");
-      toast.success(coupon.isActive ? "Coupon deactivated" : "Coupon activated");
-      fetchCoupons();
-    } catch {
-      toast.error("Failed to update coupon");
-    }
-  };
-
-  // ── Theme Classes ────────────────────────────────────────────────────
+  // ── Theme Classes ───────────────────────────────────────────────────
 
   const cardClass = isGold
     ? "bg-white/[0.03] border-white/[0.06]"
@@ -242,7 +250,7 @@ export function CouponsPage() {
     return "bg-white border-slate-200 hover:border-slate-300 hover:shadow-sm";
   };
 
-  // ── Render ────────────────────────────────────────────────────────────
+  // ── Render ──────────────────────────────────────────────────────────��[...]
 
   return (
     <div className="space-y-4 sm:space-y-6">
@@ -262,7 +270,7 @@ export function CouponsPage() {
             Refresh
           </Button>
           <Button
-            className={isGold ? "bg-gradient-to-r from-amber-600 via-yellow-500 to-amber-600 text-black hover:shadow-[0_4px_20px_rgba(211,166,56,0.3)] hover:-translate-y-0.5" : "bg-amber-600 hover:bg-amber-700"}
+            className={isGold ? "bg-gradient-to-r from-amber-600 via-yellow-500 to-amber-600 text-black hover:shadow-[0_4px_20px_rgba(211,166,56,0.3)] hover:-translate-y-0.5" : "bg-amber-600 hover:bg-amber-700 text-white"}
             onClick={openCreate}
           >
             <Plus className="mr-2 h-4 w-4" /> Create Coupon
@@ -273,15 +281,20 @@ export function CouponsPage() {
       {/* Stats */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
         <StatsCard title="Active Coupons" value={stats.active} icon={Ticket} loading={loading} variant="success" />
-        <StatsCard title="Total Coupons" value={stats.total} icon={Gift} loading={loading} />
-        <StatsCard title="Total Redeemed" value={stats.totalRedeemed} icon={Tag} loading={loading} />
-        <StatsCard title="Total Savings (Rs.)" value={stats.totalSavings.toLocaleString()} icon={Banknote} loading={loading} variant="warning" />
+        <StatsCard title="Used Up" value={stats.usedUp} icon={Tag} loading={loading} />
+        <StatsCard title="Expired" value={stats.expired} icon={Clock} loading={loading} />
+        <StatsCard title="Inactive" value={stats.inactive} icon={Gift} loading={loading} variant="warning" />
       </div>
 
       {/* Sub-tabs */}
       <div className="flex gap-1 border-b overflow-x-auto tab-bar-scroll" style={{ borderColor: isDark ? "rgba(255,255,255,0.06)" : undefined }}>
         {subTabs.map((tab) => {
-          const count = tab.id === "active" ? stats.active : stats.total - stats.active;
+          let count = 0;
+          if (tab.id === "active") count = stats.active;
+          else if (tab.id === "usedup") count = stats.usedUp;
+          else if (tab.id === "expired") count = stats.expired;
+          else if (tab.id === "inactive") count = stats.inactive;
+
           return (
             <button
               key={tab.id}
@@ -368,14 +381,18 @@ export function CouponsPage() {
                     <Ticket className={cn("h-8 w-8", isGold ? "text-amber-400" : isDark ? "text-amber-400" : "text-amber-600")} />
                   </div>
                   <h3 className={cn("text-lg font-semibold", textPrimary)}>
-                    {search ? "No matching coupons" : activeTab === "active" ? "No active coupons" : "No expired coupons"}
+                    {search ? "No matching coupons" : activeTab === "active" ? "No active coupons" : activeTab === 'usedup' ? 'No used up coupons' : activeTab === 'expired' ? 'No expired coupons' : 'No inactive coupons'}
                   </h3>
                   <p className={cn("text-sm mt-1.5 max-w-sm", textSecondary)}>
                     {search
                       ? `No coupons match "${search}".`
                       : activeTab === "active"
                         ? "Create your first discount code to attract customers and boost sales."
-                        : "Expired coupons will appear here."
+                        : activeTab === 'usedup'
+                          ? 'Coupons that reached their usage limit will appear here.'
+                          : activeTab === 'expired'
+                            ? 'Expired coupons will appear here.'
+                            : 'Inactive (manually disabled) coupons appear here.'
                     }
                   </p>
                   {activeTab === "active" && !search ? (
@@ -414,10 +431,15 @@ export function CouponsPage() {
             className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4"
           >
             {filteredCoupons.map((coupon, index) => {
-              const now = new Date();
-              const isExpired = coupon.expiresAt && new Date(coupon.expiresAt) < now;
-              const isUsedUp = coupon.usageLimit && coupon.usageCount >= coupon.usageLimit;
-              const status = getCouponStatus(coupon);
+              const now = Date.now();
+              const expired = coupon.expiresAt && Date.parse(coupon.expiresAt) < now;
+              const isUsed = isCouponUsedUp(coupon);
+              const status = (function() {
+                if (!coupon.isActive) return { label: "Inactive", variant: "inactive" as const };
+                if (expired) return { label: "Expired", variant: "expired" as const };
+                if (isUsed) return { label: "Used Up", variant: "usedup" as const };
+                return { label: "Active", variant: "active" as const };
+              })();
               const usagePercent = coupon.usageLimit ? Math.round((coupon.usageCount / coupon.usageLimit) * 100) : null;
 
               return (
@@ -429,7 +451,7 @@ export function CouponsPage() {
                   className={cn(
                     "group rounded-xl border overflow-hidden transition-all",
                     getCouponCardBg(),
-                    isExpired && "opacity-60"
+                    expired && "opacity-60"
                   )}
                 >
                   {/* Top accent strip */}
@@ -469,7 +491,14 @@ export function CouponsPage() {
                       </div>
                       <span className={cn(
                         "text-[10px] font-medium px-2 py-0.5 rounded-full whitespace-nowrap",
-                        getStatusBadgeClasses(status.variant)
+                        // reuse existing badge classes
+                        status.variant === "active"
+                          ? (isGold ? "bg-emerald-500/15 text-emerald-400 border border-emerald-500/20" : isDark ? "bg-emerald-500/15 text-emerald-400 border border-emerald-500/20" : "bg-emerald-50 text-emerald-700 border border-emerald-200")
+                          : status.variant === "expired"
+                            ? (isGold ? "bg-slate-500/15 text-slate-400 border border-slate-500/20" : isDark ? "bg-slate-500/15 text-slate-400 border border-slate-500/20" : "bg-slate-100 text-slate-500 border border-slate-200")
+                            : status.variant === "usedup"
+                              ? (isGold ? "bg-red-500/15 text-red-400 border border-red-500/20" : isDark ? "bg-red-500/15 text-red-400 border border-red-500/20" : "bg-red-50 text-red-600 border border-red-200")
+                              : (isGold ? "bg-white/5 text-slate-500 border border-white/10" : isDark ? "bg-white/5 text-slate-500 border border-white/10" : "bg-slate-50 text-slate-500 border border-slate-200")
                       )}>
                         {status.label}
                       </span>
@@ -503,7 +532,7 @@ export function CouponsPage() {
                           <span>Redemptions</span>
                         </div>
                         <div className="flex items-center gap-1.5">
-                          <span className={cn("font-semibold", isUsedUp ? "text-red-500" : textPrimary)}>
+                          <span className={cn("font-semibold", isUsed ? "text-red-500" : textPrimary)}>
                             {coupon.usageCount}
                           </span>
                           {coupon.usageLimit && (
@@ -533,7 +562,7 @@ export function CouponsPage() {
                             <div
                               className={cn(
                                 "h-full rounded-full transition-all duration-500",
-                                isUsedUp
+                                isUsed
                                   ? "bg-gradient-to-r from-red-500 to-red-400"
                                   : usagePercent && usagePercent >= 80
                                     ? "bg-gradient-to-r from-amber-500 to-yellow-500"
@@ -549,11 +578,11 @@ export function CouponsPage() {
                       {coupon.expiresAt && (
                         <div className={cn(
                           "flex items-center gap-1.5 text-xs",
-                          isExpired ? "text-red-500" : textSecondary
+                          expired ? "text-red-500" : textSecondary
                         )}>
                           <Clock className="h-3 w-3" />
                           <span>{new Date(coupon.expiresAt).toLocaleDateString("en-PK", { day: "2-digit", month: "short", year: "numeric" })}</span>
-                          {isExpired && <span className="text-[10px] font-semibold ml-1">EXPIRED</span>}
+                          {expired && <span className="text-[10px] font-semibold ml-1">EXPIRED</span>}
                         </div>
                       )}
                     </div>
@@ -598,7 +627,9 @@ export function CouponsPage() {
                       </button>
                       <button
                         onClick={() => setDeletingCouponId(coupon.id)}
-                        className="flex items-center gap-1.5 px-2 py-1 rounded text-[10px] font-medium transition-colors flex-1 justify-center hover:bg-red-500/10 text-slate-400 hover:text-red-500"
+                        className={cn(
+                          "flex items-center gap-1.5 px-2 py-1 rounded text-[10px] font-medium transition-colors flex-1 justify-center hover:bg-red-500/10 text-slate-400 hover:text-red-50",
+                        )}
                       >
                         <Trash2 className="h-3 w-3" /> Delete
                       </button>
