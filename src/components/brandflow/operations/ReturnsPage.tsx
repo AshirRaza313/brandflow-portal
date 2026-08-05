@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { RotateCcw, Clock, CheckCircle2, DollarSign, PackageCheck, ShieldCheck } from "lucide-react";
+import { RotateCcw, Clock, DollarSign, PackageCheck, ShieldCheck } from "lucide-react";
 import { EmptyState } from "@/components/brandflow/shared/EmptyState";
 import { toast } from "sonner";
 import { useValtrioxStore } from "@/store/brandflow-store";
@@ -49,7 +49,7 @@ export function ReturnsPage() {
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <h1 className={isDark ? "text-2xl font-bold text-white" : "text-2xl font-bold text-slate-900"}>Returns Management</h1>
-          <p className="text-sm text-slate-500 mt-1">Track, process and manage product returns</p>
+          <p className={isDark ? "text-sm text-slate-400 mt-1" : "text-sm text-slate-500 mt-1"}>Track, process and manage product returns</p>
         </div>
         <Button className="bg-amber-600 hover:bg-amber-700 text-white" onClick={() => toast.info("Return processing queue is empty")}>
           <RotateCcw className="mr-2 h-4 w-4" /> Process Returns
@@ -66,7 +66,7 @@ export function ReturnsPage() {
         ].map((stat) => (
           <Card key={stat.title} className="border-slate-200">
             <CardContent className="p-4">
-              <p className="text-xs font-medium text-slate-500 uppercase tracking-wider">{stat.title}</p>
+              <p className={isDark ? "text-xs font-medium text-slate-400 uppercase tracking-wider" : "text-xs font-medium text-slate-500 uppercase tracking-wider"}>{stat.title}</p>
               <p className={isDark ? "text-2xl font-bold text-white mt-1" : "text-2xl font-bold text-slate-900 mt-1"}>{stat.value}</p>
             </CardContent>
           </Card>
@@ -82,7 +82,7 @@ export function ReturnsPage() {
                 <div className="flex gap-1 flex-wrap">
                   {["all", "pending", "processing", "approved", "completed", "rejected"].map((s) => (
                     <button key={s} onClick={() => setFilterStatus(s)}
-                      className={`px-3 py-1 rounded-full text-xs font-medium capitalize transition-colors ${filterStatus === s ? "bg-amber-600 text-white" : "bg-slate-100 text-slate-600 hover:bg-slate-200"}`}>
+                      className={`px-3 py-1 rounded-full text-xs font-medium capitalize transition-colors ${filterStatus === s ? "bg-amber-600 text-white" : isDark ? "bg-slate-800 text-slate-400 hover:bg-slate-700" : "bg-slate-100 text-slate-600 hover:bg-slate-200"}`}>
                       {s}
                     </button>
                   ))}
@@ -127,20 +127,20 @@ export function ReturnsPage() {
               </p>
             </div>
             <div className="space-y-3">
-              <div className="flex justify-between py-2 border-b border-slate-100">
-                <span className="text-xs text-slate-600">Return Window</span>
+              <div className={isDark ? "flex justify-between py-2 border-b border-slate-700/60" : "flex justify-between py-2 border-b border-slate-100"}>
+                <span className={isDark ? "text-xs text-slate-400" : "text-xs text-slate-600"}>Return Window</span>
                 <span className={isDark ? "text-xs font-semibold text-white" : "text-xs font-semibold text-slate-900"}>{currentPolicy?.returnWindow || "Not configured"}</span>
               </div>
-              <div className="flex justify-between py-2 border-b border-slate-100">
-                <span className="text-xs text-slate-600">Refund Method</span>
+              <div className={isDark ? "flex justify-between py-2 border-b border-slate-700/60" : "flex justify-between py-2 border-b border-slate-100"}>
+                <span className={isDark ? "text-xs text-slate-400" : "text-xs text-slate-600"}>Refund Method</span>
                 <span className={isDark ? "text-xs font-semibold text-white" : "text-xs font-semibold text-slate-900"}>{currentPolicy?.refundMethod || "Not configured"}</span>
               </div>
               <div className="flex justify-between py-2">
-                <span className="text-xs text-slate-600">Restocking Fee</span>
+                <span className={isDark ? "text-xs text-slate-400" : "text-xs text-slate-600"}>Restocking Fee</span>
                 <span className={isDark ? "text-xs font-semibold text-white" : "text-xs font-semibold text-slate-900"}>{currentPolicy?.restockingFee || "Not configured"}</span>
               </div>
             </div>
-            <Button variant="outline" size="sm" className="mt-4 w-full border-amber-200 text-amber-700 hover:bg-amber-50 text-xs" onClick={() => setPolicyOpen(true)}>
+            <Button variant="outline" size="sm" className={isDark ? "mt-4 w-full border-amber-500/30 text-amber-400 hover:bg-amber-500/10 text-xs" : "mt-4 w-full border-amber-200 text-amber-700 hover:bg-amber-50 text-xs"} onClick={() => setPolicyOpen(true)}>
               Edit Return Policy
             </Button>
           </CardContent>
