@@ -446,7 +446,7 @@ export function Sidebar() {
                                         ? "text-yellow-100 bg-gradient-to-r from-amber-600/[0.18] via-amber-500/[0.08] to-transparent"
                                         : "text-amber-50 bg-gradient-to-r from-amber-500/[0.18] via-amber-500/[0.08] to-transparent"
                                       : isSubLocked
-                                        ? "text-slate-400 hover:bg-white/[0.03] hover:text-slate-300"
+                                        ? "text-slate-400 hover:bg-white/[0.04] hover:text-slate-200"
                                         : isReadOnly
                                           ? "text-slate-400 hover:bg-white/[0.02] hover:text-slate-300"
                                           : isPlatformItem
@@ -461,7 +461,7 @@ export function Sidebar() {
                                     <span className={cn("flex-shrink-0 transition-colors", isActive
                                       ? appTheme === "premium-dark" ? "text-amber-400" : "text-amber-400"
                                       : isSubLocked
-                                        ? "text-slate-500 group-hover/item:text-slate-400"
+                                        ? "text-slate-400 group-hover/item:text-slate-300"
                                         : isPlatformItem
                                           ? "text-amber-500/50 group-hover/item:text-amber-400/70"
                                           : "text-slate-400 group-hover/item:text-slate-300"
