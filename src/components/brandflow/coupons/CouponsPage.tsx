@@ -4,10 +4,9 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useValtrioxStore } from "@/store/brandflow-store";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import {
-  Search, Ticket, Gift, Plus, Pencil, Trash2, RefreshCw, Loader2, Tag, Percent, Banknote, CalendarDays, AlertCircle, Clock, Zap,
+  Search, Ticket, Gift, Plus, Pencil, Trash2, RefreshCw, Tag, Percent, Banknote, AlertCircle, Clock, Zap,
 } from "lucide-react";
 import { toast } from "sonner";
 import { motion, AnimatePresence } from "framer-motion";
@@ -15,7 +14,6 @@ import { CouponModal } from "./CouponModal";
 import { ConfirmDialog } from "@/components/brandflow/shared/ConfirmDialog";
 import { LoadingSkeleton } from "@/components/brandflow/shared/LoadingSkeleton";
 import { StatsCard } from "@/components/brandflow/shared/StatsCard";
-import { EmptyState } from "@/components/brandflow/shared/EmptyState";
 import { cn } from "@/lib/utils";
 import { fetchWithAuth } from "@/lib/fetch-with-auth";
 
@@ -107,13 +105,6 @@ export function CouponsPage() {
   };
 
   // ── Helpers for status checks (use epoch compare to avoid TZ issues) --
-  const isCouponExpired = (c: Coupon) => {
-    if (!c.expiresAt) return false;
-    const ts = Date.parse(c.expiresAt);
-    if (Number.isNaN(ts)) return false;
-    return ts < Date.now();
-  };
-
   const isCouponUsedUp = (c: Coupon) => {
     return typeof c.usageLimit === 'number' && c.usageLimit > 0 && c.usageCount >= c.usageLimit;
   };
@@ -514,7 +505,7 @@ export function CouponsPage() {
                     )}>
                       {coupon.type === "percentage"
                         ? `${typeof coupon.value === 'number' ? coupon.value : 0}%`
-                        : `Rs. ${fmtNumber(coupon.value)`}
+                        : `Rs. ${fmtNumber(coupon.value)}`
                       }
                     </div>
 
