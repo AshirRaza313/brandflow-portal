@@ -118,6 +118,9 @@ export function CouponsPage() {
     return typeof c.usageLimit === 'number' && c.usageLimit > 0 && c.usageCount >= c.usageLimit;
   };
 
+  // formatting helpers
+  const fmtNumber = (n: number | null | undefined) => (typeof n === 'number' ? n.toLocaleString() : '0');
+
   // ── Filtered Coupons ──────────────────────────────────────────────────
 
   const filteredCoupons = useMemo(() => {
@@ -144,7 +147,7 @@ export function CouponsPage() {
     // Search filter
     if (search.trim()) {
       const q = search.toLowerCase();
-      filtered = filtered.filter((c) => c.code.toLowerCase().includes(q));
+      filtered = filtered.filter((c) => (c.code || "").toLowerCase().includes(q));
     }
 
     return filtered;
@@ -159,7 +162,7 @@ export function CouponsPage() {
     const expired = coupons.filter((c) => c.expiresAt && Date.parse(c.expiresAt) < now);
     const inactive = coupons.filter((c) => !c.isActive);
     const totalRedeemed = coupons.reduce((s, c) => s + (c.usageCount || 0), 0);
-    const totalSavings = coupons.reduce((s, c) => s + (c.type === "percentage" ? 0 : (c.value || 0) * (c.usageCount || 0)), 0);
+    const totalSavings = coupons.reduce((s, c) => s + (c.type === "percentage" ? 0 : ((c.value || 0) * (c.usageCount || 0))), 0);
     return {
       active: active.length,
       usedUp: usedUp.length,
@@ -510,18 +513,18 @@ export function CouponsPage() {
                       isGold ? "text-amber-400" : "text-amber-600"
                     )}>
                       {coupon.type === "percentage"
-                        ? `${coupon.value}%`
-                        : `Rs. ${coupon.value.toLocaleString()}`
+                        ? `${typeof coupon.value === 'number' ? coupon.value : 0}%`
+                        : `Rs. ${fmtNumber(coupon.value)`}
                       }
                     </div>
 
                     {/* Details */}
                     <div className="space-y-2.5">
                       {/* Min Order */}
-                      {coupon.minOrder && (
+                      {typeof coupon.minOrder === 'number' && (
                         <div className={cn("flex items-center justify-between text-xs", textSecondary)}>
                           <span>Min. Order</span>
-                          <span className={cn("font-medium", textPrimary)}>Rs. {coupon.minOrder.toLocaleString()}</span>
+                          <span className={cn("font-medium", textPrimary)}>Rs. {fmtNumber(coupon.minOrder)}</span>
                         </div>
                       )}
 
@@ -533,11 +536,11 @@ export function CouponsPage() {
                         </div>
                         <div className="flex items-center gap-1.5">
                           <span className={cn("font-semibold", isUsed ? "text-red-500" : textPrimary)}>
-                            {coupon.usageCount}
+                            {coupon.usageCount || 0}
                           </span>
-                          {coupon.usageLimit && (
+                          {typeof coupon.usageLimit === 'number' && (
                             <span className={cn("text-[10px]", textMuted)}>
-                              / {coupon.usageLimit}
+                              / {fmtNumber(coupon.usageLimit)}
                             </span>
                           )}
                           {usagePercent !== null && (
@@ -556,7 +559,7 @@ export function CouponsPage() {
                       </div>
 
                       {/* Progress bar */}
-                      {coupon.usageLimit && (
+                      {typeof coupon.usageLimit === 'number' && (
                         <div className="space-y-1">
                           <div className={cn("h-1.5 rounded-full overflow-hidden", isDark ? "bg-white/5" : "bg-slate-100")}>
                             <div
@@ -568,7 +571,7 @@ export function CouponsPage() {
                                     ? "bg-gradient-to-r from-amber-500 to-yellow-500"
                                     : "bg-gradient-to-r from-amber-500 to-yellow-400"
                               )}
-                              style={{ width: `${Math.min((coupon.usageCount / coupon.usageLimit) * 100, 100)}%` }}
+                              style={{ width: `${Math.min((coupon.usageCount / (coupon.usageLimit || 1)) * 100, 100)}%` }}
                             />
                           </div>
                         </div>
