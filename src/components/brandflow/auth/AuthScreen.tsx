@@ -21,7 +21,9 @@ export function AuthScreen() {
 
   // Sync default tab with store's authModalMode
   useEffect(() => {
-    setDefaultTab("login");
+    Promise.resolve().then(() => {
+      setDefaultTab("login");
+    });
   }, [authModalMode]);
   const { identity } = usePlatformIdentity();
   const [showPassword, setShowPassword] = useState(false);

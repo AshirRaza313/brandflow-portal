@@ -14,21 +14,41 @@ import { toast } from "sonner";
 import { useValtrioxStore } from "@/store/brandflow-store";
 import { cn } from "@/lib/utils";
 
+// ─────────────────────────────────────────────────────────────────────────────
+// Supplier interface — MUST match API response (Prisma Supplier model)
+// Field names match the Prisma schema exactly: email (not contactEmail)
+// ─────────────────────────────────────────────────────────────────────────────
 interface Supplier {
   id: string;
   name: string;
-  contactEmail: string;
-  phone?: string;
+  email?: string | null; // Prisma: email String? — nullable
+  phone?: string | null;
+  contactPerson?: string | null;
   category?: string;
-  address?: string;
+  address?: string | null;
+  notes?: string | null;
   status: "active" | "inactive" | "blacklisted";
   rating: number | null; // 1-5 or null (unrated) — matches API tri-state
   createdAt: string;
   updatedAt?: string;
 }
 
-// Write roles — MUST match src/lib/supplier-store.ts canWriteSuppliers
-const WRITE_ROLES = ["owner", "admin", "manager"];
+// ─────────────────────────────────────────────────────────────────────────────
+// Server-provided statistics — from GET /api/operations/suppliers response
+// Used for org-wide summary (not calculated from local page)
+// ─────────────────────────────────────────────────────────────────────────────
+interface SupplierStats {
+  total: number;
+  active: number;
+  inactive: number;
+  blacklisted: number;
+  ratedCount: number;
+  averageRating: number;
+}
+
+// NOTE: Write roles will be replaced in Issue 2 with dynamic permission check.
+// For now, keeping legacy roles — Issue 2 will fix this properly.
+const WRITE_ROLES = ["owner", "admin", "manager", "brand_owner", "brand_admin", "operations_manager"];
 
 // Inline star rating — matches ReviewsPage convention (fill-amber-400) with
 // dark-theme-aware empty stars and optional click-to-rate interactivity.
@@ -116,6 +136,7 @@ function SupplierSkeleton({ isDark }: { isDark: boolean }) {
 export function SuppliersPage() {
   const [createOpen, setCreateOpen] = useState(false);
   const [suppliers, setSuppliers] = useState<Supplier[]>([]);
+  const [stats, setStats] = useState<SupplierStats | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
@@ -128,22 +149,30 @@ export function SuppliersPage() {
   const isDark = appTheme !== "light";
   const isGold = appTheme === "premium-dark";
 
-  // Role-based write permission — MUST match API canWriteSuppliers in src/lib/supplier-store.ts
-  // If user.role is undefined (store not wired), defaults to read-only (safe).
+  // Role-based write permission — NOTE: Issue 2 will replace this with
+  // a dynamic DB-backed permission check. For now, expanded to include
+  // Valtriox real roles (brand_owner, brand_admin, operations_manager).
   const userRole = (user?.role ?? "").toString().toLowerCase();
   const canWrite = WRITE_ROLES.includes(userRole);
 
+  // ───────────────────────────────────────────────────────────────────────────
+  // fetchSuppliers — GET /api/operations/suppliers?limit=200
+  // Response shape: { suppliers: Supplier[], stats: SupplierStats, pagination: {...} }
+  // We store both suppliers (for list rendering) AND stats (for org-wide summary).
+  // ───────────────────────────────────────────────────────────────────────────
   const fetchSuppliers = useCallback(async () => {
     setLoading(true);
     setError(null);
     try {
-      const res = await fetch("/api/operations/suppliers?pageSize=200", { cache: "no-store" });
+      const res = await fetch("/api/operations/suppliers?limit=200", { cache: "no-store" });
       if (!res.ok) {
         const body = await res.json().catch(() => ({}));
         throw new Error(body?.error || `Request failed (${res.status})`);
       }
       const json = await res.json();
-      setSuppliers(Array.isArray(json?.data) ? json.data : []);
+      // API returns { suppliers, stats, pagination } — NOT { data: [...] }
+      setSuppliers(Array.isArray(json?.suppliers) ? json.suppliers : []);
+      setStats(json?.stats ?? null);
     } catch (error: unknown) {
       setError(error instanceof Error ? error.message : "Failed to load suppliers");
     } finally {
@@ -152,12 +181,14 @@ export function SuppliersPage() {
   }, []);
 
   useEffect(() => {
-    // The fetch updates local component state after mount.
-    // This is intentionally handled in an effect for initial load.
-    // eslint-disable-next-line react-hooks/set-state-in-effect
     fetchSuppliers();
   }, [fetchSuppliers]);
 
+  // ───────────────────────────────────────────────────────────────────────────
+  // handleSubmit — POST /api/operations/suppliers
+  // Body: { name, email, phone?, category?, address? }
+  // Response: { supplier: Supplier } — must unwrap .supplier
+  // ───────────────────────────────────────────────────────────────────────────
   const handleSubmit = async () => {
     if (!formData.name) { toast.error("Supplier name is required"); return; }
     if (!formData.contactEmail) { toast.error("Contact email is required"); return; }
@@ -168,7 +199,8 @@ export function SuppliersPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           name: formData.name,
-          contactEmail: formData.contactEmail,
+          // API schema field is "email", NOT "contactEmail"
+          email: formData.contactEmail,
           phone: formData.phone || undefined,
           category: formData.category || undefined,
           address: formData.address || undefined,
@@ -178,8 +210,12 @@ export function SuppliersPage() {
         const body = await res.json().catch(() => ({}));
         throw new Error(body?.error || `Failed to create (${res.status})`);
       }
-      const created: Supplier = await res.json();
+      const json = await res.json();
+      // POST returns { supplier: {...} } — unwrap it
+      const created: Supplier = json.supplier;
       setSuppliers(prev => [created, ...prev]);
+      // Refresh stats after create (total count changed)
+      fetchSuppliers();
       setCreateOpen(false);
       setFormData({ name: "", contactEmail: "", phone: "", category: "", address: "" });
       toast.success("Supplier added successfully!");
@@ -190,6 +226,11 @@ export function SuppliersPage() {
     }
   };
 
+  // ───────────────────────────────────────────────────────────────────────────
+  // setSupplierRating — PATCH /api/operations/suppliers/[id]
+  // Body: { rating: number | null } (tri-state: set, clear, omit)
+  // Response: { supplier: Supplier } — must unwrap .supplier
+  // ───────────────────────────────────────────────────────────────────────────
   const setSupplierRating = async (id: string, rating: number | null) => {
     const supplier = suppliers.find(s => s.id === id);
     if (!supplier) return;
@@ -207,8 +248,12 @@ export function SuppliersPage() {
         const body = await res.json().catch(() => ({}));
         throw new Error(body?.error || `Failed to update (${res.status})`);
       }
-      const updated: Supplier = await res.json();
+      const json = await res.json();
+      // PATCH returns { supplier: {...} } — unwrap it
+      const updated: Supplier = json.supplier;
       setSuppliers(prev => prev.map(s => s.id === id ? updated : s));
+      // Refresh stats after rating change (averageRating / ratedCount changed)
+      fetchSuppliers();
       if (rating === null) {
         toast.info(`Rating cleared for ${supplier.name}`);
       } else {
@@ -235,6 +280,8 @@ export function SuppliersPage() {
         throw new Error(body?.error || `Failed to delete (${res.status})`);
       }
       setSuppliers(prev => prev.filter(s => s.id !== id));
+      // Refresh stats after delete (total count changed)
+      fetchSuppliers();
       toast.success(`${supplier.name} deleted`);
     } catch (error: unknown) {
       toast.error(error instanceof Error ? error.message : "Failed to delete supplier");
@@ -243,11 +290,15 @@ export function SuppliersPage() {
     }
   };
 
-  // Ratings summary metrics — computed client-side from local state
+  // ───────────────────────────────────────────────────────────────────────────
+  // Summary metrics — use SERVER-PROVIDED stats for org-wide aggregates.
+  // topPerformer and needsAttention still need local supplier objects,
+  // but total/averageRating/ratedCount come from the server (Issue 5 fix).
+  // ───────────────────────────────────────────────────────────────────────────
+  const totalSuppliers = stats?.total ?? suppliers.length;
+  const avgRating = stats?.averageRating ?? 0;
+  const ratedCount = stats?.ratedCount ?? 0;
   const ratedSuppliers = suppliers.filter(s => s.rating !== null && s.rating > 0);
-  const avgRating = ratedSuppliers.length > 0
-    ? ratedSuppliers.reduce((sum, s) => sum + (s.rating ?? 0), 0) / ratedSuppliers.length
-    : 0;
   const topPerformer = ratedSuppliers.length > 0
     ? ratedSuppliers.reduce((top, s) => (s.rating ?? 0) > (top.rating ?? 0) ? s : top)
     : null;
@@ -267,10 +318,10 @@ export function SuppliersPage() {
         )}
       </div>
 
-      {/* Stats */}
+      {/* Stats — uses server-provided stats.total (Issue 5 fix) */}
       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
         {[
-          { title: "Total Suppliers", value: String(suppliers.length), icon: Building2 },
+          { title: "Total Suppliers", value: String(totalSuppliers), icon: Building2 },
           { title: "Active Orders", value: "0", icon: ShoppingCart },
           { title: "Pending Payments", value: "Rs. 0", icon: DollarSign },
           { title: "On-Time Delivery", value: "-", icon: Truck },
@@ -345,7 +396,7 @@ export function SuppliersPage() {
                   <div key={supplier.id} className={isDark ? "flex items-center justify-between p-3 bg-white/[0.03] rounded-lg" : "flex items-center justify-between p-3 bg-slate-50 rounded-lg"}>
                     <div className="min-w-0">
                       <p className={isDark ? "text-sm font-medium text-white" : "text-sm font-medium text-slate-900"}>{supplier.name}</p>
-                      <p className={isDark ? "text-xs text-slate-400 truncate" : "text-xs text-slate-500 truncate"}>{supplier.contactEmail} · {supplier.category || "No category"}</p>
+                      <p className={isDark ? "text-xs text-slate-400 truncate" : "text-xs text-slate-500 truncate"}>{supplier.email || "No email"} · {supplier.category || "No category"}</p>
                     </div>
                     <div className="flex items-center gap-2 flex-shrink-0">
                       <span className={isDark ? "px-2 py-1 text-xs font-medium bg-amber-500/15 text-amber-400 rounded-full" : "px-2 py-1 text-xs font-medium bg-amber-100 text-amber-700 rounded-full"}>Active</span>
@@ -381,14 +432,14 @@ export function SuppliersPage() {
         </Card>
       )}
 
-      {/* Performance Ratings View */}
+      {/* Performance Ratings View — uses server-provided stats (Issue 5 fix) */}
       {activeTab === "ratings" && (
         <>
           {/* Ratings Summary Stats */}
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
             {[
-              { title: "Average Rating", value: avgRating > 0 ? avgRating.toFixed(1) : "-", icon: Star, sub: `${ratedSuppliers.length} rated` },
-              { title: "Total Rated", value: String(ratedSuppliers.length), icon: Award, sub: `of ${suppliers.length} suppliers` },
+              { title: "Average Rating", value: avgRating > 0 ? avgRating.toFixed(1) : "-", icon: Star, sub: `${ratedCount} rated` },
+              { title: "Total Rated", value: String(ratedCount), icon: Award, sub: `of ${totalSuppliers} suppliers` },
               { title: "Top Performer", value: topPerformer ? topPerformer.name : "-", icon: TrendingUp, sub: topPerformer ? `${topPerformer.rating} stars` : "No ratings yet" },
               { title: "Needs Attention", value: String(needsAttention), icon: AlertTriangle, sub: "below 3 stars" },
             ].map((stat) => (

@@ -16,14 +16,7 @@ import { cn } from "@/lib/utils";
 // ============================================================================
 
 export function TrialBanner() {
-  const { appTheme, setActiveSection } = useValtrioxStore();
-  const isDark = appTheme !== "light";
-  const isGold = appTheme === "premium-dark";
-
-  // We need subscription data from the subscription sync hook.
-  // Since this component is used in page.tsx which already calls useSubscriptionSync,
-  // we receive the data as props.
-  return null; // This is a prop-based component - see TrialBannerConnected below
+  return null
 }
 
 interface TrialBannerProps {
@@ -71,7 +64,6 @@ export function TrialBannerConnected({
   const urgentButtonClass = isGold
     ? "bg-gradient-to-r from-red-500 to-orange-500 hover:from-red-600 hover:to-orange-600 text-white font-semibold shadow-lg shadow-red-500/20"
     : "bg-red-600 hover:bg-red-700 text-white shadow-lg shadow-red-500/20";
-  const urgentIconClass = isDark ? "text-red-400" : "text-red-500";
 
   // Normal trial styling - gold/amber gradient
   const normalBg = isGold
@@ -85,13 +77,11 @@ export function TrialBannerConnected({
   const normalButtonClass = isGold
     ? "bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-black font-semibold"
     : "bg-amber-600 hover:bg-amber-700 text-white";
-  const normalIconClass = isDark ? "text-amber-400" : "text-amber-500";
 
   const bg = isUrgent ? urgentBg : normalBg;
   const text = isUrgent ? urgentText : normalText;
   const subtext = isUrgent ? urgentSubtext : normalSubtext;
   const buttonClass = isUrgent ? urgentButtonClass : normalButtonClass;
-  const iconClass = isUrgent ? urgentIconClass : normalIconClass;
   const dismissHover = isDark ? "hover:bg-white/10" : "hover:bg-black/10";
 
   // Day counter ring calculation

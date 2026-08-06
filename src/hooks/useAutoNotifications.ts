@@ -38,14 +38,14 @@ export function useAutoNotifications({
   const isMountedRef = useRef(true);
   const [shownCount, setShownCount] = useState(0);
 
-  const { fetchNotifications, addNotification, notifications } = useNotificationStore();
+  const { addNotification, notifications } = useNotificationStore();
 
   // Initialize shown IDs with current notifications to avoid duplicate toasts on mount
   useEffect(() => {
     if (notifications.length > 0) {
       notifications.forEach((n) => shownIdsRef.current.add(n.id));
     }
-  }, []); // Only on mount
+  }, [notifications]);
 
   // Map notification type to Sonner toast variant
   const getToastVariant = useCallback((type: string): "success" | "info" | "warning" | "error" => {
@@ -102,10 +102,10 @@ export function useAutoNotifications({
         // Show Sonner toast
         if (showToast && isMountedRef.current) {
           const variant = getToastVariant(item.type);
-          const toastOptions: any = {
+          const toastOptions = {
             description: item.message.length > 120 ? item.message.slice(0, 120) + "…" : item.message,
             duration: 5000,
-          };
+          } as const;
 
           switch (variant) {
             case "success":
@@ -123,9 +123,8 @@ export function useAutoNotifications({
           }
         }
       }
-    } catch (err) {
+    } catch {
       // Silently fail - don't spam console on network errors
-      console.debug("[AutoNotif] Poll error:", err);
     }
   }, [orgId, userId, showToast, addNotification, getToastVariant]);
 

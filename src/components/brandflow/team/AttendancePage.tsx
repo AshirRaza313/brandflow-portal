@@ -4,7 +4,6 @@ import { useValtrioxStore } from "@/store/brandflow-store";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -30,11 +29,8 @@ export function AttendancePage() {
   const [markForm, setMarkForm] = useState({ employee: "", status: "present", notes: "" });
   const [reportOpen, setReportOpen] = useState(false);
   const [reportForm, setReportForm] = useState({ type: "daily", from: "", to: "" });
-  const [records, setRecords] = useState<{ id: number; employee: string; status: string; notes: string }[]>([]);
-
   const handleMarkAttendance = () => {
     if (!markForm.employee.trim()) { toast.error("Employee name is required"); return; }
-    setRecords(prev => [{ id: Date.now(), ...markForm }, ...prev]);
     setMarkOpen(false);
     setMarkForm({ employee: "", status: "present", notes: "" });
     toast.success("Attendance marked successfully!");

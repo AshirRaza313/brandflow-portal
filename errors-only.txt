@@ -1,0 +1,35 @@
+     8:5   error    A `require()` style import is forbidden                  @typescript-eslint/no-require-imports
+     9:12  error    A `require()` style import is forbidden                  @typescript-eslint/no-require-imports
+    10:14  error    A `require()` style import is forbidden                  @typescript-eslint/no-require-imports
+   3:12  error    A `require()` style import is forbidden  @typescript-eslint/no-require-imports
+   4:14  error    A `require()` style import is forbidden  @typescript-eslint/no-require-imports
+  58:7  error    Error: Cannot access variable before it is declared
+   69:36  error    Compilation Skipped: Existing memoization could not be preserved
+  169:38  error    Compilation Skipped: Existing memoization could not be preserved
+  153:16  error    Error: Cannot create components during render
+  165:16  error    Error: Cannot create components during render
+  179:16  error    Error: Cannot create components during render
+  39:5   error    Do not assign to the variable `module`. See: https://nextjs.org/docs/messages/no-assign-module-variable  @next/next/no-assign-module-variable
+   168:34  error    Compilation Skipped: Existing memoization could not be preserved
+   184:43  error    Compilation Skipped: Existing memoization could not be preserved
+   201:41  error    Compilation Skipped: Existing memoization could not be preserved
+  1023:12  error    Error: Cannot create components during render
+  1026:12  error    Error: Cannot create components during render
+  1029:12  error    Error: Cannot create components during render
+  46:7   error    Error: Cannot access variable before it is declared
+  235:35  error    Compilation Skipped: Existing memoization could not be preserved
+  671:72  error    Error: Cannot create components during render
+  683:70  error    Error: Cannot create components during render
+  689:71  error    Error: Cannot create components during render
+  695:69  error    Error: Cannot create components during render
+   276:36  error    Compilation Skipped: Existing memoization could not be preserved
+  157:7   error    Error: Cannot access variable before it is declared
+  229:7   error    Error: Cannot access variable before it is declared
+   303:47  error    Compilation Skipped: Existing memoization could not be preserved
+   562:34  error    Compilation Skipped: Existing memoization could not be preserved
+   690:36  error    Compilation Skipped: Existing memoization could not be preserved
+  131:36  error    Compilation Skipped: Existing memoization could not be preserved
+   149:5  error    Error: Cannot access variable before it is declared
+  233:42  error    Compilation Skipped: Existing memoization could not be preserved
+   95:42  error    Compilation Skipped: Existing memoization could not be preserved
+  113:37  error    Compilation Skipped: Existing memoization could not be preserved

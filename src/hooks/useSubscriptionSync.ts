@@ -110,7 +110,7 @@ export function useSubscriptionSync() {
       } else if (sub.status === "pending_payment") {
         isPending = true;
         const latestPending = (sub.payments || []).find(
-          (p: any) => p.status === "pending"
+          (p: { status?: string; planName?: string }) => p.status === "pending"
         );
         if (latestPending?.planName) {
           pendingPlan = latestPending.planName;
@@ -170,14 +170,16 @@ export function useSubscriptionSync() {
     mountedRef.current = true;
 
     // Reset state when org/user changes
-    setState({
-      subscriptionPlan: "trial",
-      subscriptionStatus: null,
-      isTrialActive: false,
-      trialDaysRemaining: 0,
-      isPendingPayment: false,
-      pendingPlanName: null,
-      isLoading: true,
+    Promise.resolve().then(() => {
+      setState({
+        subscriptionPlan: "trial",
+        subscriptionStatus: null,
+        isTrialActive: false,
+        trialDaysRemaining: 0,
+        isPendingPayment: false,
+        pendingPlanName: null,
+        isLoading: true,
+      });
     });
     retryCountRef.current = 0;
 

@@ -51,12 +51,14 @@ export function AuthModal() {
 
   useEffect(() => {
     if (authModalOpen) {
-      setLoginData({ email: "", password: "" });
-      setPinLoginData({ email: "", pin: "" });
-      setShowPassword(false);
-      setShowPin(false);
-      setShowTeamLogin(false);
-      setShowForgotPassword(false);
+      Promise.resolve().then(() => {
+        setLoginData({ email: "", password: "" });
+        setPinLoginData({ email: "", pin: "" });
+        setShowPassword(false);
+        setShowPin(false);
+        setShowTeamLogin(false);
+        setShowForgotPassword(false);
+      });
     }
   }, [authModalOpen]);
 

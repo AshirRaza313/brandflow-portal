@@ -97,7 +97,6 @@ const CONTEXT = createContext<PlatformIdentityContextType>({
 
 export function PlatformIdentityProvider({ children }: { children: ReactNode }) {
   const [identity, setIdentity] = useState<PlatformIdentity>(DEFAULT_IDENTITY);
-  const [loaded, setLoaded] = useState(false);
 
   const fetchIdentity = async () => {
     try {
@@ -208,13 +207,13 @@ export function PlatformIdentityProvider({ children }: { children: ReactNode }) 
       }
     } catch {
       // Silently fail - use defaults
-    } finally {
-      setLoaded(true);
     }
   };
 
   useEffect(() => {
-    fetchIdentity();
+    Promise.resolve().then(() => {
+      fetchIdentity();
+    });
   }, []);
 
   return (
