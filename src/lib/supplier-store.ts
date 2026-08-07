@@ -17,32 +17,49 @@ import { paginationQuerySchema } from "@/lib/validations";
 // ─────────────────────────────────────────────────────────────────────────────
 // ROLE PERMISSIONS
 // ─────────────────────────────────────────────────────────────────────────────
+// Real Valtriox roles (see src/lib/roles.ts → ROLES array):
+//   Platform:  platform_owner, platform_admin, valtriox_team
+//   Brand:     brand_owner, brand_admin, operations_manager, sales_manager,
+//              marketing_manager, warehouse_manager, support_agent,
+//              content_creator, accountant, team_lead, sales_rep,
+//              inventory_clerk, viewer, custom
 //
-// Mirrors the canWriteProductCatalog(role) pattern.
-// Roles are lowercase strings stored on OrganizationMember.role.
-// Write roles: owner, admin, manager (can create/update/delete suppliers + rate)
-// Read roles: any authenticated org member (including member, viewer)
+// Supplier management is part of "operations". The roles explicitly granted
+// operations access in ROLES are: brand_owner, brand_admin, operations_manager.
+// Platform roles get full access via isPlatformRole().
 //
-// If you later add custom Role records (via the Role model), update these
-// sets or convert to a DB-driven permission check.
+// Backward-compat: legacy role names (owner/admin/manager) are kept mapped
+// to their brand-equivalent write access so existing orgs aren't broken
+// during the role migration window.
 
-const SUPPLIER_WRITE_ROLES = new Set(["owner", "admin", "manager"]);
-const SUPPLIER_READ_ROLES = new Set([
+import { isPlatformRole } from "./roles";
+
+/** Roles that can create/update/delete suppliers and change ratings. */
+const SUPPLIER_WRITE_ROLES = new Set([
+  // Real Valtriox brand roles with operations access
+  "brand_owner",
+  "brand_admin",
+  "operations_manager",
+  // Legacy fallback (backwards compatibility during role migration)
   "owner",
   "admin",
   "manager",
-  "member",
-  "viewer",
-  "staff", // alias used in some orgs
 ]);
 
 /**
  * Returns true if the given role can view suppliers.
- * All authenticated org members can read.
+ *
+ * All authenticated org members can read supplier lists, including
+ * viewers (read-only) and "custom" roles — write access is gated
+ * separately by canWriteSuppliers.
  */
 export function canReadSuppliers(role: string | undefined | null): boolean {
   if (!role) return false;
-  return SUPPLIER_READ_ROLES.has(role.toLowerCase());
+  const normalized = role.trim().toLowerCase();
+  // Platform roles always pass
+  if (isPlatformRole(normalized)) return true;
+  // Any non-empty role can read (viewer, member, custom, all brand roles)
+  return normalized.length > 0;
 }
 
 /**
@@ -50,10 +67,23 @@ export function canReadSuppliers(role: string | undefined | null): boolean {
  * and change ratings. Viewer and member accounts are read-only.
  *
  * Team-member review requirement: "Viewer accounts must remain read-only."
+ *
+ * Rules:
+ *   1. Platform roles (platform_owner, platform_admin, valtriox_team,
+ *      plus legacy owner/admin) → full write access
+ *   2. Brand roles with operations permission → write access
+ *      (brand_owner, brand_admin, operations_manager)
+ *   3. All other roles (viewer, sales_rep, etc.) → read-only
+ *   4. "custom" role → conservatively denied (use roleId-based DB check
+ *      in the route handler if you need per-org custom permissions)
  */
 export function canWriteSuppliers(role: string | undefined | null): boolean {
   if (!role) return false;
-  return SUPPLIER_WRITE_ROLES.has(role.toLowerCase());
+  const normalized = role.trim().toLowerCase();
+  // Platform roles always pass
+  if (isPlatformRole(normalized)) return true;
+  // Brand roles with explicit operations access
+  return SUPPLIER_WRITE_ROLES.has(normalized);
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
