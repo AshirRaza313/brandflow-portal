@@ -34,16 +34,19 @@ interface Supplier {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Server-provided statistics — from GET /api/operations/suppliers response
-// Used for org-wide summary (not calculated from local page)
+// Server-provided aggregate statistics — returned by GET /api/operations/suppliers/stats
+// Used for org-wide summary (not calculated from the locally loaded page)
 // ─────────────────────────────────────────────────────────────────────────────
 interface SupplierStats {
-  total: number;
-  active: number;
-  inactive: number;
-  blacklisted: number;
+  totalSuppliers: number;
   ratedCount: number;
-  averageRating: number;
+  avgRating: number;
+  topPerformer: {
+    id: string;
+    name: string;
+    rating: number;
+  } | null;
+  needsAttentionCount: number;
 }
 
 // NOTE: Write roles will be replaced in Issue 2 with dynamic permission check.
@@ -110,6 +113,76 @@ function getRatingTier(rating: number | null, isDark: boolean) {
   return { label: "Not Rated", classes: isDark ? "bg-slate-500/15 text-slate-400" : "bg-slate-100 text-slate-500" };
 }
 
+// Status badge — maps supplier.status (returned by the API) to a { label, classes } pair.
+// Falls back to "Unknown" for any unexpected value so we never silently mislabel a row.
+function getStatusBadge(status: string | undefined | null, isDark: boolean) {
+  switch (status) {
+    case "active":
+      return { label: "Active", classes: isDark ? "bg-emerald-500/15 text-emerald-400" : "bg-emerald-100 text-emerald-700" };
+    case "inactive":
+      return { label: "Inactive", classes: isDark ? "bg-slate-500/15 text-slate-400" : "bg-slate-200 text-slate-600" };
+    case "blacklisted":
+      return { label: "Blacklisted", classes: isDark ? "bg-red-500/15 text-red-400" : "bg-red-100 text-red-700" };
+    default:
+      return { label: "Unknown", classes: isDark ? "bg-slate-500/15 text-slate-400" : "bg-slate-100 text-slate-500" };
+  }
+}
+
+const PAGE_SIZE = 50; // API enforces max 100; 50 keeps initial load snappy
+
+// Tolerant of 3 API response shapes (nested pagination object, flat, or legacy just-data).
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function normalizePagination(json: any): { data: Supplier[]; total: number | null; hasMore: boolean } {
+  const data: Supplier[] = Array.isArray(json?.suppliers)
+    ? json.suppliers
+    : Array.isArray(json?.data)
+      ? json.data
+      : [];
+
+  const p = json?.pagination;
+  const total = typeof p?.totalCount === "number"
+    ? p.totalCount
+    : typeof p?.total === "number"
+      ? p.total
+      : typeof json?.totalCount === "number"
+        ? json.totalCount
+        : typeof json?.total === "number"
+          ? json.total
+          : null;
+
+  const hasMore = typeof p?.hasMore === "boolean"
+    ? p.hasMore
+    : typeof json?.hasMore === "boolean"
+      ? json.hasMore
+      : total !== null
+        ? data.length < total
+        : false;
+
+  return { data, total, hasMore };
+}
+
+function LoadMoreButton({ onLoadMore, loading, hasMore, isDark }: {
+  onLoadMore: () => void;
+  loading: boolean;
+  hasMore: boolean;
+  isDark: boolean;
+}) {
+  if (!hasMore) return null;
+  return (
+    <div className="flex justify-center pt-4">
+      <Button variant="outline" size="sm" onClick={onLoadMore} disabled={loading}
+        className={isDark ? "border-slate-600 text-slate-300 hover:bg-slate-700" : ""}>
+        {loading ? (
+          <>
+            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+            Loading...
+          </>
+        ) : "Load More"}
+      </Button>
+    </div>
+  );
+}
+
 // Loading skeleton rows — shown during initial fetch / manual retry
 function SupplierSkeleton({ isDark }: { isDark: boolean }) {
   return (
@@ -142,8 +215,12 @@ export function SuppliersPage() {
   const [submitting, setSubmitting] = useState(false);
   const [updatingRatingId, setUpdatingRatingId] = useState<string | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
-  const [formData, setFormData] = useState({ name: "", contactEmail: "", phone: "", category: "", address: "" });
+  const [formData, setFormData] = useState({ name: "", email: "", phone: "", category: "", address: "" });
   const [activeTab, setActiveTab] = useState<"directory" | "ratings">("directory");
+  const [page, setPage] = useState(1);
+  const [totalCount, setTotalCount] = useState<number | null>(null);
+  const [hasMore, setHasMore] = useState(false);
+  const [loadingMore, setLoadingMore] = useState(false);
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const { appTheme, user } = useValtrioxStore() as any;
   const isDark = appTheme !== "light";
@@ -156,23 +233,25 @@ export function SuppliersPage() {
   const canWrite = WRITE_ROLES.includes(userRole);
 
   // ───────────────────────────────────────────────────────────────────────────
-  // fetchSuppliers — GET /api/operations/suppliers?limit=200
-  // Response shape: { suppliers: Supplier[], stats: SupplierStats, pagination: {...} }
+  // fetchInitial — GET /api/operations/suppliers?page=1&limit=50
+  // Response shape: { suppliers, stats, pagination }
   // We store both suppliers (for list rendering) AND stats (for org-wide summary).
   // ───────────────────────────────────────────────────────────────────────────
-  const fetchSuppliers = useCallback(async () => {
+  const fetchInitial = useCallback(async () => {
     setLoading(true);
     setError(null);
     try {
-      const res = await fetch("/api/operations/suppliers?limit=200", { cache: "no-store" });
+      const res = await fetch(`/api/operations/suppliers?page=1&limit=${PAGE_SIZE}`, { cache: "no-store" });
       if (!res.ok) {
         const body = await res.json().catch(() => ({}));
         throw new Error(body?.error || `Request failed (${res.status})`);
       }
       const json = await res.json();
-      // API returns { suppliers, stats, pagination } — NOT { data: [...] }
-      setSuppliers(Array.isArray(json?.suppliers) ? json.suppliers : []);
-      setStats(json?.stats ?? null);
+      const { data, total, hasMore: more } = normalizePagination(json);
+      setSuppliers(data);
+      setTotalCount(total);
+      setHasMore(more);
+      setPage(1);
     } catch (error: unknown) {
       setError(error instanceof Error ? error.message : "Failed to load suppliers");
     } finally {
@@ -180,9 +259,51 @@ export function SuppliersPage() {
     }
   }, []);
 
+  const loadMore = useCallback(async () => {
+    if (loadingMore || !hasMore) return;
+    setLoadingMore(true);
+    try {
+      const nextPage = page + 1;
+      const res = await fetch(`/api/operations/suppliers?page=${nextPage}&limit=${PAGE_SIZE}`, { cache: "no-store" });
+      if (!res.ok) {
+        const body = await res.json().catch(() => ({}));
+        throw new Error(body?.error || `Request failed (${res.status})`);
+      }
+      const json = await res.json();
+      const { data, hasMore: more } = normalizePagination(json);
+      setSuppliers(prev => {
+        const ids = new Set(prev.map(s => s.id));
+        return [...prev, ...data.filter(s => !ids.has(s.id))];
+      });
+      setPage(nextPage);
+      setHasMore(more);
+    } catch (error: unknown) {
+      toast.error(error instanceof Error ? error.message : "Failed to load more suppliers");
+    } finally {
+      setLoadingMore(false);
+    }
+  }, [page, hasMore, loadingMore]);
+
+  const fetchStats = useCallback(async () => {
+    try {
+      const res = await fetch("/api/operations/suppliers/stats", { cache: "no-store" });
+      if (!res.ok) {
+        // Non-blocking. If the aggregate endpoint is unavailable,
+        // leave the UI in its previous acceptable state instead of blocking list content.
+        return;
+      }
+      const json = await res.json();
+      setStats(json ?? null);
+    } catch (error: unknown) {
+      // Non-blocking; stats are secondary and should never fail the list.
+      console.warn("Failed to fetch supplier stats", error);
+    }
+  }, []);
+
   useEffect(() => {
-    fetchSuppliers();
-  }, [fetchSuppliers]);
+    fetchInitial();
+    fetchStats();
+  }, [fetchInitial, fetchStats]);
 
   // ───────────────────────────────────────────────────────────────────────────
   // handleSubmit — POST /api/operations/suppliers
@@ -191,7 +312,20 @@ export function SuppliersPage() {
   // ───────────────────────────────────────────────────────────────────────────
   const handleSubmit = async () => {
     if (!formData.name) { toast.error("Supplier name is required"); return; }
-    if (!formData.contactEmail) { toast.error("Contact email is required"); return; }
+
+    // Email is OPTIONAL. Normalize: trim → lowercase. Blank/whitespace → null.
+    // (HTML5 type="email" validation does not fire on button-click, so validate format in JS.)
+    const rawEmail = (formData.email ?? "").trim();
+    let emailPayload: string | null = null;
+    if (rawEmail !== "") {
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!emailRegex.test(rawEmail)) {
+        toast.error("Invalid email format");
+        return;
+      }
+      emailPayload = rawEmail.toLowerCase();
+    }
+
     setSubmitting(true);
     try {
       const res = await fetch("/api/operations/suppliers", {
@@ -199,8 +333,7 @@ export function SuppliersPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           name: formData.name,
-          // API schema field is "email", NOT "contactEmail"
-          email: formData.contactEmail,
+          email: emailPayload,
           phone: formData.phone || undefined,
           category: formData.category || undefined,
           address: formData.address || undefined,
@@ -214,10 +347,11 @@ export function SuppliersPage() {
       // POST returns { supplier: {...} } — unwrap it
       const created: Supplier = json.supplier;
       setSuppliers(prev => [created, ...prev]);
-      // Refresh stats after create (total count changed)
-      fetchSuppliers();
+      setTotalCount((current) => current === null ? 1 : current + 1);
+      // Refresh aggregate stats after create (total count changed)
+      fetchStats();
       setCreateOpen(false);
-      setFormData({ name: "", contactEmail: "", phone: "", category: "", address: "" });
+      setFormData({ name: "", email: "", phone: "", category: "", address: "" });
       toast.success("Supplier added successfully!");
     } catch (error: unknown) {
       toast.error(error instanceof Error ? error.message : "Failed to create supplier");
@@ -252,8 +386,8 @@ export function SuppliersPage() {
       // PATCH returns { supplier: {...} } — unwrap it
       const updated: Supplier = json.supplier;
       setSuppliers(prev => prev.map(s => s.id === id ? updated : s));
-      // Refresh stats after rating change (averageRating / ratedCount changed)
-      fetchSuppliers();
+      // Refresh aggregate stats after rating change (average / rated / top performer changed)
+      fetchStats();
       if (rating === null) {
         toast.info(`Rating cleared for ${supplier.name}`);
       } else {
@@ -280,8 +414,9 @@ export function SuppliersPage() {
         throw new Error(body?.error || `Failed to delete (${res.status})`);
       }
       setSuppliers(prev => prev.filter(s => s.id !== id));
-      // Refresh stats after delete (total count changed)
-      fetchSuppliers();
+      setTotalCount((current) => current === null ? null : Math.max(current - 1, 0));
+      // Refresh aggregate stats after delete (total / top performer / needs attention changed)
+      fetchStats();
       toast.success(`${supplier.name} deleted`);
     } catch (error: unknown) {
       toast.error(error instanceof Error ? error.message : "Failed to delete supplier");
@@ -291,20 +426,15 @@ export function SuppliersPage() {
   };
 
   // ───────────────────────────────────────────────────────────────────────────
-  // Summary metrics — use SERVER-PROVIDED stats for org-wide aggregates.
-  // topPerformer and needsAttention still need local supplier objects,
-  // but total/averageRating/ratedCount come from the server (Issue 5 fix).
+  // Summary metrics — server-side aggregate API is authoritative.
+  // The local page is a read-through subset and must never drive these values.
   // ───────────────────────────────────────────────────────────────────────────
-  const totalSuppliers = stats?.total ?? suppliers.length;
-  const avgRating = stats?.averageRating ?? 0;
+  const totalSuppliers = stats?.totalSuppliers ?? totalCount ?? suppliers.length;
+  const avgRating = stats?.avgRating ?? 0;
   const ratedCount = stats?.ratedCount ?? 0;
-  const ratedSuppliers = suppliers.filter(s => s.rating !== null && s.rating > 0);
-  const topPerformer = ratedSuppliers.length > 0
-    ? ratedSuppliers.reduce((top, s) => (s.rating ?? 0) > (top.rating ?? 0) ? s : top)
-    : null;
-  const needsAttention = suppliers.filter(s => s.rating !== null && s.rating > 0 && s.rating < 3).length;
-
-  return (
+  const topPerformer = stats?.topPerformer ?? null;
+  const needsAttention = stats?.needsAttentionCount ?? 0;
+    return (
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
@@ -346,7 +476,7 @@ export function SuppliersPage() {
                 <p className={isDark ? "text-xs text-red-400/80" : "text-xs text-red-600/80"}>{error}</p>
               </div>
             </div>
-            <Button variant="outline" size="sm" onClick={fetchSuppliers}>
+            <Button variant="outline" size="sm" onClick={fetchInitial}>
               <RefreshCw className="h-4 w-4 mr-2" /> Retry
             </Button>
           </CardContent>
@@ -392,33 +522,43 @@ export function SuppliersPage() {
             ) : suppliers.length > 0 ? (
               <div className="space-y-3">
                 <p className={isDark ? "text-base font-semibold text-white mb-4" : "text-base font-semibold text-slate-900 mb-4"}>Supplier Directory</p>
-                {suppliers.map((supplier) => (
-                  <div key={supplier.id} className={isDark ? "flex items-center justify-between p-3 bg-white/[0.03] rounded-lg" : "flex items-center justify-between p-3 bg-slate-50 rounded-lg"}>
-                    <div className="min-w-0">
-                      <p className={isDark ? "text-sm font-medium text-white" : "text-sm font-medium text-slate-900"}>{supplier.name}</p>
-                      <p className={isDark ? "text-xs text-slate-400 truncate" : "text-xs text-slate-500 truncate"}>{supplier.email || "No email"} · {supplier.category || "No category"}</p>
+                {suppliers.map((supplier) => {
+                  const status = getStatusBadge(supplier.status, isDark);
+                  return (
+                    <div key={supplier.id} className={isDark ? "flex items-center justify-between p-3 bg-white/[0.03] rounded-lg" : "flex items-center justify-between p-3 bg-slate-50 rounded-lg"}>
+                      <div className="min-w-0">
+                        <p className={isDark ? "text-sm font-medium text-white" : "text-sm font-medium text-slate-900"}>{supplier.name}</p>
+                        <p className={isDark ? "text-xs text-slate-400 truncate" : "text-xs text-slate-500 truncate"}>{supplier.email || "No email"} · {supplier.category || "No category"}</p>
+                      </div>
+                      <div className="flex items-center gap-2 flex-shrink-0">
+                        <span className={cn("px-2 py-1 text-xs font-medium rounded-full", status.classes)}>{status.label}</span>
+                        {canWrite && (
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => handleDelete(supplier.id)}
+                            disabled={deletingId === supplier.id}
+                            className={isDark ? "text-slate-400 hover:text-red-400 hover:bg-red-500/10" : "text-slate-500 hover:text-red-600 hover:bg-red-50"}
+                            aria-label={`Delete ${supplier.name}`}
+                          >
+                            {deletingId === supplier.id ? (
+                              <Loader2 className="h-4 w-4 animate-spin" />
+                            ) : (
+                              <Trash2 className="h-4 w-4" />
+                            )}
+                          </Button>
+                        )}
+                      </div>
                     </div>
-                    <div className="flex items-center gap-2 flex-shrink-0">
-                      <span className={isDark ? "px-2 py-1 text-xs font-medium bg-amber-500/15 text-amber-400 rounded-full" : "px-2 py-1 text-xs font-medium bg-amber-100 text-amber-700 rounded-full"}>Active</span>
-                      {canWrite && (
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => handleDelete(supplier.id)}
-                          disabled={deletingId === supplier.id}
-                          className={isDark ? "text-slate-400 hover:text-red-400 hover:bg-red-500/10" : "text-slate-500 hover:text-red-600 hover:bg-red-50"}
-                          aria-label={`Delete ${supplier.name}`}
-                        >
-                          {deletingId === supplier.id ? (
-                            <Loader2 className="h-4 w-4 animate-spin" />
-                          ) : (
-                            <Trash2 className="h-4 w-4" />
-                          )}
-                        </Button>
-                      )}
-                    </div>
-                  </div>
-                ))}
+                  );
+                })}
+                <LoadMoreButton onLoadMore={loadMore} loading={loadingMore} hasMore={hasMore} isDark={isDark} />
+              </div>
+            ) : error ? (
+              <div className="text-center py-8">
+                <AlertTriangle className="h-8 w-8 text-red-500 mx-auto mb-3" />
+                <p className={isDark ? "text-sm font-medium text-red-300" : "text-sm font-medium text-red-700"}>Failed to load suppliers</p>
+                <p className={isDark ? "text-xs text-red-400/80 mt-1" : "text-xs text-red-600/80 mt-1"}>Click the Retry button above to try again.</p>
               </div>
             ) : (
               <EmptyState
@@ -489,6 +629,13 @@ export function SuppliersPage() {
                       </div>
                     );
                   })}
+                  <LoadMoreButton onLoadMore={loadMore} loading={loadingMore} hasMore={hasMore} isDark={isDark} />
+                </div>
+              ) : error ? (
+                <div className="text-center py-8">
+                  <AlertTriangle className="h-8 w-8 text-red-500 mx-auto mb-3" />
+                  <p className={isDark ? "text-sm font-medium text-red-300" : "text-sm font-medium text-red-700"}>Failed to load suppliers</p>
+                  <p className={isDark ? "text-xs text-red-400/80 mt-1" : "text-xs text-red-600/80 mt-1"}>Click the Retry button above to try again.</p>
                 </div>
               ) : (
                 <EmptyState
@@ -530,12 +677,12 @@ export function SuppliersPage() {
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div className="space-y-2">
-                <Label className={`text-xs font-medium ${isDark ? "text-slate-300" : "text-slate-700"}`}>Contact Email</Label>
+                <Label className={`text-xs font-medium ${isDark ? "text-slate-300" : "text-slate-700"}`}>Contact Email (Optional)</Label>
                 <Input
                   type="email"
                   placeholder="email@example.com"
-                  value={formData.contactEmail}
-                  onChange={(e) => setFormData(prev => ({ ...prev, contactEmail: e.target.value }))}
+                  value={formData.email}
+                  onChange={(e) => setFormData(prev => ({ ...prev, email: e.target.value }))}
                   className={isDark ? "bg-slate-700 border-slate-600 text-slate-100" : ""}
                   disabled={submitting}
                 />

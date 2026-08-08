@@ -34,6 +34,35 @@ import { paginationQuerySchema } from "@/lib/validations";
 
 import { isPlatformRole } from "./roles";
 
+/** Roles that can view supplier records at the org level. */
+const SUPPLIER_READ_ROLES = new Set([
+  // Platform / legacy service roles
+  "platform_owner",
+  "platform_admin",
+  "valtriox_team",
+  "owner",
+  "admin",
+  "ceo",
+  "manager",
+  // Brand / org roles
+  "brand_owner",
+  "brand_admin",
+  "operations_manager",
+  "sales_manager",
+  "marketing_manager",
+  "warehouse_manager",
+  "support_agent",
+  "content_creator",
+  "accountant",
+  "team_lead",
+  "sales_rep",
+  "inventory_clerk",
+  "viewer",
+  "custom",
+  "member",
+  "staff",
+]);
+
 /** Roles that can create/update/delete suppliers and change ratings. */
 const SUPPLIER_WRITE_ROLES = new Set([
   // Real Valtriox brand roles with operations access
@@ -49,17 +78,18 @@ const SUPPLIER_WRITE_ROLES = new Set([
 /**
  * Returns true if the given role can view suppliers.
  *
- * All authenticated org members can read supplier lists, including
- * viewers (read-only) and "custom" roles — write access is gated
- * separately by canWriteSuppliers.
+ * Only the known supplier-read role names are accepted. Platform roles and
+ * explicitly whitelisted brand/org roles are granted read access.
+ * Unknown strings such as "superuser" are rejected.
  */
 export function canReadSuppliers(role: string | undefined | null): boolean {
   if (!role) return false;
   const normalized = role.trim().toLowerCase();
-  // Platform roles always pass
+  if (!normalized) return false;
+  // Platform roles always pass.
   if (isPlatformRole(normalized)) return true;
-  // Any non-empty role can read (viewer, member, custom, all brand roles)
-  return normalized.length > 0;
+  // Known org roles on the supplier-read allow-list can read.
+  return SUPPLIER_READ_ROLES.has(normalized);
 }
 
 /**
@@ -120,14 +150,14 @@ export const createSupplierSchema = z.object({
     .nullable(),
 
   email: z
-    .string()
-    .trim()
-    .toLowerCase()
-    .email("Invalid email format")
-    .max(255, "Email must be 255 characters or less")
-    .optional()
-    .nullable()
-    .or(z.literal("").transform(() => null)),
+  .string()
+  .trim()
+  .toLowerCase()
+  .email("Invalid email format")
+  .max(255, "Email must be 255 characters or less")
+  .optional()
+  .nullable()
+  .or(z.literal("").transform(() => null)),
 
   phone: z
     .string()
