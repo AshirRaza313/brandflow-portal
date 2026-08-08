@@ -1,0 +1,591 @@
+// src/app/api/operations/suppliers/__tests__/suppliers-auth.test.ts
+// ─────────────────────────────────────────────────────────────────────────────
+// Issue #2 — Authorization tests for Supplier API
+// ─────────────────────────────────────────────────────────────────────────────
+// Verifies the resolveSupplierAccess helper enforces DB-resolved authorization
+// on every request, with stale-session protection.
+//
+// Test matrix (required by expert reviewer):
+//   1. Viewer — can GET, cannot POST/PATCH/DELETE (403)
+//   2. Brand Owner — can do everything (200/201)
+//   3. Operations Manager — can do everything
+//   4. Custom Role with suppliers:read but not suppliers:write — can GET, cannot POST
+//   5. Role Demotion — session says "admin" but DB member has "viewer" → treated as viewer
+//   6. Membership Removal — session valid but member row deleted → all 403
+//   7. Cross-organization access — user from org A tries supplier in org B → 404
+//
+// Pattern: mirrors existing route.test.ts (vi.hoisted + vi.mock + in-memory store)
+
+import { beforeEach, describe, expect, it, vi } from "vitest";
+import { NextRequest } from "next/server";
+
+// ─────────────────────────────────────────────────────────────────────────────
+// TYPES + TEST STATE
+// ─────────────────────────────────────────────────────────────────────────────
+
+type SupplierRecord = {
+  id: string;
+  organizationId: string;
+  name: string;
+  contactPerson: string | null;
+  email: string | null;
+  phone: string | null;
+  category: string;
+  status: string;
+  address: string | null;
+  notes: string | null;
+  rating: number | null;
+  createdAt: Date;
+  updatedAt: Date;
+};
+
+type MemberRecord = {
+  id: string;
+  userId: string;
+  organizationId: string;
+  role: string;
+  roleId: string | null;
+  penaltyUntil: Date | null;
+  roleDef: {
+    id: string;
+    name: string;
+    permissions: string; // JSON string
+  } | null;
+};
+
+const testState = vi.hoisted(() => ({
+  organizationId: "org-a" as string | undefined,
+  role: "brand_owner",
+  /** If set, OrganizationMember.findFirst returns null (simulates removal). */
+  memberRemoved: false,
+  /** Override the member's DB role (independent from session `role`). */
+  memberRoleOverride: null as string | null,
+  /** Override the member's roleId (for custom-role tests). */
+  memberRoleIdOverride: null as string | null,
+  /** Map of roleId → Role row (with permissions JSON). */
+  roles: {} as Record<string, { id: string; name: string; permissions: string }>,
+  suppliers: [] as SupplierRecord[],
+}));
+
+// ─────────────────────────────────────────────────────────────────────────────
+// DB MOCKS
+// ─────────────────────────────────────────────────────────────────────────────
+
+const dbMocks = vi.hoisted(() => {
+  const matchesWhere = (
+    supplier: SupplierRecord,
+    where: Record<string, unknown>,
+  ): boolean => {
+    if (
+      where.organizationId !== undefined &&
+      supplier.organizationId !== where.organizationId
+    )
+      return false;
+    if (where.id !== undefined && supplier.id !== where.id) return false;
+    if (where.status !== undefined && supplier.status !== where.status)
+      return false;
+    return true;
+  };
+
+  const supplier = {
+    findMany: vi.fn(async ({ where }: { where: Record<string, unknown> }) =>
+      testState.suppliers.filter((s) => matchesWhere(s, where)),
+    ),
+    count: vi.fn(async ({ where }: { where: Record<string, unknown> }) =>
+      testState.suppliers.filter((s) => matchesWhere(s, where)).length,
+    ),
+    findFirst: vi.fn(
+      async ({
+        where,
+        select,
+      }: {
+        where: Record<string, unknown>;
+        select?: Record<string, boolean>;
+      }) => {
+        const found = testState.suppliers.find((s) => matchesWhere(s, where));
+        if (!found) return null;
+        if (select) {
+          const picked: Record<string, unknown> = {};
+          for (const key of Object.keys(select)) {
+            picked[key] = (found as unknown as Record<string, unknown>)[key];
+          }
+          return picked;
+        }
+        return found;
+      },
+    ),
+    create: vi.fn(async ({ data }: { data: Record<string, unknown> }) => {
+      const s: SupplierRecord = {
+        id: `sup-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
+        organizationId: data.organizationId as string,
+        name: data.name as string,
+        contactPerson: (data.contactPerson as string) ?? null,
+        email: (data.email as string) ?? null,
+        phone: (data.phone as string) ?? null,
+        category: (data.category as string) ?? "General",
+        status: (data.status as string) ?? "active",
+        address: (data.address as string) ?? null,
+        notes: (data.notes as string) ?? null,
+        rating: (data.rating as number | null) ?? null,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      };
+      testState.suppliers.push(s);
+      return s;
+    }),
+    update: vi.fn(
+      async ({
+        where,
+        data,
+      }: {
+        where: { id: string };
+        data: Record<string, unknown>;
+      }) => {
+        const idx = testState.suppliers.findIndex((s) => s.id === where.id);
+        if (idx === -1) throw new Error("Record not found");
+        testState.suppliers[idx] = {
+          ...testState.suppliers[idx],
+          ...data,
+          updatedAt: new Date(),
+        } as SupplierRecord;
+        return testState.suppliers[idx];
+      },
+    ),
+    deleteMany: vi.fn(async ({ where }: { where: Record<string, unknown> }) => {
+      const before = testState.suppliers.length;
+      testState.suppliers = testState.suppliers.filter(
+        (s) => !matchesWhere(s, where),
+      );
+      return { count: before - testState.suppliers.length };
+    }),
+    aggregate: vi.fn(async () => ({ _sum: { rating: 0 } })),
+  };
+
+  const organizationMember = {
+    findFirst: vi.fn(
+      async ({
+        where,
+      }: {
+        where: { userId?: string; organizationId?: string };
+      }) => {
+        if (testState.memberRemoved) return null;
+        if (!testState.organizationId) return null;
+        if (where.organizationId !== testState.organizationId) return null;
+        if (where.userId !== "user-a") return null;
+
+        // Resolve roleDef (if roleId is set)
+        const roleId = testState.memberRoleIdOverride;
+        const roleDef =
+          roleId && testState.roles[roleId]
+            ? testState.roles[roleId]
+            : null;
+
+        const member: MemberRecord = {
+          id: "member-1",
+          userId: "user-a",
+          organizationId: testState.organizationId,
+          role: testState.memberRoleOverride ?? testState.role,
+          roleId,
+          penaltyUntil: null,
+          roleDef,
+        };
+        return member;
+      },
+    ),
+  };
+
+  const valtrioxTeamMember = {
+    findUnique: vi.fn(async () => null),
+  };
+
+  const db = { supplier, organizationMember, valtrioxTeamMember };
+  return { db, supplier, organizationMember, valtrioxTeamMember };
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+// MODULE MOCKS
+// ─────────────────────────────────────────────────────────────────────────────
+
+vi.mock("@/lib/db", () => ({
+  db: dbMocks.db,
+  withRetry: <T>(operation: () => T): T => operation(),
+  isDbUnavailable: () => false,
+  dbErrorResponse: () =>
+    new Response(JSON.stringify({ error: "Service unavailable" }), {
+      status: 503,
+    }),
+}));
+
+vi.mock("@/lib/auth-middleware", () => ({
+  withAuth:
+    (handler: (...args: unknown[]) => unknown) =>
+    (req: NextRequest, context?: unknown) =>
+      handler(
+        req,
+        {
+          userId: "user-a",
+          email: "owner@example.com",
+          role: testState.role,
+          organizationId: testState.organizationId,
+        },
+        context,
+      ),
+}));
+
+vi.mock("@/lib/rate-limit", () => ({
+  withRateLimit: (handler: (...args: unknown[]) => unknown) => handler,
+}));
+
+vi.mock("@/lib/logger", () => ({
+  default: { info: vi.fn(), warn: vi.fn(), error: vi.fn() },
+}));
+
+// ─────────────────────────────────────────────────────────────────────────────
+// IMPORTS (after mocks)
+// ─────────────────────────────────────────────────────────────────────────────
+
+import { GET, POST } from "@/app/api/operations/suppliers/route";
+import {
+  DELETE,
+  GET as GET_ID,
+  PATCH,
+} from "@/app/api/operations/suppliers/[id]/route";
+
+// ─────────────────────────────────────────────────────────────────────────────
+// HELPERS
+// ─────────────────────────────────────────────────────────────────────────────
+
+function getRequest(queryString = ""): NextRequest {
+  return new NextRequest(
+    `http://localhost/api/operations/suppliers${queryString}`,
+  );
+}
+
+function postRequest(body: Record<string, unknown>): NextRequest {
+  return new NextRequest("http://localhost/api/operations/suppliers", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(body),
+  });
+}
+
+function patchRequest(
+  id: string,
+  body: Record<string, unknown>,
+): NextRequest {
+  return new NextRequest(
+    `http://localhost/api/operations/suppliers/${id}`,
+    {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(body),
+    },
+  );
+}
+
+function deleteRequest(id: string): NextRequest {
+  return new NextRequest(
+    `http://localhost/api/operations/suppliers/${id}`,
+    { method: "DELETE" },
+  );
+}
+
+async function responseJson(response: Response): Promise<Record<string, unknown>> {
+  return response.json();
+}
+
+function seedSupplier(
+  organizationId: string,
+  overrides: Partial<SupplierRecord> = {},
+): SupplierRecord {
+  const s: SupplierRecord = {
+    id: `sup-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
+    organizationId,
+    name: "Seeded Supplier",
+    contactPerson: null,
+    email: null,
+    phone: null,
+    category: "General",
+    status: "active",
+    address: null,
+    notes: null,
+    rating: null,
+    createdAt: new Date(),
+    updatedAt: new Date(),
+    ...overrides,
+  };
+  testState.suppliers.push(s);
+  return s;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// TESTS
+// ─────────────────────────────────────────────────────────────────────────────
+
+describe("Issue #2 — Supplier API authorization (DB-resolved)", () => {
+  beforeEach(() => {
+    // Reset to a sensible default before each test
+    testState.organizationId = "org-a";
+    testState.role = "brand_owner";
+    testState.memberRemoved = false;
+    testState.memberRoleOverride = null;
+    testState.memberRoleIdOverride = null;
+    testState.roles = {};
+    testState.suppliers.length = 0;
+    vi.clearAllMocks();
+  });
+
+  // ─────────────────────────────────────────────────────────────────────────
+  // 1. VIEWER — read-only
+  // ─────────────────────────────────────────────────────────────────────────
+  it("viewer can GET list but cannot POST/PATCH/DELETE (403)", async () => {
+    testState.role = "viewer";
+    testState.memberRoleOverride = "viewer";
+    seedSupplier("org-a", { name: "Existing Supplier" });
+
+    // GET list — should succeed
+    const getRes = await GET(getRequest());
+    expect(getRes.status).toBe(200);
+    const getData = await responseJson(getRes);
+    expect(
+      (getData.suppliers as Array<{ name: string }>).length,
+    ).toBe(1);
+
+    // GET single — should succeed
+    const seeded = testState.suppliers[0];
+    const getIdRes = await GET_ID(getRequest(""), {
+      params: Promise.resolve({ id: seeded.id }),
+    });
+    expect(getIdRes.status).toBe(200);
+
+    // POST — should be blocked
+    const postRes = await POST(postRequest({ name: "New" }));
+    expect(postRes.status).toBe(403);
+    expect(dbMocks.supplier.create).not.toHaveBeenCalled();
+
+    // PATCH — should be blocked
+    const patchRes = await PATCH(
+      patchRequest(seeded.id, { name: "Updated" }),
+      { params: Promise.resolve({ id: seeded.id }) },
+    );
+    expect(patchRes.status).toBe(403);
+    expect(dbMocks.supplier.update).not.toHaveBeenCalled();
+
+    // DELETE — should be blocked
+    const delRes = await DELETE(deleteRequest(seeded.id), {
+      params: Promise.resolve({ id: seeded.id }),
+    });
+    expect(delRes.status).toBe(403);
+  });
+
+  // ─────────────────────────────────────────────────────────────────────────
+  // 2. BRAND OWNER — full access
+  // ─────────────────────────────────────────────────────────────────────────
+  it("brand_owner can GET, POST, PATCH, DELETE", async () => {
+    testState.role = "brand_owner";
+    testState.memberRoleOverride = "brand_owner";
+
+    // GET list — empty
+    const getEmpty = await GET(getRequest());
+    expect(getEmpty.status).toBe(200);
+
+    // POST — create
+    const postRes = await POST(postRequest({ name: "Acme Corp" }));
+    expect(postRes.status).toBe(201);
+    const postData = await responseJson(postRes);
+    const newId = (postData.supplier as { id: string }).id;
+
+    // PATCH — update
+    const patchRes = await PATCH(
+      patchRequest(newId, { name: "Acme Inc" }),
+      { params: Promise.resolve({ id: newId }) },
+    );
+    expect(patchRes.status).toBe(200);
+
+    // DELETE — remove
+    const delRes = await DELETE(deleteRequest(newId), {
+      params: Promise.resolve({ id: newId }),
+    });
+    expect(delRes.status).toBe(200);
+  });
+
+  // ─────────────────────────────────────────────────────────────────────────
+  // 3. OPERATIONS MANAGER — full access
+  // ─────────────────────────────────────────────────────────────────────────
+  it("operations_manager can GET, POST, PATCH, DELETE", async () => {
+    testState.role = "operations_manager";
+    testState.memberRoleOverride = "operations_manager";
+
+    const getRes = await GET(getRequest());
+    expect(getRes.status).toBe(200);
+
+    const postRes = await POST(postRequest({ name: "Ops Supplier" }));
+    expect(postRes.status).toBe(201);
+
+    const newId = (await responseJson(postRes)).supplier as { id: string };
+    const patchRes = await PATCH(
+      patchRequest(newId.id, { name: "Updated" }),
+      { params: Promise.resolve({ id: newId.id }) },
+    );
+    expect(patchRes.status).toBe(200);
+
+    const delRes = await DELETE(deleteRequest(newId.id), {
+      params: Promise.resolve({ id: newId.id }),
+    });
+    expect(delRes.status).toBe(200);
+  });
+
+  // ─────────────────────────────────────────────────────────────────────────
+  // 4. CUSTOM ROLE with suppliers:read but not suppliers:write
+  // ─────────────────────────────────────────────────────────────────────────
+  it("custom role with suppliers:read but not suppliers:write — can GET, cannot POST", async () => {
+    // Set up a custom role in DB with only suppliers:read
+    testState.roles = {
+      "role-custom-1": {
+        id: "role-custom-1",
+        name: "Supplier Viewer Custom",
+        permissions: JSON.stringify({ suppliers: true }), // read only, no suppliers_write
+      },
+    };
+    testState.memberRoleIdOverride = "role-custom-1";
+    // Session role string doesn't matter — DB permissions override
+    testState.role = "custom";
+
+    // GET list — should succeed
+    const getRes = await GET(getRequest());
+    expect(getRes.status).toBe(200);
+
+    // POST — should be blocked (no suppliers_write)
+    const postRes = await POST(postRequest({ name: "Blocked" }));
+    expect(postRes.status).toBe(403);
+    expect(dbMocks.supplier.create).not.toHaveBeenCalled();
+  });
+
+  // ─────────────────────────────────────────────────────────────────────────
+  // 5. ROLE DEMOTION — session says "admin", DB says "viewer"
+  // ─────────────────────────────────────────────────────────────────────────
+  it("role demotion: session says admin but DB member is viewer → treated as viewer", async () => {
+    // Session claims admin (stale)
+    testState.role = "admin";
+    // But DB shows viewer (recently demoted)
+    testState.memberRoleOverride = "viewer";
+
+    // GET list — viewer can read
+    const getRes = await GET(getRequest());
+    expect(getRes.status).toBe(200);
+
+    // POST — should be blocked because DB says viewer
+    const postRes = await POST(postRequest({ name: "Should Fail" }));
+    expect(postRes.status).toBe(403);
+    expect(dbMocks.supplier.create).not.toHaveBeenCalled();
+
+    // PATCH — also blocked
+    const seeded = seedSupplier("org-a", { name: "Existing" });
+    const patchRes = await PATCH(
+      patchRequest(seeded.id, { name: "Hacked" }),
+      { params: Promise.resolve({ id: seeded.id }) },
+    );
+    expect(patchRes.status).toBe(403);
+  });
+
+  // ─────────────────────────────────────────────────────────────────────────
+  // 6. MEMBERSHIP REMOVAL — session valid but member row deleted
+  // ─────────────────────────────────────────────────────────────────────────
+  it("membership removal: session valid but member row deleted → all requests 403", async () => {
+    testState.role = "brand_owner";
+    testState.memberRemoved = true;
+
+    // GET list — blocked
+    const getRes = await GET(getRequest());
+    expect(getRes.status).toBe(403);
+
+    // GET single — blocked
+    const seeded = seedSupplier("org-a", { name: "Existing" });
+    const getIdRes = await GET_ID(getRequest(""), {
+      params: Promise.resolve({ id: seeded.id }),
+    });
+    expect(getIdRes.status).toBe(403);
+
+    // POST — blocked
+    const postRes = await POST(postRequest({ name: "Blocked" }));
+    expect(postRes.status).toBe(403);
+    expect(dbMocks.supplier.create).not.toHaveBeenCalled();
+
+    // PATCH — blocked
+    const patchRes = await PATCH(
+      patchRequest(seeded.id, { name: "Blocked" }),
+      { params: Promise.resolve({ id: seeded.id }) },
+    );
+    expect(patchRes.status).toBe(403);
+    expect(dbMocks.supplier.update).not.toHaveBeenCalled();
+
+    // DELETE — blocked
+    const delRes = await DELETE(deleteRequest(seeded.id), {
+      params: Promise.resolve({ id: seeded.id }),
+    });
+    expect(delRes.status).toBe(403);
+    expect(dbMocks.supplier.deleteMany).not.toHaveBeenCalled();
+  });
+
+  // ─────────────────────────────────────────────────────────────────────────
+  // 7. CROSS-ORGANIZATION access — user from org A tries supplier in org B
+  // ─────────────────────────────────────────────────────────────────────────
+  it("cross-org: user from org A cannot read/modify supplier from org B → 404", async () => {
+    testState.role = "brand_owner";
+    testState.memberRoleOverride = "brand_owner";
+
+    // Seed a supplier in org-b (different org)
+    const orgBSupplier = seedSupplier("org-b", { name: "Other Org's Supplier" });
+
+    // GET single — 404 (existence hidden, not 403)
+    const getIdRes = await GET_ID(getRequest(""), {
+      params: Promise.resolve({ id: orgBSupplier.id }),
+    });
+    expect(getIdRes.status).toBe(404);
+
+    // PATCH — 404
+    const patchRes = await PATCH(
+      patchRequest(orgBSupplier.id, { name: "Hacked" }),
+      { params: Promise.resolve({ id: orgBSupplier.id }) },
+    );
+    expect(patchRes.status).toBe(404);
+    expect(dbMocks.supplier.update).not.toHaveBeenCalled();
+
+    // DELETE — 404
+    const delRes = await DELETE(deleteRequest(orgBSupplier.id), {
+      params: Promise.resolve({ id: orgBSupplier.id }),
+    });
+    expect(delRes.status).toBe(404);
+
+    // deleteMany IS called — but scoped to the user's org (org-a), so it
+    // matches nothing and returns count:0. The route then returns 404.
+    // This proves the route NEVER tries to delete without org scoping.
+    expect(dbMocks.supplier.deleteMany).toHaveBeenCalledWith({
+      where: { id: orgBSupplier.id, organizationId: "org-a" },
+    });
+
+    // Critical: org-b supplier must STILL exist (was not deleted)
+    expect(testState.suppliers.length).toBe(1);
+  });
+
+  // ─────────────────────────────────────────────────────────────────────────
+  // BONUS: access field is returned in responses for UI rendering
+  // ─────────────────────────────────────────────────────────────────────────
+  it("GET list returns access.canRead and access.canWrite for UI", async () => {
+    testState.role = "brand_owner";
+    testState.memberRoleOverride = "brand_owner";
+
+    const res = await GET(getRequest());
+    const data = await responseJson(res);
+    expect(data.access).toMatchObject({ canRead: true, canWrite: true });
+  });
+
+  it("GET list as viewer returns access.canWrite=false", async () => {
+    testState.role = "viewer";
+    testState.memberRoleOverride = "viewer";
+
+    const res = await GET(getRequest());
+    const data = await responseJson(res);
+    expect(data.access).toMatchObject({ canRead: true, canWrite: false });
+  });
+});

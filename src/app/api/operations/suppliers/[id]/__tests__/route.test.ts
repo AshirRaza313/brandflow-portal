@@ -147,8 +147,40 @@ const dbMocks = vi.hoisted(() => {
     }),
   };
 
-  const db = { supplier };
-  return { db, supplier };
+  // ── OrganizationMember mock (used by resolveSupplierAccess helper) ──
+  // Mirrors testState.role so the helper's DB query returns the same role
+  // that the auth-middleware mock passes to the handler. Per-test role
+  // changes (e.g. testState.role = "viewer") are reflected here too.
+  const organizationMember = {
+    findFirst: vi.fn(
+      async ({
+        where,
+      }: {
+        where: { userId?: string; organizationId?: string };
+      }) => {
+        if (!testState.organizationId) return null;
+        if (where.organizationId !== testState.organizationId) return null;
+        if (where.userId !== "user-a") return null;
+        return {
+          id: "member-1",
+          userId: "user-a",
+          organizationId: testState.organizationId,
+          role: testState.role,
+          roleId: null,
+          penaltyUntil: null,
+          roleDef: null,
+        };
+      },
+    ),
+  };
+
+  // ── ValtrioxTeamMember mock (platform team) — null by default ──
+  const valtrioxTeamMember = {
+    findUnique: vi.fn(async () => null),
+  };
+
+  const db = { supplier, organizationMember, valtrioxTeamMember };
+  return { db, supplier, organizationMember, valtrioxTeamMember };
 });
 
 // ─────────────────────────────────────────────────────────────────────────────

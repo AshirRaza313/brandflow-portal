@@ -4,13 +4,11 @@
 // PR #6: Suppliers persistence with performance ratings
 // ─────────────────────────────────────────────────────────────────────────────
 //
-// Team-member review requirements enforced:
-//   1. Organization ID sourced from authenticated session (authCtx), never
-//      from client input. Query/body schemas intentionally exclude orgId.
-//   2. Ratings support 1-5 + null (for clearing) — validated by Zod.
-//   3. Viewer/member accounts are read-only — canWriteSuppliers() gate on POST.
-//   4. Org isolation — every query filters by authCtx.organizationId.
-//   5. Loading/empty/error states handled — 503 on DB down, structured JSON.
+// Issue #2 (Authorization hardening):
+//   - Every request re-resolves OrganizationMember + Role from the DB via
+//     resolveSupplierAccess(). Stale sessions cannot bypass auth.
+//   - GET responses include `access: { canRead, canWrite }` so the UI can
+//     render add/edit/delete buttons correctly without trusting the session.
 //
 // Pattern: mirrors src/app/api/products/route.ts (withAuth + withRateLimit +
 // validateBody/validateQuery + withRetry + logger + dbErrorResponse).
@@ -22,52 +20,25 @@ import { validateBody, validateQuery } from "@/lib/validations";
 import logger from "@/lib/logger";
 import { withRateLimit } from "@/lib/rate-limit";
 import {
-  canReadSuppliers,
-  canWriteSuppliers,
   createSupplierSchema,
   suppliersQuerySchema,
 } from "@/lib/supplier-store";
+import { resolveSupplierAccess } from "@/lib/supplier-access";
 
 // ─────────────────────────────────────────────────────────────────────────────
 // GET /api/operations/suppliers
 // ─────────────────────────────────────────────────────────────────────────────
-// List suppliers for the authenticated user's organization.
-//
-// Query params (all optional):
-//   page        — page number (default 1)
-//   limit       — page size (default 20, capped by paginationQuerySchema)
-//   search      — search across name, email, contactPerson, category
-//   category    — filter by exact category
-//   status      — filter by status (active | inactive | blacklisted)
-//   minRating   — filter suppliers with rating >= N (1-5)
-//   maxRating   — filter suppliers with rating <= N (1-5)
-//
-// Returns:
-//   200 — { suppliers, stats, pagination }
-//   403 — user lacks read permission
-//   503 — database unavailable
-//   500 — unexpected error
 
 export const GET = withRateLimit(
   withAuth(async (req, authCtx) => {
     try {
-      // Permission gate — all authenticated org members can read,
-      // but we still check explicitly for clarity + future role changes.
-      if (!canReadSuppliers(authCtx.role)) {
-        return NextResponse.json(
-          { error: "You do not have permission to view suppliers" },
-          { status: 403 }
-        );
-      }
-
-      // Org ID comes ONLY from the session — never from query params.
-      const orgId = authCtx.organizationId;
-      if (!orgId) {
-        return NextResponse.json(
-          { error: "Organization context required" },
-          { status: 403 }
-        );
-      }
+      // Re-resolve authorization from the DB on every request.
+      const outcome = await resolveSupplierAccess(authCtx, {
+        requireRead: true,
+      });
+      if (!outcome.ok) return outcome.response;
+      const { access } = outcome;
+      const orgId = access.organizationId;
 
       // Validate query params
       const queryResult = validateQuery(req, suppliersQuerySchema);
@@ -86,9 +57,6 @@ export const GET = withRateLimit(
         where.status = status;
       }
 
-      // Rating range filter — null ratings are "unrated" and excluded from
-      // min/max filters. We build a single IntNullableFilter object that
-      // Prisma accepts: { not: null, gte?: min, lte?: max }
       if (minRating !== undefined || maxRating !== undefined) {
         const ratingFilter: { not: null; gte?: number; lte?: number } = {
           not: null,
@@ -98,7 +66,6 @@ export const GET = withRateLimit(
         where.rating = ratingFilter;
       }
 
-      // Search across multiple fields
       if (search) {
         where.OR = [
           { name: { contains: search, mode: "insensitive" } },
@@ -108,7 +75,6 @@ export const GET = withRateLimit(
         ];
       }
 
-      // Pagination
       const skip = (page - 1) * limit;
 
       const { suppliers, stats, totalCount } = await withRetry(async () => {
@@ -122,7 +88,6 @@ export const GET = withRateLimit(
           db.supplier.count({ where }),
         ]);
 
-        // Summary stats for the org (independent of filters — reflects total state)
         const [total, active, inactive, blacklisted, ratedCount, ratingSum] =
           await Promise.all([
             db.supplier.count({ where: { organizationId: orgId } }),
@@ -161,9 +126,10 @@ export const GET = withRateLimit(
             inactive,
             blacklisted,
             ratedCount,
-            averageRating: averageRating !== null
-              ? Math.round(averageRating * 100) / 100 // 2 decimal places
-              : null,
+            averageRating:
+              averageRating !== null
+                ? Math.round(averageRating * 100) / 100
+                : null,
           },
           totalCount: count,
         };
@@ -178,6 +144,7 @@ export const GET = withRateLimit(
           totalCount,
           totalPages: Math.ceil(totalCount / limit),
         },
+        access: { canRead: access.canRead, canWrite: access.canWrite },
       });
     } catch (error: unknown) {
       logger.error("Suppliers API error", error, {
@@ -188,50 +155,28 @@ export const GET = withRateLimit(
       }
       return NextResponse.json(
         { error: "Failed to fetch suppliers" },
-        { status: 500 }
+        { status: 500 },
       );
     }
   }),
-  { maxRequests: 60, windowSeconds: 60 }
+  { maxRequests: 60, windowSeconds: 60 },
 );
 
 // ─────────────────────────────────────────────────────────────────────────────
 // POST /api/operations/suppliers
 // ─────────────────────────────────────────────────────────────────────────────
-// Create a new supplier for the authenticated user's organization.
-//
-// Body (createSupplierSchema):
-//   name (required), contactPerson, email, phone, category, status,
-//   address, notes, rating (1-5 or null)
-//
-// Returns:
-//   201 — { supplier }
-//   400 — validation error
-//   403 — viewer/member attempting write, or missing org context
-//   503 — database unavailable
-//   500 — unexpected error
 
 export const POST = withRateLimit(
   withAuth(async (req, authCtx) => {
     try {
-      const orgId = authCtx.organizationId;
-      if (!orgId) {
-        return NextResponse.json(
-          { error: "Organization context required" },
-          { status: 403 }
-        );
-      }
+      // Re-resolve authorization — requires write access.
+      const outcome = await resolveSupplierAccess(authCtx, {
+        requireWrite: true,
+      });
+      if (!outcome.ok) return outcome.response;
+      const { access } = outcome;
+      const orgId = access.organizationId;
 
-      // Permission gate — viewer/member accounts are read-only.
-      // Team-member review: "Viewer accounts must remain read-only."
-      if (!canWriteSuppliers(authCtx.role)) {
-        return NextResponse.json(
-          { error: "Read-only users cannot create suppliers" },
-          { status: 403 }
-        );
-      }
-
-      // Validate body — orgId is intentionally absent from schema
       const bodyResult = await validateBody(req, createSupplierSchema);
       if (!bodyResult.success) return bodyResult.response;
       const {
@@ -249,7 +194,7 @@ export const POST = withRateLimit(
       const supplier = await withRetry(async () => {
         return db.supplier.create({
           data: {
-            organizationId: orgId, // ← from session, NOT from body
+            organizationId: orgId,
             name,
             contactPerson: contactPerson || null,
             email: email || null,
@@ -258,12 +203,18 @@ export const POST = withRateLimit(
             status: status || "active",
             address: address || null,
             notes: notes || null,
-            rating: rating ?? null, // null = unrated at creation
+            rating: rating ?? null,
           },
         });
       }, 2, 500);
 
-      return NextResponse.json({ supplier }, { status: 201 });
+      return NextResponse.json(
+        {
+          supplier,
+          access: { canRead: access.canRead, canWrite: access.canWrite },
+        },
+        { status: 201 },
+      );
     } catch (error: unknown) {
       logger.error("Create supplier API error", error, {
         orgId: authCtx?.organizationId,
@@ -271,17 +222,18 @@ export const POST = withRateLimit(
       if (isDbUnavailable(error)) {
         return NextResponse.json(
           {
-            error: "Database is currently unavailable. Please try again later.",
+            error:
+              "Database is currently unavailable. Please try again later.",
             fallback: true,
           },
-          { status: 503 }
+          { status: 503 },
         );
       }
       return NextResponse.json(
         { error: "Failed to create supplier" },
-        { status: 500 }
+        { status: 500 },
       );
     }
   }),
-  { maxRequests: 30, windowSeconds: 60 }
+  { maxRequests: 30, windowSeconds: 60 },
 );
