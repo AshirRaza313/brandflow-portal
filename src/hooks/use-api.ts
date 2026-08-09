@@ -24,7 +24,7 @@ import { fetchWithAuth } from "@/lib/fetch-with-auth";
 // ============================================================================
 
 /** Standard paginated response shape returned by list endpoints. */
-export interface PaginatedResponse {
+export interface PaginatedResponse<T> {
   pagination: {
     page: number;
     limit: number;

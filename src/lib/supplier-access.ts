@@ -1,233 +1,153 @@
 // src/lib/supplier-access.ts
-// ─────────────────────────────────────────────────────────────────────────────
-// Supplier authorization helper (PR #6 — Issue #2)
-// ─────────────────────────────────────────────────────────────────────────────
-// Re-resolves the current OrganizationMember from the DB on every request,
-// so stale sessions (member removed, role demoted, org switched) cannot
-// bypass authorization.
 //
-// Resolution order (DB is source of truth):
-//   1. Platform team (ValtrioxTeamMember.status="active") → cross-org full access
-//   2. OrganizationMember found + Role.permissions has explicit "suppliers" /
-//      "suppliers_write" key → use DB permissions
-//   3. OrganizationMember found but no explicit suppliers permission → fall
-//      back to member.role string via canReadSuppliers / canWriteSuppliers
-//      (backward compat for brand_owner, brand_admin, operations_manager, etc.)
+// DB-resolved authorization for the Suppliers module.
 //
-// Failure modes (all return 403, except cross-org supplier access → 404):
-//   - Member row missing in authCtx.organizationId  → 403 (removed / org-mismatch)
-//   - Member.penaltyUntil > now()                   → 403 (inactive / penalized)
-//   - No organizationId and not platform team       → 403 (org context required)
-// ─────────────────────────────────────────────────────────────────────────────
+// Mirrors the Seasonal Events access pattern (src/lib/seasonal-event-access.ts):
+//   - Re-resolves OrganizationMember + active ValtrioxTeamMember on every request
+//   - Uses the canonical `operations` permission key (not custom supplier keys)
+//   - Trusts a linked roleDef only when roleDef.name matches the member's
+//     current role string (prevents stale-roleId privilege retention)
+//   - Rejects stale ValtrioxTeamMember records via status="active" filter
+//   - Respects the hidden "suppliers" section for Valtriox team members
+//   - Viewer role is always read-only
 
-import { NextResponse } from "next/server";
+import type { PrismaClient } from "@prisma/client";
 import type { AuthContext } from "@/lib/auth-middleware";
-import { db } from "@/lib/db";
-import { canReadSuppliers, canWriteSuppliers } from "@/lib/supplier-store";
-import { isPlatformRole } from "@/lib/roles";
+import {
+  getRoleByName,
+  hasPermission,
+  isReadOnlyRole,
+  type RoleDefinition,
+  type RolePermission,
+} from "@/lib/roles";
 
-// ─────────────────────────────────────────────────────────────────────────────
-// TYPES
-// ─────────────────────────────────────────────────────────────────────────────
+type SupplierAccessClient = Pick<
+  PrismaClient,
+  "organizationMember" | "valtrioxTeamMember"
+>;
 
-export interface SupplierAccessResult {
-  canRead: boolean;
-  canWrite: boolean;
-  /** The resolved OrganizationMember (null when access is via platform team). */
-  member: {
-    id: string;
-    userId: string;
-    organizationId: string;
-    role: string;
-    roleId: string | null;
-  } | null;
-  /** The resolved Role definition (null when no roleId or role-name fallback used). */
-  role: {
-    id: string;
-    name: string;
-    permissions: Record<string, boolean>;
-  } | null;
-  /** True when access was granted via ValtrioxTeamMember (platform team). */
-  isPlatformTeam: boolean;
-  /** The organizationId to scope all supplier queries by. */
+export interface SupplierAccess {
   organizationId: string;
-  /** Where the canRead/canWrite decision came from — useful for debugging. */
-  accessSource: "platform_team" | "explicit_permissions" | "role_name_fallback";
+  effectiveRole: string;
+  canReadSuppliers: boolean;
+  canWriteSuppliers: boolean;
 }
 
-type AccessFailure = { ok: false; response: NextResponse };
-type AccessSuccess = { ok: true; access: SupplierAccessResult };
-export type SupplierAccessOutcome = AccessFailure | AccessSuccess;
-
-export interface ResolveSupplierAccessOptions {
-  /** If true, return 403 when canRead is false. */
-  requireRead?: boolean;
-  /** If true, return 403 when canWrite is false. */
-  requireWrite?: boolean;
+function parseStoredPermissions(
+  value: string | null | undefined,
+): RolePermission | null {
+  if (!value) return null;
+  try {
+    const parsed: unknown = JSON.parse(value);
+    if (!parsed || typeof parsed !== "object" || Array.isArray(parsed))
+      return null;
+    return Object.fromEntries(
+      Object.entries(parsed).filter(
+        ([, permission]) => typeof permission === "boolean",
+      ),
+    );
+  } catch {
+    return null;
+  }
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// MAIN HELPER
-// ─────────────────────────────────────────────────────────────────────────────
+const LEGACY_ROLE_MAP: Record<string, string> = {
+  owner: "brand_owner",
+  ceo: "brand_owner",
+  admin: "brand_admin",
+  manager: "operations_manager",
+  editor: "content_creator",
+  member: "viewer",
+};
+
+function resolveRoleDefinition(
+  roleName: string,
+  storedRole: { name: string; permissions: string } | null,
+): RoleDefinition | null {
+  // Only trust a linked role definition when it still matches the member's
+  // current role string. This prevents a stale roleId from retaining broader
+  // permissions after a role change (e.g. demotion to viewer).
+  if (storedRole?.name === roleName) {
+    const storedPermissions = parseStoredPermissions(storedRole.permissions);
+    if (storedPermissions) {
+      return {
+        name: storedRole.name,
+        label: storedRole.name,
+        description: "Database-backed organization role",
+        level: 0,
+        permissions: storedPermissions,
+      };
+    }
+  }
+
+  return getRoleByName(roleName) || null;
+}
+
+function hiddenSections(value: string | null | undefined): string[] {
+  if (!value) return [];
+  try {
+    const parsed: unknown = JSON.parse(value);
+    return Array.isArray(parsed)
+      ? parsed.filter((item): item is string => typeof item === "string")
+      : [];
+  } catch {
+    return [];
+  }
+}
 
 /**
- * Re-resolves the caller's authorization for the suppliers module by hitting
- * the database on every request. Never trusts authCtx.role alone.
+ * Re-resolve organization membership and permissions from the database for
+ * every request. Session/cookie claims identify the candidate user and org;
+ * they are never treated as current authorization state.
  *
- * Usage in route handlers:
+ * Returns null when:
+ *   - authCtx has no organizationId
+ *   - no OrganizationMember row exists for (organizationId, userId)
  *
- *   const outcome = await resolveSupplierAccess(authCtx, { requireRead: true });
- *   if (!outcome.ok) return outcome.response;
- *   const { access } = outcome;
- *   // ...use access.organizationId to scope Prisma queries...
- *   // ...return access: { canRead, canWrite } in response body for UI...
+ * Stale valtriox_team memberships are rejected via the status="active" filter.
+ * Stale roleIds are rejected via the roleDef.name === roleName check.
  */
 export async function resolveSupplierAccess(
+  client: SupplierAccessClient,
   authCtx: AuthContext,
-  options: ResolveSupplierAccessOptions = {},
-): Promise<SupplierAccessOutcome> {
-  const { requireRead = false, requireWrite = false } = options;
+): Promise<SupplierAccess | null> {
+  const organizationId = authCtx.organizationId;
+  if (!organizationId) return null;
 
-  // ── Path A: authCtx carries an organizationId → resolve member in that org ──
-  if (authCtx.organizationId) {
-    const member = await db.organizationMember.findFirst({
-      where: {
-        userId: authCtx.userId,
-        organizationId: authCtx.organizationId,
+  const [membership, valtrioxTeamMember] = await Promise.all([
+    client.organizationMember.findFirst({
+      where: { organizationId, userId: authCtx.userId },
+      select: {
+        role: true,
+        roleDef: { select: { name: true, permissions: true } },
       },
-      include: { roleDef: true },
-    });
+    }),
+    client.valtrioxTeamMember.findFirst({
+      where: { userId: authCtx.userId, status: "active" },
+      select: { id: true, visibleSections: true },
+    }),
+  ]);
 
-    if (!member) {
-      // Maybe the user is platform team impersonating / supporting this org.
-      const platformMember = await db.valtrioxTeamMember.findUnique({
-        where: { userId: authCtx.userId },
-      });
-      if (platformMember && platformMember.status === "active") {
-        return ok({
-          canRead: true,
-          canWrite: true,
-          member: null,
-          role: null,
-          isPlatformTeam: true,
-          organizationId: authCtx.organizationId,
-          accessSource: "platform_team",
-        });
-      }
-      // Not a member of this org AND not platform team → reject.
-      return forbidden(
-        "Membership not found or removed from this organization.",
-      );
-    }
+  if (!membership) return null;
 
-    // ── Inactive / penalized check ──
-    if (member.penaltyUntil && member.penaltyUntil > new Date()) {
-      return forbidden(
-        "Your access is temporarily restricted. Please contact your organization admin.",
-      );
-    }
+  const currentRole = membership.role.trim().toLowerCase();
+  const effectiveRole = valtrioxTeamMember
+    ? "valtriox_team"
+    : LEGACY_ROLE_MAP[currentRole] || currentRole;
+  const roleDefinition = resolveRoleDefinition(
+    effectiveRole,
+    valtrioxTeamMember ? null : membership.roleDef,
+  );
+  const pageHidden = valtrioxTeamMember
+    ? hiddenSections(valtrioxTeamMember.visibleSections).includes("suppliers")
+    : false;
+  const canReadSuppliers =
+    !pageHidden && hasPermission(roleDefinition, "operations");
 
-    // ── Resolve canRead / canWrite ──
-    const perms = parsePermissions(member.roleDef?.permissions);
-    const hasExplicitSuppliersPerm =
-      "suppliers" in perms || "suppliers_write" in perms;
-
-    let canRead: boolean;
-    let canWrite: boolean;
-    let accessSource: SupplierAccessResult["accessSource"];
-
-    if (hasExplicitSuppliersPerm) {
-      // Tier 2: DB-defined permissions are the source of truth.
-      canRead = perms.suppliers === true || perms.suppliers_write === true;
-      canWrite = perms.suppliers_write === true;
-      accessSource = "explicit_permissions";
-    } else {
-      // Tier 3: Fall back to member.role string.
-      canRead = canReadSuppliers(member.role);
-      canWrite = canWriteSuppliers(member.role);
-      accessSource = "role_name_fallback";
-    }
-
-    const access: SupplierAccessResult = {
-      canRead,
-      canWrite,
-      member: {
-        id: member.id,
-        userId: member.userId,
-        organizationId: member.organizationId,
-        role: member.role,
-        roleId: member.roleId,
-      },
-      role: member.roleDef
-        ? {
-            id: member.roleDef.id,
-            name: member.roleDef.name,
-            permissions: perms,
-          }
-        : null,
-      isPlatformTeam: false,
-      organizationId: member.organizationId,
-      accessSource,
-    };
-
-    return enforceRequired(access, requireRead, requireWrite);
-  }
-
-  // ── Path B: no organizationId in authCtx ──
-  if (isPlatformRole(authCtx.role)) {
-    const platformMember = await db.valtrioxTeamMember.findUnique({
-      where: { userId: authCtx.userId },
-    });
-    if (platformMember && platformMember.status === "active") {
-      return forbidden(
-        "Organization context required to access suppliers. Specify an organization.",
-      );
-    }
-  }
-
-  return forbidden("Organization context required.");
-}
-
-// ─────────────────────────────────────────────────────────────────────────────
-// INTERNAL UTILITIES
-// ─────────────────────────────────────────────────────────────────────────────
-
-function parsePermissions(
-  raw: string | null | undefined,
-): Record<string, boolean> {
-  if (!raw) return {};
-  try {
-    const parsed = JSON.parse(raw);
-    if (parsed && typeof parsed === "object" && !Array.isArray(parsed)) {
-      return parsed as Record<string, boolean>;
-    }
-    return {};
-  } catch {
-    return {};
-  }
-}
-
-function enforceRequired(
-  access: SupplierAccessResult,
-  requireRead: boolean,
-  requireWrite: boolean,
-): SupplierAccessOutcome {
-  if (requireRead && !access.canRead) {
-    return forbidden("You do not have permission to view suppliers.");
-  }
-  if (requireWrite && !access.canWrite) {
-    return forbidden("You do not have permission to modify suppliers.");
-  }
-  return ok(access);
-}
-
-function ok(access: SupplierAccessResult): AccessSuccess {
-  return { ok: true, access };
-}
-
-function forbidden(message: string): AccessFailure {
   return {
-    ok: false,
-    response: NextResponse.json({ error: message }, { status: 403 }),
+    organizationId,
+    effectiveRole,
+    canReadSuppliers,
+    canWriteSuppliers: canReadSuppliers && !isReadOnlyRole(effectiveRole),
   };
 }

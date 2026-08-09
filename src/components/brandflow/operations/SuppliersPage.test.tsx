@@ -1,5 +1,4 @@
 // @vitest-environment jsdom
-// @ts-nocheck — Phase 8: pre-existing TS errors pending migration
 /**
  * SuppliersPage component tests — Sub-Issue #5 verification
  *
@@ -15,6 +14,12 @@
  *   6. no "Contact email is required" error shown
  *   7. created Supplier renders in the list
  *   8. label shows "Contact Email (Optional)"
+ *
+ * NOTE: @ts-nocheck removed (expert review Issue #1). All types are now
+ * properly declared. Mock responses use `as unknown as Response` because
+ * we only implement the subset of Response that the component reads
+ * (ok, json). The double cast through `unknown` is the idiomatic way to
+ * satisfy TypeScript without implementing all 20+ Response properties.
  */
 
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
@@ -37,9 +42,10 @@ vi.mock("sonner", () => ({
 }));
 
 // Mock store WITH a write-capable role so canWrite=true (Add Supplier button renders)
+// Type loosely — we only need appTheme and user for SuppliersPage rendering.
 const mockStore = {
-  appTheme: "light",
-  user: { id: "u1", name: "Aashir", role: "owner" }, // owner → canWrite = true
+  appTheme: "light" as const,
+  user: { id: "u1", name: "Aashir", role: "owner" },
 };
 vi.mock("@/store/brandflow-store", () => ({
   useValtrioxStore: () => mockStore,
@@ -77,7 +83,7 @@ async function renderSuppliersPage() {
           averageRating: null,
           ratedCount: 0,
         }),
-      } as Response;
+      } as unknown as Response;
     }
 
     // GET list
@@ -85,13 +91,14 @@ async function renderSuppliersPage() {
       return {
         ok: true,
         json: async () => ({ suppliers: [], total: 0, page: 1, limit: 50, hasMore: false }),
-      } as Response;
+      } as unknown as Response;
     }
 
     // POST create
     if (u.includes("/api/operations/suppliers") && init?.method === "POST") {
       postCallCount += 1;
-      lastPostBody = JSON.parse(init.body as string);
+      const bodyStr = typeof init.body === "string" ? init.body : "";
+      lastPostBody = JSON.parse(bodyStr);
       return {
         ok: true,
         json: async () => ({
@@ -108,10 +115,10 @@ async function renderSuppliersPage() {
             createdAt: new Date().toISOString(),
           },
         }),
-      } as Response;
+      } as unknown as Response;
     }
 
-    return { ok: false, status: 404, json: async () => ({ error: "not mocked" }) } as Response;
+    return { ok: false, status: 404, json: async () => ({ error: "not mocked" }) } as unknown as Response;
   });
 
   render(<SuppliersPage />);

@@ -37,30 +37,24 @@ function urlBase64ToUint8Array(base64String: string): Uint8Array {
 
 export function usePushNotifications(): UsePushNotificationsReturn {
   const [state, setState] = useState<PushSubscriptionState>({
-    permission: typeof window !== "undefined" && typeof Notification !== "undefined" ? Notification.permission : "default",
+    permission: typeof window !== "undefined" ? (Notification as any).permission ?? "default" : "default",
     isSupported: false,
     isSubscribed: false,
     isLoading: false,
   });
 
   const vapidPublicKey = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY || "";
-  const isSupported = state.isSupported;
-  const isSubscribed = state.isSubscribed;
-  const isLoading = state.isLoading;
-  const permission = state.permission;
 
   // Check browser support
   useEffect(() => {
     if (typeof window === "undefined") return;
 
     const supported = "serviceWorker" in navigator && "PushManager" in window;
-    Promise.resolve().then(() => {
-      setState((prev) => ({
-        ...prev,
-        isSupported: supported,
-        permission: Notification.permission || "default",
-      }));
-    });
+    setState((prev) => ({
+      ...prev,
+      isSupported: supported,
+      permission: (Notification as any).permission || "default",
+    }));
 
     // Check existing subscription
     if (supported) {
@@ -75,8 +69,41 @@ export function usePushNotifications(): UsePushNotificationsReturn {
     }
   }, []);
 
+  // Auto-subscribe if permission already granted but no subscription
+  useEffect(() => {
+    if (state.isSupported && state.permission === "granted" && !state.isSubscribed && !state.isLoading) {
+      subscribe();
+    }
+  }, [state.isSupported, state.permission, state.isSubscribed, subscribe]);
+
+  const requestPermission = useCallback(async (): Promise<NotificationPermission> => {
+    if (!state.isSupported) {
+      console.warn("[Push] Push notifications not supported in this browser");
+      return "denied";
+    }
+
+    setState((prev) => ({ ...prev, isLoading: true }));
+
+    try {
+      const permission = await Notification.requestPermission();
+      setState((prev) => ({ ...prev, permission, isLoading: false }));
+
+      if (permission === "granted") {
+        // Auto-subscribe after permission granted
+        await subscribe();
+      }
+
+      return permission;
+    } catch (error) {
+      console.error("[Push] Permission request failed:", error);
+      setState((prev) => ({ ...prev, isLoading: false }));
+      return "denied";
+    }
+  }, [state.isSupported]);
+
   const subscribe = useCallback(async () => {
-    if (!isSupported || !vapidPublicKey) {
+    if (!state.isSupported || !vapidPublicKey) {
+      console.warn("[Push] Cannot subscribe: not supported or VAPID key missing");
       return;
     }
 
@@ -103,9 +130,9 @@ export function usePushNotifications(): UsePushNotificationsReturn {
       // SECURITY (Phase 17): Pull user/org ids from in-memory store (hydrated
       // from /api/auth/me via signed cookies) — NOT from localStorage.
       try {
-        const stateSnapshot = useValtrioxStore.getState();
-        const user = stateSnapshot.user;
-        const org = stateSnapshot.organization;
+        const state = useValtrioxStore.getState();
+        const user = state.user;
+        const org = state.organization;
         if (user?.id) subBody.userId = user.id;
         if (org?.id) subBody.orgId = org.id;
       } catch {
@@ -123,44 +150,15 @@ export function usePushNotifications(): UsePushNotificationsReturn {
       }
 
       setState((prev) => ({ ...prev, isSubscribed: true, isLoading: false }));
-    } catch {
+      console.log("[Push] Successfully subscribed");
+    } catch (error) {
+      console.error("[Push] Subscription failed:", error);
       setState((prev) => ({ ...prev, isLoading: false }));
     }
-  }, [isSupported, vapidPublicKey]);
-
-  // Auto-subscribe if permission already granted but no subscription
-  useEffect(() => {
-    if (isSupported && permission === "granted" && !isSubscribed && !isLoading) {
-      Promise.resolve().then(() => {
-        void subscribe();
-      });
-    }
-  }, [isSupported, permission, isSubscribed, isLoading, subscribe]);
-
-  const requestPermission = useCallback(async (): Promise<NotificationPermission> => {
-    if (!isSupported) {
-      return "denied";
-    }
-
-    setState((prev) => ({ ...prev, isLoading: true }));
-
-    try {
-      const permissionResult = await Notification.requestPermission();
-      setState((prev) => ({ ...prev, permission: permissionResult, isLoading: false }));
-
-      if (permissionResult === "granted") {
-        await subscribe();
-      }
-
-      return permissionResult;
-    } catch {
-      setState((prev) => ({ ...prev, isLoading: false }));
-      return "denied";
-    }
-  }, [isSupported, subscribe]);
+  }, [state.isSupported, vapidPublicKey]);
 
   const unsubscribe = useCallback(async () => {
-    if (!isSupported) return;
+    if (!state.isSupported) return;
 
     setState((prev) => ({ ...prev, isLoading: true }));
 
@@ -183,13 +181,16 @@ export function usePushNotifications(): UsePushNotificationsReturn {
       }
 
       setState((prev) => ({ ...prev, isSubscribed: false, isLoading: false }));
-    } catch {
+      console.log("[Push] Successfully unsubscribed");
+    } catch (error) {
+      console.error("[Push] Unsubscribe failed:", error);
       setState((prev) => ({ ...prev, isLoading: false }));
     }
-  }, [isSupported]);
+  }, [state.isSupported]);
 
   const sendTestNotification = useCallback(async (title?: string, body?: string) => {
-    if (!isSupported || !isSubscribed) {
+    if (!state.isSupported || !state.isSubscribed) {
+      console.warn("[Push] Must be subscribed to send test notification");
       return;
     }
 
@@ -204,12 +205,16 @@ export function usePushNotifications(): UsePushNotificationsReturn {
         }),
       });
 
-      await res.json();
-      return;
-    } catch {
-      return;
+      const data = await res.json();
+      if (data.success) {
+        console.log("[Push] Test notification sent:", data);
+      } else {
+        console.warn("[Push] Failed to send test notification:", data);
+      }
+    } catch (error) {
+      console.error("[Push] Send test notification failed:", error);
     }
-  }, [isSupported, isSubscribed]);
+  }, [state.isSupported, state.isSubscribed]);
 
   return {
     ...state,

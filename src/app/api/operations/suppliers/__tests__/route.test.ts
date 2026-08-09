@@ -7,11 +7,16 @@
 // Covers team-member review requirements:
 //   - Organization isolation: Org A user only sees Org A suppliers
 //   - Permissions: viewer/member cannot POST (403)
-//   - Invalid ratings: POST with rating 0/6/3.5 → 400
+//   - Invalid ratings: POST with rating 0/6/3.5 → 422
 //   - Rating null for clearing: POST with rating=null creates unrated supplier
 //   - Persistence after reload: create → re-GET → data intact
 //
 // Pattern: mirrors __tests__/product-categories.test.ts (vi.hoisted + vi.mock)
+//
+// UPDATED for Issue #2 (resolveSupplierAccess(db, authCtx) signature):
+//   - valtrioxTeamMember.findUnique → findFirst
+//   - organizationMember.findFirst returns { role, roleDef: null } (matches select)
+//   - No outcome.* patterns — direct access object usage
 
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { NextRequest } from "next/server";
@@ -53,7 +58,7 @@ const dbMocks = vi.hoisted(() => {
   // Supports: organizationId, category, status, rating (gte/lte/not null), OR (search)
   const matchesWhere = (
     supplier: SupplierRecord,
-    where: Record<string, unknown>
+    where: Record<string, unknown>,
   ): boolean => {
     if (
       where.organizationId !== undefined &&
@@ -113,7 +118,7 @@ const dbMocks = vi.hoisted(() => {
             }
           }
           return true;
-        }
+        },
       );
       if (!matchesAny) return false;
     }
@@ -135,17 +140,17 @@ const dbMocks = vi.hoisted(() => {
         take?: number;
       }) => {
         let results = testState.suppliers.filter((s) =>
-          matchesWhere(s, where)
+          matchesWhere(s, where),
         );
         if (orderBy?.createdAt === "desc") {
           results = results.sort(
-            (a, b) => b.createdAt.getTime() - a.createdAt.getTime()
+            (a, b) => b.createdAt.getTime() - a.createdAt.getTime(),
           );
         }
         if (skip !== undefined) results = results.slice(skip);
         if (take !== undefined) results = results.slice(0, take);
         return results;
-      }
+      },
     ),
 
     count: vi.fn(async ({ where }: { where: Record<string, unknown> }) => {
@@ -181,14 +186,14 @@ const dbMocks = vi.hoisted(() => {
         _sum?: { rating?: boolean };
       }) => {
         const filtered = testState.suppliers.filter((s) =>
-          matchesWhere(s, where)
+          matchesWhere(s, where),
         );
         let sum = 0;
         if (_sum?.rating) {
           sum = filtered.reduce((acc, s) => acc + (s.rating ?? 0), 0);
         }
         return { _sum: { rating: sum } };
-      }
+      },
     ),
 
     findFirst: vi.fn(
@@ -200,7 +205,7 @@ const dbMocks = vi.hoisted(() => {
         select?: Record<string, boolean>;
       }) => {
         const found = testState.suppliers.find((s) =>
-          matchesWhere(s, where)
+          matchesWhere(s, where),
         );
         if (!found) return null;
         if (select) {
@@ -211,43 +216,48 @@ const dbMocks = vi.hoisted(() => {
           return picked;
         }
         return found;
-      }
+      },
     ),
 
-    update: vi.fn(
+    updateMany: vi.fn(
       async ({
         where,
         data,
       }: {
-        where: { id: string };
+        where: { id: string; organizationId?: string };
         data: Record<string, unknown>;
       }) => {
-        const idx = testState.suppliers.findIndex((s) => s.id === where.id);
-        if (idx === -1) throw new Error("Record not found");
+        const idx = testState.suppliers.findIndex(
+          (s) =>
+            s.id === where.id &&
+            (where.organizationId === undefined ||
+              s.organizationId === where.organizationId),
+        );
+        if (idx === -1) return { count: 0 };
         testState.suppliers[idx] = {
           ...testState.suppliers[idx],
           ...data,
           updatedAt: new Date(),
         } as SupplierRecord;
-        return testState.suppliers[idx];
-      }
+        return { count: 1 };
+      },
     ),
 
     deleteMany: vi.fn(
       async ({ where }: { where: Record<string, unknown> }) => {
         const before = testState.suppliers.length;
         testState.suppliers = testState.suppliers.filter(
-          (s) => !matchesWhere(s, where)
+          (s) => !matchesWhere(s, where),
         );
         return { count: before - testState.suppliers.length };
-      }
+      },
     ),
   };
 
   // ── OrganizationMember mock (used by resolveSupplierAccess helper) ──
-  // Mirrors testState.role so the helper's DB query returns the same role
-  // that the auth-middleware mock passes to the handler. Per-test role
-  // changes (e.g. testState.role = "viewer") are reflected here too.
+  // Returns shape that matches the `select: { role, roleDef }` call.
+  // roleDef is null by default — resolveRoleDefinition falls back to
+  // getRoleByName(roleName) which uses the canonical ROLES table.
   const organizationMember = {
     findFirst: vi.fn(
       async ({
@@ -258,13 +268,10 @@ const dbMocks = vi.hoisted(() => {
         if (!testState.organizationId) return null;
         if (where.organizationId !== testState.organizationId) return null;
         if (where.userId !== "user-a") return null;
+        // Match the select shape used by resolveSupplierAccess:
+        //   select: { role: true, roleDef: { select: { name, permissions } } }
         return {
-          id: "member-1",
-          userId: "user-a",
-          organizationId: testState.organizationId,
           role: testState.role,
-          roleId: null,
-          penaltyUntil: null,
           roleDef: null,
         };
       },
@@ -272,8 +279,10 @@ const dbMocks = vi.hoisted(() => {
   };
 
   // ── ValtrioxTeamMember mock (platform team) — null by default ──
+  // FIX: resolveSupplierAccess calls findFirst (not findUnique) with
+  //   where: { userId, status: "active" }, select: { id, visibleSections }
   const valtrioxTeamMember = {
-    findUnique: vi.fn(async () => null),
+    findFirst: vi.fn(async () => null),
   };
 
   const db = { supplier, organizationMember, valtrioxTeamMember };
@@ -326,7 +335,7 @@ import { GET, POST } from "@/app/api/operations/suppliers/route";
 
 function jsonRequest(
   method: string,
-  body: Record<string, unknown>
+  body: Record<string, unknown>,
 ): NextRequest {
   return new NextRequest("http://localhost/api/operations/suppliers", {
     method,
@@ -337,19 +346,19 @@ function jsonRequest(
 
 function getRequest(queryString = ""): NextRequest {
   return new NextRequest(
-    `http://localhost/api/operations/suppliers${queryString}`
+    `http://localhost/api/operations/suppliers${queryString}`,
   );
 }
 
 async function responseJson(
-  response: Response
+  response: Response,
 ): Promise<Record<string, unknown>> {
   return response.json();
 }
 
 function seedSupplier(
   organizationId: string,
-  overrides: Partial<SupplierRecord> = {}
+  overrides: Partial<SupplierRecord> = {},
 ): SupplierRecord {
   const supplier: SupplierRecord = {
     id: `sup-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
@@ -411,7 +420,7 @@ describe("suppliers API — list (GET)", () => {
     expect(response.status).toBe(200);
     expect((data.suppliers as Array<{ name: string }>).length).toBe(2);
     expect(
-      (data.suppliers as Array<{ name: string }>).map((s) => s.name)
+      (data.suppliers as Array<{ name: string }>).map((s) => s.name),
     ).toEqual(expect.arrayContaining(["Org A Supplier 1", "Org A Supplier 2"]));
     expect(data.stats).toMatchObject({ total: 2 });
   });
@@ -478,7 +487,7 @@ describe("suppliers API — list (GET)", () => {
 
     expect(response.status).toBe(200);
     const names = (data.suppliers as Array<{ name: string }>).map(
-      (s) => s.name
+      (s) => s.name,
     );
     expect(names).toEqual(["High"]);
     expect(names).not.toContain("Unrated");
@@ -494,7 +503,7 @@ describe("suppliers API — list (GET)", () => {
 
     expect(response.status).toBe(200);
     const names = (data.suppliers as Array<{ name: string }>).map(
-      (s) => s.name
+      (s) => s.name,
     );
     expect(names).toEqual(["Low"]);
     expect(names).not.toContain("Unrated");
@@ -510,7 +519,7 @@ describe("suppliers API — list (GET)", () => {
 
     expect(response.status).toBe(200);
     const names = (data.suppliers as Array<{ name: string }>).map(
-      (s) => s.name
+      (s) => s.name,
     );
     // Should match "Acme Corp" (name) and "Beta Inc" (contactPerson)
     expect(names).toEqual(expect.arrayContaining(["Acme Corp", "Beta Inc"]));
@@ -572,7 +581,7 @@ describe("suppliers API — create (POST)", () => {
         address: "123 Industrial Way",
         notes: "Primary packaging supplier",
         rating: 5,
-      })
+      }),
     );
     const data = await responseJson(response);
 
@@ -589,7 +598,7 @@ describe("suppliers API — create (POST)", () => {
   it("persists supplier after re-GET (persistence test)", async () => {
     // Create
     const createResponse = await POST(
-      jsonRequest("POST", { name: "Persistent Supplier", rating: 4 })
+      jsonRequest("POST", { name: "Persistent Supplier", rating: 4 }),
     );
     expect(createResponse.status).toBe(201);
 
@@ -630,7 +639,7 @@ describe("suppliers API — create (POST)", () => {
       testState.role = role;
       testState.suppliers.length = 0;
       const response = await POST(
-        jsonRequest("POST", { name: `Supplier for ${role}` })
+        jsonRequest("POST", { name: `Supplier for ${role}` }),
       );
       expect(response.status).toBe(201);
     }
@@ -647,7 +656,7 @@ describe("suppliers API — create (POST)", () => {
   // ── Team-member review: Invalid ratings ──
   it("rejects rating of 0 with 422", async () => {
     const response = await POST(
-      jsonRequest("POST", { name: "Test", rating: 0 })
+      jsonRequest("POST", { name: "Test", rating: 0 }),
     );
     expect(response.status).toBe(422);
     expect(dbMocks.supplier.create).not.toHaveBeenCalled();
@@ -655,7 +664,7 @@ describe("suppliers API — create (POST)", () => {
 
   it("rejects rating of 6 with 422", async () => {
     const response = await POST(
-      jsonRequest("POST", { name: "Test", rating: 6 })
+      jsonRequest("POST", { name: "Test", rating: 6 }),
     );
     expect(response.status).toBe(422);
     expect(dbMocks.supplier.create).not.toHaveBeenCalled();
@@ -663,7 +672,7 @@ describe("suppliers API — create (POST)", () => {
 
   it("rejects non-integer rating (3.5) with 422", async () => {
     const response = await POST(
-      jsonRequest("POST", { name: "Test", rating: 3.5 })
+      jsonRequest("POST", { name: "Test", rating: 3.5 }),
     );
     expect(response.status).toBe(422);
     expect(dbMocks.supplier.create).not.toHaveBeenCalled();
@@ -672,7 +681,7 @@ describe("suppliers API — create (POST)", () => {
   // ── Team-member review: Rating null for clearing ──
   it("accepts null rating (unrated at creation)", async () => {
     const response = await POST(
-      jsonRequest("POST", { name: "Unrated Supplier", rating: null })
+      jsonRequest("POST", { name: "Unrated Supplier", rating: null }),
     );
     const data = await responseJson(response);
 
@@ -682,7 +691,7 @@ describe("suppliers API — create (POST)", () => {
 
   it("accepts omitted rating (defaults to null)", async () => {
     const response = await POST(
-      jsonRequest("POST", { name: "No Rating Specified" })
+      jsonRequest("POST", { name: "No Rating Specified" }),
     );
     const data = await responseJson(response);
 
@@ -704,14 +713,14 @@ describe("suppliers API — create (POST)", () => {
 
   it("rejects invalid email format with 422", async () => {
     const response = await POST(
-      jsonRequest("POST", { name: "Test", email: "not-an-email" })
+      jsonRequest("POST", { name: "Test", email: "not-an-email" }),
     );
     expect(response.status).toBe(422);
   });
 
   it("normalizes empty email string to null", async () => {
     const response = await POST(
-      jsonRequest("POST", { name: "Test", email: "" })
+      jsonRequest("POST", { name: "Test", email: "" }),
     );
     const data = await responseJson(response);
 
@@ -724,7 +733,7 @@ describe("suppliers API — create (POST)", () => {
       jsonRequest("POST", {
         name: "Test",
         email: "  Sales@Acme.COM  ",
-      })
+      }),
     );
     const data = await responseJson(response);
 
@@ -734,7 +743,7 @@ describe("suppliers API — create (POST)", () => {
 
   it("rejects invalid status with 422", async () => {
     const response = await POST(
-      jsonRequest("POST", { name: "Test", status: "deleted" })
+      jsonRequest("POST", { name: "Test", status: "deleted" }),
     );
     expect(response.status).toBe(422);
   });
@@ -746,7 +755,7 @@ describe("suppliers API — create (POST)", () => {
       jsonRequest("POST", {
         name: "Test",
         organizationId: "org-b", // attempt to spoof
-      })
+      }),
     );
     const data = await responseJson(response);
 

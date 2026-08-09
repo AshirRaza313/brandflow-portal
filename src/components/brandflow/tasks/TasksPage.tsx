@@ -4,6 +4,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useValtrioxStore } from "@/store/brandflow-store";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
@@ -80,41 +81,38 @@ export function TasksPage() {
   const [taskModalOpen, setTaskModalOpen] = useState(false);
   const [editingTask, setEditingTask] = useState<Task | null>(null);
   const [deletingTaskId, setDeletingTaskId] = useState<string | null>(null);
+  const [deleting, setDeleting] = useState(false);
+  const [statusUpdating, setStatusUpdating] = useState(false);
   const [activeDragId, setActiveDragId] = useState<string | null>(null);
 
-  const orgId = organization?.id;
   const searchTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   // ── Fetch Tasks ──────────────────────────────────────────────────────
 
   const fetchTasks = useCallback(async () => {
-    if (!orgId) { setLoading(false); return; }
+    if (!organization?.id) { setLoading(false); return; }
 
     setLoading(true);
     setError(null);
 
     try {
-      const res = await fetchWithAuth(`/api/tasks?orgId=${orgId}`);
+      const res = await fetchWithAuth(`/api/tasks?orgId=${organization.id}`);
       if (!res.ok) {
         const data = await res.json();
         throw new Error(data.error || "Failed to fetch tasks");
       }
       const data = await res.json();
       setTasks(data.tasks || []);
-    } catch (err: unknown) {
-      const message = err instanceof Error ? err.message : String(err);
-      setError(message || "Something went wrong");
+    } catch (err: any) {
+      console.error("Fetch tasks error:", err);
+      setError(err.message || "Something went wrong");
       toast.error("Failed to load tasks");
     } finally {
       setLoading(false);
     }
-  }, [orgId]);
+  }, [organization?.id]);
 
-  useEffect(() => {
-    Promise.resolve().then(() => {
-      fetchTasks();
-    });
-  }, [fetchTasks]);
+  useEffect(() => { fetchTasks(); }, [fetchTasks]);
 
   // ── Debounced Search ──────────────────────────────────────────────────
 
@@ -195,6 +193,7 @@ export function TasksPage() {
 
   const handleDelete = async () => {
     if (!deletingTaskId) return;
+    setDeleting(true);
     try {
       const res = await fetchWithAuth(`/api/tasks/${deletingTaskId}`, { method: "DELETE" });
       if (!res.ok) throw new Error("Failed to delete");
@@ -203,6 +202,8 @@ export function TasksPage() {
       fetchTasks();
     } catch {
       toast.error("Failed to delete task");
+    } finally {
+      setDeleting(false);
     }
   };
 
@@ -213,7 +214,7 @@ export function TasksPage() {
     setTaskModalOpen(true);
   };
 
-  const openCreate = () => {
+  const openCreate = (defaultStatus?: string) => {
     setEditingTask(null);
     setTaskModalOpen(true);
   };
@@ -453,7 +454,7 @@ export function TasksPage() {
                   <Button
                     variant="ghost"
                     className={cn("mt-2 text-xs w-full justify-start", isDark ? "text-slate-400 hover:text-slate-200" : "text-muted-foreground")}
-                    onClick={() => openCreate()}
+                    onClick={() => openCreate(col.id)}
                   >
                     <Plus className="h-3.5 w-3.5 mr-1" /> Add task
                   </Button>

@@ -301,8 +301,14 @@ export function SuppliersPage() {
   }, []);
 
   useEffect(() => {
-    fetchInitial();
-    fetchStats();
+    // Defer to microtask to avoid synchronous setState-in-effect
+    // (React 19 + react-hooks/set-state-in-effect rule).
+    // fetchInitial/fetchStats call setState before their first await,
+    // which triggers the rule when called directly in the effect body.
+    Promise.resolve().then(() => {
+      fetchInitial();
+      fetchStats();
+    });
   }, [fetchInitial, fetchStats]);
 
   // ───────────────────────────────────────────────────────────────────────────

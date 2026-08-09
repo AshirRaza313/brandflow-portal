@@ -29,12 +29,16 @@ import {
   ChevronDown,
   Hash,
   Mic,
+  MicOff,
+  Square,
+  FileText,
   X,
   Download,
   Play,
   Pause,
   Volume2,
   Trash2,
+  Loader2,
 } from "lucide-react";
 
 // ============================================================================
@@ -258,6 +262,7 @@ function VoiceNotePlayer({
   const [playbackTime, setPlaybackTime] = useState(0);
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const accentClass = isGold ? "text-amber-400" : "text-amber-400";
 
   const handlePlay = useCallback(() => {
     if (!audioRef.current) {
@@ -397,6 +402,7 @@ function MessageBubble({
   isOwn,
   isDark,
   isGold,
+  accentClass,
   isLastInGroup,
   onDelete,
 }: {
@@ -404,6 +410,7 @@ function MessageBubble({
   isOwn: boolean;
   isDark: boolean;
   isGold: boolean;
+  accentClass: string;
   isLastInGroup: boolean;
   onDelete?: (messageId: string) => void;
 }) {
@@ -581,12 +588,16 @@ function MessageBubble({
 
 function VoiceRecordingBar({
   isRecording,
+  recordingTime,
   isDark,
+  isGold,
   onCancel,
   onStop,
 }: {
   isRecording: boolean;
+  recordingTime: number;
   isDark: boolean;
+  isGold: boolean;
   onCancel: () => void;
   onStop: (blob: Blob) => void;
 }) {
@@ -596,9 +607,8 @@ function VoiceRecordingBar({
   const startTimeRef = useRef<number>(0);
   const [time, setTime] = useState(0);
   const onStopRef = useRef(onStop);
-  useEffect(() => {
-    onStopRef.current = onStop;
-  }, [onStop]);
+  onStopRef.current = onStop;
+  const accentClass = isGold ? "text-amber-500" : "text-amber-500";
 
   // Start recording when component mounts
   useEffect(() => {
@@ -666,7 +676,7 @@ function VoiceRecordingBar({
     }
 
     if (isRecording) {
-      Promise.resolve().then(() => setTime(0));
+      setTime(0);
       startRecording();
     }
 
@@ -776,8 +786,12 @@ function VoiceRecordingBar({
 
 function TeamInfoPanel({
   isDark,
+  isGold,
+  accentClass,
 }: {
   isDark: boolean;
+  isGold: boolean;
+  accentClass: string;
 }) {
   const { user, brandName } = useValtrioxStore();
   const members = useMemo(() => {
@@ -876,7 +890,8 @@ export function TeamChatPage() {
 
   const isDark = appTheme === "premium-dark" || appTheme === "dark";
   const isGold = appTheme === "premium-dark";
-  const accentBg = "bg-amber-500/15";
+  const accentClass = isGold ? "text-amber-500" : "text-amber-500";
+  const accentBg = isGold ? "bg-amber-500/15" : "bg-amber-500/15";
 
   // Platform role check - admin cannot access Team Chat
   const userRole = user?.role || "viewer";
@@ -1308,7 +1323,9 @@ export function TeamChatPage() {
             {isRecording && (
               <VoiceRecordingBar
                 isRecording={isRecording}
+                recordingTime={0}
                 isDark={isDark}
+                isGold={isGold}
                 onCancel={() => setIsRecording(false)}
                 onStop={handleVoiceStop}
               />
@@ -1418,7 +1435,7 @@ export function TeamChatPage() {
       {/* Team Info Panel (Desktop only) */}
       {showTeamInfo && (
         <div className={`hidden lg:block w-64 shrink-0 border-l ${isDark ? "border-white/[0.06]" : "border-slate-200"}`}>
-          <TeamInfoPanel isDark={isDark} />
+          <TeamInfoPanel isDark={isDark} isGold={isGold} accentClass={accentClass} />
         </div>
       )}
     </div>

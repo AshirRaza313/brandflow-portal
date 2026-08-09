@@ -12,6 +12,12 @@
 //   - Persistence after reload: PATCH → re-GET → changes intact
 //
 // Pattern: mirrors suppliers/__tests__/route.test.ts (vi.hoisted + vi.mock)
+//
+// UPDATED for Issue #2 (resolveSupplierAccess(db, authCtx) signature):
+//   - valtrioxTeamMember.findUnique → findFirst
+//   - organizationMember.findFirst returns { role, roleDef: null }
+//   - PATCH route now uses updateMany (Issue #9 TOCTOU fix) — mock updated
+//   - Assertions: dbMocks.supplier.update → dbMocks.supplier.updateMany
 
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { NextRequest } from "next/server";
@@ -49,7 +55,7 @@ const testState = vi.hoisted(() => ({
 const dbMocks = vi.hoisted(() => {
   const matchesWhere = (
     supplier: SupplierRecord,
-    where: Record<string, unknown>
+    where: Record<string, unknown>,
   ): boolean => {
     if (
       where.organizationId !== undefined &&
@@ -75,7 +81,7 @@ const dbMocks = vi.hoisted(() => {
         select?: Record<string, boolean>;
       }) => {
         const found = testState.suppliers.find((s) =>
-          matchesWhere(s, where)
+          matchesWhere(s, where),
         );
         if (!found) return null;
         if (select) {
@@ -86,40 +92,44 @@ const dbMocks = vi.hoisted(() => {
           return picked;
         }
         return found;
-      }
+      },
     ),
 
-    update: vi.fn(
+    // FIX: route now uses updateMany (Issue #9 TOCTOU) instead of update.
+    // Mock supports org-scoped where: { id, organizationId } and returns
+    // count:0 when no record matched (→ 404).
+    updateMany: vi.fn(
       async ({
         where,
         data,
       }: {
-        where: { id: string };
+        where: { id: string; organizationId?: string };
         data: Record<string, unknown>;
       }) => {
-        const idx = testState.suppliers.findIndex((s) => s.id === where.id);
-        if (idx === -1) {
-          const err = new Error("Record not found");
-          (err as { code?: string }).code = "P2025";
-          throw err;
-        }
+        const idx = testState.suppliers.findIndex(
+          (s) =>
+            s.id === where.id &&
+            (where.organizationId === undefined ||
+              s.organizationId === where.organizationId),
+        );
+        if (idx === -1) return { count: 0 };
         testState.suppliers[idx] = {
           ...testState.suppliers[idx],
           ...data,
           updatedAt: new Date(),
         } as SupplierRecord;
-        return testState.suppliers[idx];
-      }
+        return { count: 1 };
+      },
     ),
 
     deleteMany: vi.fn(
       async ({ where }: { where: Record<string, unknown> }) => {
         const before = testState.suppliers.length;
         testState.suppliers = testState.suppliers.filter(
-          (s) => !matchesWhere(s, where)
+          (s) => !matchesWhere(s, where),
         );
         return { count: before - testState.suppliers.length };
-      }
+      },
     ),
 
     findMany: vi.fn(async () => testState.suppliers),
@@ -148,9 +158,7 @@ const dbMocks = vi.hoisted(() => {
   };
 
   // ── OrganizationMember mock (used by resolveSupplierAccess helper) ──
-  // Mirrors testState.role so the helper's DB query returns the same role
-  // that the auth-middleware mock passes to the handler. Per-test role
-  // changes (e.g. testState.role = "viewer") are reflected here too.
+  // Returns shape that matches the select: { role, roleDef } call.
   const organizationMember = {
     findFirst: vi.fn(
       async ({
@@ -162,12 +170,7 @@ const dbMocks = vi.hoisted(() => {
         if (where.organizationId !== testState.organizationId) return null;
         if (where.userId !== "user-a") return null;
         return {
-          id: "member-1",
-          userId: "user-a",
-          organizationId: testState.organizationId,
           role: testState.role,
-          roleId: null,
-          penaltyUntil: null,
           roleDef: null,
         };
       },
@@ -175,8 +178,9 @@ const dbMocks = vi.hoisted(() => {
   };
 
   // ── ValtrioxTeamMember mock (platform team) — null by default ──
+  // FIX: resolveSupplierAccess calls findFirst (not findUnique).
   const valtrioxTeamMember = {
-    findUnique: vi.fn(async () => null),
+    findFirst: vi.fn(async () => null),
   };
 
   const db = { supplier, organizationMember, valtrioxTeamMember };
@@ -230,7 +234,7 @@ import { GET, PATCH, DELETE } from "@/app/api/operations/suppliers/[id]/route";
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 function jsonRequest(
   method: string,
-  body: Record<string, unknown>
+  body: Record<string, unknown>,
 ): NextRequest {
   return new NextRequest("http://localhost/api/operations/suppliers/test-id", {
     method,
@@ -241,13 +245,13 @@ function jsonRequest(
 
 function getRequest(id: string): NextRequest {
   return new NextRequest(
-    `http://localhost/api/operations/suppliers/${id}`
+    `http://localhost/api/operations/suppliers/${id}`,
   );
 }
 
 function patchRequest(
   id: string,
-  body: Record<string, unknown>
+  body: Record<string, unknown>,
 ): NextRequest {
   return new NextRequest(
     `http://localhost/api/operations/suppliers/${id}`,
@@ -255,26 +259,26 @@ function patchRequest(
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(body),
-    }
+    },
   );
 }
 
 function deleteRequest(id: string): NextRequest {
   return new NextRequest(
     `http://localhost/api/operations/suppliers/${id}`,
-    { method: "DELETE" }
+    { method: "DELETE" },
   );
 }
 
 async function responseJson(
-  response: Response
+  response: Response,
 ): Promise<Record<string, unknown>> {
   return response.json();
 }
 
 function seedSupplier(
   organizationId: string,
-  overrides: Partial<SupplierRecord> = {}
+  overrides: Partial<SupplierRecord> = {},
 ): SupplierRecord {
   const supplier: SupplierRecord = {
     id: `sup-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
@@ -350,7 +354,7 @@ describe("suppliers/[id] API — get single (GET)", () => {
     // Note: canReadSuppliers allows viewer, so this tests that the read gate
     // is enforced. If your policy is "viewers CAN read", change role to
     // something like "guest" that fails canReadSuppliers.
-    testState.role = "guest"; // not in SUPPLIER_READ_ROLES
+    testState.role = "guest"; // not in ROLES → getRoleByName returns undefined → hasPermission false
     const seeded = seedSupplier("org-a", { name: "Test" });
 
     const response = await GET(getRequest(seeded.id), {
@@ -389,7 +393,7 @@ describe("suppliers/[id] API — update (PATCH)", () => {
 
     const response = await PATCH(
       patchRequest(seeded.id, { name: "New Name" }),
-      { params: Promise.resolve({ id: seeded.id }) }
+      { params: Promise.resolve({ id: seeded.id }) },
     );
     const data = await responseJson(response);
 
@@ -406,7 +410,7 @@ describe("suppliers/[id] API — update (PATCH)", () => {
 
     const response = await PATCH(
       patchRequest(seeded.id, { rating: 5 }),
-      { params: Promise.resolve({ id: seeded.id }) }
+      { params: Promise.resolve({ id: seeded.id }) },
     );
     const data = await responseJson(response);
 
@@ -420,7 +424,7 @@ describe("suppliers/[id] API — update (PATCH)", () => {
 
     const response = await PATCH(
       patchRequest(seeded.id, { rating: null }),
-      { params: Promise.resolve({ id: seeded.id }) }
+      { params: Promise.resolve({ id: seeded.id }) },
     );
     const data = await responseJson(response);
 
@@ -433,7 +437,7 @@ describe("suppliers/[id] API — update (PATCH)", () => {
 
     const response = await PATCH(
       patchRequest(seeded.id, { name: "Updated Name" }),
-      { params: Promise.resolve({ id: seeded.id }) }
+      { params: Promise.resolve({ id: seeded.id }) },
     );
     const data = await responseJson(response);
 
@@ -457,7 +461,7 @@ describe("suppliers/[id] API — update (PATCH)", () => {
         status: "inactive",
         rating: 5,
       }),
-      { params: Promise.resolve({ id: seeded.id }) }
+      { params: Promise.resolve({ id: seeded.id }) },
     );
     const data = await responseJson(response);
 
@@ -476,7 +480,7 @@ describe("suppliers/[id] API — update (PATCH)", () => {
     // PATCH — update rating to 5
     const patchResponse = await PATCH(
       patchRequest(seeded.id, { rating: 5 }),
-      { params: Promise.resolve({ id: seeded.id }) }
+      { params: Promise.resolve({ id: seeded.id }) },
     );
     expect(patchResponse.status).toBe(200);
 
@@ -503,11 +507,12 @@ describe("suppliers/[id] API — update (PATCH)", () => {
 
     const response = await PATCH(
       patchRequest(seeded.id, { name: "Updated" }),
-      { params: Promise.resolve({ id: seeded.id }) }
+      { params: Promise.resolve({ id: seeded.id }) },
     );
 
     expect(response.status).toBe(403);
-    expect(dbMocks.supplier.update).not.toHaveBeenCalled();
+    // FIX: route uses updateMany now (not update)
+    expect(dbMocks.supplier.updateMany).not.toHaveBeenCalled();
   });
 
   it("rejects member role with 403", async () => {
@@ -516,11 +521,12 @@ describe("suppliers/[id] API — update (PATCH)", () => {
 
     const response = await PATCH(
       patchRequest(seeded.id, { rating: 5 }),
-      { params: Promise.resolve({ id: seeded.id }) }
+      { params: Promise.resolve({ id: seeded.id }) },
     );
 
     expect(response.status).toBe(403);
-    expect(dbMocks.supplier.update).not.toHaveBeenCalled();
+    // FIX: route uses updateMany now (not update)
+    expect(dbMocks.supplier.updateMany).not.toHaveBeenCalled();
   });
 
   it("allows owner, admin, and manager roles", async () => {
@@ -533,7 +539,7 @@ describe("suppliers/[id] API — update (PATCH)", () => {
 
       const response = await PATCH(
         patchRequest(seeded.id, { rating: 5 }),
-        { params: Promise.resolve({ id: seeded.id }) }
+        { params: Promise.resolve({ id: seeded.id }) },
       );
       expect(response.status).toBe(200);
     }
@@ -548,11 +554,22 @@ describe("suppliers/[id] API — update (PATCH)", () => {
 
     const response = await PATCH(
       patchRequest(otherOrgSupplier.id, { rating: 5 }),
-      { params: Promise.resolve({ id: otherOrgSupplier.id }) }
+      { params: Promise.resolve({ id: otherOrgSupplier.id }) },
     );
 
     expect(response.status).toBe(404);
-    expect(dbMocks.supplier.update).not.toHaveBeenCalled();
+    // FIX: route uses updateMany (Issue #9 TOCTOU fix) — it IS called with
+    // org-scoped where, returns count=0, route returns 404. Safety comes
+    // from the org-scoped where clause, NOT from avoiding the call.
+    expect(dbMocks.supplier.updateMany).toHaveBeenCalledWith({
+      where: { id: otherOrgSupplier.id, organizationId: "org-a" },
+      data: { rating: 5 },
+    });
+    // Critical: org-b supplier must STILL be unchanged (rating stays 1, not 5)
+    expect(testState.suppliers[0]).toMatchObject({
+      name: "Other Org's",
+      rating: 1,
+    });
   });
 
   // ── Team-member review: Invalid ratings ──
@@ -561,11 +578,12 @@ describe("suppliers/[id] API — update (PATCH)", () => {
 
     const response = await PATCH(
       patchRequest(seeded.id, { rating: 0 }),
-      { params: Promise.resolve({ id: seeded.id }) }
+      { params: Promise.resolve({ id: seeded.id }) },
     );
 
     expect(response.status).toBe(422);
-    expect(dbMocks.supplier.update).not.toHaveBeenCalled();
+    // FIX: route uses updateMany now (not update)
+    expect(dbMocks.supplier.updateMany).not.toHaveBeenCalled();
   });
 
   it("rejects rating of 6 on PATCH with 422", async () => {
@@ -573,11 +591,12 @@ describe("suppliers/[id] API — update (PATCH)", () => {
 
     const response = await PATCH(
       patchRequest(seeded.id, { rating: 6 }),
-      { params: Promise.resolve({ id: seeded.id }) }
+      { params: Promise.resolve({ id: seeded.id }) },
     );
 
     expect(response.status).toBe(422);
-    expect(dbMocks.supplier.update).not.toHaveBeenCalled();
+    // FIX: route uses updateMany now (not update)
+    expect(dbMocks.supplier.updateMany).not.toHaveBeenCalled();
   });
 
   it("rejects non-integer rating (3.5) on PATCH with 422", async () => {
@@ -585,11 +604,12 @@ describe("suppliers/[id] API — update (PATCH)", () => {
 
     const response = await PATCH(
       patchRequest(seeded.id, { rating: 3.5 }),
-      { params: Promise.resolve({ id: seeded.id }) }
+      { params: Promise.resolve({ id: seeded.id }) },
     );
 
     expect(response.status).toBe(422);
-    expect(dbMocks.supplier.update).not.toHaveBeenCalled();
+    // FIX: route uses updateMany now (not update)
+    expect(dbMocks.supplier.updateMany).not.toHaveBeenCalled();
   });
 
   // ── Validation ──
@@ -598,7 +618,7 @@ describe("suppliers/[id] API — update (PATCH)", () => {
 
     const response = await PATCH(
       patchRequest(seeded.id, {}),
-      { params: Promise.resolve({ id: seeded.id }) }
+      { params: Promise.resolve({ id: seeded.id }) },
     );
 
     expect(response.status).toBe(422);
@@ -609,7 +629,7 @@ describe("suppliers/[id] API — update (PATCH)", () => {
 
     const response = await PATCH(
       patchRequest(seeded.id, { status: "deleted" }),
-      { params: Promise.resolve({ id: seeded.id }) }
+      { params: Promise.resolve({ id: seeded.id }) },
     );
 
     expect(response.status).toBe(422);
@@ -618,7 +638,7 @@ describe("suppliers/[id] API — update (PATCH)", () => {
   it("returns 404 when patching nonexistent supplier", async () => {
     const response = await PATCH(
       patchRequest("nonexistent-id", { name: "X" }),
-      { params: Promise.resolve({ id: "nonexistent-id" }) }
+      { params: Promise.resolve({ id: "nonexistent-id" }) },
     );
 
     expect(response.status).toBe(404);
@@ -630,7 +650,7 @@ describe("suppliers/[id] API — update (PATCH)", () => {
 
     const response = await PATCH(
       patchRequest(seeded.id, { name: "X" }),
-      { params: Promise.resolve({ id: seeded.id }) }
+      { params: Promise.resolve({ id: seeded.id }) },
     );
 
     expect(response.status).toBe(403);

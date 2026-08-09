@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
@@ -14,7 +14,7 @@ import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from "@/components/ui/table";
 import {
-  DollarSign, Search, Plus, Download, TrendingUp, Receipt, Trash2, Pencil, RefreshCw, AlertCircle, CalendarDays,
+  DollarSign, Search, Plus, Download, TrendingUp, Receipt, Trash2, Pencil, RefreshCw, Loader2, AlertCircle, CalendarDays,
 } from "lucide-react";
 import { toast } from "sonner";
 import { motion, AnimatePresence } from "framer-motion";
@@ -76,9 +76,7 @@ export function PayrollPage() {
   const [expenseModalOpen, setExpenseModalOpen] = useState(false);
   const [editingExpense, setEditingExpense] = useState<Expense | null>(null);
   const [deletingExpenseId, setDeletingExpenseId] = useState<string | null>(null);
-  const [isDeleting, setIsDeleting] = useState(false);
-
-  const orgId = organization?.id;
+  const [deleting, setDeleting] = useState(false);
 
   // Local salary entries
   const [entryOpen, setEntryOpen] = useState(false);
@@ -90,31 +88,29 @@ export function PayrollPage() {
   // ── Fetch Expenses ────────────────────────────────────────────────────
 
   const fetchExpenses = useCallback(async () => {
-    if (!orgId) return;
+    if (!organization?.id) return;
 
     setLoadingExpenses(true);
     setErrorExpenses(null);
 
     try {
-      const res = await fetchWithAuth(`/api/expenses?orgId=${orgId}`);
+      const res = await fetchWithAuth(`/api/expenses?orgId=${organization.id}`);
       if (!res.ok) {
         const data = await res.json();
         throw new Error(data.error || "Failed to fetch expenses");
       }
       const data = await res.json();
       setExpenses(data.expenses || []);
-    } catch (err: unknown) {
-      const message = err instanceof Error ? err.message : String(err);
-      setErrorExpenses(message || "Something went wrong");
+    } catch (err: any) {
+      console.error("Fetch expenses error:", err);
+      setErrorExpenses(err.message || "Something went wrong");
     } finally {
       setLoadingExpenses(false);
     }
-  }, [orgId]);
+  }, [organization?.id]);
 
   useEffect(() => {
-    Promise.resolve().then(() => {
-      if (activeTab === "expenses") fetchExpenses();
-    });
+    if (activeTab === "expenses") fetchExpenses();
   }, [activeTab, fetchExpenses]);
 
   // ── Debounced Search ──────────────────────────────────────────────────
@@ -153,7 +149,7 @@ export function PayrollPage() {
 
   const handleDelete = async () => {
     if (!deletingExpenseId) return;
-    setIsDeleting(true);
+    setDeleting(true);
     try {
       const res = await fetchWithAuth(`/api/expenses/${deletingExpenseId}`, { method: "DELETE" });
       if (!res.ok) throw new Error("Failed to delete");
@@ -163,7 +159,7 @@ export function PayrollPage() {
     } catch {
       toast.error("Failed to delete expense");
     } finally {
-      setIsDeleting(false);
+      setDeleting(false);
     }
   };
 

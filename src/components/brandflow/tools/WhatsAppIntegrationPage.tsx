@@ -164,35 +164,16 @@ export function WhatsAppIntegrationPage() {
             <div className="flex justify-end">
               <Button className="bg-amber-600 hover:bg-amber-700" onClick={() => setTemplateOpen(true)}><Plus className="mr-2 h-4 w-4" /> Add Template</Button>
             </div>
-            {templates.length > 0 ? (
-              <div className="space-y-3 mt-4">
-                {templates.map((template) => (
-                  <Card key={template.id} className="border border-slate-200">
-                    <CardContent className="p-4">
-                      <div className="flex items-center justify-between gap-2">
-                        <div>
-                          <p className="text-sm font-semibold">{template.name}</p>
-                          <p className="text-xs text-muted-foreground">{template.category} • {template.language.toUpperCase()}</p>
-                        </div>
-                        <Badge className="text-xs bg-slate-100 text-slate-700">{template.language}</Badge>
-                      </div>
-                      <p className="mt-3 text-sm text-slate-600 whitespace-pre-line">{template.body}</p>
-                    </CardContent>
-                  </Card>
-                ))}
-              </div>
-            ) : (
-              <Card className="mt-4">
-                <CardContent className="p-8">
-                  <EmptyState
-                    icon={MessageSquare}
-                    title="No message templates"
-                    description="Create WhatsApp message templates for order confirmations, shipping updates, and promotions."
-                    action={{ label: "Add Template", onClick: () => setTemplateOpen(true) }}
-                  />
-                </CardContent>
-              </Card>
-            )}
+            <Card className="mt-4">
+              <CardContent className="p-8">
+                <EmptyState
+                  icon={MessageSquare}
+                  title="No message templates"
+                  description="Create WhatsApp message templates for order confirmations, shipping updates, and promotions."
+                  action={{ label: "Add Template", onClick: () => setTemplateOpen(true) }}
+                />
+              </CardContent>
+            </Card>
           </motion.div>
         )}
 

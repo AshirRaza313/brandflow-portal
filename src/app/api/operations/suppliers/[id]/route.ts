@@ -4,12 +4,16 @@
 // PR #6: Suppliers persistence with performance ratings
 // ─────────────────────────────────────────────────────────────────────────────
 //
-// Issue #2 (Authorization hardening):
-//   - Every request re-resolves OrganizationMember + Role from the DB via
-//     resolveSupplierAccess().
-//   - GET response includes `access: { canRead, canWrite }` for UI rendering.
+// Issue #2 (Authorization hardening — Seasonal Events pattern):
+//   - Every request re-resolves OrganizationMember + active ValtrioxTeamMember
+//     from the DB via resolveSupplierAccess(db, authCtx).
+//   - Uses canonical `operations` permission key.
 //   - Cross-org supplier access returns 404 (not 403) to avoid leaking
 //     existence — the org-scoped findFirst simply returns null.
+//
+// Issue #9 (PATCH atomicity):
+//   - PATCH uses updateMany with { id, organizationId } scope and checks
+//     count > 0 — no time-of-check/time-of-use gap.
 
 import { NextResponse } from "next/server";
 import { db, isDbUnavailable, withRetry } from "@/lib/db";
@@ -29,11 +33,13 @@ export const GET = withRateLimit(
     const id = (await params)?.id as string | undefined;
 
     try {
-      const outcome = await resolveSupplierAccess(authCtx, {
-        requireRead: true,
-      });
-      if (!outcome.ok) return outcome.response;
-      const { access } = outcome;
+      const access = await resolveSupplierAccess(db, authCtx);
+      if (!access || !access.canReadSuppliers) {
+        return NextResponse.json(
+          { error: "You do not have permission to view suppliers" },
+          { status: 403 },
+        );
+      }
       const orgId = access.organizationId;
 
       if (!id) {
@@ -59,7 +65,10 @@ export const GET = withRateLimit(
 
       return NextResponse.json({
         supplier,
-        access: { canRead: access.canRead, canWrite: access.canWrite },
+        access: {
+          canRead: access.canReadSuppliers,
+          canWrite: access.canWriteSuppliers,
+        },
       });
     } catch (error: unknown) {
       logger.error("Get supplier API error", error, {
@@ -94,11 +103,13 @@ export const PATCH = withRateLimit(
     const id = (await params)?.id as string | undefined;
 
     try {
-      const outcome = await resolveSupplierAccess(authCtx, {
-        requireWrite: true,
-      });
-      if (!outcome.ok) return outcome.response;
-      const { access } = outcome;
+      const access = await resolveSupplierAccess(db, authCtx);
+      if (!access || !access.canWriteSuppliers) {
+        return NextResponse.json(
+          { error: "You do not have permission to update suppliers" },
+          { status: 403 },
+        );
+      }
       const orgId = access.organizationId;
 
       if (!id) {
@@ -111,21 +122,6 @@ export const PATCH = withRateLimit(
       const bodyResult = await validateBody(req, updateSupplierSchema);
       if (!bodyResult.success) return bodyResult.response;
       const data = bodyResult.data;
-
-      // Pre-check existence in this org.
-      const existing = await withRetry(async () => {
-        return db.supplier.findFirst({
-          where: { id, organizationId: orgId },
-          select: { id: true },
-        });
-      }, 2, 500);
-
-      if (!existing) {
-        return NextResponse.json(
-          { error: "Supplier not found" },
-          { status: 404 },
-        );
-      }
 
       // Build the update payload, preserving the rating tri-state.
       const updateData: Record<string, unknown> = {};
@@ -144,16 +140,36 @@ export const PATCH = withRateLimit(
         updateData.rating = data.rating; // null or 1-5
       }
 
-      const supplier = await withRetry(async () => {
-        return db.supplier.update({
-          where: { id },
+      // Issue #9: Atomic org-scoped update — no TOCTOU gap.
+      // updateMany with { id, organizationId } scope + check count > 0.
+      // Cross-org supplier is never updated (count=0 → 404).
+      const result = await withRetry(async () => {
+        return db.supplier.updateMany({
+          where: { id, organizationId: orgId },
           data: updateData,
+        });
+      }, 2, 500);
+
+      if (result.count === 0) {
+        return NextResponse.json(
+          { error: "Supplier not found" },
+          { status: 404 },
+        );
+      }
+
+      // Fetch the updated record to return (still org-scoped).
+      const supplier = await withRetry(async () => {
+        return db.supplier.findFirst({
+          where: { id, organizationId: orgId },
         });
       }, 2, 500);
 
       return NextResponse.json({
         supplier,
-        access: { canRead: access.canRead, canWrite: access.canWrite },
+        access: {
+          canRead: access.canReadSuppliers,
+          canWrite: access.canWriteSuppliers,
+        },
       });
     } catch (error: unknown) {
       logger.error("Update supplier API error", error, {
@@ -188,11 +204,13 @@ export const DELETE = withRateLimit(
     const id = (await params)?.id as string | undefined;
 
     try {
-      const outcome = await resolveSupplierAccess(authCtx, {
-        requireWrite: true,
-      });
-      if (!outcome.ok) return outcome.response;
-      const { access } = outcome;
+      const access = await resolveSupplierAccess(db, authCtx);
+      if (!access || !access.canWriteSuppliers) {
+        return NextResponse.json(
+          { error: "You do not have permission to delete suppliers" },
+          { status: 403 },
+        );
+      }
       const orgId = access.organizationId;
 
       if (!id) {
@@ -218,7 +236,10 @@ export const DELETE = withRateLimit(
 
       return NextResponse.json({
         success: true,
-        access: { canRead: access.canRead, canWrite: access.canWrite },
+        access: {
+          canRead: access.canReadSuppliers,
+          canWrite: access.canWriteSuppliers,
+        },
       });
     } catch (error: unknown) {
       logger.error("Delete supplier API error", error, {

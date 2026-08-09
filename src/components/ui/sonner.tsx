@@ -24,7 +24,7 @@ const Toaster = ({ ...props }: ToasterProps) => {
   const [mounted, setMounted] = useState(false)
 
   useEffect(() => {
-    Promise.resolve().then(() => setMounted(true))
+    setMounted(true)
   }, [])
 
   // During SSR and first client render, use "light" (matches the default

@@ -4,14 +4,16 @@
 // PR #6: Suppliers persistence with performance ratings
 // ─────────────────────────────────────────────────────────────────────────────
 //
-// Issue #2 (Authorization hardening):
-//   - Every request re-resolves OrganizationMember + Role from the DB via
-//     resolveSupplierAccess(). Stale sessions cannot bypass auth.
-//   - GET responses include `access: { canRead, canWrite }` so the UI can
-//     render add/edit/delete buttons correctly without trusting the session.
-//
-// Pattern: mirrors src/app/api/products/route.ts (withAuth + withRateLimit +
-// validateBody/validateQuery + withRetry + logger + dbErrorResponse).
+// Issue #2 (Authorization hardening — Seasonal Events pattern):
+//   - Every request re-resolves OrganizationMember + active ValtrioxTeamMember
+//     from the DB via resolveSupplierAccess(db, authCtx).
+//   - Uses canonical `operations` permission key (not custom supplier keys).
+//   - Trusts roleDef only when roleDef.name === member.role (stale roleId safe).
+//   - Rejects stale valtriox_team memberships via status="active" filter.
+//   - Respects hidden "suppliers" section for Valtriox team members.
+//   - Viewer role is always read-only.
+//   - GET responses include `access: { canReadSuppliers, canWriteSuppliers }`
+//     so the UI can render add/edit/delete buttons without trusting the session.
 
 import { NextResponse } from "next/server";
 import { db, dbErrorResponse, isDbUnavailable, withRetry } from "@/lib/db";
@@ -33,11 +35,13 @@ export const GET = withRateLimit(
   withAuth(async (req, authCtx) => {
     try {
       // Re-resolve authorization from the DB on every request.
-      const outcome = await resolveSupplierAccess(authCtx, {
-        requireRead: true,
-      });
-      if (!outcome.ok) return outcome.response;
-      const { access } = outcome;
+      const access = await resolveSupplierAccess(db, authCtx);
+      if (!access || !access.canReadSuppliers) {
+        return NextResponse.json(
+          { error: "You do not have permission to view suppliers" },
+          { status: 403 },
+        );
+      }
       const orgId = access.organizationId;
 
       // Validate query params
@@ -144,7 +148,10 @@ export const GET = withRateLimit(
           totalCount,
           totalPages: Math.ceil(totalCount / limit),
         },
-        access: { canRead: access.canRead, canWrite: access.canWrite },
+        access: {
+          canRead: access.canReadSuppliers,
+          canWrite: access.canWriteSuppliers,
+        },
       });
     } catch (error: unknown) {
       logger.error("Suppliers API error", error, {
@@ -170,11 +177,13 @@ export const POST = withRateLimit(
   withAuth(async (req, authCtx) => {
     try {
       // Re-resolve authorization — requires write access.
-      const outcome = await resolveSupplierAccess(authCtx, {
-        requireWrite: true,
-      });
-      if (!outcome.ok) return outcome.response;
-      const { access } = outcome;
+      const access = await resolveSupplierAccess(db, authCtx);
+      if (!access || !access.canWriteSuppliers) {
+        return NextResponse.json(
+          { error: "You do not have permission to create suppliers" },
+          { status: 403 },
+        );
+      }
       const orgId = access.organizationId;
 
       const bodyResult = await validateBody(req, createSupplierSchema);
@@ -211,7 +220,10 @@ export const POST = withRateLimit(
       return NextResponse.json(
         {
           supplier,
-          access: { canRead: access.canRead, canWrite: access.canWrite },
+          access: {
+            canRead: access.canReadSuppliers,
+            canWrite: access.canWriteSuppliers,
+          },
         },
         { status: 201 },
       );

@@ -9,12 +9,20 @@
 //   1. Viewer — can GET, cannot POST/PATCH/DELETE (403)
 //   2. Brand Owner — can do everything (200/201)
 //   3. Operations Manager — can do everything
-//   4. Custom Role with suppliers:read but not suppliers:write — can GET, cannot POST
+//   4. Custom Role with operations:true but viewer name → can GET, cannot POST
 //   5. Role Demotion — session says "admin" but DB member has "viewer" → treated as viewer
 //   6. Membership Removal — session valid but member row deleted → all 403
 //   7. Cross-organization access — user from org A tries supplier in org B → 404
 //
 // Pattern: mirrors existing route.test.ts (vi.hoisted + vi.mock + in-memory store)
+//
+// UPDATED for Issue #2 (resolveSupplierAccess(db, authCtx) signature):
+//   - valtrioxTeamMember.findUnique → findFirst
+//   - organizationMember.findFirst returns { role, roleDef: { name, permissions } | null }
+//   - Test 4 rewritten: new RBAC uses canonical `operations` key for BOTH read
+//     and write; write prevention now comes from isReadOnlyRole(roleName)
+//     which is true only for "viewer". So "read without write" is expressed
+//     via a viewer-named custom roleDef (roleDef.name === member.role === "viewer").
 
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { NextRequest } from "next/server";
@@ -39,6 +47,12 @@ type SupplierRecord = {
   updatedAt: Date;
 };
 
+type RoleDefRecord = {
+  id: string;
+  name: string;
+  permissions: string; // JSON string
+};
+
 type MemberRecord = {
   id: string;
   userId: string;
@@ -46,11 +60,7 @@ type MemberRecord = {
   role: string;
   roleId: string | null;
   penaltyUntil: Date | null;
-  roleDef: {
-    id: string;
-    name: string;
-    permissions: string; // JSON string
-  } | null;
+  roleDef: RoleDefRecord | null;
 };
 
 const testState = vi.hoisted(() => ({
@@ -63,7 +73,7 @@ const testState = vi.hoisted(() => ({
   /** Override the member's roleId (for custom-role tests). */
   memberRoleIdOverride: null as string | null,
   /** Map of roleId → Role row (with permissions JSON). */
-  roles: {} as Record<string, { id: string; name: string; permissions: string }>,
+  roles: {} as Record<string, RoleDefRecord>,
   suppliers: [] as SupplierRecord[],
 }));
 
@@ -133,22 +143,28 @@ const dbMocks = vi.hoisted(() => {
       testState.suppliers.push(s);
       return s;
     }),
-    update: vi.fn(
+    // FIX: route now uses updateMany (Issue #9 TOCTOU) instead of update.
+    updateMany: vi.fn(
       async ({
         where,
         data,
       }: {
-        where: { id: string };
+        where: { id: string; organizationId?: string };
         data: Record<string, unknown>;
       }) => {
-        const idx = testState.suppliers.findIndex((s) => s.id === where.id);
-        if (idx === -1) throw new Error("Record not found");
+        const idx = testState.suppliers.findIndex(
+          (s) =>
+            s.id === where.id &&
+            (where.organizationId === undefined ||
+              s.organizationId === where.organizationId),
+        );
+        if (idx === -1) return { count: 0 };
         testState.suppliers[idx] = {
           ...testState.suppliers[idx],
           ...data,
           updatedAt: new Date(),
         } as SupplierRecord;
-        return testState.suppliers[idx];
+        return { count: 1 };
       },
     ),
     deleteMany: vi.fn(async ({ where }: { where: Record<string, unknown> }) => {
@@ -161,6 +177,9 @@ const dbMocks = vi.hoisted(() => {
     aggregate: vi.fn(async () => ({ _sum: { rating: 0 } })),
   };
 
+  // ── OrganizationMember mock ──
+  // Returns shape that matches resolveSupplierAccess select:
+  //   select: { role: true, roleDef: { select: { name, permissions } } }
   const organizationMember = {
     findFirst: vi.fn(
       async ({
@@ -194,8 +213,11 @@ const dbMocks = vi.hoisted(() => {
     ),
   };
 
+  // ── ValtrioxTeamMember mock (platform team) — null by default ──
+  // FIX: resolveSupplierAccess calls findFirst (not findUnique) with
+  //   where: { userId, status: "active" }, select: { id, visibleSections }
   const valtrioxTeamMember = {
-    findUnique: vi.fn(async () => null),
+    findFirst: vi.fn(async () => null),
   };
 
   const db = { supplier, organizationMember, valtrioxTeamMember };
@@ -369,7 +391,8 @@ describe("Issue #2 — Supplier API authorization (DB-resolved)", () => {
       { params: Promise.resolve({ id: seeded.id }) },
     );
     expect(patchRes.status).toBe(403);
-    expect(dbMocks.supplier.update).not.toHaveBeenCalled();
+    // FIX: route uses updateMany now
+    expect(dbMocks.supplier.updateMany).not.toHaveBeenCalled();
 
     // DELETE — should be blocked
     const delRes = await DELETE(deleteRequest(seeded.id), {
@@ -436,26 +459,35 @@ describe("Issue #2 — Supplier API authorization (DB-resolved)", () => {
   });
 
   // ─────────────────────────────────────────────────────────────────────────
-  // 4. CUSTOM ROLE with suppliers:read but not suppliers:write
+  // 4. CUSTOM ROLE — viewer-named roleDef with operations:true
+  //
+  // The new RBAC uses the canonical `operations` permission key for BOTH
+  // read and write. Write prevention now comes exclusively from
+  // isReadOnlyRole(roleName), which is true only for "viewer".
+  //
+  // To express "can read, cannot write" via a DB-backed custom roleDef:
+  //   - roleDef.name MUST equal member.role (trust condition)
+  //   - roleDef.name = "viewer" so isReadOnlyRole returns true → canWrite=false
+  //   - permissions = { operations: true } so canRead=true
   // ─────────────────────────────────────────────────────────────────────────
-  it("custom role with suppliers:read but not suppliers:write — can GET, cannot POST", async () => {
-    // Set up a custom role in DB with only suppliers:read
+  it("custom roleDef with viewer name + operations:true — can GET, cannot POST", async () => {
+    // Set up a custom role in DB: name MUST match member.role ("viewer")
     testState.roles = {
       "role-custom-1": {
         id: "role-custom-1",
-        name: "Supplier Viewer Custom",
-        permissions: JSON.stringify({ suppliers: true }), // read only, no suppliers_write
+        name: "viewer", // matches memberRoleOverride — trust condition passes
+        permissions: JSON.stringify({ operations: true }), // canonical key
       },
     };
     testState.memberRoleIdOverride = "role-custom-1";
-    // Session role string doesn't matter — DB permissions override
-    testState.role = "custom";
+    testState.memberRoleOverride = "viewer"; // member.role = "viewer"
+    testState.role = "viewer"; // session role (ignored by resolveSupplierAccess)
 
-    // GET list — should succeed
+    // GET list — should succeed (operations:true → canRead=true)
     const getRes = await GET(getRequest());
     expect(getRes.status).toBe(200);
 
-    // POST — should be blocked (no suppliers_write)
+    // POST — should be blocked (viewer → isReadOnlyRole=true → canWrite=false)
     const postRes = await POST(postRequest({ name: "Blocked" }));
     expect(postRes.status).toBe(403);
     expect(dbMocks.supplier.create).not.toHaveBeenCalled();
@@ -517,7 +549,8 @@ describe("Issue #2 — Supplier API authorization (DB-resolved)", () => {
       { params: Promise.resolve({ id: seeded.id }) },
     );
     expect(patchRes.status).toBe(403);
-    expect(dbMocks.supplier.update).not.toHaveBeenCalled();
+    // FIX: route uses updateMany now
+    expect(dbMocks.supplier.updateMany).not.toHaveBeenCalled();
 
     // DELETE — blocked
     const delRes = await DELETE(deleteRequest(seeded.id), {
@@ -549,7 +582,11 @@ describe("Issue #2 — Supplier API authorization (DB-resolved)", () => {
       { params: Promise.resolve({ id: orgBSupplier.id }) },
     );
     expect(patchRes.status).toBe(404);
-    expect(dbMocks.supplier.update).not.toHaveBeenCalled();
+    // FIX: route uses updateMany now — and it IS called (with org-a scope)
+    // but count=0 → 404. We don't assert "not called" here because the route
+    // always calls updateMany; the safety comes from the org-scoped where.
+    // Instead, verify the org-b supplier was NOT modified:
+    expect(testState.suppliers[0].name).toBe("Other Org's Supplier");
 
     // DELETE — 404
     const delRes = await DELETE(deleteRequest(orgBSupplier.id), {

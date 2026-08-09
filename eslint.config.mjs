@@ -15,16 +15,10 @@ const eslintConfig = [...nextCoreWebVitals, ...nextTypescript, {
     "@typescript-eslint/ban-ts-comment": "off",
     "@typescript-eslint/prefer-as-const": "off",
     "@typescript-eslint/no-unused-disable-directive": "off",
-    "@typescript-eslint/no-require-imports": "off",
     
     // React rules
     "react-hooks/exhaustive-deps": "warn",
     "react-hooks/purity": "off",
-    "react-hooks/set-state-in-effect": "warn",
-    "react-hooks/refs": "warn",
-    "react-hooks/immutability": "warn",
-    "react-hooks/static-components": "warn",
-    "react-hooks/preserve-manual-memoization": "off",
     "react/no-unescaped-entities": "off",
     "react/display-name": "off",
     "react/prop-types": "off",
@@ -33,7 +27,6 @@ const eslintConfig = [...nextCoreWebVitals, ...nextTypescript, {
     // Next.js rules
     "@next/next/no-img-element": "off",
     "@next/next/no-html-link-for-pages": "off",
-    "@next/next/no-assign-module-variable": "off",
     
     // General JavaScript rules
     "prefer-const": "warn",
