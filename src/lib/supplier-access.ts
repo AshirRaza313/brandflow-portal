@@ -10,6 +10,15 @@
 //   - Rejects stale ValtrioxTeamMember records via status="active" filter
 //   - Respects the hidden "suppliers" section for Valtriox team members
 //   - Viewer role is always read-only
+//
+// B01: penaltyUntil is checked on every Supplier request (not just login).
+//      An actively penalized user receives 403 for list/get/POST/PATCH/DELETE/stats.
+// B02: Active Valtriox team member WITHOUT an OrganizationMember row receives
+//      cross-org platform support access for the org in their session.
+// B03: A stored OrganizationMember.role === "valtriox_team" is NOT trusted alone.
+//      If the active ValtrioxTeamMember record is missing/disabled, the user
+//      receives 403 (no demotion to Viewer — "valtriox_team" is a platform role,
+//      not an organization role, so there is no fallback org role to use).
 
 import type { PrismaClient } from "@prisma/client";
 import type { AuthContext } from "@/lib/auth-middleware";
@@ -102,10 +111,14 @@ function hiddenSections(value: string | null | undefined): string[] {
  *
  * Returns null when:
  *   - authCtx has no organizationId
- *   - no OrganizationMember row exists for (organizationId, userId)
+ *   - no OrganizationMember row exists AND no active ValtrioxTeamMember record
  *
- * Stale valtriox_team memberships are rejected via the status="active" filter.
- * Stale roleIds are rejected via the roleDef.name === roleName check.
+ * B01: penaltyUntil is checked per-request from the DB (not from session).
+ *      An active penalty denies all Supplier access.
+ * B02: An active ValtrioxTeamMember without an OrganizationMember row still
+ *      gets platform-team access to the org in their session.
+ * B03: A stored role of "valtriox_team" without an active ValtrioxTeamMember
+ *      record returns null (403). No Viewer demotion — see header comment.
  */
 export async function resolveSupplierAccess(
   client: SupplierAccessClient,
@@ -120,6 +133,7 @@ export async function resolveSupplierAccess(
       select: {
         role: true,
         roleDef: { select: { name: true, permissions: true } },
+        penaltyUntil: true, // B01: per-request penalty check
       },
     }),
     client.valtrioxTeamMember.findFirst({
@@ -128,9 +142,43 @@ export async function resolveSupplierAccess(
     }),
   ]);
 
-  if (!membership) return null;
+  // B02: Active Valtriox team member WITHOUT an OrganizationMember row.
+  // Cross-org platform support access — grant team role for the org in session.
+  if (!membership) {
+    if (valtrioxTeamMember) {
+      const pageHidden = hiddenSections(
+        valtrioxTeamMember.visibleSections,
+      ).includes("suppliers");
+      const canReadSuppliers = !pageHidden;
+      return {
+        organizationId,
+        effectiveRole: "valtriox_team",
+        canReadSuppliers,
+        canWriteSuppliers: canReadSuppliers, // platform team has full write
+      };
+    }
+    return null;
+  }
+
+  // B01: Per-request penalty check from DB.
+  // An actively penalized user is denied all Supplier access (read & write).
+  const now = new Date();
+  if (membership.penaltyUntil && membership.penaltyUntil > now) {
+    return null;
+  }
 
   const currentRole = membership.role.trim().toLowerCase();
+
+  // B03 v2: Stale "valtriox_team" stored role without an active team record.
+  // "valtriox_team" is a platform role, NOT an organization role. If the
+  // active ValtrioxTeamMember record is missing/disabled, the user has no
+  // legitimate authorization path — deny access entirely (403).
+  // (Previous behavior demoted to read-only Viewer, which granted unintended
+  //  read access to a user with no valid role. Expert review flagged this.)
+  if (currentRole === "valtriox_team" && !valtrioxTeamMember) {
+    return null;
+  }
+
   const effectiveRole = valtrioxTeamMember
     ? "valtriox_team"
     : LEGACY_ROLE_MAP[currentRole] || currentRole;

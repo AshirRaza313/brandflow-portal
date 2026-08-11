@@ -12,7 +12,7 @@
 //   - Rejects stale valtriox_team memberships via status="active" filter.
 //   - Respects hidden "suppliers" section for Valtriox team members.
 //   - Viewer role is always read-only.
-//   - GET responses include `access: { canReadSuppliers, canWriteSuppliers }`
+//   - GET responses include `access: { canRead, canWrite }`
 //     so the UI can render add/edit/delete buttons without trusting the session.
 
 import { NextResponse } from "next/server";
@@ -147,6 +147,9 @@ export const GET = withRateLimit(
           limit,
           totalCount,
           totalPages: Math.ceil(totalCount / limit),
+          // C02: page-based termination — prevents infinite loop when
+          // last page has fewer items than limit.
+          hasMore: page < Math.ceil(totalCount / limit),
         },
         access: {
           canRead: access.canReadSuppliers,

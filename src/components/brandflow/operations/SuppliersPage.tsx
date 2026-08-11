@@ -1,4 +1,3 @@
-// @ts-nocheck — Phase 8: pre-existing TS errors (Decimal/Prisma types, etc.) pending migration
 "use client";
 
 import { useEffect, useState, useCallback } from "react";
@@ -49,9 +48,6 @@ interface SupplierStats {
   needsAttentionCount: number;
 }
 
-// NOTE: Write roles will be replaced in Issue 2 with dynamic permission check.
-// For now, keeping legacy roles — Issue 2 will fix this properly.
-const WRITE_ROLES = ["owner", "admin", "manager", "brand_owner", "brand_admin", "operations_manager"];
 
 // Inline star rating — matches ReviewsPage convention (fill-amber-400) with
 // dark-theme-aware empty stars and optional click-to-rate interactivity.
@@ -131,8 +127,15 @@ function getStatusBadge(status: string | undefined | null, isDark: boolean) {
 const PAGE_SIZE = 50; // API enforces max 100; 50 keeps initial load snappy
 
 // Tolerant of 3 API response shapes (nested pagination object, flat, or legacy just-data).
+// C02: hasMore is computed page-based (page < totalPages) when available,
+// falling back to API-provided hasMore, then to legacy data.length < total.
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-function normalizePagination(json: any): { data: Supplier[]; total: number | null; hasMore: boolean } {
+function normalizePagination(json: any): {
+  data: Supplier[];
+  total: number | null;
+  hasMore: boolean;
+  access: { canRead: boolean; canWrite: boolean } | null;
+} {
   const data: Supplier[] = Array.isArray(json?.suppliers)
     ? json.suppliers
     : Array.isArray(json?.data)
@@ -150,17 +153,42 @@ function normalizePagination(json: any): { data: Supplier[]; total: number | nul
           ? json.total
           : null;
 
+  const totalPages = typeof p?.totalPages === "number"
+    ? p.totalPages
+    : null;
+  const currentPage = typeof p?.page === "number"
+    ? p.page
+    : typeof json?.page === "number"
+      ? json.page
+      : 1;
+
+  // C02 fix: page-based termination is the primary signal.
+  // 1. Prefer API-provided hasMore (computed server-side as page < totalPages).
+  // 2. Fall back to local page < totalPages computation (defensive).
+  // 3. Legacy fallback: data.length < total (kept for backward compat).
+  // 4. Default: false (no more pages).
   const hasMore = typeof p?.hasMore === "boolean"
     ? p.hasMore
     : typeof json?.hasMore === "boolean"
       ? json.hasMore
-      : total !== null
-        ? data.length < total
-        : false;
+      : totalPages !== null
+        ? currentPage < totalPages
+        : total !== null
+          ? data.length < total
+          : false;
 
-  return { data, total, hasMore };
+  // Server returns access: { canRead, canWrite } alongside the list.
+  // This is the authoritative source for write permission (replaces hardcoded WRITE_ROLES).
+  const accessRaw = json?.access;
+  const access = accessRaw && typeof accessRaw === "object"
+    ? {
+        canRead: Boolean(accessRaw.canRead),
+        canWrite: Boolean(accessRaw.canWrite),
+      }
+    : null;
+
+  return { data, total, hasMore, access };
 }
-
 function LoadMoreButton({ onLoadMore, loading, hasMore, isDark }: {
   onLoadMore: () => void;
   loading: boolean;
@@ -210,6 +238,12 @@ export function SuppliersPage() {
   const [createOpen, setCreateOpen] = useState(false);
   const [suppliers, setSuppliers] = useState<Supplier[]>([]);
   const [stats, setStats] = useState<SupplierStats | null>(null);
+  // True when stats fetch failed (403/404/500/network). UI must NOT silently
+  // show 0/"-" as if those were genuine values — show an Unavailable state instead.
+  const [statsError, setStatsError] = useState(false);
+  // Server-returned access flags — authoritative source for read/write permission.
+  // Replaces the legacy hardcoded WRITE_ROLES list (Issue #2).
+  const [access, setAccess] = useState<{ canRead: boolean; canWrite: boolean } | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
@@ -222,15 +256,13 @@ export function SuppliersPage() {
   const [hasMore, setHasMore] = useState(false);
   const [loadingMore, setLoadingMore] = useState(false);
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const { appTheme, user } = useValtrioxStore() as any;
+  const { appTheme } = useValtrioxStore() as any;
   const isDark = appTheme !== "light";
   const isGold = appTheme === "premium-dark";
 
-  // Role-based write permission — NOTE: Issue 2 will replace this with
-  // a dynamic DB-backed permission check. For now, expanded to include
-  // Valtriox real roles (brand_owner, brand_admin, operations_manager).
-  const userRole = (user?.role ?? "").toString().toLowerCase();
-  const canWrite = WRITE_ROLES.includes(userRole);
+  // Write permission comes from the server's resolveSupplierAccess() check.
+  // Until the first GET resolves, default to false (safest — hides Add/Delete buttons).
+  const canWrite = access?.canWrite ?? false;
 
   // ───────────────────────────────────────────────────────────────────────────
   // fetchInitial — GET /api/operations/suppliers?page=1&limit=50
@@ -247,10 +279,11 @@ export function SuppliersPage() {
         throw new Error(body?.error || `Request failed (${res.status})`);
       }
       const json = await res.json();
-      const { data, total, hasMore: more } = normalizePagination(json);
+      const { data, total, hasMore: more, access: accessFromServer } = normalizePagination(json);
       setSuppliers(data);
       setTotalCount(total);
       setHasMore(more);
+      setAccess(accessFromServer);
       setPage(1);
     } catch (error: unknown) {
       setError(error instanceof Error ? error.message : "Failed to load suppliers");
@@ -288,14 +321,17 @@ export function SuppliersPage() {
     try {
       const res = await fetch("/api/operations/suppliers/stats", { cache: "no-store" });
       if (!res.ok) {
-        // Non-blocking. If the aggregate endpoint is unavailable,
-        // leave the UI in its previous acceptable state instead of blocking list content.
+        // Stats unavailable (403/404/500). Mark failed so UI shows the truth,
+        // not silent 0/"-" values. The list itself is unaffected.
+        setStatsError(true);
         return;
       }
       const json = await res.json();
       setStats(json ?? null);
+      setStatsError(false);
     } catch (error: unknown) {
-      // Non-blocking; stats are secondary and should never fail the list.
+      // Network/parse error — same truthful-unavailable handling.
+      setStatsError(true);
       console.warn("Failed to fetch supplier stats", error);
     }
   }, []);
@@ -457,8 +493,8 @@ export function SuppliersPage() {
       {/* Stats — uses server-provided stats.total (Issue 5 fix) */}
       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
         {[
-          { title: "Total Suppliers", value: String(totalSuppliers), icon: Building2 },
-          { title: "Active Orders", value: "0", icon: ShoppingCart },
+          { title: "Total Suppliers", value: statsError ? "Unavailable" : String(totalSuppliers), icon: Building2 },
+          { title: "Active Orders", value: statsError ? "Unavailable" : "0", icon: ShoppingCart },
           { title: "Pending Payments", value: "Rs. 0", icon: DollarSign },
           { title: "On-Time Delivery", value: "-", icon: Truck },
         ].map((stat) => (
@@ -584,10 +620,10 @@ export function SuppliersPage() {
           {/* Ratings Summary Stats */}
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
             {[
-              { title: "Average Rating", value: avgRating > 0 ? avgRating.toFixed(1) : "-", icon: Star, sub: `${ratedCount} rated` },
-              { title: "Total Rated", value: String(ratedCount), icon: Award, sub: `of ${totalSuppliers} suppliers` },
-              { title: "Top Performer", value: topPerformer ? topPerformer.name : "-", icon: TrendingUp, sub: topPerformer ? `${topPerformer.rating} stars` : "No ratings yet" },
-              { title: "Needs Attention", value: String(needsAttention), icon: AlertTriangle, sub: "below 3 stars" },
+              { title: "Average Rating", value: statsError ? "Unavailable" : avgRating > 0 ? avgRating.toFixed(1) : "-", icon: Star, sub: statsError ? "Stats failed to load" : `${ratedCount} rated` },
+              { title: "Total Rated", value: statsError ? "Unavailable" : String(ratedCount), icon: Award, sub: statsError ? "Stats failed to load" : `of ${totalSuppliers} suppliers` },
+              { title: "Top Performer", value: statsError ? "Unavailable" : topPerformer ? topPerformer.name : "-", icon: TrendingUp, sub: statsError ? "Stats failed to load" : topPerformer ? `${topPerformer.rating} stars` : "No ratings yet" },
+              { title: "Needs Attention", value: statsError ? "Unavailable" : String(needsAttention), icon: AlertTriangle, sub: statsError ? "Stats failed to load" : "below 3 stars" },
             ].map((stat) => (
               <Card key={stat.title} className="border-slate-200">
                 <CardContent className="p-4">
@@ -601,6 +637,23 @@ export function SuppliersPage() {
               </Card>
             ))}
           </div>
+
+          {/* Stats unavailable banner — C04 truthful failure state */}
+          {statsError && !loading && (
+            <Card className="border-amber-200 bg-amber-50">
+              <CardContent className="p-3 flex items-center justify-between gap-4">
+                <div className="flex items-center gap-2">
+                  <AlertTriangle className="h-4 w-4 text-amber-500 flex-shrink-0" />
+                  <p className={isDark ? "text-xs text-amber-300" : "text-xs text-amber-700"}>
+                    Stats unavailable. Showing "Unavailable" above — try again.
+                  </p>
+                </div>
+                <Button variant="outline" size="sm" onClick={fetchStats}>
+                  <RefreshCw className="h-4 w-4 mr-1" /> Retry Stats
+                </Button>
+              </CardContent>
+            </Card>
+          )}
 
           {/* Rating List */}
           <Card className="border-slate-200">
