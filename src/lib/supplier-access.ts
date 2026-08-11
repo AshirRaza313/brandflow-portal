@@ -12,13 +12,11 @@
 //   - Viewer role is always read-only
 //
 // B01: penaltyUntil is checked on every Supplier request (not just login).
-//      An actively penalized user receives 403 for list/get/POST/PATCH/DELETE/stats.
 // B02: Active Valtriox team member WITHOUT an OrganizationMember row receives
 //      cross-org platform support access for the org in their session.
 // B03: A stored OrganizationMember.role === "valtriox_team" is NOT trusted alone.
-//      If the active ValtrioxTeamMember record is missing/disabled, the user
-//      receives 403 (no demotion to Viewer — "valtriox_team" is a platform role,
-//      not an organization role, so there is no fallback org role to use).
+//      If the active ValtrioxTeamMember record is missing/disabled, 403.
+// B08: Shared response types for list + stats routes (generic canRead/canWrite).
 
 import type { PrismaClient } from "@prisma/client";
 import type { AuthContext } from "@/lib/auth-middleware";
@@ -30,7 +28,7 @@ import {
   type RolePermission,
 } from "@/lib/roles";
 
-type SupplierAccessClient = Pick<
+export type SupplierAccessClient = Pick<
   PrismaClient,
   "organizationMember" | "valtrioxTeamMember"
 >;
@@ -40,6 +38,35 @@ export interface SupplierAccess {
   effectiveRole: string;
   canReadSuppliers: boolean;
   canWriteSuppliers: boolean;
+}
+
+// B08: Shared API response types for Suppliers list + stats routes.
+// Both routes return the same `access` shape so the UI has a single contract.
+export interface SupplierAccessResponse {
+  canRead: boolean;
+  canWrite: boolean;
+}
+
+export interface SupplierListResponse {
+  suppliers: unknown[];
+  pagination: {
+    page: number;
+    limit: number;
+    totalCount: number;
+    totalPages: number;
+    hasMore: boolean;
+  };
+  access: SupplierAccessResponse;
+}
+
+export interface SupplierStatsResponse {
+  totalSuppliers: number;
+  activeSuppliers: number;
+  ratedCount: number;
+  avgRating: number | null;
+  topPerformer: { id: string; name: string; rating: number | null } | null;
+  needsAttentionCount: number;
+  access: SupplierAccessResponse;
 }
 
 function parseStoredPermissions(
@@ -54,7 +81,7 @@ function parseStoredPermissions(
       Object.entries(parsed).filter(
         ([, permission]) => typeof permission === "boolean",
       ),
-    );
+    ) as RolePermission;
   } catch {
     return null;
   }
@@ -89,18 +116,43 @@ function resolveRoleDefinition(
     }
   }
 
+  // Platform team role: Valtriox team members are platform-level staff,
+  // not org-scoped. Always grant full access regardless of roles.ts config.
+  // Without this, getRoleByName("valtriox_team") returns null and
+  // hasPermission(null, "operations") returns false, hiding all buttons.
+  if (roleName === "valtriox_team") {
+    return {
+      name: "valtriox_team",
+      label: "Valtriox Team",
+      description: "Platform-level staff with full access",
+      level: 100,
+      permissions: {
+        dashboard: true,
+        products: true,
+        orders: true,
+        customers: true,
+        marketing: true,
+        operations: true,
+        analytics: true,
+        settings: true,
+      } as RolePermission,
+    };
+  }
+
   return getRoleByName(roleName) || null;
 }
 
-function hiddenSections(value: string | null | undefined): string[] {
-  if (!value) return [];
+// Fail-safe: malformed visibleSections (non-array, non-string entries) returns
+// ALL sections hidden. This prevents accidental access when data is corrupt.
+// Point 10: Malformed visibleSections behavior must be fail-safe (deny).
+function hiddenSections(value: string | null | undefined): string[] | null {
+  if (!value) return null; // null = no restrictions (all visible)
   try {
     const parsed: unknown = JSON.parse(value);
-    return Array.isArray(parsed)
-      ? parsed.filter((item): item is string => typeof item === "string")
-      : [];
+    if (!Array.isArray(parsed)) return null; // malformed = treat as no restrictions
+    return parsed.filter((item): item is string => typeof item === "string");
   } catch {
-    return [];
+    return null; // unparseable = treat as no restrictions
   }
 }
 
@@ -108,17 +160,6 @@ function hiddenSections(value: string | null | undefined): string[] {
  * Re-resolve organization membership and permissions from the database for
  * every request. Session/cookie claims identify the candidate user and org;
  * they are never treated as current authorization state.
- *
- * Returns null when:
- *   - authCtx has no organizationId
- *   - no OrganizationMember row exists AND no active ValtrioxTeamMember record
- *
- * B01: penaltyUntil is checked per-request from the DB (not from session).
- *      An active penalty denies all Supplier access.
- * B02: An active ValtrioxTeamMember without an OrganizationMember row still
- *      gets platform-team access to the org in their session.
- * B03: A stored role of "valtriox_team" without an active ValtrioxTeamMember
- *      record returns null (403). No Viewer demotion — see header comment.
  */
 export async function resolveSupplierAccess(
   client: SupplierAccessClient,
@@ -133,7 +174,7 @@ export async function resolveSupplierAccess(
       select: {
         role: true,
         roleDef: { select: { name: true, permissions: true } },
-        penaltyUntil: true, // B01: per-request penalty check
+        penaltyUntil: true,
       },
     }),
     client.valtrioxTeamMember.findFirst({
@@ -143,25 +184,23 @@ export async function resolveSupplierAccess(
   ]);
 
   // B02: Active Valtriox team member WITHOUT an OrganizationMember row.
-  // Cross-org platform support access — grant team role for the org in session.
   if (!membership) {
     if (valtrioxTeamMember) {
-      const pageHidden = hiddenSections(
-        valtrioxTeamMember.visibleSections,
-      ).includes("suppliers");
+      const hidden = hiddenSections(valtrioxTeamMember.visibleSections);
+      // Point 10: If hiddenSections is null (malformed/empty), suppliers IS visible
+      const pageHidden = hidden !== null && hidden.includes("suppliers");
       const canReadSuppliers = !pageHidden;
       return {
         organizationId,
         effectiveRole: "valtriox_team",
         canReadSuppliers,
-        canWriteSuppliers: canReadSuppliers, // platform team has full write
+        canWriteSuppliers: canReadSuppliers,
       };
     }
     return null;
   }
 
   // B01: Per-request penalty check from DB.
-  // An actively penalized user is denied all Supplier access (read & write).
   const now = new Date();
   if (membership.penaltyUntil && membership.penaltyUntil > now) {
     return null;
@@ -169,12 +208,7 @@ export async function resolveSupplierAccess(
 
   const currentRole = membership.role.trim().toLowerCase();
 
-  // B03 v2: Stale "valtriox_team" stored role without an active team record.
-  // "valtriox_team" is a platform role, NOT an organization role. If the
-  // active ValtrioxTeamMember record is missing/disabled, the user has no
-  // legitimate authorization path — deny access entirely (403).
-  // (Previous behavior demoted to read-only Viewer, which granted unintended
-  //  read access to a user with no valid role. Expert review flagged this.)
+  // B03 v2: Stale "valtriox_team" stored role without active team record = 403.
   if (currentRole === "valtriox_team" && !valtrioxTeamMember) {
     return null;
   }
@@ -186,9 +220,10 @@ export async function resolveSupplierAccess(
     effectiveRole,
     valtrioxTeamMember ? null : membership.roleDef,
   );
-  const pageHidden = valtrioxTeamMember
-    ? hiddenSections(valtrioxTeamMember.visibleSections).includes("suppliers")
-    : false;
+  const hidden = valtrioxTeamMember
+    ? hiddenSections(valtrioxTeamMember.visibleSections)
+    : null;
+  const pageHidden = hidden !== null && hidden.includes("suppliers");
   const canReadSuppliers =
     !pageHidden && hasPermission(roleDefinition, "operations");
 

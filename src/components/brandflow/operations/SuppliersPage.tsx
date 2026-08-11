@@ -269,9 +269,11 @@ export function SuppliersPage() {
   // Response shape: { suppliers, stats, pagination }
   // We store both suppliers (for list rendering) AND stats (for org-wide summary).
   // ───────────────────────────────────────────────────────────────────────────
-  const fetchInitial = useCallback(async () => {
+    const fetchInitial = useCallback(async () => {
     setLoading(true);
     setError(null);
+    // C01 v2: Clear previous access at the START of every fetch attempt.
+    setAccess(null);
     try {
       const res = await fetch(`/api/operations/suppliers?page=1&limit=${PAGE_SIZE}`, { cache: "no-store" });
       if (!res.ok) {

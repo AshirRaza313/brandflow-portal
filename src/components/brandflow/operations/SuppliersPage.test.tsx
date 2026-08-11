@@ -15,11 +15,7 @@
  *   7. created Supplier renders in the list
  *   8. label shows "Contact Email (Optional)"
  *
- * NOTE: @ts-nocheck removed (expert review Issue #1). All types are now
- * properly declared. Mock responses use `as unknown as Response` because
- * we only implement the subset of Response that the component reads
- * (ok, json). The double cast through `unknown` is the idiomatic way to
- * satisfy TypeScript without implementing all 20+ Response properties.
+ * Point 7: Updated to new API contract (pagination object + access shape).
  */
 
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
@@ -27,7 +23,6 @@ import { render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { toast } from "sonner";
 
-// Increase timeout — component tests need more time for fetch + render
 vi.setConfig({ testTimeout: 15000 });
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -41,17 +36,13 @@ vi.mock("sonner", () => ({
   },
 }));
 
-// Mock store WITH a write-capable role so canWrite=true (Add Supplier button renders)
-// Type loosely — we only need appTheme and user for SuppliersPage rendering.
 const mockStore = {
   appTheme: "light" as const,
-  user: { id: "u1", name: "Aashir", role: "owner" },
 };
 vi.mock("@/store/brandflow-store", () => ({
   useValtrioxStore: () => mockStore,
 }));
 
-// Capture the last POST body so we can assert email normalization.
 let lastPostBody: Record<string, unknown> | null = null;
 let postCallCount = 0;
 
@@ -60,10 +51,9 @@ global.fetch = mockFetch as unknown as typeof fetch;
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Helper — render with an empty initial supplier list
+// Point 7: Updated mock to new API contract with pagination object + access
 // ─────────────────────────────────────────────────────────────────────────────
 async function renderSuppliersPage() {
-  // Dynamic import so the mocks above are in place first.
-  // NOTE: SuppliersPage uses `export function SuppliersPage()` (named export)
   const { SuppliersPage } = await import("./SuppliersPage");
 
   mockFetch.mockReset();
@@ -73,24 +63,37 @@ async function renderSuppliersPage() {
   mockFetch.mockImplementation(async (url: string, init?: RequestInit) => {
     const u = String(url);
 
-    // Stats endpoint
+    // Stats endpoint — Point 7: new stats shape (avgRating, not averageRating)
     if (u.includes("/api/operations/suppliers/stats")) {
       return {
         ok: true,
         json: async () => ({
           totalSuppliers: 0,
           activeSuppliers: 0,
-          averageRating: null,
           ratedCount: 0,
+          avgRating: null,
+          topPerformer: null,
+          needsAttentionCount: 0,
+          access: { canRead: true, canWrite: true },
         }),
       } as unknown as Response;
     }
 
-    // GET list
+    // GET list — Point 7: new pagination object shape
     if (u.includes("/api/operations/suppliers") && (!init || init.method === "GET" || init.method === undefined)) {
       return {
         ok: true,
-        json: async () => ({ suppliers: [], total: 0, page: 1, limit: 50, hasMore: false }),
+        json: async () => ({
+          suppliers: [],
+          pagination: {
+            page: 1,
+            limit: 50,
+            totalCount: 0,
+            totalPages: 0,
+            hasMore: false,
+          },
+          access: { canRead: true, canWrite: true },
+        }),
       } as unknown as Response;
     }
 
@@ -122,23 +125,12 @@ async function renderSuppliersPage() {
   });
 
   render(<SuppliersPage />);
-  // Wait for initial fetch to settle.
   await waitFor(() => expect(mockFetch).toHaveBeenCalled());
 }
 
-/**
- * Click the FIRST "Add Supplier" button (the header one).
- * NOTE: "Add Supplier" text appears in 3 places when canWrite=true:
- *   - header button (line 433)
- *   - EmptyState action (line 555) — when list is empty
- *   - dialog submit (line 719) — when dialog is open
- * We pick the first one to open the dialog.
- */
 async function openAddDialog() {
   const addButtons = await screen.findAllByRole("button", { name: /add supplier/i });
-  // First one is the header button
   await userEvent.click(addButtons[0]);
-  // Wait for dialog to appear
   await screen.findByRole("dialog");
 }
 
@@ -157,7 +149,6 @@ async function fillEmail(email: string) {
 }
 
 async function submitForm() {
-  // Scope to dialog to avoid matching the header / empty-state Add Supplier buttons
   const dialog = await screen.findByRole("dialog");
   const submitBtn = within(dialog).getByRole("button", { name: /add supplier/i });
   await userEvent.click(submitBtn);
@@ -181,7 +172,6 @@ describe("SuppliersPage — optional contact email", () => {
     await renderSuppliersPage();
     await openAddDialog();
     await fillName("Acme Corp");
-    // email intentionally left blank
     await submitForm();
 
     await waitFor(() => {
@@ -233,7 +223,6 @@ describe("SuppliersPage — optional contact email", () => {
     await fillEmail("not-an-email");
     await submitForm();
 
-    // No POST should have been made with a supplier body.
     await waitFor(() => {
       expect(toast.error).toHaveBeenCalledWith("Invalid email format");
     });

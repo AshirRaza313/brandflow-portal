@@ -13,7 +13,7 @@
  *   8. Rating (star click + tier badge)
  *   9. Delete (button + toast) — requires window.confirm mock
  */
-
+import { SuppliersPage } from "./SuppliersPage";
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
@@ -585,5 +585,535 @@ describe("SuppliersPage — delete", () => {
     await waitFor(() => {
       expect(screen.queryByText("RemoveMe Co")).not.toBeInTheDocument();
     });
+  });
+});
+// ─────────────────────────────────────────────────────────────────────────────
+// 10. Pagination boundary tests (expert review: 0, 50, 51, 100, 100+ records)
+// ─────────────────────────────────────────────────────────────────────────────
+describe("SuppliersPage — pagination boundaries", () => {
+  let mockFetch: ReturnType<typeof vi.fn>;
+
+  const makeSupplier = (overrides: Record<string, unknown> = {}) => ({
+    id: "sup_1",
+    name: "Acme Co",
+    contactEmail: "contact@acme.com",
+    phone: "+1-555-0100",
+    country: "USA",
+    category: "Manufacturing",
+    rating: 4,
+    performance: "good",
+    onTimeRate: 95,
+    qualityRate: 92,
+    totalOrders: 50,
+    lastOrderAt: "2025-01-15T00:00:00.000Z",
+    createdAt: "2025-01-01T00:00:00.000Z",
+    ...overrides,
+  });
+
+  const mockPages = (
+    pages: ReturnType<typeof makeSupplier>[][],
+    total: number,
+  ) => {
+    mockFetch.mockImplementation(async (url: string) => {
+      if (url.includes("/stats")) {
+        return new Response(
+          JSON.stringify({
+            totalSuppliers: total,
+            activeSuppliers: total,
+            avgRating: 4.2,
+            topCategory: "Manufacturing",
+          }),
+          { status: 200, headers: { "Content-Type": "application/json" } },
+        );
+      }
+      const pageMatch = url.match(/page=(\d+)/);
+      const page = pageMatch ? Number(pageMatch[1]) : 1;
+      const data = pages[page - 1] ?? [];
+      return new Response(
+        JSON.stringify({
+          data,
+          pagination: {
+            page,
+            limit: 50,
+            totalCount: total,
+            totalPages: Math.ceil(total / 50),
+            hasMore: page < Math.ceil(total / 50),
+          },
+          access: { canRead: true, canWrite: true },
+        }),
+        { status: 200, headers: { "Content-Type": "application/json" } },
+      );
+    });
+  };
+
+  beforeEach(() => {
+    mockFetch = vi.fn();
+    vi.stubGlobal("fetch", mockFetch);
+  });
+
+  afterEach(() => {
+    vi.restoreAllMocks();
+    vi.unstubAllGlobals();
+  });
+
+  it("renders empty state with no Load More when 0 records", async () => {
+    mockPages([[]], 0);
+    render(<SuppliersPage />);
+    await waitFor(() =>
+      expect(screen.getByText(/no suppliers/i)).toBeInTheDocument(),
+    );
+    expect(
+      screen.queryByRole("button", { name: /load more/i }),
+    ).not.toBeInTheDocument();
+  });
+
+  it("hides Load More when exactly 50 records (single page)", async () => {
+    const page1 = Array.from({ length: 50 }, (_, i) =>
+      makeSupplier({ id: `sup_${i}`, name: `Supplier ${i}` }),
+    );
+    mockPages([page1], 50);
+    render(<SuppliersPage />);
+    await waitFor(() =>
+      expect(screen.getByText("Supplier 0")).toBeInTheDocument(),
+    );
+    expect(
+      screen.queryByRole("button", { name: /load more/i }),
+    ).not.toBeInTheDocument();
+  });
+
+  it("shows Load More at 51 records and loads page 2", async () => {
+    const page1 = Array.from({ length: 50 }, (_, i) =>
+      makeSupplier({ id: `sup_p1_${i}`, name: `Page1 Supplier ${i}` }),
+    );
+    const page2 = [makeSupplier({ id: "sup_p2_0", name: "Page2 Supplier 0" })];
+    mockPages([page1, page2], 51);
+    render(<SuppliersPage />);
+    await waitFor(() =>
+      expect(screen.getByText("Page1 Supplier 0")).toBeInTheDocument(),
+    );
+    expect(
+      screen.getByRole("button", { name: /load more/i }),
+    ).toBeInTheDocument();
+    await userEvent.click(
+      screen.getByRole("button", { name: /load more/i }),
+    );
+    await waitFor(() =>
+      expect(screen.getByText("Page2 Supplier 0")).toBeInTheDocument(),
+    );
+    expect(
+      screen.queryByRole("button", { name: /load more/i }),
+    ).not.toBeInTheDocument();
+  });
+
+  it("shows Load More at exactly 100 records and hides after page 2", async () => {
+    const page1 = Array.from({ length: 50 }, (_, i) =>
+      makeSupplier({ id: `sup_p1_${i}`, name: `Page1 Supplier ${i}` }),
+    );
+    const page2 = Array.from({ length: 50 }, (_, i) =>
+      makeSupplier({ id: `sup_p2_${i}`, name: `Page2 Supplier ${i}` }),
+    );
+    mockPages([page1, page2], 100);
+    render(<SuppliersPage />);
+    await waitFor(() =>
+      expect(screen.getByText("Page1 Supplier 0")).toBeInTheDocument(),
+    );
+    expect(
+      screen.getByRole("button", { name: /load more/i }),
+    ).toBeInTheDocument();
+    await userEvent.click(
+      screen.getByRole("button", { name: /load more/i }),
+    );
+    await waitFor(() =>
+      expect(screen.getByText("Page2 Supplier 0")).toBeInTheDocument(),
+    );
+    expect(
+      screen.queryByRole("button", { name: /load more/i }),
+    ).not.toBeInTheDocument();
+  });
+
+  it("paginates through 100+ records across 3 pages", async () => {
+    const page1 = Array.from({ length: 50 }, (_, i) =>
+      makeSupplier({ id: `sup_p1_${i}`, name: `Alpha Supplier ${i}` }),
+    );
+    const page2 = Array.from({ length: 50 }, (_, i) =>
+      makeSupplier({ id: `sup_p2_${i}`, name: `Beta Supplier ${i}` }),
+    );
+    const page3 = Array.from({ length: 25 }, (_, i) =>
+      makeSupplier({ id: `sup_p3_${i}`, name: `Gamma Supplier ${i}` }),
+    );
+    mockPages([page1, page2, page3], 125);
+    render(<SuppliersPage />);
+    await waitFor(() =>
+      expect(screen.getByText("Alpha Supplier 0")).toBeInTheDocument(),
+    );
+    expect(
+      screen.getByRole("button", { name: /load more/i }),
+    ).toBeInTheDocument();
+    await userEvent.click(
+      screen.getByRole("button", { name: /load more/i }),
+    );
+    await waitFor(() =>
+      expect(screen.getByText("Beta Supplier 0")).toBeInTheDocument(),
+    );
+    expect(
+      screen.getByRole("button", { name: /load more/i }),
+    ).toBeInTheDocument();
+    await userEvent.click(
+      screen.getByRole("button", { name: /load more/i }),
+    );
+    await waitFor(() =>
+      expect(screen.getByText("Gamma Supplier 0")).toBeInTheDocument(),
+    );
+    expect(
+      screen.queryByRole("button", { name: /load more/i }),
+    ).not.toBeInTheDocument();
+  });
+});
+// ════════════════════════════════════════════════════════════════════════════
+// C04 v2: Stats loading, error states, recovery
+// ════════════════════════════════════════════════════════════════════════════
+describe("SuppliersPage — C04 v2 stats edge cases", () => {
+  beforeEach(() => vi.clearAllMocks());
+  afterEach(() => {
+    vi.restoreAllMocks();
+    vi.unstubAllGlobals();
+  });
+
+  it("shows Unavailable when stats returns 403", async () => {
+    mockFetch.mockImplementation(async (url: string) => {
+      if (url.includes("/stats")) {
+        return {
+          ok: false,
+          status: 403,
+          json: async () => ({ error: "Forbidden" }),
+        } as unknown as Response;
+      }
+      return {
+        ok: true,
+        json: async () => ({
+          suppliers: [makeSupplier({ name: "Co A" })],
+          pagination: {
+            page: 1,
+            limit: 50,
+            totalCount: 1,
+            totalPages: 1,
+            hasMore: false,
+          },
+          access: { canRead: true, canWrite: true },
+        }),
+      } as unknown as Response;
+    });
+
+    render(<SuppliersPage />);
+    await waitFor(() => expect(screen.getByText("Co A")).toBeInTheDocument());
+
+    const ratingsTab = await screen.findByRole("button", {
+      name: /performance ratings/i,
+    });
+    await userEvent.click(ratingsTab);
+
+    await waitFor(() => {
+      expect(screen.getAllByText("Unavailable").length).toBeGreaterThan(0);
+    });
+  });
+
+  it("shows Unavailable when stats returns 404", async () => {
+    mockFetch.mockImplementation(async (url: string) => {
+      if (url.includes("/stats")) {
+        return {
+          ok: false,
+          status: 404,
+          json: async () => ({ error: "Not found" }),
+        } as unknown as Response;
+      }
+      return {
+        ok: true,
+        json: async () => ({
+          suppliers: [makeSupplier({ name: "Co B" })],
+          pagination: {
+            page: 1,
+            limit: 50,
+            totalCount: 1,
+            totalPages: 1,
+            hasMore: false,
+          },
+          access: { canRead: true, canWrite: true },
+        }),
+      } as unknown as Response;
+    });
+
+    render(<SuppliersPage />);
+    await waitFor(() => expect(screen.getByText("Co B")).toBeInTheDocument());
+
+    const ratingsTab = await screen.findByRole("button", {
+      name: /performance ratings/i,
+    });
+    await userEvent.click(ratingsTab);
+
+    await waitFor(() => {
+      expect(screen.getAllByText("Unavailable").length).toBeGreaterThan(0);
+    });
+  });
+
+  it("shows Unavailable on network failure", async () => {
+    mockFetch.mockImplementation(async (url: string) => {
+      if (url.includes("/stats")) {
+        throw new Error("Network error");
+      }
+      return {
+        ok: true,
+        json: async () => ({
+          suppliers: [makeSupplier({ name: "Co C" })],
+          pagination: {
+            page: 1,
+            limit: 50,
+            totalCount: 1,
+            totalPages: 1,
+            hasMore: false,
+          },
+          access: { canRead: true, canWrite: true },
+        }),
+      } as unknown as Response;
+    });
+
+    render(<SuppliersPage />);
+    await waitFor(() => expect(screen.getByText("Co C")).toBeInTheDocument());
+
+    const ratingsTab = await screen.findByRole("button", {
+      name: /performance ratings/i,
+    });
+    await userEvent.click(ratingsTab);
+
+    await waitFor(() => {
+      expect(screen.getAllByText("Unavailable").length).toBeGreaterThan(0);
+    });
+  });
+
+  it("recovers from stats error on Retry Stats click", async () => {
+    let statsCallCount = 0;
+    mockFetch.mockImplementation(async (url: string) => {
+      if (url.includes("/stats")) {
+        statsCallCount++;
+        if (statsCallCount === 1) {
+          return {
+            ok: false,
+            status: 500,
+            json: async () => ({ error: "Server error" }),
+          } as unknown as Response;
+        }
+        return {
+          ok: true,
+          json: async () => ({
+            totalSuppliers: 10,
+            activeSuppliers: 8,
+            ratedCount: 5,
+            avgRating: 4.5,
+            topPerformer: { id: "sup_1", name: "Top Co", rating: 5 },
+            needsAttentionCount: 2,
+          }),
+        } as unknown as Response;
+      }
+      return {
+        ok: true,
+        json: async () => ({
+          suppliers: [makeSupplier({ name: "Co D" })],
+          pagination: {
+            page: 1,
+            limit: 50,
+            totalCount: 1,
+            totalPages: 1,
+            hasMore: false,
+          },
+          access: { canRead: true, canWrite: true },
+        }),
+      } as unknown as Response;
+    });
+
+    render(<SuppliersPage />);
+    await waitFor(() => expect(screen.getByText("Co D")).toBeInTheDocument());
+
+    const ratingsTab = await screen.findByRole("button", {
+      name: /performance ratings/i,
+    });
+    await userEvent.click(ratingsTab);
+
+    await waitFor(() => {
+      expect(screen.getAllByText("Unavailable").length).toBeGreaterThan(0);
+    });
+
+    const retryBtn = screen.getByRole("button", { name: /retry stats/i });
+    await userEvent.click(retryBtn);
+
+    await waitFor(() => {
+      expect(screen.getByText("4.5")).toBeInTheDocument();
+    });
+    expect(screen.getByText("Top Co")).toBeInTheDocument();
+  });
+});
+
+// ════════════════════════════════════════════════════════════════════════════
+// Point 10: Rating rollback, delete failure, Unknown status
+// ════════════════════════════════════════════════════════════════════════════
+describe("SuppliersPage — Point 10 edge cases", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    vi.stubGlobal("confirm", vi.fn(() => true));
+  });
+  afterEach(() => {
+    vi.restoreAllMocks();
+    vi.unstubAllGlobals();
+  });
+
+  it("rolls back rating on PATCH failure", async () => {
+    const supplier = makeSupplier({
+      id: "sup_1",
+      name: "Rollback Co",
+      rating: 4,
+    });
+    mockFetch.mockImplementation(async (url: string, init?: RequestInit) => {
+      if (url.includes("/stats")) {
+        return {
+          ok: true,
+          json: async () => ({
+            totalSuppliers: 1,
+            activeSuppliers: 1,
+            ratedCount: 1,
+            avgRating: 4,
+            topPerformer: null,
+            needsAttentionCount: 0,
+          }),
+        } as unknown as Response;
+      }
+      if (url.includes("/api/operations/suppliers/sup_1") && init?.method === "PATCH") {
+        return {
+          ok: false,
+          status: 500,
+          json: async () => ({ error: "Failed to update rating" }),
+        } as unknown as Response;
+      }
+      return {
+        ok: true,
+        json: async () => ({
+          suppliers: [supplier],
+          pagination: {
+            page: 1,
+            limit: 50,
+            totalCount: 1,
+            totalPages: 1,
+            hasMore: false,
+          },
+          access: { canRead: true, canWrite: true },
+        }),
+      } as unknown as Response;
+    });
+
+    render(<SuppliersPage />);
+    const ratingsTab = await screen.findByRole("button", {
+      name: /performance ratings/i,
+    });
+    await userEvent.click(ratingsTab);
+
+    await waitFor(() => expect(screen.getByText("Rollback Co")).toBeInTheDocument());
+
+    const stars = screen.getAllByRole("radio");
+    await userEvent.click(stars[4]);
+
+    await waitFor(() => {
+      expect(toast.error).toHaveBeenCalled();
+    });
+  });
+
+  it("shows error toast on delete failure", async () => {
+    const supplier = makeSupplier({
+      id: "sup_del_fail",
+      name: "FailDelete Co",
+    });
+    mockFetch.mockImplementation(async (url: string, init?: RequestInit) => {
+      if (url.includes("/stats")) {
+        return {
+          ok: true,
+          json: async () => ({
+            totalSuppliers: 1,
+            activeSuppliers: 1,
+            ratedCount: 0,
+            avgRating: null,
+            topPerformer: null,
+            needsAttentionCount: 0,
+          }),
+        } as unknown as Response;
+      }
+      if (url.includes("/api/operations/suppliers/sup_del_fail") && init?.method === "DELETE") {
+        return {
+          ok: false,
+          status: 500,
+          json: async () => ({ error: "Cannot delete supplier" }),
+        } as unknown as Response;
+      }
+      return {
+        ok: true,
+        json: async () => ({
+          suppliers: [supplier],
+          pagination: {
+            page: 1,
+            limit: 50,
+            totalCount: 1,
+            totalPages: 1,
+            hasMore: false,
+          },
+          access: { canRead: true, canWrite: true },
+        }),
+      } as unknown as Response;
+    });
+
+    render(<SuppliersPage />);
+    await waitFor(() => expect(screen.getByText("FailDelete Co")).toBeInTheDocument());
+
+    const deleteBtn = screen.getByLabelText(/delete faildelete co/i);
+    await userEvent.click(deleteBtn);
+
+    await waitFor(() => {
+      expect(toast.error).toHaveBeenCalled();
+    });
+    expect(screen.getByText("FailDelete Co")).toBeInTheDocument();
+  });
+
+  it("renders Unknown badge for unrecognized status", async () => {
+    const supplier = makeSupplier({
+      name: "Mystery Co",
+      status: "pending",
+    });
+    mockFetch.mockImplementation(async (url: string) => {
+      if (url.includes("/stats")) {
+        return {
+          ok: true,
+          json: async () => ({
+            totalSuppliers: 1,
+            activeSuppliers: 0,
+            ratedCount: 0,
+            avgRating: null,
+            topPerformer: null,
+            needsAttentionCount: 0,
+          }),
+        } as unknown as Response;
+      }
+      return {
+        ok: true,
+        json: async () => ({
+          suppliers: [supplier],
+          pagination: {
+            page: 1,
+            limit: 50,
+            totalCount: 1,
+            totalPages: 1,
+            hasMore: false,
+          },
+          access: { canRead: true, canWrite: true },
+        }),
+      } as unknown as Response;
+    });
+
+    render(<SuppliersPage />);
+    await waitFor(() => expect(screen.getByText("Mystery Co")).toBeInTheDocument());
+    expect(screen.getByText("Unknown")).toBeInTheDocument();
   });
 });
