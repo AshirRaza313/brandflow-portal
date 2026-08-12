@@ -59,15 +59,21 @@ export interface SupplierListResponse {
   access: SupplierAccessResponse;
 }
 
-export interface SupplierStatsResponse {
+export type SupplierStatsResponse = {
   totalSuppliers: number;
-  activeSuppliers: number;
   ratedCount: number;
   avgRating: number | null;
-  topPerformer: { id: string; name: string; rating: number | null } | null;
+  topPerformer: {
+    name: string;
+    id: string;
+    rating: number | null;
+  } | null;
   needsAttentionCount: number;
-  access: SupplierAccessResponse;
-}
+  access: {
+    canRead: boolean;
+    canWrite: boolean;
+  };
+};
 
 function parseStoredPermissions(
   value: string | null | undefined,
