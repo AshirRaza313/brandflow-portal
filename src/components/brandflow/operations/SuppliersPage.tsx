@@ -319,10 +319,11 @@ export function SuppliersPage() {
       });
       setPage(nextPage);
       setHasMore(more);
-      // G06: refresh access on every page load so canWrite reflects the
-      // latest server-side decision (handles role demotion mid-session,
-      // first-fetch returning null access due to transient error, etc).
-      if (accessFromServer) setAccess(accessFromServer);
+      // G06 + Point 6: refresh access on every page load. Fail-CLOSED:
+      // if the response lacks an access field (403, network error, or
+      // malformed payload), setAccess(null) so canWrite defaults to
+      // false. Never retain stale write access from a previous page.
+      setAccess(accessFromServer);
     } catch (error: unknown) {
       toast.error(error instanceof Error ? error.message : "Failed to load more suppliers");
     } finally {
@@ -523,7 +524,7 @@ export function SuppliersPage() {
       {/* Stats — uses server-provided stats.total (Issue 5 fix) */}
       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
         {[
-          { title: "Total Suppliers", value: statsError ? "Unavailable" : String(totalSuppliers), icon: Building2 },
+          { title: "Total Suppliers", value: statsError ? "Unavailable" : statsLoading ? "..." : String(totalSuppliers), icon: Building2 },
           { title: "Active Orders", value: statsError ? "Unavailable" : "0", icon: ShoppingCart },
           { title: "Pending Payments", value: "Rs. 0", icon: DollarSign },
           { title: "On-Time Delivery", value: "-", icon: Truck },
@@ -650,10 +651,10 @@ export function SuppliersPage() {
           {/* Ratings Summary Stats */}
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
             {[
-              { title: "Average Rating", value: statsError ? "Unavailable" : avgRating > 0 ? avgRating.toFixed(1) : "-", icon: Star, sub: statsError ? "Stats failed to load" : `${ratedCount} rated` },
-              { title: "Total Rated", value: statsError ? "Unavailable" : String(ratedCount), icon: Award, sub: statsError ? "Stats failed to load" : `of ${totalSuppliers} suppliers` },
-              { title: "Top Performer", value: statsError ? "Unavailable" : topPerformer ? topPerformer.name : "-", icon: TrendingUp, sub: statsError ? "Stats failed to load" : topPerformer ? `${topPerformer.rating} stars` : "No ratings yet" },
-              { title: "Needs Attention", value: statsError ? "Unavailable" : String(needsAttention), icon: AlertTriangle, sub: statsError ? "Stats failed to load" : "below 3 stars" },
+              { title: "Average Rating", value: statsError ? "Unavailable" : statsLoading ? "..." : avgRating > 0 ? avgRating.toFixed(1) : "-", icon: Star, sub: statsError ? "Stats failed to load" : statsLoading ? "Loading..." : `${ratedCount} rated` },
+              { title: "Total Rated", value: statsError ? "Unavailable" : statsLoading ? "..." : String(ratedCount), icon: Award, sub: statsError ? "Stats failed to load" : statsLoading ? "Loading..." : `of ${totalSuppliers} suppliers` },
+              { title: "Top Performer", value: statsError ? "Unavailable" : statsLoading ? "..." : topPerformer ? topPerformer.name : "-", icon: TrendingUp, sub: statsError ? "Stats failed to load" : statsLoading ? "Loading..." : topPerformer ? `${topPerformer.rating} stars` : "No ratings yet" },
+              { title: "Needs Attention", value: statsError ? "Unavailable" : statsLoading ? "..." : String(needsAttention), icon: AlertTriangle, sub: statsError ? "Stats failed to load" : statsLoading ? "Loading..." : "below 3 stars" },
             ].map((stat) => (
               <Card key={stat.title} className="border-slate-200">
                 <CardContent className="p-4">

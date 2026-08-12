@@ -157,7 +157,15 @@ function hiddenSections(value: string | null | undefined): string[] | null {
   try {
     const parsed: unknown = JSON.parse(value);
     if (!Array.isArray(parsed)) return ALL_SECTIONS_HIDDEN; // malformed = FAIL CLOSED
-    return parsed.filter((item): item is string => typeof item === "string");
+    // Point 8: reject the ENTIRE array if any entry is non-string.
+    // Previous .filter() approach was fail-open: it silently dropped
+    // bad entries and kept the rest, which could expose hidden sections
+    // if the bad entry was the "suppliers" string in disguise.
+    if (parsed.length === 0) return null; // empty array = no restrictions
+    for (const item of parsed) {
+      if (typeof item !== "string") return ALL_SECTIONS_HIDDEN;
+    }
+    return parsed as string[];
   } catch {
     return ALL_SECTIONS_HIDDEN; // unparseable = FAIL CLOSED
   }

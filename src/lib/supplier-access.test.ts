@@ -540,17 +540,21 @@ describe("Point 10 — malformed visibleSections fail-safe", () => {
     expect(result!.canWriteSuppliers).toBe(false);
   });
 
-  it("filters non-string entries in visibleSections array", async () => {
+  it("rejects entire array when any non-string entry present (Point 8 fail-closed)", async () => {
+    // Array contains "dashboard" (would NOT hide suppliers) AND non-string
+    // entries (123, null). Old .filter() approach: keeps ["dashboard"],
+    // suppliers NOT in list -> canRead=true (FAIL-OPEN BUG). New approach:
+    // reject entire array -> ALL_SECTIONS_HIDDEN ["*"] -> canRead=false
+    // (FAIL-CLOSED per Point 8).
     const mockClient = {
       organizationMember: { findFirst: vi.fn().mockResolvedValue(null) },
       valtrioxTeamMember: {
         findFirst: vi.fn().mockResolvedValue({
           id: "vtm_1",
           visibleSections: JSON.stringify([
-            "suppliers",
+            "dashboard",
             123,
             null,
-            "dashboard",
           ]),
         }),
       },
