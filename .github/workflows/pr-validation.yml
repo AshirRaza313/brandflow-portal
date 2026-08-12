@@ -1,0 +1,60 @@
+name: PR Validation
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [feat/suppliers-persistence]
+
+jobs:
+  validate:
+    name: Install, Test, TypeCheck, Lint, Build
+    runs-on: ubuntu-latest
+    env:
+      NEXTAUTH_SECRET: ci-dummy-secret-for-build-only-not-real
+      NEXTAUTH_URL: http://localhost:3000
+      DATABASE_URL: postgresql://ci:ci@localhost:5432/ci
+      DIRECT_DATABASE_URL: postgresql://ci:ci@localhost:5432/ci
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Clean install
+        run: npm ci
+
+      - name: Generate Prisma Client
+        run: npx prisma generate
+
+      - name: TypeScript check
+        run: npx tsc --noEmit
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Run full test suite
+        run: npm test
+        env:
+          CI: 'true'
+
+      - name: Build
+        run: npm run build
+
+      - name: Upload test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-results
+          path: |
+            coverage/
+            test-results.xml
+          retention-days: 7
+          if-no-files-found: ignore
