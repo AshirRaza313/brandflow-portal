@@ -116,30 +116,6 @@ function resolveRoleDefinition(
     }
   }
 
-  // Platform roles: platform_owner and platform_admin are platform-level
-  // staff (founders, executives). They must always have full access to all
-  // modules including operations/suppliers, regardless of roles.ts config.
-  // BUGFIX B09: previously 'platform_owner' fell through to getRoleByName()
-  // which returned null, hiding all action buttons for the founder.
-  if (roleName === "platform_owner" || roleName === "platform_admin") {
-    return {
-      name: roleName,
-      label: roleName === "platform_owner" ? "Platform Owner" : "Platform Admin",
-      description: "Platform-level staff with full access",
-      level: 100,
-      permissions: {
-        dashboard: true,
-        products: true,
-        orders: true,
-        customers: true,
-        marketing: true,
-        operations: true,
-        analytics: true,
-        settings: true,
-      } as RolePermission,
-    };
-  }
-
   // Valtriox team role: same full-access block as platform roles, kept
   // separate for clarity (ValtrioxTeamMember vs OrganizationMember.role).
   if (roleName === "valtriox_team") {
@@ -164,17 +140,20 @@ function resolveRoleDefinition(
   return getRoleByName(roleName) || null;
 }
 
-// Fail-safe: malformed visibleSections (non-array, non-string entries) returns
-// ALL sections hidden. This prevents accidental access when data is corrupt.
-// Point 10: Malformed visibleSections behavior must be fail-safe (deny).
+// Fail-CLOSED: visibleSections is a hidden-section DENY list (not a whitelist).
+// When data is malformed (non-array, unparseable), we FAIL CLOSED by returning
+// the sentinel ["*"] which causes ALL sections to be considered hidden.
+// null/empty value = no restrictions (all visible) — this is the only fail-open case.
+const ALL_SECTIONS_HIDDEN = ["*"];
+
 function hiddenSections(value: string | null | undefined): string[] | null {
   if (!value) return null; // null = no restrictions (all visible)
   try {
     const parsed: unknown = JSON.parse(value);
-    if (!Array.isArray(parsed)) return null; // malformed = treat as no restrictions
+    if (!Array.isArray(parsed)) return ALL_SECTIONS_HIDDEN; // malformed = FAIL CLOSED
     return parsed.filter((item): item is string => typeof item === "string");
   } catch {
-    return null; // unparseable = treat as no restrictions
+    return ALL_SECTIONS_HIDDEN; // unparseable = FAIL CLOSED
   }
 }
 
@@ -187,19 +166,12 @@ export async function resolveSupplierAccess(
   client: SupplierAccessClient,
   authCtx: AuthContext,
 ): Promise<SupplierAccess | null> {
-  // BUGFIX B09: auth middleware may return undefined organizationId when
-  // NextAuth session or vt-org-id cookie is not populated. Fall back to
-  // resolving from OrganizationMember table by userId alone.
-  let organizationId = authCtx.organizationId;
-
-  if (!organizationId) {
-    const fallbackMembership = await client.organizationMember.findFirst({
-      where: { userId: authCtx.userId },
-      select: { organizationId: true },
-    });
-    if (!fallbackMembership) return null;
-    organizationId = fallbackMembership.organizationId;
-  }
+  // Organization context MUST come from the authenticated session (cookie or
+  // NextAuth). We do NOT fall back to OrganizationMember.findFirst({ userId })
+  // because that is unsafe for multi-organization users (arbitrary org select).
+  // If organizationId is missing, deny access.
+  const organizationId = authCtx.organizationId;
+  if (!organizationId) return null;
 
   const [membership, valtrioxTeamMember] = await Promise.all([
     client.organizationMember.findFirst({
@@ -220,8 +192,8 @@ export async function resolveSupplierAccess(
   if (!membership) {
     if (valtrioxTeamMember) {
       const hidden = hiddenSections(valtrioxTeamMember.visibleSections);
-      // Point 10: If hiddenSections is null (malformed/empty), suppliers IS visible
-      const pageHidden = hidden !== null && hidden.includes("suppliers");
+      // Fail-CLOSED: malformed visibleSections returns ["*"] sentinel, hiding all.
+      const pageHidden = hidden !== null && (hidden.includes("suppliers") || hidden.includes("*"));
       const canReadSuppliers = !pageHidden;
       return {
         organizationId,
@@ -256,7 +228,8 @@ export async function resolveSupplierAccess(
   const hidden = valtrioxTeamMember
     ? hiddenSections(valtrioxTeamMember.visibleSections)
     : null;
-  const pageHidden = hidden !== null && hidden.includes("suppliers");
+  // Fail-CLOSED: malformed visibleSections returns ["*"] sentinel, hiding all.
+  const pageHidden = hidden !== null && (hidden.includes("suppliers") || hidden.includes("*"));
   const canReadSuppliers =
     !pageHidden && hasPermission(roleDefinition, "operations");
 

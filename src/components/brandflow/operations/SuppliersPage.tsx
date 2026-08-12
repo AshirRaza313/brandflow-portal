@@ -334,6 +334,7 @@ export function SuppliersPage() {
     } catch (error: unknown) {
       // Network/parse error — same truthful-unavailable handling.
       setStatsError(true);
+      // eslint-disable-next-line no-console
       console.warn("Failed to fetch supplier stats", error);
     }
   }, []);

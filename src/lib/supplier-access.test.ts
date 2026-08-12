@@ -498,7 +498,7 @@ describe("B06 v2 — real custom roles with operations permission", () => {
 describe("Point 10 — malformed visibleSections fail-safe", () => {
   beforeEach(() => vi.clearAllMocks());
 
-  it("treats malformed JSON visibleSections as no restrictions (all visible)", async () => {
+  it("treats malformed JSON visibleSections as FAIL CLOSED (all hidden)", async () => {
     const mockClient = {
       organizationMember: { findFirst: vi.fn().mockResolvedValue(null) },
       valtrioxTeamMember: {
@@ -515,11 +515,11 @@ describe("Point 10 — malformed visibleSections fail-safe", () => {
     } as AuthContext);
 
     expect(result).not.toBeNull();
-    expect(result!.canReadSuppliers).toBe(true);
-    expect(result!.canWriteSuppliers).toBe(true);
+    expect(result!.canReadSuppliers).toBe(false);
+    expect(result!.canWriteSuppliers).toBe(false);
   });
 
-  it("treats non-array visibleSections as no restrictions", async () => {
+  it("treats non-array visibleSections as FAIL CLOSED (all hidden)", async () => {
     const mockClient = {
       organizationMember: { findFirst: vi.fn().mockResolvedValue(null) },
       valtrioxTeamMember: {
@@ -536,7 +536,8 @@ describe("Point 10 — malformed visibleSections fail-safe", () => {
     } as AuthContext);
 
     expect(result).not.toBeNull();
-    expect(result!.canReadSuppliers).toBe(true);
+    expect(result!.canReadSuppliers).toBe(false);
+    expect(result!.canWriteSuppliers).toBe(false);
   });
 
   it("filters non-string entries in visibleSections array", async () => {

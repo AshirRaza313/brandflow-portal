@@ -503,8 +503,6 @@ describe("SuppliersPage — rating", () => {
 
     await waitFor(() => expect(screen.getByText("RateMe Co")).toBeInTheDocument());
 
-    const initialCallCount = mockFetch.mock.calls.length;
-
     // Click 5th star (index 4)
     const stars = screen.getAllByRole("radio");
     expect(stars.length).toBeGreaterThanOrEqual(5);
