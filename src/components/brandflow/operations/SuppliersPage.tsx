@@ -36,14 +36,16 @@ interface Supplier {
 // Server-provided aggregate statistics — returned by GET /api/operations/suppliers/stats
 // Used for org-wide summary (not calculated from the locally loaded page)
 // ─────────────────────────────────────────────────────────────────────────────
+// G07: aligned with SupplierStatsResponse from src/lib/supplier-access.ts.
+// avgRating and topPerformer.rating are tri-state (null when no rated suppliers).
 interface SupplierStats {
   totalSuppliers: number;
   ratedCount: number;
-  avgRating: number;
+  avgRating: number | null;
   topPerformer: {
     id: string;
     name: string;
-    rating: number;
+    rating: number | null;
   } | null;
   needsAttentionCount: number;
 }
@@ -237,10 +239,15 @@ function SupplierSkeleton({ isDark }: { isDark: boolean }) {
 export function SuppliersPage() {
   const [createOpen, setCreateOpen] = useState(false);
   const [suppliers, setSuppliers] = useState<Supplier[]>([]);
-  const [stats, setStats] = useState<SupplierStats | null>(null);
+    const [stats, setStats] = useState<SupplierStats | null>(null);
   // True when stats fetch failed (403/404/500/network). UI must NOT silently
   // show 0/"-" as if those were genuine values — show an Unavailable state instead.
   const [statsError, setStatsError] = useState(false);
+  // G08: distinct loading states so the UI does not flash "Unavailable" on
+  // first mount, and so the Retry button can be disabled while in-flight
+  // (prevents spam-clicking during a slow network).
+  const [statsLoading, setStatsLoading] = useState(true);
+  const [statsRetrying, setStatsRetrying] = useState(false);
   // Server-returned access flags — authoritative source for read/write permission.
   // Replaces the legacy hardcoded WRITE_ROLES list (Issue #2).
   const [access, setAccess] = useState<{ canRead: boolean; canWrite: boolean } | null>(null);
@@ -305,13 +312,17 @@ export function SuppliersPage() {
         throw new Error(body?.error || `Request failed (${res.status})`);
       }
       const json = await res.json();
-      const { data, hasMore: more } = normalizePagination(json);
+      const { data, hasMore: more, access: accessFromServer } = normalizePagination(json);
       setSuppliers(prev => {
         const ids = new Set(prev.map(s => s.id));
         return [...prev, ...data.filter(s => !ids.has(s.id))];
       });
       setPage(nextPage);
       setHasMore(more);
+      // G06: refresh access on every page load so canWrite reflects the
+      // latest server-side decision (handles role demotion mid-session,
+      // first-fetch returning null access due to transient error, etc).
+      if (accessFromServer) setAccess(accessFromServer);
     } catch (error: unknown) {
       toast.error(error instanceof Error ? error.message : "Failed to load more suppliers");
     } finally {
@@ -319,7 +330,15 @@ export function SuppliersPage() {
     }
   }, [page, hasMore, loadingMore]);
 
-  const fetchStats = useCallback(async () => {
+  const fetchStats = useCallback(async (isRetry = false) => {
+    // G08: set the appropriate loading flag upfront so the UI can show
+    // a loading state instead of flashing "Unavailable" on first mount,
+    // and so Retry can be disabled while in-flight.
+    if (isRetry) {
+      setStatsRetrying(true);
+    } else {
+      setStatsLoading(true);
+    }
     try {
       const res = await fetch("/api/operations/suppliers/stats", { cache: "no-store" });
       if (!res.ok) {
@@ -336,6 +355,12 @@ export function SuppliersPage() {
       setStatsError(true);
       // eslint-disable-next-line no-console
       console.warn("Failed to fetch supplier stats", error);
+    } finally {
+      if (isRetry) {
+        setStatsRetrying(false);
+      } else {
+        setStatsLoading(false);
+      }
     }
   }, []);
 
@@ -475,6 +500,8 @@ export function SuppliersPage() {
   // The local page is a read-through subset and must never drive these values.
   // ───────────────────────────────────────────────────────────────────────────
   const totalSuppliers = stats?.totalSuppliers ?? totalCount ?? suppliers.length;
+  // G07: stats.avgRating is now number | null per API contract.
+  // Treat null as 0 for numeric display logic (avgRating > 0 check below).
   const avgRating = stats?.avgRating ?? 0;
   const ratedCount = stats?.ratedCount ?? 0;
   const topPerformer = stats?.topPerformer ?? null;
@@ -651,8 +678,21 @@ export function SuppliersPage() {
                     Stats unavailable. Showing "Unavailable" above — try again.
                   </p>
                 </div>
-                <Button variant="outline" size="sm" onClick={fetchStats}>
-                  <RefreshCw className="h-4 w-4 mr-1" /> Retry Stats
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => fetchStats(true)}
+                  disabled={statsRetrying}
+                >
+                  {statsRetrying ? (
+                    <>
+                      <Loader2 className="h-4 w-4 mr-1 animate-spin" /> Retrying...
+                    </>
+                  ) : (
+                    <>
+                      <RefreshCw className="h-4 w-4 mr-1" /> Retry Stats
+                    </>
+                  )}
                 </Button>
               </CardContent>
             </Card>

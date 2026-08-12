@@ -617,7 +617,6 @@ describe("SuppliersPage — pagination boundaries", () => {
         return new Response(
           JSON.stringify({
             totalSuppliers: total,
-            activeSuppliers: total,
             avgRating: 4.2,
             topCategory: "Manufacturing",
           }),
@@ -903,7 +902,6 @@ describe("SuppliersPage — C04 v2 stats edge cases", () => {
           ok: true,
           json: async () => ({
             totalSuppliers: 10,
-            activeSuppliers: 8,
             ratedCount: 5,
             avgRating: 4.5,
             topPerformer: { id: "sup_1", name: "Top Co", rating: 5 },
@@ -974,7 +972,6 @@ describe("SuppliersPage — Point 10 edge cases", () => {
           ok: true,
           json: async () => ({
             totalSuppliers: 1,
-            activeSuppliers: 1,
             ratedCount: 1,
             avgRating: 4,
             topPerformer: null,
@@ -1013,12 +1010,31 @@ describe("SuppliersPage — Point 10 edge cases", () => {
 
     await waitFor(() => expect(screen.getByText("Rollback Co")).toBeInTheDocument());
 
+    // G09: capture the initial rating text ("4.0 / 5") so we can assert
+    // the UI rolls back to exactly this value after PATCH failure.
+    await waitFor(() => {
+      expect(screen.getByText("4.0 / 5")).toBeInTheDocument();
+    });
+
     const stars = screen.getAllByRole("radio");
     await userEvent.click(stars[4]);
 
+    // G09: wait for the PATCH failure to be processed (toast fires after
+    // the catch block runs the rollback). We do NOT assert the optimistic
+    // "5.0 / 5" state because the mock PATCH resolves synchronously and
+    // the rollback happens in the same microtask cycle as the optimistic
+    // update, making the transient state unobservable in a deterministic way.
     await waitFor(() => {
       expect(toast.error).toHaveBeenCalled();
     });
+
+    // G09: core assertion — after PATCH failure, UI must have rolled back
+    // to the previous rating. "4.0 / 5" should still be visible, and the
+    // optimistic "5.0 / 5" state should NOT persist.
+    await waitFor(() => {
+      expect(screen.getByText("4.0 / 5")).toBeInTheDocument();
+    });
+    expect(screen.queryByText("5.0 / 5")).not.toBeInTheDocument();
   });
 
   it("shows error toast on delete failure", async () => {
@@ -1032,7 +1048,6 @@ describe("SuppliersPage — Point 10 edge cases", () => {
           ok: true,
           json: async () => ({
             totalSuppliers: 1,
-            activeSuppliers: 1,
             ratedCount: 0,
             avgRating: null,
             topPerformer: null,
@@ -1086,7 +1101,6 @@ describe("SuppliersPage — Point 10 edge cases", () => {
           ok: true,
           json: async () => ({
             totalSuppliers: 1,
-            activeSuppliers: 0,
             ratedCount: 0,
             avgRating: null,
             topPerformer: null,
