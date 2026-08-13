@@ -196,14 +196,11 @@ export async function resolveSupplierAccess(
   if (!organizationId) return null;
 
    // 2. Verify the organization exists and is valid.
-  let orgExists = true;
-  if (client.organization && typeof client.organization.findUnique === "function") {
-    const org = await client.organization.findUnique({
-      where: { id: organizationId },
-      select: { id: true },
-    });
-    if (!org) return null;
-  }
+  const orgExists = await client.organization?.findUnique({
+    where: { id: organizationId },
+    select: { id: true },
+  });
+  if (!orgExists) return null;
 
   // 3. Resolve platform role from fresh DB query (not session/cookie).
   let platformRole: string | null = null;
@@ -238,14 +235,39 @@ export async function resolveSupplierAccess(
   ]);
 
   // ───────────────────────────────────────────────────────────────────────────
-  // Platform owner/admin (Option B)
+  // VALIDATE MEMBERSHIP & PENALTY (applies to ALL roles including platform)
+  // ───────────────────────────────────────────────────────────────────────────
+  // Fetch membership and Valtriox team record (needed for steps 6 & 7).
+  const [membership, valtrioxTeamMember] = await Promise.all([
+    client.organizationMember.findFirst({
+      where: { organizationId, userId: authCtx.userId },
+      select: {
+        role: true,
+        roleDef: { select: { name: true, permissions: true } },
+        penaltyUntil: true,
+      },
+    }),
+    client.valtrioxTeamMember.findFirst({
+      where: { userId: authCtx.userId, status: "active" },
+      select: { id: true, visibleSections: true },
+    }),
+  ]);
+
+  // B01: Per-request penalty check from DB (applies to EVERYONE including platform roles)
+  const now = new Date();
+  if (membership?.penaltyUntil && membership.penaltyUntil > now) {
+    return null;
+  }
+
+  // ───────────────────────────────────────────────────────────────────────────
+  // Platform owner/admin (Option B) ΓÇö after penalty check
   // ───────────────────────────────────────────────────────────────────────────
   if (platformRole === "platform_owner" || platformRole === "platform_admin") {
     // Base: full read/write access.
     let canRead = true;
     let canWrite = true;
 
-    // 6. Then apply active Valtriox team hidden-section rules.
+    // 6. Apply active Valtriox team hidden-section rules (even for platform roles).
     if (valtrioxTeamMember) {
       const hidden = hiddenSections(valtrioxTeamMember.visibleSections);
       const pageHidden = hidden !== null && (hidden.includes("suppliers") || hidden.includes("*"));
@@ -255,8 +277,6 @@ export async function resolveSupplierAccess(
       }
     }
 
-    // 8. Otherwise deny access? No, we are granting here; we already have
-    //    platform role, so we return the computed access.
     return {
       organizationId,
       effectiveRole: platformRole,
@@ -266,7 +286,7 @@ export async function resolveSupplierAccess(
   }
 
   // ───────────────────────────────────────────────────────────────────────────
-  // Valtriox team member (cross-org support)
+  // Valtriox team member (cross-org support) ΓÇö after penalty check
   // ───────────────────────────────────────────────────────────────────────────
   // 6. Apply active Valtriox team hidden-section rules (B02).
   if (!membership) {
@@ -288,13 +308,7 @@ export async function resolveSupplierAccess(
   // ───────────────────────────────────────────────────────────────────────────
   // Organization member (with or without Valtriox team overlap)
   // ───────────────────────────────────────────────────────────────────────────
-  // 7. Apply OrganizationMember role, permissions and penalty checks.
-  // B01: Per-request penalty check from DB.
-  const now = new Date();
-  if (membership.penaltyUntil && membership.penaltyUntil > now) {
-    return null;
-  }
-
+  // 7. Apply OrganizationMember role and permissions.
   const currentRole = membership.role.trim().toLowerCase();
 
   // B03 v2: Stale "valtriox_team" stored role without active team record = 403.
