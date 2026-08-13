@@ -66,6 +66,10 @@ type MemberRecord = {
 const testState = vi.hoisted(() => ({
   organizationId: "org-a" as string | undefined,
   role: "brand_owner",
+  /** User.role from database (for platform role tests). */
+  userRole: null as string | null,
+  /** If false, organization.findUnique returns null. */
+  orgExists: true,
   /** If set, OrganizationMember.findFirst returns null (simulates removal). */
   memberRemoved: false,
   /** Override the member's DB role (independent from session `role`). */
@@ -259,10 +263,29 @@ const dbMocks = vi.hoisted(() => {
   // FIX: resolveSupplierAccess calls findFirst (not findUnique) with
   //   where: { userId, status: "active" }, select: { id, visibleSections }
   const valtrioxTeamMember = {
-    findFirst: vi.fn(async () => null),
+    findFirst: vi.fn(async () => null as any),
   };
 
-  const db = { supplier, organizationMember, valtrioxTeamMember };
+  // Platform role mocks (Phase 5)
+  const user = {
+    findUnique: vi.fn(async ({ where }: { where: { id: string } }) => {
+      if (where.id === "user-a") {
+        return { role: testState.userRole };
+      }
+      return null;
+    }),
+  };
+
+  const organization = {
+    findUnique: vi.fn(async ({ where }: { where: { id: string } }) => {
+      if (testState.orgExists && where.id === testState.organizationId) {
+        return { id: where.id };
+      }
+      return null;
+    }),
+  };
+
+  const db = { supplier, organizationMember, valtrioxTeamMember, user, organization };
   return { db, supplier, organizationMember, valtrioxTeamMember };
 });
 
@@ -790,6 +813,129 @@ describe("Issue #2 — Supplier API authorization (DB-resolved)", () => {
       const data = await responseJson(res);
 
       expect(data.topPerformer).toMatchObject({ name: "Newer Sup", rating: 5 });
+    });
+  });
+    // ─────────────────────────────────────────────────────────────────────────
+  // Phase 5: Platform role Option B — 8 safeguards
+  // ─────────────────────────────────────────────────────────────────────────
+  describe("Platform role Option B — 8 safeguards", () => {
+    beforeEach(() => {
+      testState.organizationId = "org-a";
+      testState.role = "brand_owner";
+      testState.userRole = null; // default: no platform role
+      testState.orgExists = true;
+      testState.memberRemoved = false;
+      testState.memberRoleOverride = null;
+      testState.memberRoleIdOverride = null;
+      testState.roles = {};
+      testState.suppliers.length = 0;
+      vi.clearAllMocks();
+    });
+
+    it("1. platform_owner with membership: full read/write access", async () => {
+      testState.userRole = "platform_owner";
+      testState.memberRoleOverride = "viewer"; // membership role doesn't matter for platform owners
+
+      const res = await GET(getRequest());
+      expect(res.status).toBe(200);
+      const data = await responseJson(res);
+      expect(data.access).toMatchObject({ canRead: true, canWrite: true });
+    });
+
+    it("2. platform_owner without membership: full read/write access (transcends org)", async () => {
+      testState.userRole = "platform_owner";
+      testState.memberRemoved = true; // no membership row
+
+      const res = await GET(getRequest());
+      expect(res.status).toBe(200);
+      const data = await responseJson(res);
+      expect(data.access).toMatchObject({ canRead: true, canWrite: true });
+    });
+
+    it("3. platform_admin with membership: full read/write access", async () => {
+      testState.userRole = "platform_admin";
+      testState.memberRoleOverride = "viewer";
+
+      const res = await GET(getRequest());
+      expect(res.status).toBe(200);
+      const data = await responseJson(res);
+      expect(data.access).toMatchObject({ canRead: true, canWrite: true });
+    });
+
+    it("4. platform_admin without membership: full read/write access", async () => {
+      testState.userRole = "platform_admin";
+      testState.memberRemoved = true;
+
+      const res = await GET(getRequest());
+      expect(res.status).toBe(200);
+      const data = await responseJson(res);
+      expect(data.access).toMatchObject({ canRead: true, canWrite: true });
+    });
+
+    it("5. platform_owner with Valtriox hidden 'suppliers' section → access denied (fail-closed)", async () => {
+      testState.userRole = "platform_owner";
+      testState.memberRoleOverride = "brand_owner";
+
+      // Mock active Valtriox team member with hidden suppliers section
+      const mockVt = dbMocks.valtrioxTeamMember;
+      mockVt.findFirst.mockImplementation(async () => ({
+        id: "vt-1",
+        visibleSections: JSON.stringify(["suppliers"]),
+      }) as any);
+
+      const res = await GET(getRequest());
+      expect(res.status).toBe(403);
+      const data = await responseJson(res);
+      expect(data.error).toMatch(/permission/i);
+
+      // Clean up mock for other tests
+      mockVt.findFirst.mockReset();
+    });
+
+    it("6. stale platform role: session says platform_owner, DB says viewer → treated as viewer", async () => {
+      // Session role is "platform_owner" (stale cookie)
+      testState.role = "platform_owner";
+      // DB user role is "viewer" (fresh reality)
+      testState.userRole = "viewer";
+      testState.memberRoleOverride = "viewer";
+
+      const res = await GET(getRequest());
+      expect(res.status).toBe(200);
+      const data = await responseJson(res);
+      // Viewer can read but cannot write
+      expect(data.access).toMatchObject({ canRead: true, canWrite: false });
+
+      // POST should be blocked
+      const postRes = await POST(postRequest({ name: "Blocked" }));
+      expect(postRes.status).toBe(403);
+    });
+
+    it("7. inactive Valtriox team record: platform role still works, but hidden rules ignored if inactive", async () => {
+      testState.userRole = "platform_owner";
+      testState.memberRoleOverride = "brand_owner";
+
+      // Valtriox team member exists but status is NOT "active" (so findFirst returns null)
+      const mockVt = dbMocks.valtrioxTeamMember;
+      mockVt.findFirst.mockResolvedValue(null); // inactive/missing
+
+      const res = await GET(getRequest());
+      expect(res.status).toBe(200);
+      const data = await responseJson(res);
+      // Platform owner still has full access despite inactive Valtriox record
+      expect(data.access).toMatchObject({ canRead: true, canWrite: true });
+
+      mockVt.findFirst.mockReset();
+    });
+
+    it("8. missing organization: platform owner still denied if orgId missing (Safeguard 1)", async () => {
+      testState.userRole = "platform_owner";
+      testState.organizationId = undefined; // missing org context
+
+      const res = await GET(getRequest());
+      expect(res.status).toBe(403);
+      const data = await responseJson(res);
+      // Error message may vary, just verify it's a 403 with an error
+      expect(data.error).toBeDefined();
     });
   });
 });
