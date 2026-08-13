@@ -290,13 +290,15 @@ export function SuppliersPage() {
     }
   }, []);
 
-  const loadMore = useCallback(async () => {
+    const loadMore = useCallback(async () => {
     if (loadingMore || !hasMore) return;
     setLoadingMore(true);
     try {
       const nextPage = page + 1;
       const res = await fetch(`/api/operations/suppliers?page=${nextPage}&limit=${PAGE_SIZE}`, { cache: "no-store" });
       if (!res.ok) {
+        // FAIL-CLOSED: clear access on ANY failure status
+        setAccess(null);
         const body = await res.json().catch(() => ({}));
         throw new Error(body?.error || `Request failed (${res.status})`);
       }
@@ -308,12 +310,11 @@ export function SuppliersPage() {
       });
       setPage(nextPage);
       setHasMore(more);
-      // G06 + Point 6: refresh access on every page load. Fail-CLOSED:
-      // if the response lacks an access field (403, network error, or
-      // malformed payload), setAccess(null) so canWrite defaults to
-      // false. Never retain stale write access from a previous page.
-      setAccess(accessFromServer);
+      // FAIL-CLOSED: if access field missing, set null
+      setAccess(accessFromServer ?? null);
     } catch (error: unknown) {
+      // FAIL-CLOSED: clear access on network/any error
+      setAccess(null);
       toast.error(error instanceof Error ? error.message : "Failed to load more suppliers");
     } finally {
       setLoadingMore(false);
