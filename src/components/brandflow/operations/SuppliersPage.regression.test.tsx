@@ -1129,3 +1129,416 @@ describe("SuppliersPage — Point 10 edge cases", () => {
     expect(screen.getByText("Unknown")).toBeInTheDocument();
   });
 });
+// ─────────────────────────────────────────────────────────────────────────────
+// Issue 2: Load More failure handling (fail-closed on 403/500/network)
+// ─────────────────────────────────────────────────────────────────────────────
+describe("SuppliersPage — load more failure handling", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    vi.stubGlobal("confirm", vi.fn(() => true));
+  });
+  afterEach(() => {
+    vi.restoreAllMocks();
+    vi.unstubAllGlobals();
+  });
+
+  it("clears access on successful role demotion (canWrite becomes false)", async () => {
+    const suppliersPage1 = Array.from({ length: 50 }, (_, i) =>
+      makeSupplier({ id: `sup_${i}`, name: `Supplier ${i}` })
+    );
+    const suppliersPage2 = Array.from({ length: 10 }, (_, i) =>
+      makeSupplier({ id: `sup2_${i}`, name: `Supplier2 ${i}` })
+    );
+    mockFetch.mockImplementation(async (url: string, init?: RequestInit) => {
+      if (url.includes("/stats")) {
+        return {
+          ok: true,
+          json: async () => ({
+            totalSuppliers: 60,
+            ratedCount: 0,
+            avgRating: null,
+            topPerformer: null,
+            needsAttentionCount: 0,
+          }),
+        } as unknown as Response;
+      }
+      if (url.includes("/api/operations/suppliers") && (!init || init.method === "GET" || init.method === undefined)) {
+        const pageMatch = url.match(/page=(\d+)/);
+        const page = pageMatch ? Number(pageMatch[1]) : 1;
+        if (page === 1) {
+          return {
+            ok: true,
+            json: async () => ({
+              suppliers: suppliersPage1,
+              pagination: {
+                page: 1,
+                limit: 50,
+                totalCount: 60,
+                totalPages: 2,
+                hasMore: true,
+              },
+              access: { canRead: true, canWrite: true },
+            }),
+          } as unknown as Response;
+        } else {
+          // Page 2: demote role
+          return {
+            ok: true,
+            json: async () => ({
+              suppliers: suppliersPage2,
+              pagination: {
+                page: 2,
+                limit: 50,
+                totalCount: 60,
+                totalPages: 2,
+                hasMore: false,
+              },
+              access: { canRead: true, canWrite: false }, // demoted
+            }),
+          } as unknown as Response;
+        }
+      }
+      return { ok: false, status: 404, json: async () => ({}) } as unknown as Response;
+    });
+
+    render(<SuppliersPage />);
+    await waitFor(() => expect(screen.getByText("Supplier 0")).toBeInTheDocument());
+
+    expect(screen.getByRole("button", { name: /add supplier/i })).toBeInTheDocument();
+
+    const loadMoreBtn = screen.getByRole("button", { name: /load more/i });
+    await userEvent.click(loadMoreBtn);
+
+    await waitFor(() => expect(screen.getByText("Supplier2 0")).toBeInTheDocument());
+
+    await waitFor(() => {
+      expect(screen.queryByRole("button", { name: /add supplier/i })).not.toBeInTheDocument();
+    });
+  });
+
+  it("clears access when access field is missing in loadMore response", async () => {
+    const suppliersPage1 = Array.from({ length: 50 }, (_, i) =>
+      makeSupplier({ id: `sup_${i}`, name: `Supplier ${i}` })
+    );
+    const suppliersPage2 = Array.from({ length: 10 }, (_, i) =>
+      makeSupplier({ id: `sup2_${i}`, name: `Supplier2 ${i}` })
+    );
+    mockFetch.mockImplementation(async (url: string, init?: RequestInit) => {
+      if (url.includes("/stats")) {
+        return {
+          ok: true,
+          json: async () => ({
+            totalSuppliers: 60,
+            ratedCount: 0,
+            avgRating: null,
+            topPerformer: null,
+            needsAttentionCount: 0,
+          }),
+        } as unknown as Response;
+      }
+      if (url.includes("/api/operations/suppliers") && (!init || init.method === "GET" || init.method === undefined)) {
+        const pageMatch = url.match(/page=(\d+)/);
+        const page = pageMatch ? Number(pageMatch[1]) : 1;
+        if (page === 1) {
+          return {
+            ok: true,
+            json: async () => ({
+              suppliers: suppliersPage1,
+              pagination: {
+                page: 1,
+                limit: 50,
+                totalCount: 60,
+                totalPages: 2,
+                hasMore: true,
+              },
+              access: { canRead: true, canWrite: true },
+            }),
+          } as unknown as Response;
+        } else {
+          // Missing access field
+          return {
+            ok: true,
+            json: async () => ({
+              suppliers: suppliersPage2,
+              pagination: {
+                page: 2,
+                limit: 50,
+                totalCount: 60,
+                totalPages: 2,
+                hasMore: false,
+              },
+            }),
+          } as unknown as Response;
+        }
+      }
+      return { ok: false, status: 404, json: async () => ({}) } as unknown as Response;
+    });
+
+    render(<SuppliersPage />);
+    await waitFor(() => expect(screen.getByText("Supplier 0")).toBeInTheDocument());
+
+    expect(screen.getByRole("button", { name: /add supplier/i })).toBeInTheDocument();
+
+    const loadMoreBtn = screen.getByRole("button", { name: /load more/i });
+    await userEvent.click(loadMoreBtn);
+
+    await waitFor(() => expect(screen.getByText("Supplier2 0")).toBeInTheDocument());
+
+    await waitFor(() => {
+      expect(screen.queryByRole("button", { name: /add supplier/i })).not.toBeInTheDocument();
+    });
+  });
+
+  it("clears access on 403 response from loadMore", async () => {
+    const suppliersPage1 = Array.from({ length: 50 }, (_, i) =>
+      makeSupplier({ id: `sup_${i}`, name: `Supplier ${i}` })
+    );
+    mockFetch.mockImplementation(async (url: string, init?: RequestInit) => {
+      if (url.includes("/stats")) {
+        return {
+          ok: true,
+          json: async () => ({
+            totalSuppliers: 60,
+            ratedCount: 0,
+            avgRating: null,
+            topPerformer: null,
+            needsAttentionCount: 0,
+          }),
+        } as unknown as Response;
+      }
+      if (url.includes("/api/operations/suppliers") && (!init || init.method === "GET" || init.method === undefined)) {
+        const pageMatch = url.match(/page=(\d+)/);
+        const page = pageMatch ? Number(pageMatch[1]) : 1;
+        if (page === 1) {
+          return {
+            ok: true,
+            json: async () => ({
+              suppliers: suppliersPage1,
+              pagination: {
+                page: 1,
+                limit: 50,
+                totalCount: 60,
+                totalPages: 2,
+                hasMore: true,
+              },
+              access: { canRead: true, canWrite: true },
+            }),
+          } as unknown as Response;
+        } else {
+          return {
+            ok: false,
+            status: 403,
+            json: async () => ({ error: "Forbidden" }),
+          } as unknown as Response;
+        }
+      }
+      return { ok: false, status: 404, json: async () => ({}) } as unknown as Response;
+    });
+
+    render(<SuppliersPage />);
+    await waitFor(() => expect(screen.getByText("Supplier 0")).toBeInTheDocument());
+
+    expect(screen.getByRole("button", { name: /add supplier/i })).toBeInTheDocument();
+
+    const loadMoreBtn = screen.getByRole("button", { name: /load more/i });
+    await userEvent.click(loadMoreBtn);
+
+    await waitFor(() => {
+      expect(toast.error).toHaveBeenCalled();
+    });
+
+    await waitFor(() => {
+      expect(screen.queryByRole("button", { name: /add supplier/i })).not.toBeInTheDocument();
+    });
+  });
+
+  it("clears access on network failure during loadMore", async () => {
+    const suppliersPage1 = Array.from({ length: 50 }, (_, i) =>
+      makeSupplier({ id: `sup_${i}`, name: `Supplier ${i}` })
+    );
+    mockFetch.mockImplementation(async (url: string, init?: RequestInit) => {
+      if (url.includes("/stats")) {
+        return {
+          ok: true,
+          json: async () => ({
+            totalSuppliers: 60,
+            ratedCount: 0,
+            avgRating: null,
+            topPerformer: null,
+            needsAttentionCount: 0,
+          }),
+        } as unknown as Response;
+      }
+      if (url.includes("/api/operations/suppliers") && (!init || init.method === "GET" || init.method === undefined)) {
+        const pageMatch = url.match(/page=(\d+)/);
+        const page = pageMatch ? Number(pageMatch[1]) : 1;
+        if (page === 1) {
+          return {
+            ok: true,
+            json: async () => ({
+              suppliers: suppliersPage1,
+              pagination: {
+                page: 1,
+                limit: 50,
+                totalCount: 60,
+                totalPages: 2,
+                hasMore: true,
+              },
+              access: { canRead: true, canWrite: true },
+            }),
+          } as unknown as Response;
+        } else {
+          throw new Error("Network error");
+        }
+      }
+      return { ok: false, status: 404, json: async () => ({}) } as unknown as Response;
+    });
+
+    render(<SuppliersPage />);
+    await waitFor(() => expect(screen.getByText("Supplier 0")).toBeInTheDocument());
+
+    expect(screen.getByRole("button", { name: /add supplier/i })).toBeInTheDocument();
+
+    const loadMoreBtn = screen.getByRole("button", { name: /load more/i });
+    await userEvent.click(loadMoreBtn);
+
+    await waitFor(() => {
+      expect(toast.error).toHaveBeenCalled();
+    });
+
+    await waitFor(() => {
+      expect(screen.queryByRole("button", { name: /add supplier/i })).not.toBeInTheDocument();
+    });
+  });
+});
+// ─────────────────────────────────────────────────────────────────────────────
+// Phase 4: Deferred stats tests (initial loading + retry pending)
+// ─────────────────────────────────────────────────────────────────────────────
+describe("SuppliersPage — deferred stats tests", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+  afterEach(() => {
+    vi.restoreAllMocks();
+    vi.unstubAllGlobals();
+  });
+
+  it("shows '...' in all 5 stats cards during initial stats loading", async () => {
+    // Mock stats to never resolve (keeps loading=true)
+    mockFetch.mockImplementation(async (url: string) => {
+      if (url.includes("/stats")) {
+        return new Promise<Response>(() => {});
+      }
+      if (url.includes("/api/operations/suppliers")) {
+        return {
+          ok: true,
+          json: async () => ({
+            suppliers: [makeSupplier({ name: "Test Co" })],
+            pagination: {
+              page: 1,
+              limit: 50,
+              totalCount: 1,
+              totalPages: 1,
+              hasMore: false,
+            },
+            access: { canRead: true, canWrite: true },
+          }),
+        } as unknown as Response;
+      }
+      return { ok: false, status: 404, json: async () => ({}) } as unknown as Response;
+    });
+
+    render(<SuppliersPage />);
+
+    // Wait for list to load
+    await waitFor(() => expect(screen.getByText("Test Co")).toBeInTheDocument());
+
+    // Switch to Performance Ratings tab
+    const ratingsTab = screen.getByRole("button", { name: /performance ratings/i });
+    await userEvent.click(ratingsTab);
+
+    // All 4 stats cards should show "..."
+    // Stats cards: Average Rating, Total Rated, Top Performer, Needs Attention
+    await waitFor(() => {
+      const ellipsisElements = screen.getAllByText("...");
+      expect(ellipsisElements.length).toBeGreaterThanOrEqual(4);
+    });
+  });
+
+  it("disables Retry button when stats retry request is pending", async () => {
+    let statsCallCount = 0;
+    mockFetch.mockImplementation(async (url: string) => {
+      if (url.includes("/stats")) {
+        statsCallCount++;
+        if (statsCallCount === 1) {
+          return {
+            ok: false,
+            status: 500,
+            json: async () => ({ error: "Server error" }),
+          } as unknown as Response;
+        }
+        if (statsCallCount === 2) {
+          // Second call never resolves (simulates in-flight retry)
+          return new Promise<Response>(() => {});
+        }
+        return {
+          ok: true,
+          json: async () => ({
+            totalSuppliers: 10,
+            ratedCount: 5,
+            avgRating: 4.5,
+            topPerformer: { id: "sup_1", name: "Top Co", rating: 5 },
+            needsAttentionCount: 2,
+          }),
+        } as unknown as Response;
+      }
+      if (url.includes("/api/operations/suppliers")) {
+        return {
+          ok: true,
+          json: async () => ({
+            suppliers: [makeSupplier({ name: "Test Co" })],
+            pagination: {
+              page: 1,
+              limit: 50,
+              totalCount: 1,
+              totalPages: 1,
+              hasMore: false,
+            },
+            access: { canRead: true, canWrite: true },
+          }),
+        } as unknown as Response;
+      }
+      return { ok: false, status: 404, json: async () => ({}) } as unknown as Response;
+    });
+
+    render(<SuppliersPage />);
+
+    // Wait for list to load
+    await waitFor(() => expect(screen.getByText("Test Co")).toBeInTheDocument());
+
+    // Switch to Performance Ratings tab
+    const ratingsTab = screen.getByRole("button", { name: /performance ratings/i });
+    await userEvent.click(ratingsTab);
+
+    // Wait for stats to fail -> Unavailable appears
+    await waitFor(() => {
+      expect(screen.getAllByText("Unavailable").length).toBeGreaterThan(0);
+    });
+
+    // Find Retry button (text is "Retry Stats" but we search for "Retry" to be safe)
+    const retryBtn = await screen.findByRole("button", { name: /retry/i });
+    expect(retryBtn).not.toBeDisabled();
+    await userEvent.click(retryBtn);
+
+    // Retry button should now be disabled (in-flight)
+    await waitFor(() => {
+      const btn = screen.getByRole("button", { name: /retry/i });
+      expect(btn).toBeDisabled();
+    });
+
+    // Loading text should appear (button shows "Retrying..." or contains spinner)
+    await waitFor(() => {
+      expect(screen.getByText(/retrying/i)).toBeInTheDocument();
+    });
+  });
+});
