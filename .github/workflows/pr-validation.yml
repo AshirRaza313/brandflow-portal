@@ -36,29 +36,57 @@ jobs:
         run: npx tsc --noEmit
 
   lint:
-    name: Lint (informational)
+    name: Lint (changed files only)
     runs-on: ubuntu-latest
     env:
       DATABASE_URL: postgresql://ci:ci@localhost:5432/ci
       DIRECT_DATABASE_URL: postgresql://ci:ci@localhost:5432/ci
       NEXTAUTH_SECRET: ci-dummy-secret-for-build-only-not-real
       NEXTAUTH_URL: http://localhost:3000
-    continue-on-error: true
+    # No continue-on-error: fail if new errors are found in changed files
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # needed for git diff against base
+
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: '20'
           cache: 'npm'
+
       - name: Clean install
         run: npm ci
+
       - name: Generate Prisma Client
         run: npx prisma generate
-      - name: Lint
-        run: npm run lint
-      - name: Upload lint report
+
+      - name: Get changed files
+        id: changed-files
+        uses: tj-actions/changed-files@v44
+        with:
+          files: |
+            **/*.ts
+            **/*.tsx
+          files_ignore: |
+            **/*.test.ts
+            **/*.test.tsx
+            **/__tests__/**
+            **/*.d.ts
+          separator: ' '
+
+      - name: Run ESLint on changed files
+        if: steps.changed-files.outputs.any_changed == 'true'
+        run: |
+          echo "Changed files: ${{ steps.changed-files.outputs.all_changed_files }}"
+          npx eslint ${{ steps.changed-files.outputs.all_changed_files }} --max-warnings=0
+
+      - name: No changed files to lint
+        if: steps.changed-files.outputs.any_changed != 'true'
+        run: echo "No changed TypeScript files to lint."
+
+      - name: Upload lint report (if any)
         if: always()
         uses: actions/upload-artifact@v4
         with:
