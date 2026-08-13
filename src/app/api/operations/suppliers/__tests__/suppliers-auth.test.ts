@@ -94,6 +94,15 @@ const dbMocks = vi.hoisted(() => {
     if (where.id !== undefined && supplier.id !== where.id) return false;
     if (where.status !== undefined && supplier.status !== where.status)
       return false;
+    // Handle rating filter: { not: null } and { not: null, lt: N }
+    if (where.rating !== undefined && typeof where.rating === "object") {
+      const ratingFilter = where.rating as { not?: null; lt?: number };
+      if (ratingFilter.not === null && supplier.rating === null) return false;
+      if (ratingFilter.lt !== undefined) {
+        if (supplier.rating === null) return false;
+        if (supplier.rating >= ratingFilter.lt) return false;
+      }
+    }
     return true;
   };
 
@@ -108,11 +117,32 @@ const dbMocks = vi.hoisted(() => {
       async ({
         where,
         select,
+        orderBy,
       }: {
         where: Record<string, unknown>;
         select?: Record<string, boolean>;
+        orderBy?: Record<string, "asc" | "desc">;
       }) => {
-        const found = testState.suppliers.find((s) => matchesWhere(s, where));
+        let filtered = testState.suppliers.filter((s) => matchesWhere(s, where));
+        // Handle orderBy: { rating: "desc", updatedAt: "desc" }
+        if (orderBy) {
+          filtered.sort((a, b) => {
+            for (const [field, dir] of Object.entries(orderBy)) {
+              const aVal = (a as unknown as Record<string, unknown>)[field];
+              const bVal = (b as unknown as Record<string, unknown>)[field];
+              if (aVal === bVal) continue;
+              // null sorts last in desc, first in asc
+              if (aVal === null) return dir === "desc" ? 1 : -1;
+              if (bVal === null) return dir === "desc" ? -1 : 1;
+              if (dir === "desc") {
+                return (bVal as number) - (aVal as number);
+              }
+              return (aVal as number) - (bVal as number);
+            }
+            return 0;
+          });
+        }
+        const found = filtered[0];
         if (!found) return null;
         if (select) {
           const picked: Record<string, unknown> = {};
@@ -174,7 +204,19 @@ const dbMocks = vi.hoisted(() => {
       );
       return { count: before - testState.suppliers.length };
     }),
-    aggregate: vi.fn(async () => ({ _sum: { rating: 0 } })),
+    aggregate: vi.fn(async ({ where }: { where: Record<string, unknown> }) => {
+      const filtered = testState.suppliers.filter((s) => matchesWhere(s, where));
+      const ratings = filtered
+        .map((s) => s.rating)
+        .filter((r): r is number => r !== null);
+      const avg = ratings.length > 0
+        ? ratings.reduce((a, b) => a + b, 0) / ratings.length
+        : null;
+      return {
+        _avg: { rating: avg },
+        _count: { _all: filtered.length },
+      };
+    }),
   };
 
   // ── OrganizationMember mock ──
@@ -272,6 +314,7 @@ import {
   GET as GET_ID,
   PATCH,
 } from "@/app/api/operations/suppliers/[id]/route";
+import { GET as GET_STATS } from "@/app/api/operations/suppliers/stats/route";
 
 // ─────────────────────────────────────────────────────────────────────────────
 // HELPERS
@@ -624,5 +667,129 @@ describe("Issue #2 — Supplier API authorization (DB-resolved)", () => {
     const res = await GET(getRequest());
     const data = await responseJson(res);
     expect(data.access).toMatchObject({ canRead: true, canWrite: false });
+  });
+
+  // ─────────────────────────────────────────────────────────────────────────
+  // B07 ACTUAL STATS ROUTE TESTS (G04)
+  // Verifies the /api/operations/suppliers/stats endpoint directly,
+  // not just resolveSupplierAccess helper.
+  // ─────────────────────────────────────────────────────────────────────────
+  describe("B07 actual stats route — /api/operations/suppliers/stats", () => {
+    beforeEach(() => {
+      testState.organizationId = "org-a";
+      testState.role = "brand_owner";
+      testState.memberRoleOverride = "brand_owner";
+      testState.memberRemoved = false;
+      testState.memberRoleIdOverride = null;
+      testState.memberRoleOverride = null;
+      testState.roles = {};
+      testState.suppliers.length = 0;
+      vi.clearAllMocks();
+    });
+
+    it("brand_owner can GET stats with correct shape", async () => {
+      testState.role = "brand_owner";
+      testState.memberRoleOverride = "brand_owner";
+      seedSupplier("org-a", { name: "Sup 1", rating: 4 });
+      seedSupplier("org-a", { name: "Sup 2", rating: 5 });
+      seedSupplier("org-a", { name: "Sup 3", rating: null });
+
+      const res = await GET_STATS(getRequest("/stats"));
+      expect(res.status).toBe(200);
+      const data = await responseJson(res);
+
+      expect(data.totalSuppliers).toBe(3);
+      expect(data.ratedCount).toBe(2);
+      expect(data.avgRating).toBe(4.5);
+      expect(data.topPerformer).toMatchObject({ name: "Sup 2", rating: 5 });
+      expect(data.needsAttentionCount).toBe(0);
+      expect(data.access).toMatchObject({ canRead: true, canWrite: true });
+    });
+
+    it("viewer can GET stats (read-only access)", async () => {
+      testState.role = "viewer";
+      testState.memberRoleOverride = "viewer";
+      seedSupplier("org-a", { name: "Sup 1", rating: 4 });
+
+      const res = await GET_STATS(getRequest("/stats"));
+      expect(res.status).toBe(200);
+      const data = await responseJson(res);
+      expect(data.access).toMatchObject({ canRead: true, canWrite: false });
+    });
+
+    it("returns null avgRating when no rated suppliers exist", async () => {
+      seedSupplier("org-a", { name: "Sup 1", rating: null });
+      seedSupplier("org-a", { name: "Sup 2", rating: null });
+
+      const res = await GET_STATS(getRequest("/stats"));
+      expect(res.status).toBe(200);
+      const data = await responseJson(res);
+
+      expect(data.totalSuppliers).toBe(2);
+      expect(data.ratedCount).toBe(0);
+      expect(data.avgRating).toBeNull();
+      expect(data.topPerformer).toBeNull();
+      expect(data.needsAttentionCount).toBe(0);
+    });
+
+    it("counts needsAttention when ratings below 3", async () => {
+      seedSupplier("org-a", { name: "Sup 1", rating: 1 });
+      seedSupplier("org-a", { name: "Sup 2", rating: 2 });
+      seedSupplier("org-a", { name: "Sup 3", rating: 5 });
+
+      const res = await GET_STATS(getRequest("/stats"));
+      expect(res.status).toBe(200);
+      const data = await responseJson(res);
+
+      expect(data.totalSuppliers).toBe(3);
+      expect(data.ratedCount).toBe(3);
+      expect(data.needsAttentionCount).toBe(2);
+      expect(data.topPerformer).toMatchObject({ name: "Sup 3", rating: 5 });
+    });
+
+    it("returns 403 when membership removed", async () => {
+      testState.memberRemoved = true;
+      seedSupplier("org-a", { name: "Sup 1", rating: 4 });
+
+      const res = await GET_STATS(getRequest("/stats"));
+      expect(res.status).toBe(403);
+      const data = await responseJson(res);
+      expect(data.error).toBeDefined();
+    });
+
+    it("returns 403 when no organizationId in session", async () => {
+      testState.organizationId = undefined;
+      seedSupplier("org-a", { name: "Sup 1", rating: 4 });
+
+      const res = await GET_STATS(getRequest("/stats"));
+      expect(res.status).toBe(403);
+    });
+
+    it("only counts suppliers from user's organization (org isolation)", async () => {
+      seedSupplier("org-a", { name: "My Sup", rating: 4 });
+      seedSupplier("org-b", { name: "Other Sup", rating: 5 });
+
+      const res = await GET_STATS(getRequest("/stats"));
+      expect(res.status).toBe(200);
+      const data = await responseJson(res);
+
+      expect(data.totalSuppliers).toBe(1);
+      expect(data.ratedCount).toBe(1);
+      expect(data.avgRating).toBe(4);
+      expect(data.topPerformer).toMatchObject({ name: "My Sup", rating: 4 });
+    });
+
+    it("returns topPerformer with highest rating (ties broken by updatedAt)", async () => {
+      const older = seedSupplier("org-a", { name: "Older Sup", rating: 5 });
+      older.updatedAt = new Date("2024-01-01");
+      const newer = seedSupplier("org-a", { name: "Newer Sup", rating: 5 });
+      newer.updatedAt = new Date("2024-06-01");
+
+      const res = await GET_STATS(getRequest("/stats"));
+      expect(res.status).toBe(200);
+      const data = await responseJson(res);
+
+      expect(data.topPerformer).toMatchObject({ name: "Newer Sup", rating: 5 });
+    });
   });
 });

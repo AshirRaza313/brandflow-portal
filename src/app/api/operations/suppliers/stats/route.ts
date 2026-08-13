@@ -13,7 +13,7 @@ import { NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { withAuth } from "@/lib/auth-middleware";
 import { withRateLimit } from "@/lib/rate-limit";
-import { resolveSupplierAccess } from "@/lib/supplier-access";
+import { resolveSupplierAccess, type SupplierStatsResponse } from "@/lib/supplier-access";
 import logger from "@/lib/logger";
 
 export const GET = withRateLimit(
@@ -47,17 +47,20 @@ export const GET = withRateLimit(
         }),
       ]);
 
-      return NextResponse.json({
+            const response: SupplierStatsResponse = {
         totalSuppliers: total,
         ratedCount: ratedAgg._count._all,
-        avgRating: ratedAgg._avg.rating ?? 0,
+        // Return null (not 0) when no rated suppliers exist.
+        // UI uses null to render "Not Rated" badge correctly.
+        avgRating: ratedAgg._avg.rating ?? null,
         topPerformer,
         needsAttentionCount: needsAttention,
         access: {
           canRead: access.canReadSuppliers,
           canWrite: access.canWriteSuppliers,
         },
-      });
+      };
+      return NextResponse.json(response);
     } catch (error: unknown) {
       logger.error("Supplier stats API error", error, {
         orgId: authCtx?.organizationId,

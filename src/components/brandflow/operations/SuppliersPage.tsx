@@ -1,5 +1,5 @@
 "use client";
-
+import type { SupplierStatsResponse } from "@/lib/supplier-access";
 import { useEffect, useState, useCallback } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -38,17 +38,6 @@ interface Supplier {
 // ─────────────────────────────────────────────────────────────────────────────
 // G07: aligned with SupplierStatsResponse from src/lib/supplier-access.ts.
 // avgRating and topPerformer.rating are tri-state (null when no rated suppliers).
-interface SupplierStats {
-  totalSuppliers: number;
-  ratedCount: number;
-  avgRating: number | null;
-  topPerformer: {
-    id: string;
-    name: string;
-    rating: number | null;
-  } | null;
-  needsAttentionCount: number;
-}
 
 
 // Inline star rating — matches ReviewsPage convention (fill-amber-400) with
@@ -238,8 +227,8 @@ function SupplierSkeleton({ isDark }: { isDark: boolean }) {
 
 export function SuppliersPage() {
   const [createOpen, setCreateOpen] = useState(false);
+    const [stats, setStats] = useState<SupplierStatsResponse | null>(null);
   const [suppliers, setSuppliers] = useState<Supplier[]>([]);
-    const [stats, setStats] = useState<SupplierStats | null>(null);
   // True when stats fetch failed (403/404/500/network). UI must NOT silently
   // show 0/"-" as if those were genuine values — show an Unavailable state instead.
   const [statsError, setStatsError] = useState(false);
