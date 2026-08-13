@@ -628,7 +628,7 @@ describe("SuppliersPage — pagination boundaries", () => {
       const data = pages[page - 1] ?? [];
       return new Response(
         JSON.stringify({
-          data,
+          suppliers: data,
           pagination: {
             page,
             limit: 50,

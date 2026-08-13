@@ -398,13 +398,12 @@ describe("suppliers API — list (GET)", () => {
 
     expect(response.status).toBe(200);
     expect(data.suppliers).toEqual([]);
-    expect(data.stats).toMatchObject({
-      total: 0,
-      active: 0,
-      inactive: 0,
-      blacklisted: 0,
-      ratedCount: 0,
-      averageRating: null,
+    // Issue #4: stats now live at /api/operations/suppliers/stats (separate endpoint)
+    expect(data.access).toMatchObject({ canRead: true, canWrite: true });
+    expect(data.pagination).toMatchObject({
+      page: 1,
+      totalCount: 0,
+      hasMore: false,
     });
   });
 
@@ -422,7 +421,9 @@ describe("suppliers API — list (GET)", () => {
     expect(
       (data.suppliers as Array<{ name: string }>).map((s) => s.name),
     ).toEqual(expect.arrayContaining(["Org A Supplier 1", "Org A Supplier 2"]));
-    expect(data.stats).toMatchObject({ total: 2 });
+    // Issue #4: list endpoint no longer returns stats; verify via pagination.totalCount
+    expect(data.pagination).toMatchObject({ totalCount: 2 });
+    expect(data.access).toMatchObject({ canRead: true, canWrite: true });
   });
 
   it("rejects platform session without organization context", async () => {
@@ -536,14 +537,23 @@ describe("suppliers API — list (GET)", () => {
     const data = await responseJson(response);
 
     expect(response.status).toBe(200);
-    expect(data.stats).toMatchObject({
-      total: 4,
-      active: 3,
-      inactive: 1,
-      blacklisted: 0,
-      ratedCount: 3, // A, B, D (C is null)
-      averageRating: 4, // (4 + 5 + 3) / 3 = 4
-    });
+    // Issue #4: stats now live at /api/operations/suppliers/stats (separate endpoint).
+    // List endpoint returns suppliers with their ratings intact — verify here.
+    const list = data.suppliers as Array<{
+      name: string;
+      rating: number | null;
+      status: string;
+    }>;
+    expect(list.length).toBe(4);
+    expect(list.map((s) => s.rating).sort((a, b) => {
+      if (a === null) return 1;
+      if (b === null) return -1;
+      return a - b;
+    })).toEqual([3, 4, 5, null]);
+    expect(list.filter((s) => s.status === "active").length).toBe(3);
+    expect(list.filter((s) => s.status === "inactive").length).toBe(1);
+    expect(data.pagination).toMatchObject({ totalCount: 4 });
+    expect(data.access).toMatchObject({ canRead: true, canWrite: true });
   });
 });
 
