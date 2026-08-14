@@ -25,7 +25,7 @@ import {
   createSupplierSchema,
   suppliersQuerySchema,
 } from "@/lib/supplier-store";
-import { resolveSupplierAccess } from "@/lib/supplier-access";
+import { resolveSupplierAccess, type SupplierListResponse } from "@/lib/supplier-access";
 
 // ─────────────────────────────────────────────────────────────────────────────
 // GET /api/operations/suppliers
@@ -81,7 +81,11 @@ export const GET = withRateLimit(
 
       const skip = (page - 1) * limit;
 
-      const { suppliers, stats, totalCount } = await withRetry(async () => {
+      // Issue #4: List API contract — GET returns EXACTLY SupplierListResponse.
+      // `stats` was removed because it is not part of SupplierListResponse and
+      // the UI fetches aggregates separately from /api/operations/suppliers/stats.
+      // This also removes 6 redundant count/aggregate queries per GET request.
+      const { suppliers, totalCount } = await withRetry(async () => {
         const [list, count] = await Promise.all([
           db.supplier.findMany({
             where,
@@ -91,57 +95,11 @@ export const GET = withRateLimit(
           }),
           db.supplier.count({ where }),
         ]);
-
-        const [total, active, inactive, blacklisted, ratedCount, ratingSum] =
-          await Promise.all([
-            db.supplier.count({ where: { organizationId: orgId } }),
-            db.supplier.count({
-              where: { organizationId: orgId, status: "active" },
-            }),
-            db.supplier.count({
-              where: { organizationId: orgId, status: "inactive" },
-            }),
-            db.supplier.count({
-              where: { organizationId: orgId, status: "blacklisted" },
-            }),
-            db.supplier.count({
-              where: {
-                organizationId: orgId,
-                rating: { not: null },
-              },
-            }),
-            db.supplier.aggregate({
-              where: {
-                organizationId: orgId,
-                rating: { not: null },
-              },
-              _sum: { rating: true },
-            }),
-          ]);
-
-        const averageRating =
-          ratedCount > 0 ? (ratingSum._sum.rating ?? 0) / ratedCount : null;
-
-        return {
-          suppliers: list,
-          stats: {
-            total,
-            active,
-            inactive,
-            blacklisted,
-            ratedCount,
-            averageRating:
-              averageRating !== null
-                ? Math.round(averageRating * 100) / 100
-                : null,
-          },
-          totalCount: count,
-        };
+        return { suppliers: list, totalCount: count };
       }, 2, 500);
 
-      return NextResponse.json({
+      const response: SupplierListResponse = {
         suppliers,
-        stats,
         pagination: {
           page,
           limit,
@@ -155,7 +113,8 @@ export const GET = withRateLimit(
           canRead: access.canReadSuppliers,
           canWrite: access.canWriteSuppliers,
         },
-      });
+      };
+      return NextResponse.json(response);
     } catch (error: unknown) {
       logger.error("Suppliers API error", error, {
         orgId: authCtx?.organizationId,

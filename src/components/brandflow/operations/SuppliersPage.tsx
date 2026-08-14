@@ -1,5 +1,8 @@
 "use client";
-import type { SupplierStatsResponse } from "@/lib/supplier-access";
+import type {
+  SupplierListResponse,
+  SupplierStatsResponse,
+} from "@/lib/supplier-access";
 import { useEffect, useState, useCallback } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -14,8 +17,10 @@ import { useValtrioxStore } from "@/store/brandflow-store";
 import { cn } from "@/lib/utils";
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Supplier interface — MUST match API response (Prisma Supplier model)
-// Field names match the Prisma schema exactly: email (not contactEmail)
+// Supplier interface — derived from the API contract (SupplierListResponse).
+// `suppliers` is typed as `unknown[]` on the server (intentional, since the
+// route is shared across org-scoped queries), so the client narrows here.
+// Field names match the Prisma schema exactly: email (not contactEmail).
 // ─────────────────────────────────────────────────────────────────────────────
 interface Supplier {
   id: string;
@@ -30,6 +35,13 @@ interface Supplier {
   rating: number | null; // 1-5 or null (unrated) — matches API tri-state
   createdAt: string;
   updatedAt?: string;
+}
+
+// Shape returned by POST/PATCH (single supplier + access).
+// Kept local because the server does not export this yet.
+interface SupplierMutationResponse {
+  supplier: Supplier;
+  access: { canRead: boolean; canWrite: boolean };
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -117,66 +129,50 @@ function getStatusBadge(status: string | undefined | null, isDark: boolean) {
 
 const PAGE_SIZE = 50; // API enforces max 100; 50 keeps initial load snappy
 
-// Tolerant of 3 API response shapes (nested pagination object, flat, or legacy just-data).
-// C02: hasMore is computed page-based (page < totalPages) when available,
-// falling back to API-provided hasMore, then to legacy data.length < total.
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-function normalizePagination(json: any): {
+// Issue #4: List API contract — typed against SupplierListResponse.
+// The route now returns EXACTLY that shape, so we no longer need `any`
+// or legacy-shape tolerance. If the response is malformed we fail closed
+// (empty data, hasMore=false, access=null) so the UI never silently
+// renders stale permission flags.
+function normalizePagination(
+  json: Partial<SupplierListResponse> | null | undefined,
+): {
   data: Supplier[];
   total: number | null;
   hasMore: boolean;
   access: { canRead: boolean; canWrite: boolean } | null;
 } {
-  const data: Supplier[] = Array.isArray(json?.suppliers)
-    ? json.suppliers
-    : Array.isArray(json?.data)
-      ? json.data
-      : [];
+  const rawSuppliers = json?.suppliers;
+  const data: Supplier[] = Array.isArray(rawSuppliers)
+    ? (rawSuppliers as Supplier[])
+    : [];
 
   const p = json?.pagination;
-  const total = typeof p?.totalCount === "number"
-    ? p.totalCount
-    : typeof p?.total === "number"
-      ? p.total
-      : typeof json?.totalCount === "number"
-        ? json.totalCount
-        : typeof json?.total === "number"
-          ? json.total
-          : null;
+  const total = typeof p?.totalCount === "number" ? p.totalCount : null;
+  const totalPages = typeof p?.totalPages === "number" ? p.totalPages : null;
+  const currentPage = typeof p?.page === "number" ? p.page : 1;
 
-  const totalPages = typeof p?.totalPages === "number"
-    ? p.totalPages
-    : null;
-  const currentPage = typeof p?.page === "number"
-    ? p.page
-    : typeof json?.page === "number"
-      ? json.page
-      : 1;
-
-  // C02 fix: page-based termination is the primary signal.
+  // C02: page-based termination is the primary signal.
   // 1. Prefer API-provided hasMore (computed server-side as page < totalPages).
   // 2. Fall back to local page < totalPages computation (defensive).
-  // 3. Legacy fallback: data.length < total (kept for backward compat).
-  // 4. Default: false (no more pages).
-  const hasMore = typeof p?.hasMore === "boolean"
-    ? p.hasMore
-    : typeof json?.hasMore === "boolean"
-      ? json.hasMore
+  // 3. Default: false (no more pages).
+  const hasMore =
+    typeof p?.hasMore === "boolean"
+      ? p.hasMore
       : totalPages !== null
         ? currentPage < totalPages
-        : total !== null
-          ? data.length < total
-          : false;
+        : false;
 
   // Server returns access: { canRead, canWrite } alongside the list.
   // This is the authoritative source for write permission (replaces hardcoded WRITE_ROLES).
   const accessRaw = json?.access;
-  const access = accessRaw && typeof accessRaw === "object"
-    ? {
-        canRead: Boolean(accessRaw.canRead),
-        canWrite: Boolean(accessRaw.canWrite),
-      }
-    : null;
+  const access =
+    accessRaw && typeof accessRaw === "object"
+      ? {
+          canRead: Boolean(accessRaw.canRead),
+          canWrite: Boolean(accessRaw.canWrite),
+        }
+      : null;
 
   return { data, total, hasMore, access };
 }
@@ -273,10 +269,11 @@ export function SuppliersPage() {
     try {
       const res = await fetch(`/api/operations/suppliers?page=1&limit=${PAGE_SIZE}`, { cache: "no-store" });
       if (!res.ok) {
-        const body = await res.json().catch(() => ({}));
+        const body = (await res.json().catch(() => ({}))) as { error?: string };
         throw new Error(body?.error || `Request failed (${res.status})`);
       }
-      const json = await res.json();
+      // Issue #4: typed against SupplierListResponse (no more implicit any).
+      const json = (await res.json()) as SupplierListResponse;
       const { data, total, hasMore: more, access: accessFromServer } = normalizePagination(json);
       setSuppliers(data);
       setTotalCount(total);
@@ -299,10 +296,11 @@ export function SuppliersPage() {
       if (!res.ok) {
         // FAIL-CLOSED: clear access on ANY failure status
         setAccess(null);
-        const body = await res.json().catch(() => ({}));
+        const body = (await res.json().catch(() => ({}))) as { error?: string };
         throw new Error(body?.error || `Request failed (${res.status})`);
       }
-      const json = await res.json();
+      // Issue #4: typed against SupplierListResponse (no more implicit any).
+      const json = (await res.json()) as SupplierListResponse;
       const { data, hasMore: more, access: accessFromServer } = normalizePagination(json);
       setSuppliers(prev => {
         const ids = new Set(prev.map(s => s.id));
@@ -338,7 +336,8 @@ export function SuppliersPage() {
         setStatsError(true);
         return;
       }
-      const json = await res.json();
+      // Issue #4: typed against SupplierStatsResponse (no more implicit any).
+      const json = (await res.json()) as SupplierStatsResponse;
       setStats(json ?? null);
       setStatsError(false);
     } catch (error: unknown) {
@@ -401,10 +400,11 @@ export function SuppliersPage() {
         }),
       });
       if (!res.ok) {
-        const body = await res.json().catch(() => ({}));
+        const body = (await res.json().catch(() => ({}))) as { error?: string };
         throw new Error(body?.error || `Failed to create (${res.status})`);
       }
-      const json = await res.json();
+      // Issue #4: typed against SupplierMutationResponse (no more implicit any).
+      const json = (await res.json()) as SupplierMutationResponse;
       // POST returns { supplier: {...} } — unwrap it
       const created: Supplier = json.supplier;
       setSuppliers(prev => [created, ...prev]);
@@ -440,10 +440,11 @@ export function SuppliersPage() {
         body: JSON.stringify({ rating }),
       });
       if (!res.ok) {
-        const body = await res.json().catch(() => ({}));
+        const body = (await res.json().catch(() => ({}))) as { error?: string };
         throw new Error(body?.error || `Failed to update (${res.status})`);
       }
-      const json = await res.json();
+      // Issue #4: typed against SupplierMutationResponse (no more implicit any).
+      const json = (await res.json()) as SupplierMutationResponse;
       // PATCH returns { supplier: {...} } — unwrap it
       const updated: Supplier = json.supplier;
       setSuppliers(prev => prev.map(s => s.id === id ? updated : s));
@@ -471,7 +472,7 @@ export function SuppliersPage() {
     try {
       const res = await fetch(`/api/operations/suppliers/${id}`, { method: "DELETE" });
       if (!res.ok) {
-        const body = await res.json().catch(() => ({}));
+        const body = (await res.json().catch(() => ({}))) as { error?: string };
         throw new Error(body?.error || `Failed to delete (${res.status})`);
       }
       setSuppliers(prev => prev.filter(s => s.id !== id));

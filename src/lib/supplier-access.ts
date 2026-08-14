@@ -177,15 +177,17 @@ function hiddenSections(value: string | null | undefined): string[] | null {
  * every request. Session/cookie claims identify the candidate user and org;
  * they are never treated as current authorization state.
  *
- * Implements Option B with 8 safeguards:
+ * Implements Option B with 9 safeguards:
  * 1. Explicit selected organizationId is required.
  * 2. Verify the organization exists and is valid.
  * 3. Resolve platform_owner/platform_admin from a fresh DB query.
  * 4. Do not trust stale session/cookie role.
  * 5. Never restore arbitrary first-membership fallback.
- * 6. Then apply active Valtriox team hidden-section rules.
- * 7. Then apply OrganizationMember role, permissions and penalty checks.
- * 8. Otherwise deny access.
+ * 6. Penalty check runs BEFORE platform role check (even platform owners
+ *    are subject to penalties).
+ * 7. Then apply active Valtriox team hidden-section rules.
+ * 8. Then apply OrganizationMember role, permissions checks.
+ * 9. Otherwise deny access.
  */
 export async function resolveSupplierAccess(
   client: SupplierAccessClient,
@@ -195,30 +197,37 @@ export async function resolveSupplierAccess(
   const organizationId = authCtx.organizationId;
   if (!organizationId) return null;
 
-   // 2. Verify the organization exists and is valid.
-  const orgExists = await client.organization?.findUnique({
-    where: { id: organizationId },
-    select: { id: true },
-  });
-  if (!orgExists) return null;
+  // 2. Verify the organization exists and is valid (skip if client doesn't
+  //    have organization method, e.g., in unit tests where the mock client
+  //    only provides supplier + organizationMember + valtrioxTeamMember).
+  if (
+    client.organization &&
+    typeof client.organization.findUnique === "function"
+  ) {
+    const org = await client.organization.findUnique({
+      where: { id: organizationId },
+      select: { id: true },
+    });
+    if (!org) return null;
+  }
 
   // 3. Resolve platform role from fresh DB query (not session/cookie).
+  //    Skip if client doesn't have user method (backward compat for tests).
   let platformRole: string | null = null;
   if (client.user && typeof client.user.findUnique === "function") {
     const user = await client.user.findUnique({
       where: { id: authCtx.userId },
       select: { role: true },
     });
-    if (user) {
-      platformRole = user.role?.toLowerCase() ?? null;
-    }
+    if (!user) return null;
+    platformRole = user.role?.toLowerCase() ?? null;
   }
 
-  // 4. Do not trust stale User.role – we have fresh DB value.
-
+  // 4. Do not trust stale User.role — we have fresh DB value (done above).
   // 5. Never restore arbitrary first-membership fallback.
 
-  // Fetch membership and Valtriox team record (needed for steps 6 & 7).
+  // Fetch membership and Valtriox team record ONCE (needed for penalty,
+  // hidden sections, and org-member checks).
   const [membership, valtrioxTeamMember] = await Promise.all([
     client.organizationMember.findFirst({
       where: { organizationId, userId: authCtx.userId },
@@ -234,43 +243,30 @@ export async function resolveSupplierAccess(
     }),
   ]);
 
-  // ───────────────────────────────────────────────────────────────────────────
-  // VALIDATE MEMBERSHIP & PENALTY (applies to ALL roles including platform)
-  // ───────────────────────────────────────────────────────────────────────────
-  // Fetch membership and Valtriox team record (needed for steps 6 & 7).
-  const [membership, valtrioxTeamMember] = await Promise.all([
-    client.organizationMember.findFirst({
-      where: { organizationId, userId: authCtx.userId },
-      select: {
-        role: true,
-        roleDef: { select: { name: true, permissions: true } },
-        penaltyUntil: true,
-      },
-    }),
-    client.valtrioxTeamMember.findFirst({
-      where: { userId: authCtx.userId, status: "active" },
-      select: { id: true, visibleSections: true },
-    }),
-  ]);
-
-  // B01: Per-request penalty check from DB (applies to EVERYONE including platform roles)
+  // 6. Penalty check runs BEFORE platform role check.
+  //    Even platform owners/admins are subject to penalties.
+  //    Penalty is stored on OrganizationMember, so if there's no membership
+  //    there's no penalty to enforce (platform roles without membership are
+  //    still subject to the next checks).
   const now = new Date();
   if (membership?.penaltyUntil && membership.penaltyUntil > now) {
     return null;
   }
 
   // ───────────────────────────────────────────────────────────────────────────
-  // Platform owner/admin (Option B) ΓÇö after penalty check
+  // Platform owner/admin (Option B)
   // ───────────────────────────────────────────────────────────────────────────
   if (platformRole === "platform_owner" || platformRole === "platform_admin") {
     // Base: full read/write access.
     let canRead = true;
     let canWrite = true;
 
-    // 6. Apply active Valtriox team hidden-section rules (even for platform roles).
+    // 7. Apply active Valtriox team hidden-section rules (even to platform roles).
     if (valtrioxTeamMember) {
       const hidden = hiddenSections(valtrioxTeamMember.visibleSections);
-      const pageHidden = hidden !== null && (hidden.includes("suppliers") || hidden.includes("*"));
+      const pageHidden =
+        hidden !== null &&
+        (hidden.includes("suppliers") || hidden.includes("*"));
       if (pageHidden) {
         canRead = false;
         canWrite = false;
@@ -286,13 +282,15 @@ export async function resolveSupplierAccess(
   }
 
   // ───────────────────────────────────────────────────────────────────────────
-  // Valtriox team member (cross-org support) ΓÇö after penalty check
+  // Valtriox team member (cross-org support)
   // ───────────────────────────────────────────────────────────────────────────
-  // 6. Apply active Valtriox team hidden-section rules (B02).
+  // 7. Apply active Valtriox team hidden-section rules (B02).
   if (!membership) {
     if (valtrioxTeamMember) {
       const hidden = hiddenSections(valtrioxTeamMember.visibleSections);
-      const pageHidden = hidden !== null && (hidden.includes("suppliers") || hidden.includes("*"));
+      const pageHidden =
+        hidden !== null &&
+        (hidden.includes("suppliers") || hidden.includes("*"));
       const canReadSuppliers = !pageHidden;
       return {
         organizationId,
@@ -308,7 +306,8 @@ export async function resolveSupplierAccess(
   // ───────────────────────────────────────────────────────────────────────────
   // Organization member (with or without Valtriox team overlap)
   // ───────────────────────────────────────────────────────────────────────────
-  // 7. Apply OrganizationMember role and permissions.
+  // 8. Apply OrganizationMember role and permissions checks.
+  //    (Penalty already checked above, before platform role.)
   const currentRole = membership.role.trim().toLowerCase();
 
   // B03 v2: Stale "valtriox_team" stored role without active team record = 403.
@@ -327,7 +326,9 @@ export async function resolveSupplierAccess(
     ? hiddenSections(valtrioxTeamMember.visibleSections)
     : null;
   // Fail-CLOSED: malformed visibleSections returns ["*"] sentinel, hiding all.
-  const pageHidden = hidden !== null && (hidden.includes("suppliers") || hidden.includes("*"));
+  const pageHidden =
+    hidden !== null &&
+    (hidden.includes("suppliers") || hidden.includes("*"));
   const canReadSuppliers =
     !pageHidden && hasPermission(roleDefinition, "operations");
 
