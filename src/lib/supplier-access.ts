@@ -31,7 +31,7 @@ import {
 // Extended client to include user and organization for platform-role checks.
 export type SupplierAccessClient = Pick<
   PrismaClient,
-  "organizationMember" | "valtrioxTeamMember" | "user" | "organization"
+  "organizationMember" | "valtrioxTeamMember" | "organization"
 >;
 
 export interface SupplierAccess {
@@ -211,20 +211,8 @@ export async function resolveSupplierAccess(
     if (!org) return null;
   }
 
-  // 3. Resolve platform role from fresh DB query (not session/cookie).
-  //    Skip if client doesn't have user method (backward compat for tests).
-  let platformRole: string | null = null;
-  if (client.user && typeof client.user.findUnique === "function") {
-    const user = await client.user.findUnique({
-      where: { id: authCtx.userId },
-      select: { role: true },
-    });
-    if (!user) return null;
-    platformRole = user.role?.toLowerCase() ?? null;
-  }
-
-  // 4. Do not trust stale User.role — we have fresh DB value (done above).
-  // 5. Never restore arbitrary first-membership fallback.
+  // Platform role is now resolved exclusively from ValtrioxTeamMember.role.
+  // User.role is NOT consulted for supplier authorization.
 
   // Fetch membership and Valtriox team record ONCE (needed for penalty,
   // hidden sections, and org-member checks).
@@ -239,7 +227,7 @@ export async function resolveSupplierAccess(
     }),
     client.valtrioxTeamMember.findFirst({
       where: { userId: authCtx.userId, status: "active" },
-      select: { id: true, visibleSections: true },
+      select: { id: true, role: true, visibleSections: true },
     }),
   ]);
 
@@ -254,91 +242,49 @@ export async function resolveSupplierAccess(
   }
 
   // ───────────────────────────────────────────────────────────────────────────
-  // Platform owner/admin (Option B)
+  // Valtriox team member (canonical platform role from VTM.role)
   // ───────────────────────────────────────────────────────────────────────────
-  if (platformRole === "platform_owner" || platformRole === "platform_admin") {
-    // B-fix v2: Platform roles REQUIRE active Valtriox team membership.
-    // Without this, deactivation/deletion of ValtrioxTeamMember record
-    // would not revoke platform access (User.role is not synced by those flows).
-    if (!valtrioxTeamMember) {
-      return null;
-    }
-
-    // Base: full read/write access.
-    let canRead = true;
-    let canWrite = true;
-
-    // 7. Apply active Valtriox team hidden-section rules (even to platform roles).
+  // VTM.role is now the ONLY source of platform role truth.
+  // User.role is NOT used for supplier authorization.
+  if (valtrioxTeamMember) {
+    const vtmRole = (valtrioxTeamMember.role || "").toLowerCase();
+    const roleDefinition = getRoleByName(vtmRole);
     const hidden = hiddenSections(valtrioxTeamMember.visibleSections);
     const pageHidden =
       hidden !== null &&
       (hidden.includes("suppliers") || hidden.includes("*"));
-    if (pageHidden) {
-      canRead = false;
-      canWrite = false;
-    }
+    const canReadSuppliers =
+      !pageHidden && hasPermission(roleDefinition ?? null, "operations");
+    const canWriteSuppliers =
+      canReadSuppliers && !isReadOnlyRole(vtmRole);
 
     return {
       organizationId,
-      effectiveRole: platformRole,
-      canReadSuppliers: canRead,
-      canWriteSuppliers: canWrite,
+      effectiveRole: vtmRole,
+      canReadSuppliers,
+      canWriteSuppliers,
     };
   }
 
-  // ───────────────────────────────────────────────────────────────────────────
-  // Valtriox team member (cross-org support)
-  // ───────────────────────────────────────────────────────────────────────────
-  // 7. Apply active Valtriox team hidden-section rules (B02).
+  // No VTM record => platform access impossible. Fall through to membership logic.
   if (!membership) {
-    if (valtrioxTeamMember) {
-      const hidden = hiddenSections(valtrioxTeamMember.visibleSections);
-      const pageHidden =
-        hidden !== null &&
-        (hidden.includes("suppliers") || hidden.includes("*"));
-      const canReadSuppliers = !pageHidden;
-      return {
-        organizationId,
-        effectiveRole: "valtriox_team",
-        canReadSuppliers,
-        canWriteSuppliers: canReadSuppliers,
-      };
-    }
-    // No membership and no Valtriox team record => deny.
     return null;
   }
 
   // ───────────────────────────────────────────────────────────────────────────
-  // Organization member (with or without Valtriox team overlap)
+  // Organization member (no Valtriox team overlap)
   // ───────────────────────────────────────────────────────────────────────────
   // 8. Apply OrganizationMember role and permissions checks.
-  //    (Penalty already checked above, before platform role.)
   const currentRole = membership.role.trim().toLowerCase();
 
   // B03 v2: Stale "valtriox_team" stored role without active team record = 403.
-  if (currentRole === "valtriox_team" && !valtrioxTeamMember) {
+  if (currentRole === "valtriox_team") {
     return null;
   }
 
-  // VTM takes precedence over org membership when both exist:
-  // the user is both an org member AND a Valtriox team member, so they
-  // get team-level access with hidden sections applied (B04 semantics).
-  const effectiveRole = valtrioxTeamMember
-    ? "valtriox_team"
-    : LEGACY_ROLE_MAP[currentRole] || currentRole;
-  const roleDefinition = resolveRoleDefinition(
-    effectiveRole,
-    valtrioxTeamMember ? null : membership.roleDef,
-  );
-  const hidden = valtrioxTeamMember
-    ? hiddenSections(valtrioxTeamMember.visibleSections)
-    : null;
-  // Fail-CLOSED: malformed visibleSections returns ["*"] sentinel, hiding all.
-  const pageHidden =
-    hidden !== null &&
-    (hidden.includes("suppliers") || hidden.includes("*"));
-  const canReadSuppliers =
-    !pageHidden && hasPermission(roleDefinition, "operations");
+  const effectiveRole = LEGACY_ROLE_MAP[currentRole] || currentRole;
+  const roleDefinition = resolveRoleDefinition(effectiveRole, membership.roleDef);
+  const canReadSuppliers = hasPermission(roleDefinition, "operations");
 
   return {
     organizationId,

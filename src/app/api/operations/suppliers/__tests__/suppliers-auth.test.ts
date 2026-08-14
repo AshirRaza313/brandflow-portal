@@ -68,6 +68,8 @@ const testState = vi.hoisted(() => ({
   role: "brand_owner",
   /** User.role from database (for platform role tests). */
   userRole: null as string | null,
+  /** Canonical ValtrioxTeamMember.role for platform role tests. */
+  vtmRole: "platform_admin" as string,
   /** If false, organization.findUnique returns null. */
   orgExists: true,
   /** If set, OrganizationMember.findFirst returns null (simulates removal). */
@@ -266,7 +268,7 @@ const dbMocks = vi.hoisted(() => {
   //   where: { userId, status: "active" }, select: { id, visibleSections }
     const valtrioxTeamMember = {
     findFirst: vi.fn(
-      async (): Promise<{ id: string; visibleSections: string } | null> => null,
+      async (): Promise<{ id: string; role: string; visibleSections: string } | null> => null,
     ),
   };
 
@@ -424,6 +426,7 @@ describe("Issue #2 — Supplier API authorization (DB-resolved)", () => {
     testState.memberRoleIdOverride = null;
     testState.roles = {};
     testState.penaltyUntil = null;
+    testState.vtmRole = "platform_admin";
     testState.suppliers.length = 0;
     vi.clearAllMocks();
   });
@@ -807,6 +810,7 @@ describe("Issue #2 — Supplier API authorization (DB-resolved)", () => {
       testState.organizationId = "org-a";
       testState.role = "brand_owner";
       testState.userRole = null; // default: no platform role
+      testState.vtmRole = "platform_admin";
       testState.orgExists = true;
       testState.memberRemoved = false;
       testState.memberRoleOverride = null;
@@ -821,6 +825,7 @@ describe("Issue #2 — Supplier API authorization (DB-resolved)", () => {
       // inactive/missing scenarios (e.g. test #7).
       dbMocks.valtrioxTeamMember.findFirst.mockResolvedValue({
         id: "vt-default",
+        role: testState.vtmRole,
         visibleSections: JSON.stringify([]),
       });
     });
@@ -873,6 +878,7 @@ describe("Issue #2 — Supplier API authorization (DB-resolved)", () => {
       const mockVt = dbMocks.valtrioxTeamMember;
       mockVt.findFirst.mockImplementation(async () => ({
         id: "vt-1",
+        role: testState.vtmRole,
         visibleSections: JSON.stringify(["suppliers"]),
       }));
 
@@ -906,10 +912,9 @@ describe("Issue #2 — Supplier API authorization (DB-resolved)", () => {
 
     it("7. inactive Valtriox team record: platform role DENIED (fail-closed revocation)", async () => {
       testState.userRole = "platform_owner";
-      testState.memberRoleOverride = "brand_owner";
+      testState.memberRoleOverride = "content_creator"; // no operations permission
 
       // Valtriox team member exists but status is NOT "active" (so findFirst returns null).
-      // B-fix v2: Platform roles REQUIRE active VTM — missing/inactive = 403.
       const mockVt = dbMocks.valtrioxTeamMember;
       mockVt.findFirst.mockResolvedValue(null); // inactive/missing
 
@@ -941,7 +946,8 @@ describe("Issue #2 — Supplier API authorization (DB-resolved)", () => {
     beforeEach(() => {
       testState.organizationId = "org-a";
       testState.role = "platform_owner";
-      testState.userRole = "platform_owner";
+      testState.userRole = null;
+      testState.vtmRole = "platform_admin";
       testState.memberRoleOverride = "brand_owner";
       testState.memberRemoved = false;
       testState.penaltyUntil = new Date(Date.now() + 24 * 60 * 60 * 1000); // tomorrow
@@ -950,6 +956,7 @@ describe("Issue #2 — Supplier API authorization (DB-resolved)", () => {
       // Active VTM (so platform role would be granted if not for penalty)
       dbMocks.valtrioxTeamMember.findFirst.mockResolvedValue({
         id: "vt-1",
+        role: testState.vtmRole,
         visibleSections: JSON.stringify([]),
       });
     });
@@ -1019,8 +1026,9 @@ describe("Issue #2 — Supplier API authorization (DB-resolved)", () => {
     beforeEach(() => {
       testState.organizationId = "org-a";
       testState.role = "platform_owner";
-      testState.userRole = "platform_owner";
-      testState.memberRoleOverride = "brand_owner";
+      testState.userRole = null;
+      testState.vtmRole = "platform_admin";
+      testState.memberRoleOverride = "content_creator"; // no operations permission
       testState.memberRemoved = false;
       testState.penaltyUntil = null;
       testState.suppliers.length = 0;
@@ -1073,6 +1081,222 @@ describe("Issue #2 — Supplier API authorization (DB-resolved)", () => {
       seedSupplier("org-a", { name: "Sup 1", rating: 4 });
       const res = await GET_STATS(getRequest("/stats"));
       expect(res.status).toBe(403);
+    });
+  });
+    // ─────────────────────────────────────────────────────────────────────────
+  // Blocker 1 — VTM role demotion across all 6 routes
+  // ─────────────────────────────────────────────────────────────────────────
+  describe("Blocker 1 — VTM role demotion across all 6 routes", () => {
+    beforeEach(() => {
+      testState.organizationId = "org-a";
+      testState.role = "brand_owner";
+      testState.userRole = null;
+      testState.vtmRole = "content_creator";
+      testState.memberRemoved = false;
+      testState.memberRoleOverride = null;
+      testState.memberRoleIdOverride = null;
+      testState.penaltyUntil = null;
+      testState.suppliers.length = 0;
+      vi.clearAllMocks();
+      dbMocks.valtrioxTeamMember.findFirst.mockResolvedValue({
+        id: "vt-demoted",
+        role: testState.vtmRole,
+        visibleSections: JSON.stringify([]),
+      });
+    });
+
+    it("GET list returns 403 after VTM role demoted", async () => {
+      seedSupplier("org-a", { name: "Sup 1" });
+      const res = await GET(getRequest());
+      expect(res.status).toBe(403);
+      expect(dbMocks.supplier.findMany).not.toHaveBeenCalled();
+    });
+
+    it("GET detail returns 403 after VTM role demoted", async () => {
+      const sup = seedSupplier("org-a", { name: "Sup 1" });
+      const res = await GET_ID(getRequest(""), { params: Promise.resolve({ id: sup.id }) });
+      expect(res.status).toBe(403);
+      expect(dbMocks.supplier.findFirst).not.toHaveBeenCalled();
+    });
+
+    it("POST create returns 403 and does not create after VTM role demoted", async () => {
+      const res = await POST(postRequest({ name: "Blocked" }));
+      expect(res.status).toBe(403);
+      expect(dbMocks.supplier.create).not.toHaveBeenCalled();
+    });
+
+    it("PATCH update returns 403 and does not update after VTM role demoted", async () => {
+      const sup = seedSupplier("org-a", { name: "Existing" });
+      const res = await PATCH(patchRequest(sup.id, { name: "Hacked" }), { params: Promise.resolve({ id: sup.id }) });
+      expect(res.status).toBe(403);
+      expect(dbMocks.supplier.updateMany).not.toHaveBeenCalled();
+    });
+
+    it("DELETE returns 403 and does not delete after VTM role demoted", async () => {
+      const sup = seedSupplier("org-a", { name: "Existing" });
+      const res = await DELETE(deleteRequest(sup.id), { params: Promise.resolve({ id: sup.id }) });
+      expect(res.status).toBe(403);
+      expect(dbMocks.supplier.deleteMany).not.toHaveBeenCalled();
+    });
+
+    it("GET stats returns 403 after VTM role demoted", async () => {
+      seedSupplier("org-a", { name: "Sup 1", rating: 4 });
+      const res = await GET_STATS(getRequest("/stats"));
+      expect(res.status).toBe(403);
+    });
+  });
+
+  // ─────────────────────────────────────────────────────────────────────────
+  // Blocker 1 — hidden suppliers section (visibleSections contains '*') across all routes
+  // ─────────────────────────────────────────────────────────────────────────
+  describe("Blocker 1 — hidden suppliers section (visibleSections contains '*') across all routes", () => {
+    beforeEach(() => {
+      testState.organizationId = "org-a";
+      testState.role = "brand_owner";
+      testState.userRole = null;
+      testState.vtmRole = "platform_admin";
+      testState.memberRoleOverride = null;
+      testState.memberRemoved = false;
+      testState.penaltyUntil = null;
+      testState.suppliers.length = 0;
+      vi.clearAllMocks();
+      dbMocks.valtrioxTeamMember.findFirst.mockResolvedValue({
+        id: "vt-star",
+        role: testState.vtmRole,
+        visibleSections: JSON.stringify(["*"]),
+      });
+    });
+
+    it("GET list returns 403 when star hidden", async () => {
+      seedSupplier("org-a", { name: "Sup 1" });
+      const res = await GET(getRequest());
+      expect(res.status).toBe(403);
+      expect(dbMocks.supplier.findMany).not.toHaveBeenCalled();
+    });
+
+    it("GET detail returns 403 when star hidden", async () => {
+      const sup = seedSupplier("org-a", { name: "Sup 1" });
+      const res = await GET_ID(getRequest(""), { params: Promise.resolve({ id: sup.id }) });
+      expect(res.status).toBe(403);
+      expect(dbMocks.supplier.findFirst).not.toHaveBeenCalled();
+    });
+
+    it("POST create returns 403 and no create when star hidden", async () => {
+      const res = await POST(postRequest({ name: "Blocked" }));
+      expect(res.status).toBe(403);
+      expect(dbMocks.supplier.create).not.toHaveBeenCalled();
+    });
+
+    it("PATCH update returns 403 and no update when star hidden", async () => {
+      const sup = seedSupplier("org-a", { name: "Existing" });
+      const res = await PATCH(patchRequest(sup.id, { name: "Hacked" }), { params: Promise.resolve({ id: sup.id }) });
+      expect(res.status).toBe(403);
+      expect(dbMocks.supplier.updateMany).not.toHaveBeenCalled();
+    });
+
+    it("DELETE returns 403 and no delete when star hidden", async () => {
+      const sup = seedSupplier("org-a", { name: "Existing" });
+      const res = await DELETE(deleteRequest(sup.id), { params: Promise.resolve({ id: sup.id }) });
+      expect(res.status).toBe(403);
+      expect(dbMocks.supplier.deleteMany).not.toHaveBeenCalled();
+    });
+
+    it("GET stats returns 403 when star hidden", async () => {
+      seedSupplier("org-a", { name: "Sup 1", rating: 4 });
+      const res = await GET_STATS(getRequest("/stats"));
+      expect(res.status).toBe(403);
+    });
+  });
+
+  // ─────────────────────────────────────────────────────────────────────────
+  // Blocker 1 — stale valtriox_team stored role without active VTM across all routes
+  // ─────────────────────────────────────────────────────────────────────────
+  describe("Blocker 1 — stale valtriox_team stored role without active VTM across all routes", () => {
+    beforeEach(() => {
+      testState.organizationId = "org-a";
+      testState.role = "brand_owner";
+      testState.userRole = null;
+      testState.vtmRole = "platform_admin";
+      testState.memberRemoved = false;
+      testState.memberRoleOverride = "valtriox_team";
+      testState.memberRoleIdOverride = null;
+      testState.penaltyUntil = null;
+      testState.suppliers.length = 0;
+      vi.clearAllMocks();
+      dbMocks.valtrioxTeamMember.findFirst.mockResolvedValue(null);
+    });
+
+    it("GET list returns 403 for stale valtriox_team", async () => {
+      seedSupplier("org-a", { name: "Sup 1" });
+      const res = await GET(getRequest());
+      expect(res.status).toBe(403);
+      expect(dbMocks.supplier.findMany).not.toHaveBeenCalled();
+    });
+
+    it("GET detail returns 403 for stale valtriox_team", async () => {
+      const sup = seedSupplier("org-a", { name: "Sup 1" });
+      const res = await GET_ID(getRequest(""), { params: Promise.resolve({ id: sup.id }) });
+      expect(res.status).toBe(403);
+      expect(dbMocks.supplier.findFirst).not.toHaveBeenCalled();
+    });
+
+    it("POST create returns 403 and no create for stale valtriox_team", async () => {
+      const res = await POST(postRequest({ name: "Blocked" }));
+      expect(res.status).toBe(403);
+      expect(dbMocks.supplier.create).not.toHaveBeenCalled();
+    });
+
+    it("PATCH update returns 403 and no update for stale valtriox_team", async () => {
+      const sup = seedSupplier("org-a", { name: "Existing" });
+      const res = await PATCH(patchRequest(sup.id, { name: "Hacked" }), { params: Promise.resolve({ id: sup.id }) });
+      expect(res.status).toBe(403);
+      expect(dbMocks.supplier.updateMany).not.toHaveBeenCalled();
+    });
+
+    it("DELETE returns 403 and no delete for stale valtriox_team", async () => {
+      const sup = seedSupplier("org-a", { name: "Existing" });
+      const res = await DELETE(deleteRequest(sup.id), { params: Promise.resolve({ id: sup.id }) });
+      expect(res.status).toBe(403);
+      expect(dbMocks.supplier.deleteMany).not.toHaveBeenCalled();
+    });
+
+    it("GET stats returns 403 for stale valtriox_team", async () => {
+      seedSupplier("org-a", { name: "Sup 1", rating: 4 });
+      const res = await GET_STATS(getRequest("/stats"));
+      expect(res.status).toBe(403);
+    });
+  });
+
+  // ─────────────────────────────────────────────────────────────────────────
+  // Blocker 1 — viewer PATCH/DELETE no-mutation
+  // ─────────────────────────────────────────────────────────────────────────
+  describe("Blocker 1 — viewer PATCH/DELETE no-mutation", () => {
+    beforeEach(() => {
+      testState.organizationId = "org-a";
+      testState.role = "viewer";
+      testState.userRole = null;
+      testState.vtmRole = "platform_admin";
+      testState.memberRemoved = false;
+      testState.memberRoleOverride = "viewer";
+      testState.memberRoleIdOverride = null;
+      testState.penaltyUntil = null;
+      testState.suppliers.length = 0;
+      vi.clearAllMocks();
+      dbMocks.valtrioxTeamMember.findFirst.mockResolvedValue(null);
+    });
+
+    it("viewer PATCH returns 403 and does not call updateMany", async () => {
+      const sup = seedSupplier("org-a", { name: "Existing" });
+      const res = await PATCH(patchRequest(sup.id, { name: "Hacked" }), { params: Promise.resolve({ id: sup.id }) });
+      expect(res.status).toBe(403);
+      expect(dbMocks.supplier.updateMany).not.toHaveBeenCalled();
+    });
+
+    it("viewer DELETE returns 403 and does not call deleteMany", async () => {
+      const sup = seedSupplier("org-a", { name: "Existing" });
+      const res = await DELETE(deleteRequest(sup.id), { params: Promise.resolve({ id: sup.id }) });
+      expect(res.status).toBe(403);
+      expect(dbMocks.supplier.deleteMany).not.toHaveBeenCalled();
     });
   });
 });

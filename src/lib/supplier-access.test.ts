@@ -27,6 +27,12 @@ vi.mock("@/lib/roles", () => {
     operations_manager: { name: "operations_manager", label: "Operations Manager", description: "Ops access", level: 60, permissions: { operations: true } },
     content_creator: { name: "content_creator", label: "Content Creator", description: "Content access", level: 40, permissions: { operations: false } },
     valtriox_team: { name: "valtriox_team", label: "Valtriox Team", description: "Platform team", level: 200, permissions: { operations: true } },
+    platform_owner: { name: "platform_owner", label: "Platform Owner", description: "Full access", level: 100, permissions: { all: true } },
+    platform_admin: { name: "platform_admin", label: "Platform Admin", description: "Admin access", level: 95, permissions: { all: true, manage_platform: false } },
+    platform_engineer: { name: "platform_engineer", label: "Platform Engineer", description: "Engineering access", level: 85, permissions: { operations: true } },
+    platform_support: { name: "platform_support", label: "Platform Support", description: "Support access", level: 85, permissions: { operations: true } },
+    platform_sales: { name: "platform_sales", label: "Platform Sales", description: "Sales access", level: 85, permissions: { operations: true } },
+    platform_marketing: { name: "platform_marketing", label: "Platform Marketing", description: "Marketing access", level: 85, permissions: { operations: true } },
   };
 
   return {
@@ -59,14 +65,20 @@ interface MockTeamMember {
 
 function makeClient(opts: {
   membership?: MockMembership | null;
-  teamMember?: MockTeamMember | null;
+  teamMember?: (MockTeamMember & { role?: string }) | null;
 }): SupplierAccessClient {
   return {
     organizationMember: {
       findFirst: vi.fn(async () => opts.membership ?? null),
     },
     valtrioxTeamMember: {
-      findFirst: vi.fn(async () => opts.teamMember ?? null),
+      findFirst: vi.fn(async () => {
+        const tm = opts.teamMember ?? null;
+        if (tm && !tm.role) {
+          return { ...tm, role: "valtriox_team" };
+        }
+        return tm;
+      }),
     },
   } as unknown as SupplierAccessClient;
 }
@@ -576,6 +588,7 @@ describe("Point 10 — malformed visibleSections fail-safe", () => {
       valtrioxTeamMember: {
         findFirst: vi.fn().mockResolvedValue({
           id: "vtm_1",
+          role: "valtriox_team",
           visibleSections: null,
         }),
       },
