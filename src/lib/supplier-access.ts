@@ -257,20 +257,25 @@ export async function resolveSupplierAccess(
   // Platform owner/admin (Option B)
   // ───────────────────────────────────────────────────────────────────────────
   if (platformRole === "platform_owner" || platformRole === "platform_admin") {
+    // B-fix v2: Platform roles REQUIRE active Valtriox team membership.
+    // Without this, deactivation/deletion of ValtrioxTeamMember record
+    // would not revoke platform access (User.role is not synced by those flows).
+    if (!valtrioxTeamMember) {
+      return null;
+    }
+
     // Base: full read/write access.
     let canRead = true;
     let canWrite = true;
 
     // 7. Apply active Valtriox team hidden-section rules (even to platform roles).
-    if (valtrioxTeamMember) {
-      const hidden = hiddenSections(valtrioxTeamMember.visibleSections);
-      const pageHidden =
-        hidden !== null &&
-        (hidden.includes("suppliers") || hidden.includes("*"));
-      if (pageHidden) {
-        canRead = false;
-        canWrite = false;
-      }
+    const hidden = hiddenSections(valtrioxTeamMember.visibleSections);
+    const pageHidden =
+      hidden !== null &&
+      (hidden.includes("suppliers") || hidden.includes("*"));
+    if (pageHidden) {
+      canRead = false;
+      canWrite = false;
     }
 
     return {
@@ -315,6 +320,9 @@ export async function resolveSupplierAccess(
     return null;
   }
 
+  // VTM takes precedence over org membership when both exist:
+  // the user is both an org member AND a Valtriox team member, so they
+  // get team-level access with hidden sections applied (B04 semantics).
   const effectiveRole = valtrioxTeamMember
     ? "valtriox_team"
     : LEGACY_ROLE_MAP[currentRole] || currentRole;

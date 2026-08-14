@@ -24,7 +24,7 @@
 //     which is true only for "viewer". So "read without write" is expressed
 //     via a viewer-named custom roleDef (roleDef.name === member.role === "viewer").
 
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { NextRequest } from "next/server";
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -78,6 +78,8 @@ const testState = vi.hoisted(() => ({
   memberRoleIdOverride: null as string | null,
   /** Map of roleId → Role row (with permissions JSON). */
   roles: {} as Record<string, RoleDefRecord>,
+  /** If set, member has active penalty until this date (B01 penalty tests). */
+  penaltyUntil: null as Date | null,
   suppliers: [] as SupplierRecord[],
 }));
 
@@ -127,7 +129,7 @@ const dbMocks = vi.hoisted(() => {
         select?: Record<string, boolean>;
         orderBy?: Record<string, "asc" | "desc">;
       }) => {
-        let filtered = testState.suppliers.filter((s) => matchesWhere(s, where));
+        const filtered = testState.suppliers.filter((s) => matchesWhere(s, where));
         // Handle orderBy: { rating: "desc", updatedAt: "desc" }
         if (orderBy) {
           filtered.sort((a, b) => {
@@ -251,7 +253,7 @@ const dbMocks = vi.hoisted(() => {
           organizationId: testState.organizationId,
           role: testState.memberRoleOverride ?? testState.role,
           roleId,
-          penaltyUntil: null,
+          penaltyUntil: testState.penaltyUntil,
           roleDef,
         };
         return member;
@@ -262,8 +264,10 @@ const dbMocks = vi.hoisted(() => {
   // ── ValtrioxTeamMember mock (platform team) — null by default ──
   // FIX: resolveSupplierAccess calls findFirst (not findUnique) with
   //   where: { userId, status: "active" }, select: { id, visibleSections }
-  const valtrioxTeamMember = {
-    findFirst: vi.fn(async () => null as any),
+    const valtrioxTeamMember = {
+    findFirst: vi.fn(
+      async (): Promise<{ id: string; visibleSections: string } | null> => null,
+    ),
   };
 
   // Platform role mocks (Phase 5)
@@ -419,6 +423,7 @@ describe("Issue #2 — Supplier API authorization (DB-resolved)", () => {
     testState.memberRoleOverride = null;
     testState.memberRoleIdOverride = null;
     testState.roles = {};
+    testState.penaltyUntil = null;
     testState.suppliers.length = 0;
     vi.clearAllMocks();
   });
@@ -426,46 +431,24 @@ describe("Issue #2 — Supplier API authorization (DB-resolved)", () => {
   // ─────────────────────────────────────────────────────────────────────────
   // 1. VIEWER — read-only
   // ─────────────────────────────────────────────────────────────────────────
-  it("viewer can GET list but cannot POST/PATCH/DELETE (403)", async () => {
-    testState.role = "viewer";
-    testState.memberRoleOverride = "viewer";
-    seedSupplier("org-a", { name: "Existing Supplier" });
+      it("6. stale platform role: session says platform_owner, DB says viewer → treated as viewer", async () => {
+      // Session role is "platform_owner" (stale cookie)
+      testState.role = "platform_owner";
+      // DB user role is "viewer" (fresh reality)
+      testState.userRole = "viewer";
+      testState.memberRoleOverride = "viewer";
+      dbMocks.valtrioxTeamMember.findFirst.mockResolvedValue(null);
 
-    // GET list — should succeed
-    const getRes = await GET(getRequest());
-    expect(getRes.status).toBe(200);
-    const getData = await responseJson(getRes);
-    expect(
-      (getData.suppliers as Array<{ name: string }>).length,
-    ).toBe(1);
+      const res = await GET(getRequest());
+      expect(res.status).toBe(200);
+      const data = await responseJson(res);
+      // Viewer can read but cannot write
+      expect(data.access).toMatchObject({ canRead: true, canWrite: false });
 
-    // GET single — should succeed
-    const seeded = testState.suppliers[0];
-    const getIdRes = await GET_ID(getRequest(""), {
-      params: Promise.resolve({ id: seeded.id }),
+      // POST should be blocked
+      const postRes = await POST(postRequest({ name: "Blocked" }));
+      expect(postRes.status).toBe(403);
     });
-    expect(getIdRes.status).toBe(200);
-
-    // POST — should be blocked
-    const postRes = await POST(postRequest({ name: "New" }));
-    expect(postRes.status).toBe(403);
-    expect(dbMocks.supplier.create).not.toHaveBeenCalled();
-
-    // PATCH — should be blocked
-    const patchRes = await PATCH(
-      patchRequest(seeded.id, { name: "Updated" }),
-      { params: Promise.resolve({ id: seeded.id }) },
-    );
-    expect(patchRes.status).toBe(403);
-    // FIX: route uses updateMany now
-    expect(dbMocks.supplier.updateMany).not.toHaveBeenCalled();
-
-    // DELETE — should be blocked
-    const delRes = await DELETE(deleteRequest(seeded.id), {
-      params: Promise.resolve({ id: seeded.id }),
-    });
-    expect(delRes.status).toBe(403);
-  });
 
   // ─────────────────────────────────────────────────────────────────────────
   // 2. BRAND OWNER — full access
@@ -547,6 +530,7 @@ describe("Issue #2 — Supplier API authorization (DB-resolved)", () => {
     };
     testState.memberRoleIdOverride = "role-custom-1";
     testState.memberRoleOverride = "viewer"; // member.role = "viewer"
+    dbMocks.valtrioxTeamMember.findFirst.mockResolvedValue(null);
     testState.role = "viewer"; // session role (ignored by resolveSupplierAccess)
 
     // GET list — should succeed (operations:true → canRead=true)
@@ -828,8 +812,17 @@ describe("Issue #2 — Supplier API authorization (DB-resolved)", () => {
       testState.memberRoleOverride = null;
       testState.memberRoleIdOverride = null;
       testState.roles = {};
+      testState.penaltyUntil = null;
       testState.suppliers.length = 0;
       vi.clearAllMocks();
+      // B-fix v2: Default to active ValtrioxTeamMember with no hidden sections.
+      // Platform roles now REQUIRE an active VTM record (revocation-safe).
+      // Individual tests can override with mockResolvedValue(null) for
+      // inactive/missing scenarios (e.g. test #7).
+      dbMocks.valtrioxTeamMember.findFirst.mockResolvedValue({
+        id: "vt-default",
+        visibleSections: JSON.stringify([]),
+      });
     });
 
     it("1. platform_owner with membership: full read/write access", async () => {
@@ -881,7 +874,7 @@ describe("Issue #2 — Supplier API authorization (DB-resolved)", () => {
       mockVt.findFirst.mockImplementation(async () => ({
         id: "vt-1",
         visibleSections: JSON.stringify(["suppliers"]),
-      }) as any);
+      }));
 
       const res = await GET(getRequest());
       expect(res.status).toBe(403);
@@ -898,6 +891,7 @@ describe("Issue #2 — Supplier API authorization (DB-resolved)", () => {
       // DB user role is "viewer" (fresh reality)
       testState.userRole = "viewer";
       testState.memberRoleOverride = "viewer";
+      dbMocks.valtrioxTeamMember.findFirst.mockResolvedValue(null);
 
       const res = await GET(getRequest());
       expect(res.status).toBe(200);
@@ -910,19 +904,19 @@ describe("Issue #2 — Supplier API authorization (DB-resolved)", () => {
       expect(postRes.status).toBe(403);
     });
 
-    it("7. inactive Valtriox team record: platform role still works, but hidden rules ignored if inactive", async () => {
+    it("7. inactive Valtriox team record: platform role DENIED (fail-closed revocation)", async () => {
       testState.userRole = "platform_owner";
       testState.memberRoleOverride = "brand_owner";
 
-      // Valtriox team member exists but status is NOT "active" (so findFirst returns null)
+      // Valtriox team member exists but status is NOT "active" (so findFirst returns null).
+      // B-fix v2: Platform roles REQUIRE active VTM — missing/inactive = 403.
       const mockVt = dbMocks.valtrioxTeamMember;
       mockVt.findFirst.mockResolvedValue(null); // inactive/missing
 
       const res = await GET(getRequest());
-      expect(res.status).toBe(200);
+      expect(res.status).toBe(403);
       const data = await responseJson(res);
-      // Platform owner still has full access despite inactive Valtriox record
-      expect(data.access).toMatchObject({ canRead: true, canWrite: true });
+      expect(data.error).toMatch(/permission/i);
 
       mockVt.findFirst.mockReset();
     });
@@ -936,6 +930,149 @@ describe("Issue #2 — Supplier API authorization (DB-resolved)", () => {
       const data = await responseJson(res);
       // Error message may vary, just verify it's a 403 with an error
       expect(data.error).toBeDefined();
+    });
+  });
+
+  // ─────────────────────────────────────────────────────────────────────────
+  // B01 PENALTY ENFORCEMENT — even platform owners are subject to penalties
+  // Expert review point #3: route-level tests for all 5 endpoints + stats.
+  // ─────────────────────────────────────────────────────────────────────────
+  describe("B01 penalty enforcement — platform_owner with active penalty", () => {
+    beforeEach(() => {
+      testState.organizationId = "org-a";
+      testState.role = "platform_owner";
+      testState.userRole = "platform_owner";
+      testState.memberRoleOverride = "brand_owner";
+      testState.memberRemoved = false;
+      testState.penaltyUntil = new Date(Date.now() + 24 * 60 * 60 * 1000); // tomorrow
+      testState.suppliers.length = 0;
+      vi.clearAllMocks();
+      // Active VTM (so platform role would be granted if not for penalty)
+      dbMocks.valtrioxTeamMember.findFirst.mockResolvedValue({
+        id: "vt-1",
+        visibleSections: JSON.stringify([]),
+      });
+    });
+
+    afterEach(() => {
+      testState.penaltyUntil = null;
+    });
+
+    it("denies GET list with active penalty (403, no DB query)", async () => {
+      seedSupplier("org-a", { name: "Sup 1" });
+      const res = await GET(getRequest());
+      expect(res.status).toBe(403);
+      expect(dbMocks.supplier.findMany).not.toHaveBeenCalled();
+    });
+
+    it("denies GET detail with active penalty (403)", async () => {
+      const sup = seedSupplier("org-a", { name: "Sup 1" });
+      const res = await GET_ID(getRequest(""), {
+        params: Promise.resolve({ id: sup.id }),
+      });
+      expect(res.status).toBe(403);
+    });
+
+    it("denies POST create with active penalty (403, no mutation)", async () => {
+      const res = await POST(postRequest({ name: "Blocked" }));
+      expect(res.status).toBe(403);
+      expect(dbMocks.supplier.create).not.toHaveBeenCalled();
+    });
+
+    it("denies PATCH update with active penalty (403, no mutation)", async () => {
+      const sup = seedSupplier("org-a", { name: "Sup 1" });
+      const res = await PATCH(
+        patchRequest(sup.id, { name: "Hacked" }),
+        { params: Promise.resolve({ id: sup.id }) },
+      );
+      expect(res.status).toBe(403);
+      expect(dbMocks.supplier.updateMany).not.toHaveBeenCalled();
+    });
+
+    it("denies DELETE with active penalty (403, no mutation)", async () => {
+      const sup = seedSupplier("org-a", { name: "Sup 1" });
+      const res = await DELETE(deleteRequest(sup.id), {
+        params: Promise.resolve({ id: sup.id }),
+      });
+      expect(res.status).toBe(403);
+      expect(dbMocks.supplier.deleteMany).not.toHaveBeenCalled();
+    });
+
+    it("denies GET stats with active penalty (403)", async () => {
+      seedSupplier("org-a", { name: "Sup 1", rating: 4 });
+      const res = await GET_STATS(getRequest("/stats"));
+      expect(res.status).toBe(403);
+    });
+
+    it("allows access after penalty expires", async () => {
+      testState.penaltyUntil = new Date(Date.now() - 1000); // expired
+      const res = await GET(getRequest());
+      expect(res.status).toBe(200);
+    });
+  });
+
+  // ─────────────────────────────────────────────────────────────────────────
+  // B-FIX v2: Option B revocation — platform role without active VTM = 403
+  // Expert review point #4: deactivation/deletion must immediately revoke.
+  // ─────────────────────────────────────────────────────────────────────────
+  describe("B-fix v2 — Option B revocation (platform role without active VTM)", () => {
+    beforeEach(() => {
+      testState.organizationId = "org-a";
+      testState.role = "platform_owner";
+      testState.userRole = "platform_owner";
+      testState.memberRoleOverride = "brand_owner";
+      testState.memberRemoved = false;
+      testState.penaltyUntil = null;
+      testState.suppliers.length = 0;
+      vi.clearAllMocks();
+      // No active ValtrioxTeamMember (deactivated/deleted)
+      dbMocks.valtrioxTeamMember.findFirst.mockResolvedValue(null);
+    });
+
+    it("denies GET list when VTM inactive (403, no DB query)", async () => {
+      seedSupplier("org-a", { name: "Sup 1" });
+      const res = await GET(getRequest());
+      expect(res.status).toBe(403);
+      expect(dbMocks.supplier.findMany).not.toHaveBeenCalled();
+    });
+
+    it("denies GET detail when VTM inactive (403)", async () => {
+      const sup = seedSupplier("org-a", { name: "Sup 1" });
+      const res = await GET_ID(getRequest(""), {
+        params: Promise.resolve({ id: sup.id }),
+      });
+      expect(res.status).toBe(403);
+    });
+
+    it("denies POST create when VTM inactive (403, no mutation)", async () => {
+      const res = await POST(postRequest({ name: "Blocked" }));
+      expect(res.status).toBe(403);
+      expect(dbMocks.supplier.create).not.toHaveBeenCalled();
+    });
+
+    it("denies PATCH update when VTM inactive (403, no mutation)", async () => {
+      const sup = seedSupplier("org-a", { name: "Sup 1" });
+      const res = await PATCH(
+        patchRequest(sup.id, { name: "Hacked" }),
+        { params: Promise.resolve({ id: sup.id }) },
+      );
+      expect(res.status).toBe(403);
+      expect(dbMocks.supplier.updateMany).not.toHaveBeenCalled();
+    });
+
+    it("denies DELETE when VTM inactive (403, no mutation)", async () => {
+      const sup = seedSupplier("org-a", { name: "Sup 1" });
+      const res = await DELETE(deleteRequest(sup.id), {
+        params: Promise.resolve({ id: sup.id }),
+      });
+      expect(res.status).toBe(403);
+      expect(dbMocks.supplier.deleteMany).not.toHaveBeenCalled();
+    });
+
+    it("denies GET stats when VTM inactive (403)", async () => {
+      seedSupplier("org-a", { name: "Sup 1", rating: 4 });
+      const res = await GET_STATS(getRequest("/stats"));
+      expect(res.status).toBe(403);
     });
   });
 });
