@@ -12,10 +12,12 @@ describe.skipIf(!connectionString)("PostgreSQL supplier constraints", () => {
       connectionString,
       ssl: { rejectUnauthorized: false },
     });
+    const uniqueSuffix = Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
     const org = await pool.query(
-      `INSERT INTO "public"."Organization" ("id", "name", "slug", "email")
-       VALUES (gen_random_uuid()::text, 'Integration Test Org', 'integration-test-org', 'it@example.com')
-       RETURNING "id"`
+      `INSERT INTO "public"."Organization" ("id", "name", "slug", "email", "updatedAt")
+       VALUES (gen_random_uuid()::text, 'Integration Test Org', $1, 'it@example.com', NOW())
+       RETURNING "id"`,
+      [`integration-test-org-${uniqueSuffix}`]
     );
     orgId = org.rows[0].id;
   });

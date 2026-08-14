@@ -2,7 +2,7 @@
 CREATE SCHEMA IF NOT EXISTS "public";
 
 -- CreateTable
-CREATE TABLE "Account" (
+CREATE TABLE "public"."Account" (
     "id" TEXT NOT NULL,
     "userId" TEXT NOT NULL,
     "type" TEXT NOT NULL,
@@ -20,123 +20,117 @@ CREATE TABLE "Account" (
 );
 
 -- CreateTable
-CREATE TABLE "Session" (
+CREATE TABLE "public"."Attendance" (
     "id" TEXT NOT NULL,
-    "sessionToken" TEXT NOT NULL,
     "userId" TEXT NOT NULL,
-    "expires" TIMESTAMP(3) NOT NULL,
-
-    CONSTRAINT "Session_pkey" PRIMARY KEY ("id")
-);
-
--- CreateTable
-CREATE TABLE "VerificationToken" (
-    "identifier" TEXT NOT NULL,
-    "token" TEXT NOT NULL,
-    "expires" TIMESTAMP(3) NOT NULL
-);
-
--- CreateTable
-CREATE TABLE "User" (
-    "id" TEXT NOT NULL,
-    "name" TEXT NOT NULL,
-    "email" TEXT NOT NULL,
-    "emailVerified" TIMESTAMP(3),
-    "password" TEXT,
-    "image" TEXT,
-    "role" TEXT NOT NULL DEFAULT 'owner',
+    "organizationId" TEXT NOT NULL,
+    "date" TIMESTAMP(3) NOT NULL,
+    "clockIn" TIMESTAMP(3),
+    "clockOut" TIMESTAMP(3),
+    "totalHours" DOUBLE PRECISION,
+    "status" TEXT NOT NULL DEFAULT 'present',
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updatedAt" TIMESTAMP(3) NOT NULL,
-    "otpCode" TEXT,
-    "otpExpires" TIMESTAMP(3),
-    "otpVerified" BOOLEAN NOT NULL DEFAULT false,
+    "lateReason" TEXT,
+    "leaveReason" TEXT,
+    "markedBy" TEXT,
 
-    CONSTRAINT "User_pkey" PRIMARY KEY ("id")
+    CONSTRAINT "Attendance_pkey" PRIMARY KEY ("id")
 );
 
 -- CreateTable
-CREATE TABLE "Organization" (
+CREATE TABLE "public"."Automation" (
     "id" TEXT NOT NULL,
-    "name" TEXT NOT NULL,
-    "slug" TEXT NOT NULL,
-    "logo" TEXT,
-    "website" TEXT,
-    "phone" TEXT,
-    "email" TEXT,
-    "currency" TEXT NOT NULL DEFAULT 'USD',
-    "timezone" TEXT NOT NULL DEFAULT 'UTC',
-    "plan" TEXT NOT NULL DEFAULT 'starter',
-    "workingHoursStart" TEXT NOT NULL DEFAULT '09:00',
-    "workingHoursEnd" TEXT NOT NULL DEFAULT '18:00',
-    "isActive" BOOLEAN NOT NULL DEFAULT true,
-    "country" TEXT,
-    "religion" TEXT,
-    "brandTagline" TEXT,
-    "brandColor" TEXT,
-    "secondaryBrandColor" TEXT,
-    "brandDescription" TEXT,
-    "industry" TEXT,
-    "address" TEXT,
-    "taxId" TEXT,
-    "favicon" TEXT,
-    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    "updatedAt" TIMESTAMP(3) NOT NULL,
-    "orderCounter" INTEGER NOT NULL DEFAULT 0,
-    "paymentRejectionCount" INTEGER NOT NULL DEFAULT 0,
-    "isBanned" BOOLEAN NOT NULL DEFAULT false,
-    "banReason" TEXT,
-    "bannedAt" TIMESTAMP(3),
-    "usageOrdersCount" INTEGER NOT NULL DEFAULT 0,
-    "usageProductsCount" INTEGER NOT NULL DEFAULT 0,
-    "usageCustomersCount" INTEGER NOT NULL DEFAULT 0,
-    "usageStorageMb" INTEGER NOT NULL DEFAULT 0,
-    "usageInvoicesCount" INTEGER NOT NULL DEFAULT 0,
-    "usageCouponsCount" INTEGER NOT NULL DEFAULT 0,
-    "usageTasksCount" INTEGER NOT NULL DEFAULT 0,
-    "usageTeamChatsCount" INTEGER NOT NULL DEFAULT 0,
-    "usageBroadcastsCount" INTEGER NOT NULL DEFAULT 0,
-    "usageLastResetAt" TIMESTAMP(3),
-
-    CONSTRAINT "Organization_pkey" PRIMARY KEY ("id")
-);
-
--- CreateTable
-CREATE TABLE "OrganizationMember" (
-    "id" TEXT NOT NULL,
-    "organizationId" TEXT NOT NULL,
-    "userId" TEXT NOT NULL,
-    "role" TEXT NOT NULL DEFAULT 'member',
-    "roleId" TEXT,
-    "pin" TEXT,
-    "pinCreatedAt" TIMESTAMP(3),
-    "absenceCount" INTEGER NOT NULL DEFAULT 0,
-    "penaltyUntil" TIMESTAMP(3),
-    "joinedAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
-
-    CONSTRAINT "OrganizationMember_pkey" PRIMARY KEY ("id")
-);
-
--- CreateTable
-CREATE TABLE "Product" (
-    "id" TEXT NOT NULL,
-    "organizationId" TEXT NOT NULL,
     "name" TEXT NOT NULL,
     "description" TEXT,
-    "sku" TEXT,
-    "price" DECIMAL(10,2) NOT NULL DEFAULT 0,
-    "costPrice" DECIMAL(10,2),
-    "stock" INTEGER NOT NULL DEFAULT 0,
-    "category" TEXT,
-    "status" TEXT NOT NULL DEFAULT 'active',
-    "imageUrl" TEXT,
+    "trigger" TEXT NOT NULL,
+    "triggerConfig" TEXT NOT NULL DEFAULT '{}',
+    "templateId" TEXT,
+    "action" TEXT NOT NULL DEFAULT 'send_email',
+    "actionConfig" TEXT NOT NULL DEFAULT '{}',
+    "delayMinutes" INTEGER NOT NULL DEFAULT 0,
+    "enabled" BOOLEAN NOT NULL DEFAULT true,
+    "lastRunAt" TIMESTAMP(3),
+    "runCount" INTEGER NOT NULL DEFAULT 0,
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updatedAt" TIMESTAMP(3) NOT NULL,
 
-    CONSTRAINT "Product_pkey" PRIMARY KEY ("id")
+    CONSTRAINT "Automation_pkey" PRIMARY KEY ("id")
 );
 
 -- CreateTable
-CREATE TABLE "Customer" (
+CREATE TABLE "public"."BetaInvite" (
+    "id" TEXT NOT NULL,
+    "email" TEXT NOT NULL,
+    "token" TEXT NOT NULL,
+    "plan" TEXT NOT NULL DEFAULT 'enterprise',
+    "invitedBy" TEXT NOT NULL,
+    "status" TEXT NOT NULL DEFAULT 'sent',
+    "trialDays" INTEGER NOT NULL DEFAULT 14,
+    "expiresAt" TIMESTAMP(3),
+    "acceptedAt" TIMESTAMP(3),
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" TIMESTAMP(3) NOT NULL,
+
+    CONSTRAINT "BetaInvite_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "public"."ClientMessage" (
+    "id" TEXT NOT NULL,
+    "organizationId" TEXT NOT NULL,
+    "threadId" TEXT NOT NULL,
+    "parentMessageId" TEXT,
+    "direction" TEXT NOT NULL,
+    "senderUserId" TEXT,
+    "senderName" TEXT NOT NULL,
+    "senderEmail" TEXT NOT NULL,
+    "senderRole" TEXT NOT NULL,
+    "senderAvatar" TEXT,
+    "category" TEXT NOT NULL,
+    "subject" TEXT NOT NULL,
+    "body" TEXT NOT NULL,
+    "attachments" JSONB,
+    "priority" TEXT NOT NULL DEFAULT 'normal',
+    "isReadByAdmin" BOOLEAN NOT NULL DEFAULT false,
+    "isReadByClient" BOOLEAN NOT NULL DEFAULT false,
+    "readAt" TIMESTAMP(3),
+    "isPinned" BOOLEAN NOT NULL DEFAULT false,
+    "isArchived" BOOLEAN NOT NULL DEFAULT false,
+    "scheduledFor" TIMESTAMP(3),
+    "deadlineDate" TIMESTAMP(3),
+    "sentAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "relatedInvoiceId" TEXT,
+    "relatedReportId" TEXT,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" TIMESTAMP(3) NOT NULL,
+    "actions" JSONB,
+    "isSystemMessage" BOOLEAN NOT NULL DEFAULT false,
+    "metadata" JSONB,
+
+    CONSTRAINT "ClientMessage_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "public"."Coupon" (
+    "id" TEXT NOT NULL,
+    "organizationId" TEXT NOT NULL,
+    "code" TEXT NOT NULL,
+    "type" TEXT NOT NULL DEFAULT 'percentage',
+    "value" DECIMAL(10,2) NOT NULL,
+    "minOrder" DECIMAL(10,2),
+    "usageLimit" INTEGER,
+    "usageCount" INTEGER NOT NULL DEFAULT 0,
+    "expiresAt" TIMESTAMP(3),
+    "isActive" BOOLEAN NOT NULL DEFAULT true,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" TIMESTAMP(3) NOT NULL,
+
+    CONSTRAINT "Coupon_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "public"."Customer" (
     "id" TEXT NOT NULL,
     "organizationId" TEXT NOT NULL,
     "name" TEXT NOT NULL,
@@ -155,41 +149,23 @@ CREATE TABLE "Customer" (
 );
 
 -- CreateTable
-CREATE TABLE "Order" (
+CREATE TABLE "public"."EmailTemplate" (
     "id" TEXT NOT NULL,
-    "orderNumber" TEXT NOT NULL,
-    "organizationId" TEXT NOT NULL,
-    "customerId" TEXT,
-    "status" TEXT NOT NULL DEFAULT 'pending',
-    "subtotal" DECIMAL(10,2) NOT NULL DEFAULT 0,
-    "discount" DECIMAL(10,2) NOT NULL DEFAULT 0,
-    "total" DECIMAL(10,2) NOT NULL DEFAULT 0,
-    "channel" TEXT NOT NULL DEFAULT 'manual',
-    "courier" TEXT,
-    "trackingNumber" TEXT,
-    "notes" TEXT,
-    "priority" INTEGER NOT NULL DEFAULT 50,
-    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "type" TEXT NOT NULL,
+    "name" TEXT NOT NULL,
+    "subject" TEXT NOT NULL,
+    "htmlContent" TEXT NOT NULL,
+    "textContent" TEXT NOT NULL DEFAULT '',
+    "variables" TEXT NOT NULL DEFAULT '[]',
+    "isActive" BOOLEAN NOT NULL DEFAULT true,
     "updatedAt" TIMESTAMP(3) NOT NULL,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
 
-    CONSTRAINT "Order_pkey" PRIMARY KEY ("id")
+    CONSTRAINT "EmailTemplate_pkey" PRIMARY KEY ("id")
 );
 
 -- CreateTable
-CREATE TABLE "OrderItem" (
-    "id" TEXT NOT NULL,
-    "orderId" TEXT NOT NULL,
-    "productId" TEXT,
-    "productName" TEXT NOT NULL,
-    "quantity" INTEGER NOT NULL,
-    "price" DECIMAL(10,2) NOT NULL,
-    "total" DECIMAL(10,2) NOT NULL,
-
-    CONSTRAINT "OrderItem_pkey" PRIMARY KEY ("id")
-);
-
--- CreateTable
-CREATE TABLE "Expense" (
+CREATE TABLE "public"."Expense" (
     "id" TEXT NOT NULL,
     "organizationId" TEXT NOT NULL,
     "title" TEXT NOT NULL,
@@ -204,98 +180,43 @@ CREATE TABLE "Expense" (
 );
 
 -- CreateTable
-CREATE TABLE "Coupon" (
+CREATE TABLE "public"."Feedback" (
     "id" TEXT NOT NULL,
     "organizationId" TEXT NOT NULL,
-    "code" TEXT NOT NULL,
-    "type" TEXT NOT NULL DEFAULT 'percentage',
-    "value" DECIMAL(10,2) NOT NULL,
-    "minOrder" DECIMAL(10,2),
-    "usageLimit" INTEGER,
-    "usageCount" INTEGER NOT NULL DEFAULT 0,
-    "expiresAt" TIMESTAMP(3),
-    "isActive" BOOLEAN NOT NULL DEFAULT true,
+    "type" TEXT NOT NULL,
+    "rating" INTEGER,
+    "content" TEXT NOT NULL,
+    "authorName" TEXT,
+    "authorCompany" TEXT,
+    "videoUrl" TEXT,
+    "isFeatured" BOOLEAN NOT NULL DEFAULT false,
+    "status" TEXT NOT NULL DEFAULT 'pending',
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updatedAt" TIMESTAMP(3) NOT NULL,
 
-    CONSTRAINT "Coupon_pkey" PRIMARY KEY ("id")
+    CONSTRAINT "Feedback_pkey" PRIMARY KEY ("id")
 );
 
 -- CreateTable
-CREATE TABLE "TeamTask" (
+CREATE TABLE "public"."IntegrationConnection" (
     "id" TEXT NOT NULL,
-    "organizationId" TEXT NOT NULL,
-    "assignedTo" TEXT,
-    "title" TEXT NOT NULL,
-    "description" TEXT,
-    "status" TEXT NOT NULL DEFAULT 'todo',
-    "priority" TEXT NOT NULL DEFAULT 'medium',
-    "dueDate" TIMESTAMP(3),
+    "status" TEXT NOT NULL DEFAULT 'disconnected',
+    "lastSyncedAt" TIMESTAMP(3),
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updatedAt" TIMESTAMP(3) NOT NULL,
-
-    CONSTRAINT "TeamTask_pkey" PRIMARY KEY ("id")
-);
-
--- CreateTable
-CREATE TABLE "Attendance" (
-    "id" TEXT NOT NULL,
-    "userId" TEXT NOT NULL,
-    "organizationId" TEXT NOT NULL,
-    "date" TIMESTAMP(3) NOT NULL,
-    "clockIn" TIMESTAMP(3),
-    "clockOut" TIMESTAMP(3),
-    "totalHours" DOUBLE PRECISION,
-    "status" TEXT NOT NULL DEFAULT 'present',
-    "lateReason" TEXT,
-    "leaveReason" TEXT,
-    "markedBy" TEXT,
-    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    "updatedAt" TIMESTAMP(3) NOT NULL,
-
-    CONSTRAINT "Attendance_pkey" PRIMARY KEY ("id")
-);
-
--- CreateTable
-CREATE TABLE "SubscriptionPlan" (
-    "id" TEXT NOT NULL,
+    "config" TEXT,
+    "connectedAt" TIMESTAMP(3),
+    "metadata" TEXT,
     "name" TEXT NOT NULL,
-    "price" DECIMAL(10,2) NOT NULL,
-    "annualPrice" DECIMAL(10,2) NOT NULL DEFAULT 0,
-    "quarterlyPrice" DECIMAL(10,2) NOT NULL DEFAULT 0,
-    "period" TEXT NOT NULL DEFAULT 'monthly',
-    "features" TEXT NOT NULL DEFAULT '[]',
-    "teamLimit" INTEGER NOT NULL DEFAULT 3,
-    "orderLimit" INTEGER NOT NULL DEFAULT 100,
-    "productLimit" INTEGER NOT NULL DEFAULT 50,
-    "isActive" BOOLEAN NOT NULL DEFAULT true,
-    "trialDays" INTEGER NOT NULL DEFAULT 14,
-    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    "updatedAt" TIMESTAMP(3) NOT NULL,
-
-    CONSTRAINT "SubscriptionPlan_pkey" PRIMARY KEY ("id")
-);
-
--- CreateTable
-CREATE TABLE "Subscription" (
-    "id" TEXT NOT NULL,
     "organizationId" TEXT NOT NULL,
-    "planId" TEXT NOT NULL,
-    "status" TEXT NOT NULL DEFAULT 'trial',
-    "billingCycle" TEXT NOT NULL DEFAULT 'monthly',
-    "trialStartsAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    "trialEndsAt" TIMESTAMP(3) NOT NULL,
-    "currentPeriodEnd" TIMESTAMP(3),
-    "lastReminderAt" TIMESTAMP(3),
-    "reminderCount" INTEGER NOT NULL DEFAULT 0,
-    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    "updatedAt" TIMESTAMP(3) NOT NULL,
+    "provider" TEXT NOT NULL,
+    "type" TEXT NOT NULL,
 
-    CONSTRAINT "Subscription_pkey" PRIMARY KEY ("id")
+    CONSTRAINT "IntegrationConnection_pkey" PRIMARY KEY ("id")
 );
 
 -- CreateTable
-CREATE TABLE "Invoice" (
+CREATE TABLE "public"."Invoice" (
     "id" TEXT NOT NULL,
     "invoiceNumber" TEXT NOT NULL,
     "organizationId" TEXT NOT NULL,
@@ -319,28 +240,342 @@ CREATE TABLE "Invoice" (
     "orgEmail" TEXT,
     "orgPhone" TEXT,
     "orgAddress" TEXT,
-    "lineItems" JSONB,
-    "subtotal" DECIMAL(12,2),
-    "taxRate" DECIMAL(5,2),
-    "taxAmount" DECIMAL(10,2),
-    "discountAmount" DECIMAL(10,2),
-    "clientEmail" TEXT,
-    "clientName" TEXT,
-    "clientAddress" TEXT,
-    "approvedBy" TEXT,
-    "approvedAt" TIMESTAMP(3),
-    "sentAt" TIMESTAMP(3),
-    "createdBy" TEXT,
-    "invoiceTitle" TEXT,
-    "paymentStatus" TEXT,
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updatedAt" TIMESTAMP(3) NOT NULL,
+    "approvedAt" TIMESTAMP(3),
+    "approvedBy" TEXT,
+    "clientAddress" TEXT,
+    "clientEmail" TEXT,
+    "clientName" TEXT,
+    "createdBy" TEXT,
+    "discountAmount" DECIMAL(10,2),
+    "invoiceTitle" TEXT,
+    "lineItems" JSONB,
+    "paymentStatus" TEXT,
+    "sentAt" TIMESTAMP(3),
+    "subtotal" DECIMAL(12,2),
+    "taxAmount" DECIMAL(10,2),
+    "taxRate" DECIMAL(5,2),
 
     CONSTRAINT "Invoice_pkey" PRIMARY KEY ("id")
 );
 
 -- CreateTable
-CREATE TABLE "ReportExport" (
+CREATE TABLE "public"."Lead" (
+    "id" TEXT NOT NULL,
+    "fullName" TEXT NOT NULL,
+    "email" TEXT NOT NULL,
+    "phone" TEXT,
+    "company" TEXT,
+    "companySize" TEXT,
+    "industry" TEXT,
+    "interest" TEXT,
+    "message" TEXT,
+    "status" TEXT NOT NULL DEFAULT 'new',
+    "source" TEXT NOT NULL DEFAULT 'website',
+    "notes" TEXT,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" TIMESTAMP(3) NOT NULL,
+    "consultationType" TEXT,
+    "preferredDate" TEXT,
+    "preferredTime" TEXT,
+    "timezone" TEXT,
+    "availabilityNote" TEXT,
+    "calendlyBookingLink" TEXT,
+    "lastFollowUpAt" TIMESTAMP(3),
+    "followUpCount" INTEGER NOT NULL DEFAULT 0,
+
+    CONSTRAINT "Lead_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "public"."LegalPage" (
+    "id" TEXT NOT NULL,
+    "slug" TEXT NOT NULL,
+    "title" TEXT NOT NULL,
+    "content" TEXT NOT NULL DEFAULT '',
+    "isActive" BOOLEAN NOT NULL DEFAULT true,
+    "updatedAt" TIMESTAMP(3) NOT NULL,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+    CONSTRAINT "LegalPage_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "public"."Notification" (
+    "id" TEXT NOT NULL,
+    "userId" TEXT,
+    "type" TEXT NOT NULL DEFAULT 'info',
+    "title" TEXT NOT NULL,
+    "message" TEXT NOT NULL,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "actionUrl" TEXT,
+    "icon" TEXT,
+    "orgId" TEXT,
+    "read" BOOLEAN NOT NULL DEFAULT false,
+
+    CONSTRAINT "Notification_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "public"."Order" (
+    "id" TEXT NOT NULL,
+    "orderNumber" TEXT NOT NULL,
+    "organizationId" TEXT NOT NULL,
+    "customerId" TEXT,
+    "status" TEXT NOT NULL DEFAULT 'pending',
+    "subtotal" DECIMAL(10,2) NOT NULL DEFAULT 0,
+    "discount" DECIMAL(10,2) NOT NULL DEFAULT 0,
+    "total" DECIMAL(10,2) NOT NULL DEFAULT 0,
+    "channel" TEXT NOT NULL DEFAULT 'manual',
+    "courier" TEXT,
+    "trackingNumber" TEXT,
+    "notes" TEXT,
+    "priority" INTEGER NOT NULL DEFAULT 50,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" TIMESTAMP(3) NOT NULL,
+
+    CONSTRAINT "Order_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "public"."OrderItem" (
+    "id" TEXT NOT NULL,
+    "orderId" TEXT NOT NULL,
+    "productId" TEXT,
+    "productName" TEXT NOT NULL,
+    "quantity" INTEGER NOT NULL,
+    "price" DECIMAL(10,2) NOT NULL,
+    "total" DECIMAL(10,2) NOT NULL,
+
+    CONSTRAINT "OrderItem_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "public"."Organization" (
+    "id" TEXT NOT NULL,
+    "name" TEXT NOT NULL,
+    "slug" TEXT NOT NULL,
+    "logo" TEXT,
+    "website" TEXT,
+    "phone" TEXT,
+    "email" TEXT,
+    "currency" TEXT NOT NULL DEFAULT 'USD',
+    "timezone" TEXT NOT NULL DEFAULT 'UTC',
+    "plan" TEXT NOT NULL DEFAULT 'starter',
+    "isActive" BOOLEAN NOT NULL DEFAULT true,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" TIMESTAMP(3) NOT NULL,
+    "workingHoursEnd" TEXT NOT NULL DEFAULT '18:00',
+    "workingHoursStart" TEXT NOT NULL DEFAULT '09:00',
+    "address" TEXT,
+    "brandColor" TEXT,
+    "brandDescription" TEXT,
+    "brandTagline" TEXT,
+    "country" TEXT,
+    "favicon" TEXT,
+    "religion" TEXT,
+    "secondaryBrandColor" TEXT,
+    "taxId" TEXT,
+    "banReason" TEXT,
+    "bannedAt" TIMESTAMP(3),
+    "isBanned" BOOLEAN NOT NULL DEFAULT false,
+    "paymentRejectionCount" INTEGER NOT NULL DEFAULT 0,
+    "usageOrdersCount" INTEGER NOT NULL DEFAULT 0,
+    "usageProductsCount" INTEGER NOT NULL DEFAULT 0,
+    "usageCustomersCount" INTEGER NOT NULL DEFAULT 0,
+    "usageStorageMb" INTEGER NOT NULL DEFAULT 0,
+    "usageInvoicesCount" INTEGER NOT NULL DEFAULT 0,
+    "usageCouponsCount" INTEGER NOT NULL DEFAULT 0,
+    "usageTasksCount" INTEGER NOT NULL DEFAULT 0,
+    "usageTeamChatsCount" INTEGER NOT NULL DEFAULT 0,
+    "usageBroadcastsCount" INTEGER NOT NULL DEFAULT 0,
+    "usageLastResetAt" TIMESTAMP(3),
+    "industry" TEXT,
+    "orderCounter" INTEGER NOT NULL DEFAULT 0,
+
+    CONSTRAINT "Organization_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "public"."OrganizationMember" (
+    "id" TEXT NOT NULL,
+    "organizationId" TEXT NOT NULL,
+    "userId" TEXT NOT NULL,
+    "role" TEXT NOT NULL DEFAULT 'member',
+    "joinedAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "roleId" TEXT,
+    "absenceCount" INTEGER NOT NULL DEFAULT 0,
+    "penaltyUntil" TIMESTAMP(3),
+    "pin" TEXT,
+    "pinCreatedAt" TIMESTAMP(3),
+
+    CONSTRAINT "OrganizationMember_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "public"."PaymentProof" (
+    "id" TEXT NOT NULL,
+    "subscriptionId" TEXT NOT NULL,
+    "organizationId" TEXT NOT NULL,
+    "planName" TEXT NOT NULL,
+    "amount" DECIMAL(10,2) NOT NULL,
+    "transactionId" TEXT NOT NULL,
+    "paymentMethod" TEXT NOT NULL DEFAULT 'bank_transfer',
+    "screenshotUrl" TEXT,
+    "status" TEXT NOT NULL DEFAULT 'pending',
+    "adminNote" TEXT,
+    "reviewedBy" TEXT,
+    "reviewedAt" TIMESTAMP(3),
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" TIMESTAMP(3) NOT NULL,
+    "billingCycle" TEXT NOT NULL DEFAULT 'monthly',
+    "planId" TEXT,
+    "clientNote" TEXT,
+
+    CONSTRAINT "PaymentProof_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "public"."PlatformDocument" (
+    "id" TEXT NOT NULL,
+    "title" TEXT NOT NULL,
+    "description" TEXT,
+    "fileName" TEXT NOT NULL,
+    "fileSize" INTEGER NOT NULL,
+    "mimeType" TEXT NOT NULL,
+    "fileType" TEXT NOT NULL DEFAULT 'document',
+    "cloudinaryUrl" TEXT,
+    "cloudinaryPublicId" TEXT,
+    "category" TEXT NOT NULL DEFAULT 'uploaded',
+    "isActive" BOOLEAN NOT NULL DEFAULT true,
+    "uploadedBy" TEXT,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" TIMESTAMP(3) NOT NULL,
+    "organizationId" TEXT,
+
+    CONSTRAINT "PlatformDocument_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "public"."PlatformSettings" (
+    "id" TEXT NOT NULL,
+    "companyName" TEXT NOT NULL DEFAULT 'Valtriox',
+    "companyEmail" TEXT NOT NULL,
+    "companyPhone" TEXT,
+    "companyWebsite" TEXT,
+    "companyAddress" TEXT,
+    "supportHours" TEXT NOT NULL DEFAULT 'Mon-Fri: 9AM-6PM PKT',
+    "whatsappNumber" TEXT,
+    "instagramUrl" TEXT,
+    "facebookUrl" TEXT,
+    "twitterUrl" TEXT,
+    "paymentMethods" TEXT NOT NULL DEFAULT '[]',
+    "currency" TEXT NOT NULL DEFAULT 'PKR',
+    "logoUrl" TEXT,
+    "faviconUrl" TEXT,
+    "primaryBrandColor" TEXT NOT NULL DEFAULT '#059669',
+    "secondaryBrandColor" TEXT NOT NULL DEFAULT '#d97706',
+    "currencySymbol" TEXT NOT NULL DEFAULT 'Rs.',
+    "customCss" TEXT NOT NULL DEFAULT '',
+    "emailFooterText" TEXT,
+    "invoiceHeaderText" TEXT,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" TIMESTAMP(3) NOT NULL,
+    "tagline" TEXT NOT NULL DEFAULT 'Premium Brand Management Portal',
+    "showInstagram" BOOLEAN NOT NULL DEFAULT false,
+    "showFacebook" BOOLEAN NOT NULL DEFAULT false,
+    "showTwitter" BOOLEAN NOT NULL DEFAULT false,
+    "showLinkedin" BOOLEAN NOT NULL DEFAULT false,
+    "showDiscord" BOOLEAN NOT NULL DEFAULT false,
+    "showReddit" BOOLEAN NOT NULL DEFAULT false,
+    "showYoutube" BOOLEAN NOT NULL DEFAULT false,
+    "showTiktok" BOOLEAN NOT NULL DEFAULT false,
+    "showWhatsApp" BOOLEAN NOT NULL DEFAULT false,
+    "linkedinUrl" TEXT,
+    "discordUrl" TEXT,
+    "redditUrl" TEXT,
+    "youtubeUrl" TEXT,
+    "tiktokUrl" TEXT,
+    "socialLinksVisible" TEXT NOT NULL DEFAULT 'true',
+    "founderBio" TEXT,
+    "founderImageUrl" TEXT,
+    "leadMagnetTitle" TEXT,
+    "leadMagnetDescription" TEXT,
+    "leadMagnetEmailSubject" TEXT,
+    "leadMagnetEmailBody" TEXT,
+    "leadMagnetPdfUrl" TEXT,
+    "leadMagnetSentCount" INTEGER NOT NULL DEFAULT 0,
+    "leadMagnetDownloadCount" INTEGER NOT NULL DEFAULT 0,
+
+    CONSTRAINT "PlatformSettings_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "public"."Product" (
+    "id" TEXT NOT NULL,
+    "organizationId" TEXT NOT NULL,
+    "name" TEXT NOT NULL,
+    "description" TEXT,
+    "sku" TEXT,
+    "price" DECIMAL(10,2) NOT NULL DEFAULT 0,
+    "costPrice" DECIMAL(10,2),
+    "stock" INTEGER NOT NULL DEFAULT 0,
+    "category" TEXT,
+    "status" TEXT NOT NULL DEFAULT 'active',
+    "imageUrl" TEXT,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" TIMESTAMP(3) NOT NULL,
+
+    CONSTRAINT "Product_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "public"."Proposal" (
+    "id" TEXT NOT NULL,
+    "leadId" TEXT,
+    "clientName" TEXT NOT NULL,
+    "clientEmail" TEXT NOT NULL,
+    "clientCompany" TEXT,
+    "clientPhone" TEXT,
+    "type" TEXT NOT NULL,
+    "title" TEXT NOT NULL,
+    "status" TEXT NOT NULL DEFAULT 'draft',
+    "totalCost" DECIMAL(10,2),
+    "currency" TEXT NOT NULL DEFAULT 'PKR',
+    "currencySymbol" TEXT NOT NULL DEFAULT 'Rs.',
+    "validUntil" TIMESTAMP(3),
+    "content" TEXT NOT NULL DEFAULT '{}',
+    "notes" TEXT,
+    "sentAt" TIMESTAMP(3),
+    "viewedAt" TIMESTAMP(3),
+    "respondedAt" TIMESTAMP(3),
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" TIMESTAMP(3) NOT NULL,
+    "payproOrderId" TEXT,
+    "paymentStatus" TEXT NOT NULL DEFAULT 'unpaid',
+    "paidAt" TIMESTAMP(3),
+    "paymentAmount" DECIMAL(10,2),
+
+    CONSTRAINT "Proposal_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "public"."PushSubscription" (
+    "id" TEXT NOT NULL,
+    "userId" TEXT NOT NULL,
+    "orgId" TEXT,
+    "endpoint" TEXT NOT NULL,
+    "keysAuth" TEXT NOT NULL,
+    "keysP256dh" TEXT NOT NULL,
+    "userAgent" TEXT,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+    CONSTRAINT "PushSubscription_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "public"."ReportExport" (
     "id" TEXT NOT NULL,
     "organizationId" TEXT NOT NULL,
     "type" TEXT NOT NULL,
@@ -360,187 +595,7 @@ CREATE TABLE "ReportExport" (
 );
 
 -- CreateTable
-CREATE TABLE "ClientMessage" (
-    "id" TEXT NOT NULL,
-    "organizationId" TEXT NOT NULL,
-    "threadId" TEXT NOT NULL,
-    "parentMessageId" TEXT,
-    "direction" TEXT NOT NULL,
-    "senderUserId" TEXT,
-    "senderName" TEXT NOT NULL,
-    "senderEmail" TEXT NOT NULL,
-    "senderRole" TEXT NOT NULL,
-    "senderAvatar" TEXT,
-    "category" TEXT NOT NULL,
-    "subject" TEXT NOT NULL,
-    "body" TEXT NOT NULL,
-    "attachments" JSONB,
-    "priority" TEXT NOT NULL DEFAULT 'normal',
-    "actions" JSONB,
-    "metadata" JSONB,
-    "isSystemMessage" BOOLEAN NOT NULL DEFAULT false,
-    "isReadByAdmin" BOOLEAN NOT NULL DEFAULT false,
-    "isReadByClient" BOOLEAN NOT NULL DEFAULT false,
-    "readAt" TIMESTAMP(3),
-    "isPinned" BOOLEAN NOT NULL DEFAULT false,
-    "isArchived" BOOLEAN NOT NULL DEFAULT false,
-    "scheduledFor" TIMESTAMP(3),
-    "deadlineDate" TIMESTAMP(3),
-    "sentAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    "relatedInvoiceId" TEXT,
-    "relatedReportId" TEXT,
-    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    "updatedAt" TIMESTAMP(3) NOT NULL,
-
-    CONSTRAINT "ClientMessage_pkey" PRIMARY KEY ("id")
-);
-
--- CreateTable
-CREATE TABLE "PaymentProof" (
-    "id" TEXT NOT NULL,
-    "subscriptionId" TEXT NOT NULL,
-    "organizationId" TEXT NOT NULL,
-    "planId" TEXT,
-    "planName" TEXT NOT NULL,
-    "amount" DECIMAL(10,2) NOT NULL,
-    "billingCycle" TEXT NOT NULL DEFAULT 'monthly',
-    "transactionId" TEXT NOT NULL,
-    "paymentMethod" TEXT NOT NULL DEFAULT 'bank_transfer',
-    "screenshotUrl" TEXT,
-    "status" TEXT NOT NULL DEFAULT 'pending',
-    "adminNote" TEXT,
-    "clientNote" TEXT,
-    "reviewedBy" TEXT,
-    "reviewedAt" TIMESTAMP(3),
-    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    "updatedAt" TIMESTAMP(3) NOT NULL,
-
-    CONSTRAINT "PaymentProof_pkey" PRIMARY KEY ("id")
-);
-
--- CreateTable
-CREATE TABLE "Notification" (
-    "id" TEXT NOT NULL,
-    "orgId" TEXT,
-    "userId" TEXT,
-    "title" TEXT NOT NULL,
-    "message" TEXT NOT NULL,
-    "type" TEXT NOT NULL DEFAULT 'info',
-    "actionUrl" TEXT,
-    "icon" TEXT,
-    "read" BOOLEAN NOT NULL DEFAULT false,
-    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
-
-    CONSTRAINT "Notification_pkey" PRIMARY KEY ("id")
-);
-
--- CreateTable
-CREATE TABLE "Lead" (
-    "id" TEXT NOT NULL,
-    "fullName" TEXT NOT NULL,
-    "email" TEXT NOT NULL,
-    "phone" TEXT,
-    "company" TEXT,
-    "companySize" TEXT,
-    "industry" TEXT,
-    "interest" TEXT,
-    "message" TEXT,
-    "consultationType" TEXT,
-    "preferredDate" TEXT,
-    "preferredTime" TEXT,
-    "timezone" TEXT,
-    "availabilityNote" TEXT,
-    "calendlyBookingLink" TEXT,
-    "status" TEXT NOT NULL DEFAULT 'new',
-    "source" TEXT NOT NULL DEFAULT 'website',
-    "notes" TEXT,
-    "lastFollowUpAt" TIMESTAMP(3),
-    "followUpCount" INTEGER NOT NULL DEFAULT 0,
-    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    "updatedAt" TIMESTAMP(3) NOT NULL,
-
-    CONSTRAINT "Lead_pkey" PRIMARY KEY ("id")
-);
-
--- CreateTable
-CREATE TABLE "Proposal" (
-    "id" TEXT NOT NULL,
-    "leadId" TEXT,
-    "clientName" TEXT NOT NULL,
-    "clientEmail" TEXT NOT NULL,
-    "clientCompany" TEXT,
-    "clientPhone" TEXT,
-    "type" TEXT NOT NULL,
-    "title" TEXT NOT NULL,
-    "status" TEXT NOT NULL DEFAULT 'draft',
-    "totalCost" DECIMAL(10,2),
-    "currency" TEXT NOT NULL DEFAULT 'PKR',
-    "currencySymbol" TEXT NOT NULL DEFAULT 'Rs.',
-    "validUntil" TIMESTAMP(3),
-    "content" TEXT NOT NULL DEFAULT '{}',
-    "notes" TEXT,
-    "sentAt" TIMESTAMP(3),
-    "viewedAt" TIMESTAMP(3),
-    "respondedAt" TIMESTAMP(3),
-    "payproOrderId" TEXT,
-    "paymentStatus" TEXT NOT NULL DEFAULT 'unpaid',
-    "paidAt" TIMESTAMP(3),
-    "paymentAmount" DECIMAL(10,2),
-    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    "updatedAt" TIMESTAMP(3) NOT NULL,
-
-    CONSTRAINT "Proposal_pkey" PRIMARY KEY ("id")
-);
-
--- CreateTable
-CREATE TABLE "PlatformSettings" (
-    "id" TEXT NOT NULL,
-    "companyName" TEXT NOT NULL DEFAULT 'Valtriox',
-    "companyEmail" TEXT NOT NULL,
-    "companyPhone" TEXT,
-    "companyWebsite" TEXT,
-    "companyAddress" TEXT,
-    "supportHours" TEXT NOT NULL DEFAULT 'Mon-Fri: 9AM-6PM PKT',
-    "whatsappNumber" TEXT,
-    "instagramUrl" TEXT,
-    "facebookUrl" TEXT,
-    "twitterUrl" TEXT,
-    "linkedinUrl" TEXT,
-    "discordUrl" TEXT,
-    "redditUrl" TEXT,
-    "youtubeUrl" TEXT,
-    "tiktokUrl" TEXT,
-    "socialLinksVisible" TEXT NOT NULL DEFAULT 'true',
-    "showInstagram" BOOLEAN NOT NULL DEFAULT false,
-    "showFacebook" BOOLEAN NOT NULL DEFAULT false,
-    "showTwitter" BOOLEAN NOT NULL DEFAULT false,
-    "showLinkedin" BOOLEAN NOT NULL DEFAULT false,
-    "showDiscord" BOOLEAN NOT NULL DEFAULT false,
-    "showReddit" BOOLEAN NOT NULL DEFAULT false,
-    "showYoutube" BOOLEAN NOT NULL DEFAULT false,
-    "showTiktok" BOOLEAN NOT NULL DEFAULT false,
-    "showWhatsApp" BOOLEAN NOT NULL DEFAULT false,
-    "paymentMethods" TEXT NOT NULL DEFAULT '[]',
-    "currency" TEXT NOT NULL DEFAULT 'PKR',
-    "logoUrl" TEXT,
-    "faviconUrl" TEXT,
-    "founderImageUrl" TEXT,
-    "founderBio" TEXT,
-    "primaryBrandColor" TEXT NOT NULL DEFAULT '#059669',
-    "secondaryBrandColor" TEXT NOT NULL DEFAULT '#d97706',
-    "currencySymbol" TEXT NOT NULL DEFAULT 'Rs.',
-    "customCss" TEXT NOT NULL DEFAULT '',
-    "tagline" TEXT NOT NULL DEFAULT 'Premium Brand Management Portal',
-    "emailFooterText" TEXT,
-    "invoiceHeaderText" TEXT,
-    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    "updatedAt" TIMESTAMP(3) NOT NULL,
-
-    CONSTRAINT "PlatformSettings_pkey" PRIMARY KEY ("id")
-);
-
--- CreateTable
-CREATE TABLE "Role" (
+CREATE TABLE "public"."Role" (
     "id" TEXT NOT NULL,
     "name" TEXT NOT NULL,
     "label" TEXT NOT NULL,
@@ -554,107 +609,55 @@ CREATE TABLE "Role" (
 );
 
 -- CreateTable
-CREATE TABLE "TeamInvitation" (
+CREATE TABLE "public"."Session" (
+    "id" TEXT NOT NULL,
+    "sessionToken" TEXT NOT NULL,
+    "userId" TEXT NOT NULL,
+    "expires" TIMESTAMP(3) NOT NULL,
+
+    CONSTRAINT "Session_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "public"."Subscription" (
     "id" TEXT NOT NULL,
     "organizationId" TEXT NOT NULL,
-    "inviterId" TEXT NOT NULL,
-    "inviteeEmail" TEXT NOT NULL,
-    "inviteeName" TEXT NOT NULL,
-    "role" TEXT NOT NULL DEFAULT 'member',
-    "roleId" TEXT,
-    "pin" TEXT NOT NULL,
-    "status" TEXT NOT NULL DEFAULT 'pending',
-    "invitedAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    "acceptedAt" TIMESTAMP(3),
-    "expiresAt" TIMESTAMP(3) NOT NULL,
-
-    CONSTRAINT "TeamInvitation_pkey" PRIMARY KEY ("id")
-);
-
--- CreateTable
-CREATE TABLE "SystemSetting" (
-    "id" TEXT NOT NULL,
-    "key" TEXT NOT NULL,
-    "value" TEXT NOT NULL,
-    "category" TEXT NOT NULL DEFAULT 'system',
+    "planId" TEXT NOT NULL,
+    "status" TEXT NOT NULL DEFAULT 'trial',
+    "trialStartsAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "trialEndsAt" TIMESTAMP(3) NOT NULL,
+    "currentPeriodEnd" TIMESTAMP(3),
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updatedAt" TIMESTAMP(3) NOT NULL,
+    "billingCycle" TEXT NOT NULL DEFAULT 'monthly',
+    "lastReminderAt" TIMESTAMP(3),
+    "reminderCount" INTEGER NOT NULL DEFAULT 0,
 
-    CONSTRAINT "SystemSetting_pkey" PRIMARY KEY ("id")
+    CONSTRAINT "Subscription_pkey" PRIMARY KEY ("id")
 );
 
 -- CreateTable
-CREATE TABLE "LegalPage" (
+CREATE TABLE "public"."SubscriptionPlan" (
     "id" TEXT NOT NULL,
-    "slug" TEXT NOT NULL,
-    "title" TEXT NOT NULL,
-    "content" TEXT NOT NULL DEFAULT '',
-    "isActive" BOOLEAN NOT NULL DEFAULT true,
-    "updatedAt" TIMESTAMP(3) NOT NULL,
-    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
-
-    CONSTRAINT "LegalPage_pkey" PRIMARY KEY ("id")
-);
-
--- CreateTable
-CREATE TABLE "PlatformDocument" (
-    "id" TEXT NOT NULL,
-    "title" TEXT NOT NULL,
-    "description" TEXT,
-    "fileName" TEXT NOT NULL,
-    "fileSize" INTEGER NOT NULL,
-    "mimeType" TEXT NOT NULL,
-    "fileType" TEXT NOT NULL DEFAULT 'document',
-    "cloudinaryUrl" TEXT,
-    "cloudinaryPublicId" TEXT,
-    "category" TEXT NOT NULL DEFAULT 'uploaded',
-    "isActive" BOOLEAN NOT NULL DEFAULT true,
-    "uploadedBy" TEXT,
-    "organizationId" TEXT,
-    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    "updatedAt" TIMESTAMP(3) NOT NULL,
-
-    CONSTRAINT "PlatformDocument_pkey" PRIMARY KEY ("id")
-);
-
--- CreateTable
-CREATE TABLE "ValtrioxTeamMember" (
-    "id" TEXT NOT NULL,
-    "userId" TEXT NOT NULL,
-    "email" TEXT NOT NULL,
     "name" TEXT NOT NULL,
-    "role" TEXT NOT NULL DEFAULT 'platform_admin',
-    "department" TEXT,
-    "status" TEXT NOT NULL DEFAULT 'active',
-    "invitedBy" TEXT,
-    "joinedAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    "lastActive" TIMESTAMP(3),
-    "visibleSections" TEXT NOT NULL DEFAULT '[]',
+    "price" DECIMAL(10,2) NOT NULL,
+    "period" TEXT NOT NULL DEFAULT 'monthly',
+    "features" TEXT NOT NULL DEFAULT '[]',
+    "teamLimit" INTEGER NOT NULL DEFAULT 3,
+    "orderLimit" INTEGER NOT NULL DEFAULT 100,
+    "productLimit" INTEGER NOT NULL DEFAULT 50,
+    "isActive" BOOLEAN NOT NULL DEFAULT true,
+    "trialDays" INTEGER NOT NULL DEFAULT 14,
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updatedAt" TIMESTAMP(3) NOT NULL,
+    "annualPrice" DECIMAL(10,2) NOT NULL DEFAULT 0,
+    "quarterlyPrice" DECIMAL(10,2) NOT NULL DEFAULT 0,
 
-    CONSTRAINT "ValtrioxTeamMember_pkey" PRIMARY KEY ("id")
+    CONSTRAINT "SubscriptionPlan_pkey" PRIMARY KEY ("id")
 );
 
 -- CreateTable
-CREATE TABLE "ValtrioxTeamInvitation" (
-    "id" TEXT NOT NULL,
-    "email" TEXT NOT NULL,
-    "name" TEXT NOT NULL,
-    "role" TEXT NOT NULL DEFAULT 'platform_admin',
-    "department" TEXT,
-    "invitedBy" TEXT,
-    "token" TEXT NOT NULL,
-    "status" TEXT NOT NULL DEFAULT 'pending',
-    "expiresAt" TIMESTAMP(3) NOT NULL,
-    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    "acceptedAt" TIMESTAMP(3),
-
-    CONSTRAINT "ValtrioxTeamInvitation_pkey" PRIMARY KEY ("id")
-);
-
--- CreateTable
-CREATE TABLE "SupportConversation" (
+CREATE TABLE "public"."SupportConversation" (
     "id" TEXT NOT NULL,
     "organizationId" TEXT NOT NULL,
     "orgName" TEXT NOT NULL,
@@ -669,7 +672,7 @@ CREATE TABLE "SupportConversation" (
 );
 
 -- CreateTable
-CREATE TABLE "SupportMessage" (
+CREATE TABLE "public"."SupportMessage" (
     "id" TEXT NOT NULL,
     "conversationId" TEXT NOT NULL,
     "senderId" TEXT NOT NULL,
@@ -687,573 +690,608 @@ CREATE TABLE "SupportMessage" (
 );
 
 -- CreateTable
-CREATE TABLE "EmailTemplate" (
+CREATE TABLE "public"."SystemSetting" (
     "id" TEXT NOT NULL,
-    "type" TEXT NOT NULL,
-    "name" TEXT NOT NULL,
-    "subject" TEXT NOT NULL,
-    "htmlContent" TEXT NOT NULL,
-    "textContent" TEXT NOT NULL DEFAULT '',
-    "variables" TEXT NOT NULL DEFAULT '[]',
-    "isActive" BOOLEAN NOT NULL DEFAULT true,
-    "updatedAt" TIMESTAMP(3) NOT NULL,
-    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
-
-    CONSTRAINT "EmailTemplate_pkey" PRIMARY KEY ("id")
-);
-
--- CreateTable
-CREATE TABLE "Automation" (
-    "id" TEXT NOT NULL,
-    "name" TEXT NOT NULL,
-    "description" TEXT,
-    "trigger" TEXT NOT NULL,
-    "triggerConfig" TEXT NOT NULL DEFAULT '{}',
-    "templateId" TEXT,
-    "action" TEXT NOT NULL DEFAULT 'send_email',
-    "actionConfig" TEXT NOT NULL DEFAULT '{}',
-    "delayMinutes" INTEGER NOT NULL DEFAULT 0,
-    "enabled" BOOLEAN NOT NULL DEFAULT true,
-    "lastRunAt" TIMESTAMP(3),
-    "runCount" INTEGER NOT NULL DEFAULT 0,
+    "key" TEXT NOT NULL,
+    "value" TEXT NOT NULL,
+    "category" TEXT NOT NULL DEFAULT 'system',
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updatedAt" TIMESTAMP(3) NOT NULL,
 
-    CONSTRAINT "Automation_pkey" PRIMARY KEY ("id")
+    CONSTRAINT "SystemSetting_pkey" PRIMARY KEY ("id")
 );
 
 -- CreateTable
-CREATE TABLE "IntegrationConnection" (
+CREATE TABLE "public"."TeamInvitation" (
     "id" TEXT NOT NULL,
     "organizationId" TEXT NOT NULL,
-    "type" TEXT NOT NULL,
-    "provider" TEXT NOT NULL,
-    "name" TEXT NOT NULL,
-    "status" TEXT NOT NULL DEFAULT 'disconnected',
-    "config" TEXT,
-    "metadata" TEXT,
-    "connectedAt" TIMESTAMP(3),
-    "lastSyncedAt" TIMESTAMP(3),
-    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    "updatedAt" TIMESTAMP(3) NOT NULL,
-
-    CONSTRAINT "IntegrationConnection_pkey" PRIMARY KEY ("id")
-);
-
--- CreateTable
-CREATE TABLE "Feedback" (
-    "id" TEXT NOT NULL,
-    "organizationId" TEXT NOT NULL,
-    "type" TEXT NOT NULL,
-    "rating" INTEGER,
-    "content" TEXT NOT NULL,
-    "authorName" TEXT,
-    "authorCompany" TEXT,
-    "videoUrl" TEXT,
-    "isFeatured" BOOLEAN NOT NULL DEFAULT false,
+    "inviterId" TEXT NOT NULL,
+    "inviteeEmail" TEXT NOT NULL,
+    "inviteeName" TEXT NOT NULL,
+    "role" TEXT NOT NULL DEFAULT 'member',
+    "roleId" TEXT,
+    "pin" TEXT NOT NULL,
     "status" TEXT NOT NULL DEFAULT 'pending',
-    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    "updatedAt" TIMESTAMP(3) NOT NULL,
+    "invitedAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "acceptedAt" TIMESTAMP(3),
+    "expiresAt" TIMESTAMP(3) NOT NULL,
 
-    CONSTRAINT "Feedback_pkey" PRIMARY KEY ("id")
+    CONSTRAINT "TeamInvitation_pkey" PRIMARY KEY ("id")
 );
 
 -- CreateTable
-CREATE TABLE "BetaInvite" (
+CREATE TABLE "public"."TeamTask" (
+    "id" TEXT NOT NULL,
+    "organizationId" TEXT NOT NULL,
+    "assignedTo" TEXT,
+    "title" TEXT NOT NULL,
+    "description" TEXT,
+    "status" TEXT NOT NULL DEFAULT 'todo',
+    "priority" TEXT NOT NULL DEFAULT 'medium',
+    "dueDate" TIMESTAMP(3),
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" TIMESTAMP(3) NOT NULL,
+
+    CONSTRAINT "TeamTask_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "public"."User" (
+    "id" TEXT NOT NULL,
+    "name" TEXT NOT NULL,
+    "email" TEXT NOT NULL,
+    "emailVerified" TIMESTAMP(3),
+    "password" TEXT,
+    "image" TEXT,
+    "role" TEXT NOT NULL DEFAULT 'owner',
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" TIMESTAMP(3) NOT NULL,
+    "otpCode" TEXT,
+    "otpExpires" TIMESTAMP(3),
+    "otpVerified" BOOLEAN NOT NULL DEFAULT false,
+
+    CONSTRAINT "User_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "public"."ValtrioxTeamInvitation" (
     "id" TEXT NOT NULL,
     "email" TEXT NOT NULL,
+    "name" TEXT NOT NULL,
+    "role" TEXT NOT NULL DEFAULT 'platform_admin',
+    "department" TEXT,
+    "invitedBy" TEXT,
     "token" TEXT NOT NULL,
-    "plan" TEXT NOT NULL DEFAULT 'enterprise',
-    "invitedBy" TEXT NOT NULL,
-    "status" TEXT NOT NULL DEFAULT 'sent',
-    "trialDays" INTEGER NOT NULL DEFAULT 14,
-    "expiresAt" TIMESTAMP(3),
-    "acceptedAt" TIMESTAMP(3),
+    "status" TEXT NOT NULL DEFAULT 'pending',
+    "expiresAt" TIMESTAMP(3) NOT NULL,
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    "updatedAt" TIMESTAMP(3) NOT NULL,
+    "acceptedAt" TIMESTAMP(3),
 
-    CONSTRAINT "BetaInvite_pkey" PRIMARY KEY ("id")
+    CONSTRAINT "ValtrioxTeamInvitation_pkey" PRIMARY KEY ("id")
 );
 
 -- CreateTable
-CREATE TABLE "PushSubscription" (
+CREATE TABLE "public"."ValtrioxTeamMember" (
     "id" TEXT NOT NULL,
     "userId" TEXT NOT NULL,
-    "orgId" TEXT,
-    "endpoint" TEXT NOT NULL,
-    "keysAuth" TEXT NOT NULL,
-    "keysP256dh" TEXT NOT NULL,
-    "userAgent" TEXT,
+    "email" TEXT NOT NULL,
+    "name" TEXT NOT NULL,
+    "role" TEXT NOT NULL DEFAULT 'platform_admin',
+    "department" TEXT,
+    "status" TEXT NOT NULL DEFAULT 'active',
+    "invitedBy" TEXT,
+    "joinedAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "lastActive" TIMESTAMP(3),
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" TIMESTAMP(3) NOT NULL,
+    "visibleSections" TEXT NOT NULL DEFAULT '[]',
 
-    CONSTRAINT "PushSubscription_pkey" PRIMARY KEY ("id")
+    CONSTRAINT "ValtrioxTeamMember_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "public"."VerificationToken" (
+    "identifier" TEXT NOT NULL,
+    "token" TEXT NOT NULL,
+    "expires" TIMESTAMP(3) NOT NULL
+);
+
+-- CreateTable
+CREATE TABLE "public"."suppliers" (
+    "id" TEXT NOT NULL,
+    "organization_id" TEXT NOT NULL,
+    "name" TEXT NOT NULL,
+    "contact_person" TEXT,
+    "email" TEXT,
+    "phone" TEXT,
+    "category" TEXT NOT NULL DEFAULT 'General',
+    "status" TEXT NOT NULL DEFAULT 'active',
+    "address" TEXT,
+    "notes" TEXT,
+    "rating" INTEGER,
+    "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updated_at" TIMESTAMP(3) NOT NULL,
+
+    CONSTRAINT "suppliers_pkey" PRIMARY KEY ("id")
 );
 
 -- CreateIndex
-CREATE INDEX "Account_userId_idx" ON "Account"("userId");
+CREATE UNIQUE INDEX "Account_provider_providerAccountId_key" ON "public"."Account"("provider" ASC, "providerAccountId" ASC);
 
 -- CreateIndex
-CREATE UNIQUE INDEX "Account_provider_providerAccountId_key" ON "Account"("provider", "providerAccountId");
+CREATE INDEX "Account_userId_idx" ON "public"."Account"("userId" ASC);
 
 -- CreateIndex
-CREATE UNIQUE INDEX "Session_sessionToken_key" ON "Session"("sessionToken");
+CREATE INDEX "Attendance_organizationId_date_idx" ON "public"."Attendance"("organizationId" ASC, "date" ASC);
 
 -- CreateIndex
-CREATE INDEX "Session_userId_idx" ON "Session"("userId");
+CREATE INDEX "Attendance_organizationId_status_idx" ON "public"."Attendance"("organizationId" ASC, "status" ASC);
 
 -- CreateIndex
-CREATE UNIQUE INDEX "VerificationToken_token_key" ON "VerificationToken"("token");
+CREATE INDEX "Attendance_userId_date_idx" ON "public"."Attendance"("userId" ASC, "date" ASC);
 
 -- CreateIndex
-CREATE UNIQUE INDEX "VerificationToken_identifier_token_key" ON "VerificationToken"("identifier", "token");
+CREATE UNIQUE INDEX "Attendance_userId_organizationId_date_key" ON "public"."Attendance"("userId" ASC, "organizationId" ASC, "date" ASC);
 
 -- CreateIndex
-CREATE UNIQUE INDEX "User_email_key" ON "User"("email");
+CREATE INDEX "Automation_enabled_idx" ON "public"."Automation"("enabled" ASC);
 
 -- CreateIndex
-CREATE INDEX "User_role_idx" ON "User"("role");
+CREATE INDEX "Automation_trigger_idx" ON "public"."Automation"("trigger" ASC);
 
 -- CreateIndex
-CREATE UNIQUE INDEX "Organization_slug_key" ON "Organization"("slug");
+CREATE UNIQUE INDEX "BetaInvite_email_key" ON "public"."BetaInvite"("email" ASC);
 
 -- CreateIndex
-CREATE INDEX "Organization_plan_idx" ON "Organization"("plan");
+CREATE INDEX "BetaInvite_invitedBy_idx" ON "public"."BetaInvite"("invitedBy" ASC);
 
 -- CreateIndex
-CREATE INDEX "Organization_isActive_idx" ON "Organization"("isActive");
+CREATE INDEX "BetaInvite_status_idx" ON "public"."BetaInvite"("status" ASC);
 
 -- CreateIndex
-CREATE INDEX "OrganizationMember_organizationId_role_idx" ON "OrganizationMember"("organizationId", "role");
+CREATE UNIQUE INDEX "BetaInvite_token_key" ON "public"."BetaInvite"("token" ASC);
 
 -- CreateIndex
-CREATE UNIQUE INDEX "OrganizationMember_organizationId_userId_key" ON "OrganizationMember"("organizationId", "userId");
+CREATE INDEX "ClientMessage_createdAt_idx" ON "public"."ClientMessage"("createdAt" ASC);
 
 -- CreateIndex
-CREATE INDEX "Product_organizationId_status_idx" ON "Product"("organizationId", "status");
+CREATE INDEX "ClientMessage_isArchived_idx" ON "public"."ClientMessage"("isArchived" ASC);
 
 -- CreateIndex
-CREATE INDEX "Product_organizationId_category_idx" ON "Product"("organizationId", "category");
+CREATE INDEX "ClientMessage_organizationId_category_idx" ON "public"."ClientMessage"("organizationId" ASC, "category" ASC);
 
 -- CreateIndex
-CREATE INDEX "Product_organizationId_createdAt_idx" ON "Product"("organizationId", "createdAt");
+CREATE INDEX "ClientMessage_organizationId_direction_idx" ON "public"."ClientMessage"("organizationId" ASC, "direction" ASC);
 
 -- CreateIndex
-CREATE INDEX "Product_organizationId_stock_idx" ON "Product"("organizationId", "stock");
+CREATE INDEX "ClientMessage_scheduledFor_idx" ON "public"."ClientMessage"("scheduledFor" ASC);
 
 -- CreateIndex
-CREATE INDEX "Customer_organizationId_loyaltyTier_idx" ON "Customer"("organizationId", "loyaltyTier");
+CREATE INDEX "ClientMessage_threadId_idx" ON "public"."ClientMessage"("threadId" ASC);
 
 -- CreateIndex
-CREATE INDEX "Customer_organizationId_totalSpent_idx" ON "Customer"("organizationId", "totalSpent");
+CREATE UNIQUE INDEX "Coupon_organizationId_code_key" ON "public"."Coupon"("organizationId" ASC, "code" ASC);
 
 -- CreateIndex
-CREATE INDEX "Customer_organizationId_createdAt_idx" ON "Customer"("organizationId", "createdAt");
+CREATE INDEX "Coupon_organizationId_expiresAt_idx" ON "public"."Coupon"("organizationId" ASC, "expiresAt" ASC);
 
 -- CreateIndex
-CREATE INDEX "Customer_organizationId_email_idx" ON "Customer"("organizationId", "email");
+CREATE INDEX "Coupon_organizationId_isActive_idx" ON "public"."Coupon"("organizationId" ASC, "isActive" ASC);
 
 -- CreateIndex
-CREATE INDEX "Order_organizationId_status_idx" ON "Order"("organizationId", "status");
+CREATE INDEX "Customer_organizationId_createdAt_idx" ON "public"."Customer"("organizationId" ASC, "createdAt" ASC);
 
 -- CreateIndex
-CREATE INDEX "Order_organizationId_createdAt_idx" ON "Order"("organizationId", "createdAt");
+CREATE INDEX "Customer_organizationId_email_idx" ON "public"."Customer"("organizationId" ASC, "email" ASC);
 
 -- CreateIndex
-CREATE INDEX "Order_organizationId_customerId_idx" ON "Order"("organizationId", "customerId");
+CREATE INDEX "Customer_organizationId_loyaltyTier_idx" ON "public"."Customer"("organizationId" ASC, "loyaltyTier" ASC);
 
 -- CreateIndex
-CREATE INDEX "Order_channel_idx" ON "Order"("channel");
+CREATE INDEX "Customer_organizationId_totalSpent_idx" ON "public"."Customer"("organizationId" ASC, "totalSpent" ASC);
 
 -- CreateIndex
-CREATE INDEX "Order_orderNumber_idx" ON "Order"("orderNumber");
+CREATE UNIQUE INDEX "EmailTemplate_type_key" ON "public"."EmailTemplate"("type" ASC);
 
 -- CreateIndex
-CREATE UNIQUE INDEX "Order_organizationId_orderNumber_key" ON "Order"("organizationId", "orderNumber");
+CREATE INDEX "Expense_organizationId_category_idx" ON "public"."Expense"("organizationId" ASC, "category" ASC);
 
 -- CreateIndex
-CREATE INDEX "OrderItem_orderId_idx" ON "OrderItem"("orderId");
+CREATE INDEX "Expense_organizationId_date_idx" ON "public"."Expense"("organizationId" ASC, "date" ASC);
 
 -- CreateIndex
-CREATE INDEX "OrderItem_productId_idx" ON "OrderItem"("productId");
+CREATE INDEX "Feedback_organizationId_type_idx" ON "public"."Feedback"("organizationId" ASC, "type" ASC);
 
 -- CreateIndex
-CREATE INDEX "Expense_organizationId_date_idx" ON "Expense"("organizationId", "date");
+CREATE INDEX "Feedback_status_idx" ON "public"."Feedback"("status" ASC);
 
 -- CreateIndex
-CREATE INDEX "Expense_organizationId_category_idx" ON "Expense"("organizationId", "category");
+CREATE INDEX "IntegrationConnection_organizationId_idx" ON "public"."IntegrationConnection"("organizationId" ASC);
 
 -- CreateIndex
-CREATE INDEX "Coupon_organizationId_isActive_idx" ON "Coupon"("organizationId", "isActive");
+CREATE UNIQUE INDEX "IntegrationConnection_organizationId_type_key" ON "public"."IntegrationConnection"("organizationId" ASC, "type" ASC);
 
 -- CreateIndex
-CREATE INDEX "Coupon_organizationId_expiresAt_idx" ON "Coupon"("organizationId", "expiresAt");
+CREATE INDEX "IntegrationConnection_status_idx" ON "public"."IntegrationConnection"("status" ASC);
 
 -- CreateIndex
-CREATE UNIQUE INDEX "Coupon_organizationId_code_key" ON "Coupon"("organizationId", "code");
+CREATE INDEX "IntegrationConnection_type_idx" ON "public"."IntegrationConnection"("type" ASC);
 
 -- CreateIndex
-CREATE INDEX "TeamTask_organizationId_status_idx" ON "TeamTask"("organizationId", "status");
+CREATE UNIQUE INDEX "Invoice_invoiceNumber_key" ON "public"."Invoice"("invoiceNumber" ASC);
 
 -- CreateIndex
-CREATE INDEX "TeamTask_organizationId_priority_idx" ON "TeamTask"("organizationId", "priority");
+CREATE INDEX "Invoice_organizationId_idx" ON "public"."Invoice"("organizationId" ASC);
 
 -- CreateIndex
-CREATE INDEX "TeamTask_assignedTo_idx" ON "TeamTask"("assignedTo");
+CREATE INDEX "Invoice_organizationId_status_idx" ON "public"."Invoice"("organizationId" ASC, "status" ASC);
 
 -- CreateIndex
-CREATE INDEX "TeamTask_organizationId_dueDate_idx" ON "TeamTask"("organizationId", "dueDate");
+CREATE INDEX "Invoice_paymentStatus_idx" ON "public"."Invoice"("paymentStatus" ASC);
 
 -- CreateIndex
-CREATE INDEX "Attendance_organizationId_date_idx" ON "Attendance"("organizationId", "date");
+CREATE INDEX "Invoice_status_idx" ON "public"."Invoice"("status" ASC);
 
 -- CreateIndex
-CREATE INDEX "Attendance_organizationId_status_idx" ON "Attendance"("organizationId", "status");
+CREATE INDEX "Invoice_type_idx" ON "public"."Invoice"("type" ASC);
 
 -- CreateIndex
-CREATE INDEX "Attendance_userId_date_idx" ON "Attendance"("userId", "date");
+CREATE INDEX "Lead_createdAt_idx" ON "public"."Lead"("createdAt" ASC);
 
 -- CreateIndex
-CREATE UNIQUE INDEX "Attendance_userId_organizationId_date_key" ON "Attendance"("userId", "organizationId", "date");
+CREATE INDEX "Lead_email_idx" ON "public"."Lead"("email" ASC);
 
 -- CreateIndex
-CREATE UNIQUE INDEX "SubscriptionPlan_name_key" ON "SubscriptionPlan"("name");
+CREATE INDEX "Lead_status_createdAt_idx" ON "public"."Lead"("status" ASC, "createdAt" ASC);
 
 -- CreateIndex
-CREATE UNIQUE INDEX "Subscription_organizationId_key" ON "Subscription"("organizationId");
+CREATE INDEX "Lead_status_idx" ON "public"."Lead"("status" ASC);
 
 -- CreateIndex
-CREATE INDEX "Subscription_status_idx" ON "Subscription"("status");
+CREATE UNIQUE INDEX "LegalPage_slug_key" ON "public"."LegalPage"("slug" ASC);
 
 -- CreateIndex
-CREATE INDEX "Subscription_organizationId_status_idx" ON "Subscription"("organizationId", "status");
+CREATE INDEX "Notification_createdAt_idx" ON "public"."Notification"("createdAt" ASC);
 
 -- CreateIndex
-CREATE UNIQUE INDEX "Invoice_invoiceNumber_key" ON "Invoice"("invoiceNumber");
+CREATE INDEX "Notification_orgId_idx" ON "public"."Notification"("orgId" ASC);
 
 -- CreateIndex
-CREATE INDEX "Invoice_organizationId_idx" ON "Invoice"("organizationId");
+CREATE INDEX "Notification_orgId_read_idx" ON "public"."Notification"("orgId" ASC, "read" ASC);
 
 -- CreateIndex
-CREATE INDEX "Invoice_status_idx" ON "Invoice"("status");
+CREATE INDEX "Notification_read_idx" ON "public"."Notification"("read" ASC);
 
 -- CreateIndex
-CREATE INDEX "Invoice_organizationId_status_idx" ON "Invoice"("organizationId", "status");
+CREATE INDEX "Notification_type_idx" ON "public"."Notification"("type" ASC);
 
 -- CreateIndex
-CREATE INDEX "Invoice_type_idx" ON "Invoice"("type");
+CREATE INDEX "Notification_userId_idx" ON "public"."Notification"("userId" ASC);
 
 -- CreateIndex
-CREATE INDEX "Invoice_paymentStatus_idx" ON "Invoice"("paymentStatus");
+CREATE INDEX "Notification_userId_read_idx" ON "public"."Notification"("userId" ASC, "read" ASC);
 
 -- CreateIndex
-CREATE INDEX "ReportExport_organizationId_idx" ON "ReportExport"("organizationId");
+CREATE INDEX "Order_channel_idx" ON "public"."Order"("channel" ASC);
 
 -- CreateIndex
-CREATE INDEX "ReportExport_type_idx" ON "ReportExport"("type");
+CREATE INDEX "Order_orderNumber_idx" ON "public"."Order"("orderNumber" ASC);
 
 -- CreateIndex
-CREATE INDEX "ReportExport_createdAt_idx" ON "ReportExport"("createdAt");
+CREATE INDEX "Order_organizationId_createdAt_idx" ON "public"."Order"("organizationId" ASC, "createdAt" ASC);
 
 -- CreateIndex
-CREATE INDEX "ClientMessage_organizationId_direction_idx" ON "ClientMessage"("organizationId", "direction");
+CREATE INDEX "Order_organizationId_customerId_idx" ON "public"."Order"("organizationId" ASC, "customerId" ASC);
 
 -- CreateIndex
-CREATE INDEX "ClientMessage_organizationId_category_idx" ON "ClientMessage"("organizationId", "category");
+CREATE UNIQUE INDEX "Order_organizationId_orderNumber_key" ON "public"."Order"("organizationId" ASC, "orderNumber" ASC);
 
 -- CreateIndex
-CREATE INDEX "ClientMessage_threadId_idx" ON "ClientMessage"("threadId");
+CREATE INDEX "Order_organizationId_status_idx" ON "public"."Order"("organizationId" ASC, "status" ASC);
 
 -- CreateIndex
-CREATE INDEX "ClientMessage_scheduledFor_idx" ON "ClientMessage"("scheduledFor");
+CREATE INDEX "OrderItem_orderId_idx" ON "public"."OrderItem"("orderId" ASC);
 
 -- CreateIndex
-CREATE INDEX "ClientMessage_isArchived_idx" ON "ClientMessage"("isArchived");
+CREATE INDEX "OrderItem_productId_idx" ON "public"."OrderItem"("productId" ASC);
 
 -- CreateIndex
-CREATE INDEX "ClientMessage_createdAt_idx" ON "ClientMessage"("createdAt");
+CREATE INDEX "Organization_isActive_idx" ON "public"."Organization"("isActive" ASC);
 
 -- CreateIndex
-CREATE INDEX "PaymentProof_organizationId_idx" ON "PaymentProof"("organizationId");
+CREATE INDEX "Organization_plan_idx" ON "public"."Organization"("plan" ASC);
 
 -- CreateIndex
-CREATE INDEX "PaymentProof_status_idx" ON "PaymentProof"("status");
+CREATE UNIQUE INDEX "Organization_slug_key" ON "public"."Organization"("slug" ASC);
 
 -- CreateIndex
-CREATE INDEX "PaymentProof_subscriptionId_idx" ON "PaymentProof"("subscriptionId");
+CREATE INDEX "OrganizationMember_organizationId_role_idx" ON "public"."OrganizationMember"("organizationId" ASC, "role" ASC);
 
 -- CreateIndex
-CREATE INDEX "Notification_userId_idx" ON "Notification"("userId");
+CREATE UNIQUE INDEX "OrganizationMember_organizationId_userId_key" ON "public"."OrganizationMember"("organizationId" ASC, "userId" ASC);
 
 -- CreateIndex
-CREATE INDEX "Notification_orgId_idx" ON "Notification"("orgId");
+CREATE INDEX "PaymentProof_organizationId_idx" ON "public"."PaymentProof"("organizationId" ASC);
 
 -- CreateIndex
-CREATE INDEX "Notification_read_idx" ON "Notification"("read");
+CREATE INDEX "PaymentProof_status_idx" ON "public"."PaymentProof"("status" ASC);
 
 -- CreateIndex
-CREATE INDEX "Notification_type_idx" ON "Notification"("type");
+CREATE INDEX "PaymentProof_subscriptionId_idx" ON "public"."PaymentProof"("subscriptionId" ASC);
 
 -- CreateIndex
-CREATE INDEX "Notification_createdAt_idx" ON "Notification"("createdAt");
+CREATE INDEX "PlatformDocument_category_idx" ON "public"."PlatformDocument"("category" ASC);
 
 -- CreateIndex
-CREATE INDEX "Notification_userId_read_idx" ON "Notification"("userId", "read");
+CREATE INDEX "PlatformDocument_fileType_idx" ON "public"."PlatformDocument"("fileType" ASC);
 
 -- CreateIndex
-CREATE INDEX "Notification_orgId_read_idx" ON "Notification"("orgId", "read");
+CREATE INDEX "PlatformDocument_isActive_idx" ON "public"."PlatformDocument"("isActive" ASC);
 
 -- CreateIndex
-CREATE INDEX "Lead_status_idx" ON "Lead"("status");
+CREATE INDEX "PlatformDocument_organizationId_idx" ON "public"."PlatformDocument"("organizationId" ASC);
 
 -- CreateIndex
-CREATE INDEX "Lead_email_idx" ON "Lead"("email");
+CREATE INDEX "Product_organizationId_category_idx" ON "public"."Product"("organizationId" ASC, "category" ASC);
 
 -- CreateIndex
-CREATE INDEX "Lead_createdAt_idx" ON "Lead"("createdAt");
+CREATE INDEX "Product_organizationId_createdAt_idx" ON "public"."Product"("organizationId" ASC, "createdAt" ASC);
 
 -- CreateIndex
-CREATE INDEX "Lead_status_createdAt_idx" ON "Lead"("status", "createdAt");
+CREATE INDEX "Product_organizationId_status_idx" ON "public"."Product"("organizationId" ASC, "status" ASC);
 
 -- CreateIndex
-CREATE INDEX "Proposal_leadId_idx" ON "Proposal"("leadId");
+CREATE INDEX "Product_organizationId_stock_idx" ON "public"."Product"("organizationId" ASC, "stock" ASC);
 
 -- CreateIndex
-CREATE INDEX "Proposal_status_idx" ON "Proposal"("status");
+CREATE INDEX "Proposal_clientEmail_idx" ON "public"."Proposal"("clientEmail" ASC);
 
 -- CreateIndex
-CREATE INDEX "Proposal_type_idx" ON "Proposal"("type");
+CREATE INDEX "Proposal_createdAt_idx" ON "public"."Proposal"("createdAt" ASC);
 
 -- CreateIndex
-CREATE INDEX "Proposal_clientEmail_idx" ON "Proposal"("clientEmail");
+CREATE INDEX "Proposal_leadId_idx" ON "public"."Proposal"("leadId" ASC);
 
 -- CreateIndex
-CREATE INDEX "Proposal_createdAt_idx" ON "Proposal"("createdAt");
+CREATE INDEX "Proposal_paymentStatus_idx" ON "public"."Proposal"("paymentStatus" ASC);
 
 -- CreateIndex
-CREATE INDEX "Proposal_paymentStatus_idx" ON "Proposal"("paymentStatus");
+CREATE INDEX "Proposal_status_idx" ON "public"."Proposal"("status" ASC);
 
 -- CreateIndex
-CREATE UNIQUE INDEX "Role_name_key" ON "Role"("name");
+CREATE INDEX "Proposal_type_idx" ON "public"."Proposal"("type" ASC);
 
 -- CreateIndex
-CREATE INDEX "TeamInvitation_organizationId_idx" ON "TeamInvitation"("organizationId");
+CREATE UNIQUE INDEX "PushSubscription_endpoint_key" ON "public"."PushSubscription"("endpoint" ASC);
 
 -- CreateIndex
-CREATE INDEX "TeamInvitation_inviteeEmail_idx" ON "TeamInvitation"("inviteeEmail");
+CREATE INDEX "PushSubscription_orgId_idx" ON "public"."PushSubscription"("orgId" ASC);
 
 -- CreateIndex
-CREATE INDEX "TeamInvitation_status_idx" ON "TeamInvitation"("status");
+CREATE INDEX "PushSubscription_userId_idx" ON "public"."PushSubscription"("userId" ASC);
 
 -- CreateIndex
-CREATE INDEX "TeamInvitation_organizationId_status_idx" ON "TeamInvitation"("organizationId", "status");
+CREATE INDEX "ReportExport_createdAt_idx" ON "public"."ReportExport"("createdAt" ASC);
 
 -- CreateIndex
-CREATE INDEX "TeamInvitation_expiresAt_idx" ON "TeamInvitation"("expiresAt");
+CREATE INDEX "ReportExport_organizationId_idx" ON "public"."ReportExport"("organizationId" ASC);
 
 -- CreateIndex
-CREATE UNIQUE INDEX "SystemSetting_key_key" ON "SystemSetting"("key");
+CREATE INDEX "ReportExport_type_idx" ON "public"."ReportExport"("type" ASC);
 
 -- CreateIndex
-CREATE UNIQUE INDEX "LegalPage_slug_key" ON "LegalPage"("slug");
+CREATE UNIQUE INDEX "Role_name_key" ON "public"."Role"("name" ASC);
 
 -- CreateIndex
-CREATE INDEX "PlatformDocument_category_idx" ON "PlatformDocument"("category");
+CREATE UNIQUE INDEX "Session_sessionToken_key" ON "public"."Session"("sessionToken" ASC);
 
 -- CreateIndex
-CREATE INDEX "PlatformDocument_isActive_idx" ON "PlatformDocument"("isActive");
+CREATE INDEX "Session_userId_idx" ON "public"."Session"("userId" ASC);
 
 -- CreateIndex
-CREATE INDEX "PlatformDocument_fileType_idx" ON "PlatformDocument"("fileType");
+CREATE UNIQUE INDEX "Subscription_organizationId_key" ON "public"."Subscription"("organizationId" ASC);
 
 -- CreateIndex
-CREATE INDEX "PlatformDocument_organizationId_idx" ON "PlatformDocument"("organizationId");
+CREATE INDEX "Subscription_organizationId_status_idx" ON "public"."Subscription"("organizationId" ASC, "status" ASC);
 
 -- CreateIndex
-CREATE UNIQUE INDEX "ValtrioxTeamMember_userId_key" ON "ValtrioxTeamMember"("userId");
+CREATE INDEX "Subscription_status_idx" ON "public"."Subscription"("status" ASC);
 
 -- CreateIndex
-CREATE INDEX "ValtrioxTeamMember_status_idx" ON "ValtrioxTeamMember"("status");
+CREATE UNIQUE INDEX "SubscriptionPlan_name_key" ON "public"."SubscriptionPlan"("name" ASC);
 
 -- CreateIndex
-CREATE INDEX "ValtrioxTeamMember_department_idx" ON "ValtrioxTeamMember"("department");
+CREATE INDEX "SupportConversation_lastMessageAt_idx" ON "public"."SupportConversation"("lastMessageAt" ASC);
 
 -- CreateIndex
-CREATE UNIQUE INDEX "ValtrioxTeamInvitation_token_key" ON "ValtrioxTeamInvitation"("token");
+CREATE UNIQUE INDEX "SupportConversation_organizationId_key" ON "public"."SupportConversation"("organizationId" ASC);
 
 -- CreateIndex
-CREATE INDEX "ValtrioxTeamInvitation_email_idx" ON "ValtrioxTeamInvitation"("email");
+CREATE INDEX "SupportMessage_conversationId_createdAt_idx" ON "public"."SupportMessage"("conversationId" ASC, "createdAt" ASC);
 
 -- CreateIndex
-CREATE INDEX "ValtrioxTeamInvitation_status_idx" ON "ValtrioxTeamInvitation"("status");
+CREATE UNIQUE INDEX "SystemSetting_key_key" ON "public"."SystemSetting"("key" ASC);
 
 -- CreateIndex
-CREATE UNIQUE INDEX "SupportConversation_organizationId_key" ON "SupportConversation"("organizationId");
+CREATE INDEX "TeamInvitation_expiresAt_idx" ON "public"."TeamInvitation"("expiresAt" ASC);
 
 -- CreateIndex
-CREATE INDEX "SupportConversation_lastMessageAt_idx" ON "SupportConversation"("lastMessageAt");
+CREATE INDEX "TeamInvitation_inviteeEmail_idx" ON "public"."TeamInvitation"("inviteeEmail" ASC);
 
 -- CreateIndex
-CREATE INDEX "SupportMessage_conversationId_createdAt_idx" ON "SupportMessage"("conversationId", "createdAt");
+CREATE INDEX "TeamInvitation_organizationId_idx" ON "public"."TeamInvitation"("organizationId" ASC);
 
 -- CreateIndex
-CREATE UNIQUE INDEX "EmailTemplate_type_key" ON "EmailTemplate"("type");
+CREATE INDEX "TeamInvitation_organizationId_status_idx" ON "public"."TeamInvitation"("organizationId" ASC, "status" ASC);
 
 -- CreateIndex
-CREATE INDEX "Automation_enabled_idx" ON "Automation"("enabled");
+CREATE INDEX "TeamInvitation_status_idx" ON "public"."TeamInvitation"("status" ASC);
 
 -- CreateIndex
-CREATE INDEX "Automation_trigger_idx" ON "Automation"("trigger");
+CREATE INDEX "TeamTask_assignedTo_idx" ON "public"."TeamTask"("assignedTo" ASC);
 
 -- CreateIndex
-CREATE INDEX "IntegrationConnection_organizationId_idx" ON "IntegrationConnection"("organizationId");
+CREATE INDEX "TeamTask_organizationId_dueDate_idx" ON "public"."TeamTask"("organizationId" ASC, "dueDate" ASC);
 
 -- CreateIndex
-CREATE INDEX "IntegrationConnection_type_idx" ON "IntegrationConnection"("type");
+CREATE INDEX "TeamTask_organizationId_priority_idx" ON "public"."TeamTask"("organizationId" ASC, "priority" ASC);
 
 -- CreateIndex
-CREATE INDEX "IntegrationConnection_status_idx" ON "IntegrationConnection"("status");
+CREATE INDEX "TeamTask_organizationId_status_idx" ON "public"."TeamTask"("organizationId" ASC, "status" ASC);
 
 -- CreateIndex
-CREATE UNIQUE INDEX "IntegrationConnection_organizationId_type_key" ON "IntegrationConnection"("organizationId", "type");
+CREATE UNIQUE INDEX "User_email_key" ON "public"."User"("email" ASC);
 
 -- CreateIndex
-CREATE INDEX "Feedback_organizationId_type_idx" ON "Feedback"("organizationId", "type");
+CREATE INDEX "User_role_idx" ON "public"."User"("role" ASC);
 
 -- CreateIndex
-CREATE INDEX "Feedback_status_idx" ON "Feedback"("status");
+CREATE INDEX "ValtrioxTeamInvitation_email_idx" ON "public"."ValtrioxTeamInvitation"("email" ASC);
 
 -- CreateIndex
-CREATE UNIQUE INDEX "BetaInvite_email_key" ON "BetaInvite"("email");
+CREATE INDEX "ValtrioxTeamInvitation_status_idx" ON "public"."ValtrioxTeamInvitation"("status" ASC);
 
 -- CreateIndex
-CREATE UNIQUE INDEX "BetaInvite_token_key" ON "BetaInvite"("token");
+CREATE UNIQUE INDEX "ValtrioxTeamInvitation_token_key" ON "public"."ValtrioxTeamInvitation"("token" ASC);
 
 -- CreateIndex
-CREATE INDEX "BetaInvite_status_idx" ON "BetaInvite"("status");
+CREATE INDEX "ValtrioxTeamMember_department_idx" ON "public"."ValtrioxTeamMember"("department" ASC);
 
 -- CreateIndex
-CREATE INDEX "BetaInvite_invitedBy_idx" ON "BetaInvite"("invitedBy");
+CREATE INDEX "ValtrioxTeamMember_status_idx" ON "public"."ValtrioxTeamMember"("status" ASC);
 
 -- CreateIndex
-CREATE UNIQUE INDEX "PushSubscription_endpoint_key" ON "PushSubscription"("endpoint");
+CREATE UNIQUE INDEX "ValtrioxTeamMember_userId_key" ON "public"."ValtrioxTeamMember"("userId" ASC);
 
 -- CreateIndex
-CREATE INDEX "PushSubscription_userId_idx" ON "PushSubscription"("userId");
+CREATE UNIQUE INDEX "VerificationToken_identifier_token_key" ON "public"."VerificationToken"("identifier" ASC, "token" ASC);
 
 -- CreateIndex
-CREATE INDEX "PushSubscription_orgId_idx" ON "PushSubscription"("orgId");
+CREATE UNIQUE INDEX "VerificationToken_token_key" ON "public"."VerificationToken"("token" ASC);
+
+-- CreateIndex
+CREATE INDEX "suppliers_organization_id_category_idx" ON "public"."suppliers"("organization_id" ASC, "category" ASC);
+
+-- CreateIndex
+CREATE INDEX "suppliers_organization_id_idx" ON "public"."suppliers"("organization_id" ASC);
+
+-- CreateIndex
+CREATE INDEX "suppliers_organization_id_status_idx" ON "public"."suppliers"("organization_id" ASC, "status" ASC);
 
 -- AddForeignKey
-ALTER TABLE "Account" ADD CONSTRAINT "Account_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+ALTER TABLE "public"."Account" ADD CONSTRAINT "Account_userId_fkey" FOREIGN KEY ("userId") REFERENCES "public"."User"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "Session" ADD CONSTRAINT "Session_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+ALTER TABLE "public"."Attendance" ADD CONSTRAINT "Attendance_organizationId_fkey" FOREIGN KEY ("organizationId") REFERENCES "public"."Organization"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "OrganizationMember" ADD CONSTRAINT "OrganizationMember_organizationId_fkey" FOREIGN KEY ("organizationId") REFERENCES "Organization"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+ALTER TABLE "public"."Attendance" ADD CONSTRAINT "Attendance_userId_fkey" FOREIGN KEY ("userId") REFERENCES "public"."User"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "OrganizationMember" ADD CONSTRAINT "OrganizationMember_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+ALTER TABLE "public"."Automation" ADD CONSTRAINT "Automation_templateId_fkey" FOREIGN KEY ("templateId") REFERENCES "public"."EmailTemplate"("id") ON DELETE SET NULL ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "OrganizationMember" ADD CONSTRAINT "OrganizationMember_roleId_fkey" FOREIGN KEY ("roleId") REFERENCES "Role"("id") ON DELETE SET NULL ON UPDATE CASCADE;
+ALTER TABLE "public"."ClientMessage" ADD CONSTRAINT "ClientMessage_organizationId_fkey" FOREIGN KEY ("organizationId") REFERENCES "public"."Organization"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "Product" ADD CONSTRAINT "Product_organizationId_fkey" FOREIGN KEY ("organizationId") REFERENCES "Organization"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+ALTER TABLE "public"."Coupon" ADD CONSTRAINT "Coupon_organizationId_fkey" FOREIGN KEY ("organizationId") REFERENCES "public"."Organization"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "Customer" ADD CONSTRAINT "Customer_organizationId_fkey" FOREIGN KEY ("organizationId") REFERENCES "Organization"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+ALTER TABLE "public"."Customer" ADD CONSTRAINT "Customer_organizationId_fkey" FOREIGN KEY ("organizationId") REFERENCES "public"."Organization"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "Order" ADD CONSTRAINT "Order_organizationId_fkey" FOREIGN KEY ("organizationId") REFERENCES "Organization"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+ALTER TABLE "public"."Expense" ADD CONSTRAINT "Expense_organizationId_fkey" FOREIGN KEY ("organizationId") REFERENCES "public"."Organization"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "Order" ADD CONSTRAINT "Order_customerId_fkey" FOREIGN KEY ("customerId") REFERENCES "Customer"("id") ON DELETE SET NULL ON UPDATE CASCADE;
+ALTER TABLE "public"."Feedback" ADD CONSTRAINT "Feedback_organizationId_fkey" FOREIGN KEY ("organizationId") REFERENCES "public"."Organization"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "OrderItem" ADD CONSTRAINT "OrderItem_orderId_fkey" FOREIGN KEY ("orderId") REFERENCES "Order"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+ALTER TABLE "public"."IntegrationConnection" ADD CONSTRAINT "IntegrationConnection_organizationId_fkey" FOREIGN KEY ("organizationId") REFERENCES "public"."Organization"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "OrderItem" ADD CONSTRAINT "OrderItem_productId_fkey" FOREIGN KEY ("productId") REFERENCES "Product"("id") ON DELETE SET NULL ON UPDATE CASCADE;
+ALTER TABLE "public"."Invoice" ADD CONSTRAINT "Invoice_organizationId_fkey" FOREIGN KEY ("organizationId") REFERENCES "public"."Organization"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "Expense" ADD CONSTRAINT "Expense_organizationId_fkey" FOREIGN KEY ("organizationId") REFERENCES "Organization"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+ALTER TABLE "public"."Invoice" ADD CONSTRAINT "Invoice_paymentProofId_fkey" FOREIGN KEY ("paymentProofId") REFERENCES "public"."PaymentProof"("id") ON DELETE SET NULL ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "Coupon" ADD CONSTRAINT "Coupon_organizationId_fkey" FOREIGN KEY ("organizationId") REFERENCES "Organization"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+ALTER TABLE "public"."Invoice" ADD CONSTRAINT "Invoice_subscriptionId_fkey" FOREIGN KEY ("subscriptionId") REFERENCES "public"."Subscription"("id") ON DELETE SET NULL ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "TeamTask" ADD CONSTRAINT "TeamTask_organizationId_fkey" FOREIGN KEY ("organizationId") REFERENCES "Organization"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+ALTER TABLE "public"."Notification" ADD CONSTRAINT "Notification_orgId_fkey" FOREIGN KEY ("orgId") REFERENCES "public"."Organization"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "TeamTask" ADD CONSTRAINT "TeamTask_assignedTo_fkey" FOREIGN KEY ("assignedTo") REFERENCES "User"("id") ON DELETE SET NULL ON UPDATE CASCADE;
+ALTER TABLE "public"."Notification" ADD CONSTRAINT "Notification_userId_fkey" FOREIGN KEY ("userId") REFERENCES "public"."User"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "Attendance" ADD CONSTRAINT "Attendance_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+ALTER TABLE "public"."Order" ADD CONSTRAINT "Order_customerId_fkey" FOREIGN KEY ("customerId") REFERENCES "public"."Customer"("id") ON DELETE SET NULL ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "Attendance" ADD CONSTRAINT "Attendance_organizationId_fkey" FOREIGN KEY ("organizationId") REFERENCES "Organization"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+ALTER TABLE "public"."Order" ADD CONSTRAINT "Order_organizationId_fkey" FOREIGN KEY ("organizationId") REFERENCES "public"."Organization"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "Subscription" ADD CONSTRAINT "Subscription_organizationId_fkey" FOREIGN KEY ("organizationId") REFERENCES "Organization"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+ALTER TABLE "public"."OrderItem" ADD CONSTRAINT "OrderItem_orderId_fkey" FOREIGN KEY ("orderId") REFERENCES "public"."Order"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "Subscription" ADD CONSTRAINT "Subscription_planId_fkey" FOREIGN KEY ("planId") REFERENCES "SubscriptionPlan"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+ALTER TABLE "public"."OrderItem" ADD CONSTRAINT "OrderItem_productId_fkey" FOREIGN KEY ("productId") REFERENCES "public"."Product"("id") ON DELETE SET NULL ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "Invoice" ADD CONSTRAINT "Invoice_organizationId_fkey" FOREIGN KEY ("organizationId") REFERENCES "Organization"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+ALTER TABLE "public"."OrganizationMember" ADD CONSTRAINT "OrganizationMember_organizationId_fkey" FOREIGN KEY ("organizationId") REFERENCES "public"."Organization"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "Invoice" ADD CONSTRAINT "Invoice_subscriptionId_fkey" FOREIGN KEY ("subscriptionId") REFERENCES "Subscription"("id") ON DELETE SET NULL ON UPDATE CASCADE;
+ALTER TABLE "public"."OrganizationMember" ADD CONSTRAINT "OrganizationMember_roleId_fkey" FOREIGN KEY ("roleId") REFERENCES "public"."Role"("id") ON DELETE SET NULL ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "Invoice" ADD CONSTRAINT "Invoice_paymentProofId_fkey" FOREIGN KEY ("paymentProofId") REFERENCES "PaymentProof"("id") ON DELETE SET NULL ON UPDATE CASCADE;
+ALTER TABLE "public"."OrganizationMember" ADD CONSTRAINT "OrganizationMember_userId_fkey" FOREIGN KEY ("userId") REFERENCES "public"."User"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "ReportExport" ADD CONSTRAINT "ReportExport_organizationId_fkey" FOREIGN KEY ("organizationId") REFERENCES "Organization"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+ALTER TABLE "public"."PaymentProof" ADD CONSTRAINT "PaymentProof_organizationId_fkey" FOREIGN KEY ("organizationId") REFERENCES "public"."Organization"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "ClientMessage" ADD CONSTRAINT "ClientMessage_organizationId_fkey" FOREIGN KEY ("organizationId") REFERENCES "Organization"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+ALTER TABLE "public"."PaymentProof" ADD CONSTRAINT "PaymentProof_planId_fkey" FOREIGN KEY ("planId") REFERENCES "public"."SubscriptionPlan"("id") ON DELETE SET NULL ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "PaymentProof" ADD CONSTRAINT "PaymentProof_subscriptionId_fkey" FOREIGN KEY ("subscriptionId") REFERENCES "Subscription"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+ALTER TABLE "public"."PaymentProof" ADD CONSTRAINT "PaymentProof_subscriptionId_fkey" FOREIGN KEY ("subscriptionId") REFERENCES "public"."Subscription"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "PaymentProof" ADD CONSTRAINT "PaymentProof_organizationId_fkey" FOREIGN KEY ("organizationId") REFERENCES "Organization"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+ALTER TABLE "public"."PlatformDocument" ADD CONSTRAINT "PlatformDocument_organizationId_fkey" FOREIGN KEY ("organizationId") REFERENCES "public"."Organization"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "PaymentProof" ADD CONSTRAINT "PaymentProof_planId_fkey" FOREIGN KEY ("planId") REFERENCES "SubscriptionPlan"("id") ON DELETE SET NULL ON UPDATE CASCADE;
+ALTER TABLE "public"."Product" ADD CONSTRAINT "Product_organizationId_fkey" FOREIGN KEY ("organizationId") REFERENCES "public"."Organization"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "Notification" ADD CONSTRAINT "Notification_orgId_fkey" FOREIGN KEY ("orgId") REFERENCES "Organization"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+ALTER TABLE "public"."Proposal" ADD CONSTRAINT "Proposal_leadId_fkey" FOREIGN KEY ("leadId") REFERENCES "public"."Lead"("id") ON DELETE SET NULL ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "Notification" ADD CONSTRAINT "Notification_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+ALTER TABLE "public"."ReportExport" ADD CONSTRAINT "ReportExport_organizationId_fkey" FOREIGN KEY ("organizationId") REFERENCES "public"."Organization"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "Proposal" ADD CONSTRAINT "Proposal_leadId_fkey" FOREIGN KEY ("leadId") REFERENCES "Lead"("id") ON DELETE SET NULL ON UPDATE CASCADE;
+ALTER TABLE "public"."Session" ADD CONSTRAINT "Session_userId_fkey" FOREIGN KEY ("userId") REFERENCES "public"."User"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "TeamInvitation" ADD CONSTRAINT "TeamInvitation_organizationId_fkey" FOREIGN KEY ("organizationId") REFERENCES "Organization"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+ALTER TABLE "public"."Subscription" ADD CONSTRAINT "Subscription_organizationId_fkey" FOREIGN KEY ("organizationId") REFERENCES "public"."Organization"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "TeamInvitation" ADD CONSTRAINT "TeamInvitation_inviterId_fkey" FOREIGN KEY ("inviterId") REFERENCES "User"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+ALTER TABLE "public"."Subscription" ADD CONSTRAINT "Subscription_planId_fkey" FOREIGN KEY ("planId") REFERENCES "public"."SubscriptionPlan"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "PlatformDocument" ADD CONSTRAINT "PlatformDocument_organizationId_fkey" FOREIGN KEY ("organizationId") REFERENCES "Organization"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+ALTER TABLE "public"."SupportMessage" ADD CONSTRAINT "SupportMessage_conversationId_fkey" FOREIGN KEY ("conversationId") REFERENCES "public"."SupportConversation"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "ValtrioxTeamMember" ADD CONSTRAINT "ValtrioxTeamMember_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+ALTER TABLE "public"."TeamInvitation" ADD CONSTRAINT "TeamInvitation_inviterId_fkey" FOREIGN KEY ("inviterId") REFERENCES "public"."User"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "SupportMessage" ADD CONSTRAINT "SupportMessage_conversationId_fkey" FOREIGN KEY ("conversationId") REFERENCES "SupportConversation"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+ALTER TABLE "public"."TeamInvitation" ADD CONSTRAINT "TeamInvitation_organizationId_fkey" FOREIGN KEY ("organizationId") REFERENCES "public"."Organization"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "Automation" ADD CONSTRAINT "Automation_templateId_fkey" FOREIGN KEY ("templateId") REFERENCES "EmailTemplate"("id") ON DELETE SET NULL ON UPDATE CASCADE;
+ALTER TABLE "public"."TeamTask" ADD CONSTRAINT "TeamTask_assignedTo_fkey" FOREIGN KEY ("assignedTo") REFERENCES "public"."User"("id") ON DELETE SET NULL ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "IntegrationConnection" ADD CONSTRAINT "IntegrationConnection_organizationId_fkey" FOREIGN KEY ("organizationId") REFERENCES "Organization"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+ALTER TABLE "public"."TeamTask" ADD CONSTRAINT "TeamTask_organizationId_fkey" FOREIGN KEY ("organizationId") REFERENCES "public"."Organization"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "Feedback" ADD CONSTRAINT "Feedback_organizationId_fkey" FOREIGN KEY ("organizationId") REFERENCES "Organization"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+ALTER TABLE "public"."ValtrioxTeamMember" ADD CONSTRAINT "ValtrioxTeamMember_userId_fkey" FOREIGN KEY ("userId") REFERENCES "public"."User"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "public"."suppliers" ADD CONSTRAINT "suppliers_organization_id_fkey" FOREIGN KEY ("organization_id") REFERENCES "public"."Organization"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 

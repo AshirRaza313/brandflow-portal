@@ -51,11 +51,16 @@ psql -d valtriox_baseline_rehearsal -f prisma/migrations/20260814_add_suppliers_
 
 Verify tables and constraints.
 
-## Step 5: Mark migration as resolved if needed
+## Step 5: Compensating migration for supplier constraints (if required)
 
-If Prisma migration state is stuck, use:
+If supplier CHECK constraints need to be removed, apply a compensating migration:
 
-npx prisma migrate resolve --schema prisma/schema.prisma --applied "20260101000000_baseline"
+ALTER TABLE "public"."suppliers" DROP CONSTRAINT IF EXISTS "suppliers_rating_check";
+ALTER TABLE "public"."suppliers" DROP CONSTRAINT IF EXISTS "suppliers_status_check";
+
+Then resolve migration state:
+
+npx prisma migrate resolve --schema prisma/schema.prisma --applied "20260814_add_suppliers_table"
 
 ## Step 6: Validate application
 
