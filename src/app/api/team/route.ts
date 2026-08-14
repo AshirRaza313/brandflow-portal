@@ -37,6 +37,10 @@ type OrgWithSubscription = {
 const ROLE_LEVELS: Record<string, number> = {
   platform_owner: 100,
   platform_admin: 95,
+  platform_engineer: 85,
+  platform_support: 85,
+  platform_sales: 85,
+  platform_marketing: 85,
   brand_owner: 90,
   brand_admin: 80,
   operations_manager: 70,
@@ -58,7 +62,7 @@ const ROLE_LEVELS: Record<string, number> = {
   ceo: 90,
 };
 
-const PLATFORM_ONLY_ROLES = ["platform_owner", "platform_admin", "owner"];
+const PLATFORM_ONLY_ROLES = ["platform_owner", "platform_admin", "owner", "platform_engineer", "platform_support", "platform_sales", "platform_marketing"];
 const BRAND_OWNER_MAX_LEVEL = 80;
 const BRAND_ADMIN_MAX_LEVEL = 60;
 

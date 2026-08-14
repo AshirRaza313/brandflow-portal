@@ -276,7 +276,7 @@ const dbMocks = vi.hoisted(() => {
   const user = {
     findUnique: vi.fn(async ({ where }: { where: { id: string } }) => {
       if (where.id === "user-a") {
-        return { role: testState.userRole };
+        return { role: testState.vtmRole };
       }
       return null;
     }),
@@ -831,7 +831,7 @@ describe("Issue #2 — Supplier API authorization (DB-resolved)", () => {
     });
 
     it("1. platform_owner with membership: full read/write access", async () => {
-      testState.userRole = "platform_owner";
+      testState.vtmRole = "platform_owner";
       testState.memberRoleOverride = "viewer"; // membership role doesn't matter for platform owners
 
       const res = await GET(getRequest());
@@ -841,7 +841,7 @@ describe("Issue #2 — Supplier API authorization (DB-resolved)", () => {
     });
 
     it("2. platform_owner without membership: full read/write access (transcends org)", async () => {
-      testState.userRole = "platform_owner";
+      testState.vtmRole = "platform_owner";
       testState.memberRemoved = true; // no membership row
 
       const res = await GET(getRequest());
@@ -851,7 +851,7 @@ describe("Issue #2 — Supplier API authorization (DB-resolved)", () => {
     });
 
     it("3. platform_admin with membership: full read/write access", async () => {
-      testState.userRole = "platform_admin";
+      testState.vtmRole = "platform_owner";
       testState.memberRoleOverride = "viewer";
 
       const res = await GET(getRequest());
@@ -861,7 +861,7 @@ describe("Issue #2 — Supplier API authorization (DB-resolved)", () => {
     });
 
     it("4. platform_admin without membership: full read/write access", async () => {
-      testState.userRole = "platform_admin";
+      testState.vtmRole = "platform_owner";
       testState.memberRemoved = true;
 
       const res = await GET(getRequest());
@@ -871,7 +871,7 @@ describe("Issue #2 — Supplier API authorization (DB-resolved)", () => {
     });
 
     it("5. platform_owner with Valtriox hidden 'suppliers' section → access denied (fail-closed)", async () => {
-      testState.userRole = "platform_owner";
+      testState.vtmRole = "platform_owner";
       testState.memberRoleOverride = "brand_owner";
 
       // Mock active Valtriox team member with hidden suppliers section
@@ -893,7 +893,7 @@ describe("Issue #2 — Supplier API authorization (DB-resolved)", () => {
 
     it("6. stale platform role: session says platform_owner, DB says viewer → treated as viewer", async () => {
       // Session role is "platform_owner" (stale cookie)
-      testState.role = "platform_owner";
+      testState.vtmRole = "platform_owner";
       // DB user role is "viewer" (fresh reality)
       testState.userRole = "viewer";
       testState.memberRoleOverride = "viewer";
@@ -911,7 +911,7 @@ describe("Issue #2 — Supplier API authorization (DB-resolved)", () => {
     });
 
     it("7. inactive Valtriox team record: platform role DENIED (fail-closed revocation)", async () => {
-      testState.userRole = "platform_owner";
+      testState.vtmRole = "platform_owner";
       testState.memberRoleOverride = "content_creator"; // no operations permission
 
       // Valtriox team member exists but status is NOT "active" (so findFirst returns null).
@@ -927,7 +927,7 @@ describe("Issue #2 — Supplier API authorization (DB-resolved)", () => {
     });
 
     it("8. missing organization: platform owner still denied if orgId missing (Safeguard 1)", async () => {
-      testState.userRole = "platform_owner";
+      testState.vtmRole = "platform_owner";
       testState.organizationId = undefined; // missing org context
 
       const res = await GET(getRequest());
@@ -1297,6 +1297,177 @@ describe("Issue #2 — Supplier API authorization (DB-resolved)", () => {
       const res = await DELETE(deleteRequest(sup.id), { params: Promise.resolve({ id: sup.id }) });
       expect(res.status).toBe(403);
       expect(dbMocks.supplier.deleteMany).not.toHaveBeenCalled();
+    });
+  });
+    // ─────────────────────────────────────────────────────────────────────────
+  // Blocker 1 - VTM supplier access matrix across all 6 routes (36 tests)
+  // ─────────────────────────────────────────────────────────────────────────
+  describe("Blocker 1 - VTM supplier access matrix across all 6 routes", () => {
+    const roleMatrix = [
+      { role: "platform_owner", list: 200, detail: 200, create: 201, update: 200, delete: 200, stats: 200 },
+      { role: "platform_admin", list: 200, detail: 200, create: 201, update: 200, delete: 200, stats: 200 },
+      { role: "platform_engineer", list: 200, detail: 200, create: 403, update: 403, delete: 403, stats: 200 },
+      { role: "platform_support", list: 200, detail: 200, create: 403, update: 403, delete: 403, stats: 200 },
+      { role: "platform_sales", list: 200, detail: 200, create: 403, update: 403, delete: 403, stats: 200 },
+      { role: "platform_marketing", list: 403, detail: 403, create: 403, update: 403, delete: 403, stats: 403 },
+    ];
+
+    for (const m of roleMatrix) {
+      describe(`VTM role ${m.role}`, () => {
+        beforeEach(() => {
+          testState.organizationId = "org-a";
+          testState.role = "brand_owner";
+          testState.userRole = null;
+          testState.vtmRole = m.role;
+          testState.memberRemoved = false;
+          testState.memberRoleOverride = null;
+          testState.memberRoleIdOverride = null;
+          testState.penaltyUntil = null;
+          testState.suppliers.length = 0;
+          vi.clearAllMocks();
+          dbMocks.valtrioxTeamMember.findFirst.mockResolvedValue({
+            id: `vt-${m.role}`,
+            role: m.role,
+            visibleSections: JSON.stringify([]),
+          });
+        });
+
+        it(`GET list returns ${m.list}`, async () => {
+          seedSupplier("org-a", { name: "Sup" });
+          const res = await GET(getRequest());
+          expect(res.status).toBe(m.list);
+        });
+
+        it(`GET detail returns ${m.detail}`, async () => {
+          const sup = seedSupplier("org-a", { name: "Sup" });
+          const res = await GET_ID(getRequest(""), { params: Promise.resolve({ id: sup.id }) });
+          expect(res.status).toBe(m.detail);
+        });
+
+        it(`POST create returns ${m.create}`, async () => {
+          const res = await POST(postRequest({ name: "New" }));
+          expect(res.status).toBe(m.create);
+        });
+
+        it(`PATCH update returns ${m.update}`, async () => {
+          const sup = seedSupplier("org-a", { name: "Sup" });
+          const res = await PATCH(patchRequest(sup.id, { name: "Hacked" }), { params: Promise.resolve({ id: sup.id }) });
+          expect(res.status).toBe(m.update);
+        });
+
+        it(`DELETE returns ${m.delete}`, async () => {
+          const sup = seedSupplier("org-a", { name: "Sup" });
+          const res = await DELETE(deleteRequest(sup.id), { params: Promise.resolve({ id: sup.id }) });
+          expect(res.status).toBe(m.delete);
+        });
+
+        it(`GET stats returns ${m.stats}`, async () => {
+          seedSupplier("org-a", { name: "Sup", rating: 4 });
+          const res = await GET_STATS(getRequest("/stats"));
+          expect(res.status).toBe(m.stats);
+        });
+      });
+    }
+  });
+
+  // ─────────────────────────────────────────────────────────────────────────
+  // Blocker 1 - exact "suppliers" hidden section matrix across all routes
+  // ─────────────────────────────────────────────────────────────────────────
+  describe("Blocker 1 - hidden suppliers section ('suppliers' string)", () => {
+    beforeEach(() => {
+      testState.organizationId = "org-a";
+      testState.role = "brand_owner";
+      testState.userRole = null;
+      testState.vtmRole = "platform_admin";
+      testState.memberRoleOverride = null;
+      testState.memberRemoved = false;
+      testState.penaltyUntil = null;
+      testState.suppliers.length = 0;
+      vi.clearAllMocks();
+      dbMocks.valtrioxTeamMember.findFirst.mockResolvedValue({
+        id: "vt-hidden-suppliers",
+        role: testState.vtmRole,
+        visibleSections: JSON.stringify(["suppliers"]),
+      });
+    });
+
+    it("GET list returns 403", async () => {
+      seedSupplier("org-a", { name: "Sup" });
+      const res = await GET(getRequest());
+      expect(res.status).toBe(403);
+    });
+    it("GET detail returns 403", async () => {
+      const sup = seedSupplier("org-a", { name: "Sup" });
+      const res = await GET_ID(getRequest(""), { params: Promise.resolve({ id: sup.id }) });
+      expect(res.status).toBe(403);
+    });
+    it("POST create returns 403", async () => {
+      const res = await POST(postRequest({ name: "Blocked" }));
+      expect(res.status).toBe(403);
+    });
+    it("PATCH update returns 403", async () => {
+      const sup = seedSupplier("org-a", { name: "Sup" });
+      const res = await PATCH(patchRequest(sup.id, { name: "Hacked" }), { params: Promise.resolve({ id: sup.id }) });
+      expect(res.status).toBe(403);
+    });
+    it("DELETE returns 403", async () => {
+      const sup = seedSupplier("org-a", { name: "Sup" });
+      const res = await DELETE(deleteRequest(sup.id), { params: Promise.resolve({ id: sup.id }) });
+      expect(res.status).toBe(403);
+    });
+    it("GET stats returns 403", async () => {
+      seedSupplier("org-a", { name: "Sup", rating: 4 });
+      const res = await GET_STATS(getRequest("/stats"));
+      expect(res.status).toBe(403);
+    });
+  });
+
+  // ─────────────────────────────────────────────────────────────────────────
+  // Blocker 1 - VTM revoke fallback tests (brand_owner, viewer, no membership)
+  // ─────────────────────────────────────────────────────────────────────────
+  describe("Blocker 1 - VTM revoke fallback", () => {
+    beforeEach(() => {
+      vi.clearAllMocks();
+      dbMocks.valtrioxTeamMember.findFirst.mockResolvedValue(null);
+    });
+
+    it("VTM null + brand_owner membership = full access", async () => {
+      testState.organizationId = "org-a";
+      testState.role = "brand_owner";
+      testState.memberRoleOverride = "brand_owner";
+      testState.memberRemoved = false;
+      testState.penaltyUntil = null;
+      testState.suppliers.length = 0;
+
+      const getRes = await GET(getRequest());
+      expect(getRes.status).toBe(200);
+      const postRes = await POST(postRequest({ name: "Allowed" }));
+      expect(postRes.status).toBe(201);
+    });
+
+    it("VTM null + viewer membership = read-only", async () => {
+      testState.organizationId = "org-a";
+      testState.role = "viewer";
+      testState.memberRoleOverride = "viewer";
+      testState.memberRemoved = false;
+      testState.penaltyUntil = null;
+      testState.suppliers.length = 0;
+
+      const getRes = await GET(getRequest());
+      expect(getRes.status).toBe(200);
+      const postRes = await POST(postRequest({ name: "Blocked" }));
+      expect(postRes.status).toBe(403);
+    });
+
+    it("VTM null + no membership = deny", async () => {
+      testState.organizationId = "org-a";
+      testState.role = "brand_owner";
+      testState.memberRemoved = true;
+      testState.penaltyUntil = null;
+      testState.suppliers.length = 0;
+
+      const getRes = await GET(getRequest());
+      expect(getRes.status).toBe(403);
     });
   });
 });

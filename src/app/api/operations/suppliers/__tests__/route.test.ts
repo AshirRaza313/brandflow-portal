@@ -527,7 +527,7 @@ describe("suppliers API — list (GET)", () => {
     expect(names).not.toContain("Gamma LLC");
   });
 
-  it("returns correct stats including averageRating", async () => {
+  it("returns supplier list with ratings intact", async () => {
     seedSupplier("org-a", { name: "A", rating: 4 });
     seedSupplier("org-a", { name: "B", rating: 5 });
     seedSupplier("org-a", { name: "C", rating: null }); // unrated

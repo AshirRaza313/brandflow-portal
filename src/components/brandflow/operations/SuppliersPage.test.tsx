@@ -69,7 +69,6 @@ async function renderSuppliersPage() {
         ok: true,
         json: async () => ({
           totalSuppliers: 0,
-          activeSuppliers: 0,
           ratedCount: 0,
           avgRating: null,
           topPerformer: null,

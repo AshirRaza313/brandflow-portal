@@ -41,28 +41,28 @@ export const ROLES: RoleDefinition[] = [
     label: "Platform Engineer",
     description: "Engineering access - can manage code, infrastructure, and technical operations",
     level: 85,
-    permissions: { operations: true },
+    permissions: {},
   },
   {
     name: "platform_support",
     label: "Platform Support",
     description: "Support access - can manage client support tickets and conversations",
     level: 85,
-    permissions: { operations: true },
+    permissions: {},
   },
   {
     name: "platform_sales",
     label: "Platform Sales",
     description: "Sales access - can manage clients, subscriptions, and payments",
     level: 85,
-    permissions: { operations: true },
+    permissions: {},
   },
   {
     name: "platform_marketing",
     label: "Platform Marketing",
     description: "Marketing access - can manage content, campaigns, and SEO",
     level: 85,
-    permissions: { operations: true },
+    permissions: {},
   },
   {
     name: "brand_owner",
@@ -320,9 +320,10 @@ export function canAssignRole(
   targetRole: string,
   adminEmail: string
 ): { allowed: boolean; reason?: string; code?: string } {
-  const PLATFORM_ROLES = ["platform_owner", "platform_admin"];
+  const PLATFORM_ROLES = ["platform_owner", "platform_admin", "platform_engineer", "platform_support", "platform_sales", "platform_marketing"];
   const LEVELS: Record<string, number> = {
     platform_owner: 100, platform_admin: 95,
+    platform_engineer: 85, platform_support: 85, platform_sales: 85, platform_marketing: 85,
     brand_owner: 90, brand_admin: 80,
     operations_manager: 70, sales_manager: 65, marketing_manager: 65,
     warehouse_manager: 60, accountant: 55, team_lead: 55,
@@ -365,7 +366,15 @@ export function canAssignRole(
 
 /** Check if a role is a platform-level role (includes legacy 'owner' and 'admin' for backward compat, and valtriox_team) */
 export function isPlatformRole(roleName: string): boolean {
-  return roleName === "platform_owner" || roleName === "platform_admin" || roleName === "owner" || roleName === "admin" || roleName === "valtriox_team";
+  return roleName === "platform_owner" ||
+    roleName === "platform_admin" ||
+    roleName === "platform_engineer" ||
+    roleName === "platform_support" ||
+    roleName === "platform_sales" ||
+    roleName === "platform_marketing" ||
+    roleName === "owner" ||
+    roleName === "admin" ||
+    roleName === "valtriox_team";
 }
 
 /** Check if a role is read-only (viewer) */

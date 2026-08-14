@@ -153,6 +153,19 @@ function resolveRoleDefinition(
 // null/empty value = no restrictions (all visible) — this is the only fail-open case.
 const ALL_SECTIONS_HIDDEN = ["*"];
 
+// Supplier-specific access matrix for ValtrioxTeamMember roles.
+// This is intentional and separate from global role permissions.
+// Values are review-pending with Abdul Nafay bhai.
+const VTM_SUPPLIER_ACCESS: Record<string, { canRead: boolean; canWrite: boolean }> = {
+  platform_owner: { canRead: true, canWrite: true },
+  platform_admin: { canRead: true, canWrite: true },
+  valtriox_team: { canRead: true, canWrite: true },
+  platform_engineer: { canRead: true, canWrite: false },
+  platform_support: { canRead: true, canWrite: false },
+  platform_sales: { canRead: true, canWrite: false },
+  platform_marketing: { canRead: false, canWrite: false },
+};
+
 function hiddenSections(value: string | null | undefined): string[] | null {
   if (!value) return null; // null = no restrictions (all visible)
   try {
@@ -248,15 +261,13 @@ export async function resolveSupplierAccess(
   // User.role is NOT used for supplier authorization.
   if (valtrioxTeamMember) {
     const vtmRole = (valtrioxTeamMember.role || "").toLowerCase();
-    const roleDefinition = getRoleByName(vtmRole);
+    const matrixAccess = VTM_SUPPLIER_ACCESS[vtmRole] ?? { canRead: false, canWrite: false };
     const hidden = hiddenSections(valtrioxTeamMember.visibleSections);
     const pageHidden =
       hidden !== null &&
       (hidden.includes("suppliers") || hidden.includes("*"));
-    const canReadSuppliers =
-      !pageHidden && hasPermission(roleDefinition ?? null, "operations");
-    const canWriteSuppliers =
-      canReadSuppliers && !isReadOnlyRole(vtmRole);
+    const canReadSuppliers = !pageHidden && matrixAccess.canRead;
+    const canWriteSuppliers = !pageHidden && matrixAccess.canWrite;
 
     return {
       organizationId,

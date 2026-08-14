@@ -109,9 +109,10 @@ async function renderSuppliersPage(opts: RenderOptions = {}) {
           stats ?? {
             totalSuppliers: 0,
             ratedCount: 0,
-            avgRating: 0,
+            avgRating: null,
             topPerformer: null,
             needsAttentionCount: 0,
+            access: { canRead: true, canWrite: true },
           },
       } as unknown as Response;
     }
@@ -125,14 +126,6 @@ async function renderSuppliersPage(opts: RenderOptions = {}) {
         ok: true,
         json: async () => ({
           suppliers,
-          stats: {
-            total: computedTotal,
-            active: suppliers.filter((s) => s.status === "active").length,
-            inactive: 0,
-            blacklisted: 0,
-            ratedCount: suppliers.filter((s) => s.rating !== null).length,
-            averageRating: null,
-          },
           pagination: {
             page,
             limit,
@@ -319,6 +312,7 @@ describe("SuppliersPage — stats", () => {
         avgRating: 4.2,
         topPerformer: { id: "sup_1", name: "Top Co", rating: 5 },
         needsAttentionCount: 1,
+        access: { canRead: true, canWrite: true }
       },
     });
 
@@ -906,6 +900,7 @@ describe("SuppliersPage — C04 v2 stats edge cases", () => {
             avgRating: 4.5,
             topPerformer: { id: "sup_1", name: "Top Co", rating: 5 },
             needsAttentionCount: 2,
+            access: { canRead: true, canWrite: true }
           }),
         } as unknown as Response;
       }
@@ -976,6 +971,7 @@ describe("SuppliersPage — Point 10 edge cases", () => {
             avgRating: 4,
             topPerformer: null,
             needsAttentionCount: 0,
+            access: { canRead: true, canWrite: true }
           }),
         } as unknown as Response;
       }
@@ -1052,6 +1048,7 @@ describe("SuppliersPage — Point 10 edge cases", () => {
             avgRating: null,
             topPerformer: null,
             needsAttentionCount: 0,
+            access: { canRead: true, canWrite: true }
           }),
         } as unknown as Response;
       }
@@ -1105,6 +1102,7 @@ describe("SuppliersPage — Point 10 edge cases", () => {
             avgRating: null,
             topPerformer: null,
             needsAttentionCount: 0,
+            access: { canRead: true, canWrite: true }
           }),
         } as unknown as Response;
       }
@@ -1159,6 +1157,7 @@ describe("SuppliersPage — load more failure handling", () => {
             avgRating: null,
             topPerformer: null,
             needsAttentionCount: 0,
+            access: { canRead: true, canWrite: true }
           }),
         } as unknown as Response;
       }
@@ -1233,6 +1232,7 @@ describe("SuppliersPage — load more failure handling", () => {
             avgRating: null,
             topPerformer: null,
             needsAttentionCount: 0,
+            access: { canRead: true, canWrite: true }
           }),
         } as unknown as Response;
       }
@@ -1303,6 +1303,7 @@ describe("SuppliersPage — load more failure handling", () => {
             avgRating: null,
             topPerformer: null,
             needsAttentionCount: 0,
+            access: { canRead: true, canWrite: true }
           }),
         } as unknown as Response;
       }
@@ -1366,6 +1367,7 @@ describe("SuppliersPage — load more failure handling", () => {
             avgRating: null,
             topPerformer: null,
             needsAttentionCount: 0,
+            access: { canRead: true, canWrite: true }
           }),
         } as unknown as Response;
       }
@@ -1489,6 +1491,7 @@ describe("SuppliersPage — deferred stats tests", () => {
             avgRating: 4.5,
             topPerformer: { id: "sup_1", name: "Top Co", rating: 5 },
             needsAttentionCount: 2,
+            access: { canRead: true, canWrite: true }
           }),
         } as unknown as Response;
       }

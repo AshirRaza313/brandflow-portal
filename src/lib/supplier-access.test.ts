@@ -604,3 +604,52 @@ describe("Point 10 — malformed visibleSections fail-safe", () => {
     expect(result!.canWriteSuppliers).toBe(true);
   });
 });
+// ════════════════════════════════════════════════════════════════════════════
+// Blocker 1 - VTM supplier access matrix
+// ════════════════════════════════════════════════════════════════════════════
+describe("Blocker 1 - VTM supplier access matrix", () => {
+  beforeEach(() => vi.clearAllMocks());
+
+  const cases = [
+    { role: "platform_owner", canRead: true, canWrite: true },
+    { role: "platform_admin", canRead: true, canWrite: true },
+    { role: "valtriox_team", canRead: true, canWrite: true },
+    { role: "platform_engineer", canRead: true, canWrite: false },
+    { role: "platform_support", canRead: true, canWrite: false },
+    { role: "platform_sales", canRead: true, canWrite: false },
+    { role: "platform_marketing", canRead: false, canWrite: false },
+  ];
+
+  for (const c of cases) {
+    it(`${c.role}: canRead=${c.canRead}, canWrite=${c.canWrite}`, async () => {
+      const client = makeClient({
+        membership: null,
+        teamMember: {
+          id: `vtm_${c.role}`,
+          role: c.role,
+          visibleSections: "[]",
+        },
+      });
+      const result = await resolveSupplierAccess(client, authCtx);
+      expect(result).not.toBeNull();
+      expect(result!.effectiveRole).toBe(c.role);
+      expect(result!.canReadSuppliers).toBe(c.canRead);
+      expect(result!.canWriteSuppliers).toBe(c.canWrite);
+    });
+  }
+
+  it("unknown VTM role defaults to deny", async () => {
+    const client = makeClient({
+      membership: null,
+      teamMember: {
+        id: "vtm_unknown",
+        role: "platform_unknown",
+        visibleSections: "[]",
+      },
+    });
+    const result = await resolveSupplierAccess(client, authCtx);
+    expect(result).not.toBeNull();
+    expect(result!.canReadSuppliers).toBe(false);
+    expect(result!.canWriteSuppliers).toBe(false);
+  });
+});
