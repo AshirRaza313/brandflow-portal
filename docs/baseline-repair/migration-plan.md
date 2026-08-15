@@ -1,25 +1,26 @@
 # Migration Plan for Supplier Constraints and Grants
 
-Date: 2026-08-15
+Date: 2026-08-15 (updated)
 
 ## Current State
 
 - PR #7 baseline-only contains immutable baseline migration with suppliers table.
-- Supplier constraints and grants are currently standalone scripts for rehearsal only.
-- PR #6 still has duplicate CREATE TABLE supplier migration.
+- PR #6 duplicate CREATE TABLE supplier migration removed in 3ca0d64.
+- PR #6 forward migration 20260815_add_supplier_constraints_and_security added
+  in 3ca0d64 (constraints + anon/authenticated revoke).
+- RLS enable + policy: pending runtime role resolution, see
+  docs/baseline-repair/supplier-rls-grants-posture.md decision checkpoint.
 
 ## Required Final State
 
 1. PR #7 baseline approved and merged to main.
 2. PR #6 rebased on updated main.
-3. PR #6 duplicate CREATE TABLE supplier migration removed.
-4. PR #6 adds a single immutable forward migration containing:
-   - ALTER TABLE suppliers ADD CONSTRAINT rating_check
-   - ALTER TABLE suppliers ADD CONSTRAINT status_check
-   - REVOKE privileges from anon/authenticated
-   - ENABLE ROW LEVEL SECURITY and server policy after runtime role verified
+3. Single immutable forward migration with rating_check, status_check,
+   REVOKE for anon/authenticated (done in 3ca0d64).
+4. RLS enable + server policy after runtime role verified on staging.
 5. Full CI and isolated PostgreSQL tests pass.
 6. Staging migrate deploy rehearsal.
+7. Expert final approval, then production.
 
 ## Safety
 

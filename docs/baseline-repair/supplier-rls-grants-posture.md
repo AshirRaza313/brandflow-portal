@@ -1,29 +1,61 @@
 # Supplier Table RLS and Grants Posture
 
-Date: 2026-08-15
+Date: 2026-08-15 (updated)
 
-## Current Posture
+## Current Posture (PR #7, baseline-only)
 
-- Table: public.suppliers
-- RLS: Not enabled yet.
-- Grants: anon and authenticated revoked SELECT/INSERT/UPDATE/DELETE on suppliers table.
-- Prisma runtime role: uses database owner privileges (no dedicated app role yet).
+- Table: public.suppliers (created by immutable baseline migration
+  20260101000000_baseline)
+- RLS: Not enabled.
+- Grants: anon and authenticated have no privileges on suppliers (revoked
+  via PR #6 forward migration 20260815_add_supplier_constraints_and_security
+  after rebase).
+- Runtime role: Prisma connects with the database connection user from
+  DATABASE_URL. Exact role name NOT yet confirmed - resolved in staging
+  rehearsal (see decision checkpoint below).
+
+## Decision Checkpoint - Runtime Role Resolution (Required Before Policy)
+
+The policy SQL placeholder cannot be finalized without the actual runtime
+role. Resolution procedure:
+
+1. Isolated staging DB par Prisma se ek query chalao:
+   SELECT current_user;
+   (App route ya prisma studio se, production nahi.)
+2. Recorded value: [PENDING: expected candidates - Supabase default owner
+   `postgres`, ya dedicated app role agar banaya gaya]
+3. Yeh value policy SQL mein substitute hone se pehle expert review hogi.
+
+Agar runtime role `postgres` (owner) hai, to RLS policy owner ko bhi cover
+karni padegi kyunki PostgreSQL superuser/owner bypass alag hota hai - yeh
+case explicitly review hoga. Alternative under consideration: dedicated
+least-privilege app role for Prisma runtime.
 
 ## Required Final Posture for Production
 
-- Enable RLS on public.suppliers.
-- Create policy: only server-side Prisma runtime role can SELECT/INSERT/UPDATE/DELETE.
-- Do NOT use Supabase Auth identities or auth.uid().
-- anon and authenticated roles must have zero privileges on suppliers table.
-- Document actual Prisma runtime role name and verify CRUD with integration tests.
+- RLS ENABLE on public.suppliers.
+- Policy: only the verified Prisma runtime role gets
+  SELECT/INSERT/UPDATE/DELETE.
+- No Supabase Auth identities, no auth.uid(). Authorization is enforced
+  server-side in NextAuth + Prisma application layer
+  (src/lib/supplier-access.ts).
+- anon and authenticated roles: zero privileges on suppliers.
 
-## Implementation Plan
+## Implementation Plan (PR #6, post-rebase)
 
-This will be implemented in PR #6 after rebase, as a reviewed forward migration with:
+Forward migration 20260815_add_supplier_constraints_and_security contains:
+
+- ALTER TABLE suppliers ADD CONSTRAINT rating_check
+- ALTER TABLE suppliers ADD CONSTRAINT status_check
+- REVOKE all on suppliers FROM anon, authenticated
+
+RLS enable + policy SIRF runtime role confirm hone ke baad alag forward
+migration mein add hoga:
 
 ALTER TABLE "public"."suppliers" ENABLE ROW LEVEL SECURITY;
-CREATE POLICY "server_full_access" ON "public"."suppliers"
-  USING (current_user = '<prisma_runtime_role>')
-  WITH CHECK (current_user = '<prisma_runtime_role>');
+CREATE POLICY "suppliers_server_full_access" ON "public"."suppliers"
+  USING (current_user = '<resolved_runtime_role>')
+  WITH CHECK (current_user = '<resolved_runtime_role>');
 
-Replace <prisma_runtime_role> with actual role after staging verification.
+Verification: integration test jo resolved role se CRUD karta hai aur
+anon/authenticated se denial karta hai.

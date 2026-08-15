@@ -1,22 +1,57 @@
 # Backup Evidence
 
-Date: 2026-08-15
+Date: 2026-08-15 (updated)
 
-## External Off-Site Backup Location
+## 1. Backup Artifacts
 
-- Local encrypted folder: C:\Users\Aashir\Documents\ValtrioxBackups
-- Files stored:
-  - catalog-tables.json
-  - roles.json
-  - valtriox-catalog-20260815.zip
+Full production backup (custom format -Fc, session pooler port 5432):
 
-## Sanitized Manifest
+- Schema dump: valtriox-schema-20260815.dump
+  SHA-256: [PENDING: Ashir command ke baad bharega]
+- Data dump: valtriox-data-20260815.dump
+  SHA-256: [PENDING: Ashir command ke baad bharega]
+- Dump date/time (UTC): [PENDING]
 
-- SHA-256 hashes recorded in docs/baseline-repair/sanitized-manifest.md
-- No credentials or raw data committed to GitHub.
+Catalog reference data (already committed, hashes in sanitized-manifest.md):
 
-## Restore Proof
+- backups/production-catalog.json
+- backups/catalog-tables.json
+- backups/roles.json
+- backups/table-row-counts.json
 
-- Disposable Supabase rehearsal database replayed baseline successfully.
-- Tables after baseline replay: 40.
-- Integration tests: 7/7 passed on isolated rehearsal database.
+## 2. Off-Site Encrypted Copy
+
+- Encryption: GPG AES256 symmetric
+- Encrypted files:
+  - valtriox-schema-20260815.dump.gpg SHA-256: [PENDING]
+  - valtriox-data-20260815.dump.gpg SHA-256: [PENDING]
+- Off-site target: [PENDING: Backblaze B2 / S3 / documented local encrypted disk]
+- Upload receipt (timestamp + object checksum match): [PENDING]
+
+Note: Local encrypted folder alone is NOT off-site. Agar cloud option use nahi
+hua to yeh limitation explicitly yahan document hogi aur expert ko bataya jayega.
+
+## 3. Restore Proof
+
+Restore rehearsed on disposable database:
+
+- Restore commands run: [PENDING: date + command list]
+- Tables after restore: [PENDING: expected 40]
+- Row counts match vs table-row-counts.json: [PENDING: yes/no + diffs]
+- Output log location: [PENDING]
+
+## 4. Integration Test Evidence
+
+CI integration-tests job (real postgres:16 service, baseline replay via
+scripts/baseline/replay-baseline.cjs):
+
+- Branch: chore/baseline-repair-p3006
+- Commit: [PENDING: final SHA]
+- CI run URL: [PENDING: Ashir Actions tab se paste karega]
+- Result: [PENDING: pass/fail]
+- Test count: 4 baseline replay validation tests (40 tables, suppliers,
+  Organization, ValtrioxTeamMember). Note: purana "7/7" claim ghalt tha,
+  current suite 4 tests hai. Yeh doc abhi ke actual suite se match karta hai.
+
+No credentials or raw production data committed to GitHub. Sirf sanitized
+catalog JSONs committed hain, hashes sanitized-manifest.md mein.
