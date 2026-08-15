@@ -6,7 +6,7 @@ import logger from "@/lib/logger";
 import { withAuth } from "@/lib/auth-middleware";
 import { validateBody } from "@/lib/validations";
 import { z } from "zod";
-import { getAdminEmail } from "@/lib/roles";
+import { getAdminEmail, getRoleByName, hasPermission } from "@/lib/roles";
 import { withRateLimit } from "@/lib/rate-limit";
 
 /** Safely extract message and code from an unknown error */
@@ -145,6 +145,46 @@ export const POST = withRateLimit(withAuth(async (req: NextRequest, authCtx) => 
     if (!bodyResult.success) return bodyResult.response;
     const { organizationId, email, name, role, pin } = bodyResult.data;
 
+    // Fresh same-org membership and active VTM resolution
+    const membership = await withRetry(async () => {
+      return db.organizationMember.findFirst({
+        where: { organizationId, userId: authCtx.userId },
+        select: {
+          role: true,
+          roleDef: { select: { name: true, permissions: true } },
+        },
+      });
+    }, 2, 500);
+
+    const vtm = await withRetry(async () => {
+      return db.valtrioxTeamMember.findFirst({
+        where: { userId: authCtx.userId, status: "active" },
+        select: { role: true },
+      });
+    }, 2, 500);
+
+    const freshRole = vtm?.role || membership?.role || authCtx.role;
+    let hasTeamManage = false;
+    if (
+      membership?.roleDef &&
+      membership.roleDef.name === membership.role
+    ) {
+      try {
+        const perms = JSON.parse(membership.roleDef.permissions);
+        hasTeamManage = perms.team_manage === true;
+      } catch {
+        hasTeamManage = false;
+      }
+    }
+    if (!hasTeamManage) {
+      const builtInRole = getRoleByName(freshRole);
+      hasTeamManage =
+        hasPermission(builtInRole ?? null, "team_manage") ||
+        ["platform_owner", "platform_admin"].includes(freshRole);
+    }
+    const isFreshPlatformAdmin =
+      ["platform_owner", "platform_admin"].includes(freshRole) && !!vtm;
+
     // ── Fetch Platform Identity ──
     let platformName = "Valtriox";
     try {
@@ -160,12 +200,9 @@ export const POST = withRateLimit(withAuth(async (req: NextRequest, authCtx) => 
 
     // Security: verify organizationId matches auth context
     // Platform admins (platform_owner, platform_admin) can invite to any org
-    const platformAdminRoles = ["platform_owner", "platform_admin"];
-    const isPlatformAdmin = platformAdminRoles.includes(authCtx.role);
-    if (!isPlatformAdmin && organizationId !== authCtx.organizationId) {
+        if (!isFreshPlatformAdmin && organizationId !== authCtx.organizationId) {
       return NextResponse.json({ error: "Access denied" }, { status: 403 });
     }
-
     // ── Team Limit Check ──
     let org: OrgWithSubscription | null = null;
     try {
@@ -204,7 +241,7 @@ export const POST = withRateLimit(withAuth(async (req: NextRequest, authCtx) => 
     const adminEmail = getAdminEmail();
     const isAdminByEmail = adminEmail && authCtx.email?.toLowerCase() === adminEmail;
 
-    if (!isPlatformAdmin && !isAdminByEmail && teamLimit !== -1 && totalUsed >= teamLimit) {
+    if (!isFreshPlatformAdmin && !isAdminByEmail && teamLimit !== -1 && totalUsed >= teamLimit) {
       return NextResponse.json({
         error: `Team member limit reached! Your ${org.subscription?.plan?.name || "Starter"} plan allows ${teamLimit} team members. Upgrade your plan to add more members.`,
         code: "TEAM_LIMIT_REACHED",
@@ -212,6 +249,13 @@ export const POST = withRateLimit(withAuth(async (req: NextRequest, authCtx) => 
         currentCount: currentMemberCount,
         pendingCount: pendingInviteCount,
       }, { status: 403 });
+    }
+
+    if (!hasTeamManage && !isFreshPlatformAdmin) {
+      return NextResponse.json(
+        { error: "You do not have permission to invite team members" },
+        { status: 403 }
+      );
     }
 
     // ── Validate PIN ──
@@ -242,7 +286,7 @@ export const POST = withRateLimit(withAuth(async (req: NextRequest, authCtx) => 
       });
 
       if (inviterUser) {
-        const inviterRole = inviterUser.role.toLowerCase();
+        const inviterRole = freshRole.toLowerCase();
         const inviterLevel = ROLE_LEVELS[inviterRole] ?? 0;
         const adminEmail = getAdminEmail();
         const isPlatformOwner = adminEmail && inviterUser.email.toLowerCase() === adminEmail;
