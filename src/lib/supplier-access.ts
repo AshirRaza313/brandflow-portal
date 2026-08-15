@@ -289,7 +289,11 @@ export async function resolveSupplierAccess(
   const currentRole = membership.role.trim().toLowerCase();
 
   // B03 v2: Stale "valtriox_team" stored role without active team record = 403.
-  if (currentRole === "valtriox_team") {
+  // Also reject all platform roles and legacy owner/admin in OrganizationMember fallback.
+  if (
+    currentRole === "valtriox_team" ||
+    currentRole.startsWith("platform_")
+  ) {
     return null;
   }
 

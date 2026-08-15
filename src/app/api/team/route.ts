@@ -140,11 +140,10 @@ export const POST = withRateLimit(withAuth(async (req: NextRequest, authCtx) => 
       name: z.string().max(100).optional(),
       role: z.string().min(1).max(50),
       pin: z.string().regex(/^\d{6}$/, "PIN must be exactly 6 digits"),
-      invitedBy: z.string().optional(),
     });
     const bodyResult = await validateBody(req, teamInviteSchema);
     if (!bodyResult.success) return bodyResult.response;
-    const { organizationId, email, name, role, pin, invitedBy } = bodyResult.data;
+    const { organizationId, email, name, role, pin } = bodyResult.data;
 
     // ── Fetch Platform Identity ──
     let platformName = "Valtriox";
@@ -161,7 +160,7 @@ export const POST = withRateLimit(withAuth(async (req: NextRequest, authCtx) => 
 
     // Security: verify organizationId matches auth context
     // Platform admins (platform_owner, platform_admin) can invite to any org
-    const platformAdminRoles = ["platform_owner", "platform_admin", "owner"];
+    const platformAdminRoles = ["platform_owner", "platform_admin"];
     const isPlatformAdmin = platformAdminRoles.includes(authCtx.role);
     if (!isPlatformAdmin && organizationId !== authCtx.organizationId) {
       return NextResponse.json({ error: "Access denied" }, { status: 403 });
@@ -235,7 +234,7 @@ export const POST = withRateLimit(withAuth(async (req: NextRequest, authCtx) => 
       }, { status: 403 });
     }
 
-    const inviterId = invitedBy || authCtx.userId;
+    const inviterId = authCtx.userId;
     if (inviterId) {
       const inviterUser = await db.user.findUnique({
         where: { id: inviterId },
@@ -321,7 +320,7 @@ export const POST = withRateLimit(withAuth(async (req: NextRequest, authCtx) => 
     const inviteeName = name || email.split("@")[0];
     let inviter: Awaited<ReturnType<typeof db.user.findUnique>> | null;
     try {
-      inviter = invitedBy ? await db.user.findUnique({ where: { id: invitedBy } }) : null;
+      inviter = await db.user.findUnique({ where: { id: authCtx.userId } });
     } catch (e: unknown) {
       logger.warn("[Team] Failed to fetch inviter (non-critical):", { error: getErrorInfo(e).message });
       inviter = null;
@@ -380,7 +379,7 @@ export const POST = withRateLimit(withAuth(async (req: NextRequest, authCtx) => 
       invitation = await db.teamInvitation.create({
         data: {
           organizationId,
-          inviterId: invitedBy || user.id,
+          inviterId: authCtx.userId,
           inviteeEmail: sanitizeEmail(email),
           inviteeName,
           role: targetRole,
