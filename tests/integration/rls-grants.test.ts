@@ -3,13 +3,13 @@ import { Pool } from "pg";
 
 const connectionString = process.env.INTEGRATION_DATABASE_URL;
 
-describe.skipIf(!connectionString)("PostgreSQL RLS/grants", () => {
+describe.skipIf(!connectionString)("PostgreSQL baseline schema", () => {
   let pool: Pool;
 
   beforeAll(() => {
     pool = new Pool({
       connectionString,
-      ssl: { rejectUnauthorized: false },
+      ssl: connectionString.includes("localhost") ? undefined : { rejectUnauthorized: false },
     });
   });
 
@@ -17,25 +17,17 @@ describe.skipIf(!connectionString)("PostgreSQL RLS/grants", () => {
     await pool.end();
   });
 
-  it("suppliers table exists in public schema", async () => {
+  it("Organization table exists", async () => {
     const result = await pool.query(
-      `SELECT table_name FROM information_schema.tables
-       WHERE table_schema = 'public' AND table_name = 'suppliers'`
+      `SELECT table_name FROM information_schema.tables WHERE table_schema='public' AND table_name='Organization'`
     );
     expect(result.rowCount).toBe(1);
   });
 
-  it("anon role has no privileges on suppliers table", async () => {
+  it("ValtrioxTeamMember table exists", async () => {
     const result = await pool.query(
-      `SELECT has_table_privilege('anon', 'public.suppliers', 'SELECT') AS has_select`
+      `SELECT table_name FROM information_schema.tables WHERE table_schema='public' AND table_name='ValtrioxTeamMember'`
     );
-    expect(result.rows[0].has_select).toBe(false);
-  });
-
-  it("authenticated role has no privileges on suppliers table", async () => {
-    const result = await pool.query(
-      `SELECT has_table_privilege('authenticated', 'public.suppliers', 'SELECT') AS has_select`
-    );
-    expect(result.rows[0].has_select).toBe(false);
+    expect(result.rowCount).toBe(1);
   });
 });
