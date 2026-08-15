@@ -2,7 +2,9 @@ if (!process.env.REHEARSAL_DATABASE_URL) {
   console.error("REHEARSAL_DATABASE_URL not set");
   process.exit(1);
 }
-if (!process.env.REHEARSAL_DATABASE_URL.includes("supabase.co")) {
+const isCiLocalhost =
+  process.env.CI === "true" && process.env.REHEARSAL_DATABASE_URL.includes("localhost");
+if (!isCiLocalhost && !process.env.REHEARSAL_DATABASE_URL.includes("supabase.co")) {
   console.error("REHEARSAL_DATABASE_URL must point to a Supabase database");
   process.exit(1);
 }
@@ -14,7 +16,7 @@ const { Pool } = require('pg');
 const fs = require('fs');
 const connectionString = process.env.REHEARSAL_DATABASE_URL;
 if (!connectionString) { console.error('REHEARSAL_DATABASE_URL not set'); process.exit(1); }
-const pool = new Pool({ connectionString, ssl: { rejectUnauthorized: false } });
+const pool = new Pool({ connectionString, ssl: isCiLocalhost ? undefined : { rejectUnauthorized: false } });
 (async () => {
   const tables = await pool.query(`SELECT table_name FROM information_schema.tables WHERE table_schema='public' ORDER BY table_name`);
   const roles = await pool.query(`SELECT rolname FROM pg_roles ORDER BY rolname`);

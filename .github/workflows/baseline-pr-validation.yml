@@ -6,6 +6,7 @@ on:
 
 jobs:
   typecheck:
+    name: TypeScript Check
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -16,6 +17,7 @@ jobs:
       - run: npx tsc --noEmit
 
   unit-tests:
+    name: Tests
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -26,6 +28,7 @@ jobs:
       - run: npx vitest run --exclude "tests/integration/**"
 
   build:
+    name: Build
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -36,6 +39,7 @@ jobs:
       - run: npm run build
 
   lint:
+    name: Lint
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -46,6 +50,7 @@ jobs:
       - run: npx eslint "tests/integration/**/*.ts"
 
   integration-tests:
+    name: Integration Tests
     runs-on: ubuntu-latest
     services:
       postgres:
