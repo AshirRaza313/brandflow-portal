@@ -8,6 +8,7 @@ const files = [
   'backups/production-catalog.json',
   'backups/catalog-tables.json',
   'backups/roles.json',
+  'backups/table-row-counts.json',
 ];
 const manifestLines = ['# Sanitized Backup Manifest', ''];
 manifestLines.push(`Generated: ${new Date().toISOString()}`);

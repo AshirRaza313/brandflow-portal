@@ -118,6 +118,8 @@ model Organization {
   platformDocuments     PlatformDocument[]
   // ── Phase 3: Client Communication Center ──
   clientMessages        ClientMessage[]
+    // ── Operations: Suppliers directory with performance ratings (PR #6) ──
+  suppliers             Supplier[]
   // ── Atomic Counters (race-safe via increment) ──
   orderCounter          Int                     @default(0) // Monotonic counter for VTX-XXXX order numbers
   // ── Billing Security ──
@@ -985,4 +987,52 @@ model PushSubscription {
 
   @@index([userId])
   @@index([orgId])
+}
+
+
+// ─────────────────────────────────────────────────────────────────────────────
+// OPERATIONS — SUPPLIERS DIRECTORY (PR #6: Persistence + Performance Ratings)
+// ─────────────────────────────────────────────────────────────────────────────
+//
+// Org-scoped supplier records with performance ratings (1-5 stars or null).
+//
+// Key design decisions (per team-member review on PR #5):
+//   1. organizationId is sourced ONLY from the authenticated session in API
+//      routes (/api/operations/suppliers) — never from client input.
+//   2. rating is Int? — nullable so "clear rating" is a first-class operation
+//      (null = unrated/cleared; 1-5 = actual rating). API enforces 1 <= r <= 5.
+//   3. status & category are plain String (codebase convention: no Prisma
+//      enums). Allowed values are documented in comments.
+//   4. Three composite indexes for fast org-scoped filtering by status,
+//      category, and direct lookup.
+//   5. onDelete: Cascade from Organization — deleting an org removes its
+//      suppliers (consistent with the rest of the schema).
+//   6. Snake_case DB column names via @map (codebase convention).
+
+model Supplier {
+  id             String   @id @default(cuid())
+  organizationId String   @map("organization_id")
+  name           String
+  contactPerson  String?  @map("contact_person")
+  email          String?
+  phone          String?
+  category       String   @default("General")
+  // Status stored as String (codebase convention: no Prisma enums).
+  // Allowed values: "active" | "inactive" | "blacklisted"
+  status         String   @default("active")
+  address        String?  @db.Text
+  notes          String?  @db.Text
+  // Performance rating: 1-5 stars, or null for unrated/cleared.
+  // API MUST validate 1 <= rating <= 5 before writing.
+  // null explicitly means "rating cleared" (distinct from 0).
+  rating         Int?
+  createdAt      DateTime @default(now()) @map("created_at")
+  updatedAt      DateTime @updatedAt @map("updated_at")
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  @@index([organizationId])
+  @@index([organizationId, status])
+  @@index([organizationId, category])
+  @@map("suppliers")
 }
