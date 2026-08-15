@@ -1,3 +1,15 @@
+if (!process.env.REHEARSAL_DATABASE_URL) {
+  console.error("REHEARSAL_DATABASE_URL not set");
+  process.exit(1);
+}
+if (!process.env.REHEARSAL_DATABASE_URL.includes("supabase.co")) {
+  console.error("REHEARSAL_DATABASE_URL must point to a Supabase database");
+  process.exit(1);
+}
+if (process.env.REHEARSAL_DATABASE_URL.includes("db.wqwsagnxkamblnefhpzx.supabase.co")) {
+  console.error("Production database rejected");
+  process.exit(1);
+}
 const { Pool } = require('pg');
 const fs = require('fs');
 const connectionString = process.env.REHEARSAL_DATABASE_URL;
