@@ -46,9 +46,10 @@ CI integration-tests job (real postgres:16 service, baseline replay via
 scripts/baseline/replay-baseline.cjs):
 
 - Branch: chore/baseline-repair-p3006
-- Commit: [PENDING: final SHA]
-- CI run URL: [PENDING: Ashir Actions tab se paste karega]
-- Result: [PENDING: pass/fail]
+- Commit: 6918b46
+- CI run URL: https://github.com/AshirRaza313/valtriox/actions/runs/31900001141
+- Result: PASS (all 5 jobs green: TypeScript Check, Tests, Build, Lint,
+  Integration Tests)
 - Test count: 4 baseline replay validation tests (40 tables, suppliers,
   Organization, ValtrioxTeamMember). Note: purana "7/7" claim ghalt tha,
   current suite 4 tests hai. Yeh doc abhi ke actual suite se match karta hai.
