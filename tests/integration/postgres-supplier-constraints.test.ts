@@ -8,8 +8,8 @@ describe.skipIf(!connectionString)("PostgreSQL baseline replay validation", () =
 
   beforeAll(() => {
     pool = new Pool({
-      connectionString,
-      ssl: connectionString.includes("localhost") ? undefined : { rejectUnauthorized: false },
+      connectionString: connectionString!,
+      ssl: connectionString!.includes("localhost") ? undefined : { rejectUnauthorized: false },
     });
   });
 
