@@ -1471,3 +1471,49 @@ describe("Issue #2 — Supplier API authorization (DB-resolved)", () => {
     });
   });
 });
+
+describe("Blocker 1 - denied write roles do not call DB mutations", () => {
+  const deniedRoles = ["platform_engineer", "platform_support", "platform_sales", "platform_marketing"];
+
+  for (const role of deniedRoles) {
+    describe(`VTM role ${role}`, () => {
+      beforeEach(() => {
+        testState.organizationId = "org-a";
+        testState.role = "brand_owner";
+        testState.userRole = null;
+        testState.vtmRole = role;
+        testState.memberRemoved = false;
+        testState.memberRoleOverride = null;
+        testState.memberRoleIdOverride = null;
+        testState.penaltyUntil = null;
+        testState.suppliers.length = 0;
+        vi.clearAllMocks();
+        dbMocks.valtrioxTeamMember.findFirst.mockResolvedValue({
+          id: `vt-${role}`,
+          role: role,
+          visibleSections: JSON.stringify([]),
+        });
+      });
+
+      it("POST create returns 403 and does not call supplier.create", async () => {
+        const res = await POST(postRequest({ name: "Blocked" }));
+        expect(res.status).toBe(403);
+        expect(dbMocks.supplier.create).not.toHaveBeenCalled();
+      });
+
+      it("PATCH update returns 403 and does not call supplier.updateMany", async () => {
+        const sup = seedSupplier("org-a", { name: "Sup" });
+        const res = await PATCH(patchRequest(sup.id, { name: "Hacked" }), { params: Promise.resolve({ id: sup.id }) });
+        expect(res.status).toBe(403);
+        expect(dbMocks.supplier.updateMany).not.toHaveBeenCalled();
+      });
+
+      it("DELETE returns 403 and does not call supplier.deleteMany", async () => {
+        const sup = seedSupplier("org-a", { name: "Sup" });
+        const res = await DELETE(deleteRequest(sup.id), { params: Promise.resolve({ id: sup.id }) });
+        expect(res.status).toBe(403);
+        expect(dbMocks.supplier.deleteMany).not.toHaveBeenCalled();
+      });
+    });
+  }
+});

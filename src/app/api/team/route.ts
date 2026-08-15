@@ -1,10 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db, isDbUnavailable, withRetry } from "@/lib/db";
 import bcrypt from "bcryptjs";
-import { sanitizeEmail, sanitizeObject } from "@/lib/sanitize";
+import { sanitizeEmail } from "@/lib/sanitize";
 import logger from "@/lib/logger";
 import { withAuth } from "@/lib/auth-middleware";
-import { validateBody, inviteTeamMemberSchema } from "@/lib/validations";
+import { validateBody } from "@/lib/validations";
 import { z } from "zod";
 import { getAdminEmail } from "@/lib/roles";
 import { withRateLimit } from "@/lib/rate-limit";
@@ -62,7 +62,7 @@ const ROLE_LEVELS: Record<string, number> = {
   ceo: 90,
 };
 
-const PLATFORM_ONLY_ROLES = ["platform_owner", "platform_admin", "owner", "platform_engineer", "platform_support", "platform_sales", "platform_marketing"];
+const PLATFORM_ONLY_ROLES = ["platform_owner", "platform_admin", "owner", "platform_engineer", "platform_support", "platform_sales", "platform_marketing", "valtriox_team"];
 const BRAND_OWNER_MAX_LEVEL = 80;
 const BRAND_ADMIN_MAX_LEVEL = 60;
 
@@ -235,9 +235,10 @@ export const POST = withRateLimit(withAuth(async (req: NextRequest, authCtx) => 
       }, { status: 403 });
     }
 
-    if (invitedBy) {
+    const inviterId = invitedBy || authCtx.userId;
+    if (inviterId) {
       const inviterUser = await db.user.findUnique({
-        where: { id: invitedBy },
+        where: { id: inviterId },
         select: { email: true, role: true },
       });
 
@@ -342,7 +343,7 @@ export const POST = withRateLimit(withAuth(async (req: NextRequest, authCtx) => 
         });
         logger.info("New user created for team invitation", { userId: user.id, email: sanitizeEmail(email), role: targetRole });
       } catch (e: unknown) {
-        const { message: errMsg, code: errCode } = getErrorInfo(e);
+        const { message: errMsg } = getErrorInfo(e);
         logger.error("[Team] Failed to create user:", { error: errMsg });
         return NextResponse.json({ error: "Failed to create user account. Please try again.", _step: "create_user", _details: undefined, _code: undefined }, { status: 500 });
       }
@@ -431,12 +432,12 @@ export const POST = withRateLimit(withAuth(async (req: NextRequest, authCtx) => 
       message: `Team member ${inviteeName} invited successfully! Share the PIN securely via email.`,
     }, { status: 201 });
   } catch (error: unknown) {
-    const { message: errMsg, code: errCode } = getErrorInfo(error);
+    const errorInfo = getErrorInfo(error);
     logger.error("Team POST error", error, { organizationId: authCtx?.organizationId });
     if (isDbUnavailable(error)) {
       return NextResponse.json({ error: "Database is currently unavailable. Please try again later.", fallback: true }, { status: 503 });
     }
-    if (errCode === 'P2002') {
+    if (errorInfo.code === 'P2002') {
       return NextResponse.json({ error: "User is already a member of this organization" }, { status: 400 });
     }
     return NextResponse.json({ error: "Failed to add member" }, { status: 500 });
