@@ -43,4 +43,32 @@ jobs:
         with:
           node-version: 24
       - run: npm ci
-      - run: npx eslint src/app/api/team/route.ts src/lib/supplier-access.ts src/lib/roles.ts
+      - run: npx eslint "tests/integration/**/*.ts"
+
+  integration-tests:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: valtriox_test
+          POSTGRES_PASSWORD: valtriox_test_pass
+          POSTGRES_DB: valtriox_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U valtriox_test"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+    env:
+      INTEGRATION_DATABASE_URL: postgresql://valtriox_test:valtriox_test_pass@localhost:5432/valtriox_test
+      REHEARSAL_DATABASE_URL: postgresql://valtriox_test:valtriox_test_pass@localhost:5432/valtriox_test
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+      - run: npm ci
+      - run: node scripts/baseline/replay-baseline.cjs
+      - run: npx vitest run tests/integration --reporter=verbose
