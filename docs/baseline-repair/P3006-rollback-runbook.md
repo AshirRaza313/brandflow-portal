@@ -35,22 +35,60 @@ Checkpoint CP0: Agar "migration failed" ya "database is not empty" dikhe,
 BASELINE ADOPTION ROKEIN. Yeh already-broken state hai, adoption se pehle
 expert se clarify karein.
 
-## 3. Baseline Adoption Sequence (Staging First)
+## 3. Baseline Adoption Sequence - Two Paths
 
-Staging/production par sirf yeh allowed hai:
+Yeh section do separate paths cover karta hai. Tumhara database state ke hisaab se
+sahi path follow karo. Dono paths mein staging rehearsal MANDATORY hai.
 
-npx prisma migrate deploy
+### 3a. Path A - Empty Database (Fresh Supabase Project ya Disposable Docker)
 
-Order:
+Yeh path use karo jab target database bilkul empty ho (zero tables, no data).
 
-1. CP1 - Isolated rehearsal DB par `migrate deploy` chalao. 40 tables verify karo.
-2. CP2 - Integration tests chalao us rehearsal DB ke khilaf (INTEGRATION_DATABASE_URL set).
-   Expected: all tests pass, zero failures.
-3. CP3 - Row counts compare karo `backups/table-row-counts.json` se. Drift sirf
-   tab acceptable hai agar documented ho.
-4. CP4 - Expert approval checkpoint. Rehearsal green hone ka evidence expert ko
+Steps:
+
+1. `npx prisma migrate status` run karo. Expected: "Database is empty" ya zero migrations.
+2. `npx prisma migrate deploy` run karo. Yeh baseline migration SQL replay karega
+   aur `_prisma_migrations` table bhi create karega. Expected: 40 tables created,
+   baseline marked as applied.
+3. `npx prisma migrate status` verify karo. Expected: 20260101000000_baseline
+   status = "Applied".
+4. Integration tests chalao (INTEGRATION_DATABASE_URL set karo):
+   `npx vitest run tests/integration`
+   Expected: all pass, zero failures.
+5. Row counts capture karo aur `backups/table-row-counts.json` se compare karo.
+   Empty DB mein row counts zero honge - yeh expected hai.
+6. Expert approval checkpoint. Evidence bhejo.
+
+### 3b. Path B - Existing Populated Database (Production ya Staging with Data)
+
+Yeh path use karo jab target database mein already 40 tables aur data hai
+(jaise production Supabase). Baseline migration ka SQL already manually ya
+db.push se applied ho chuka hai, lekin `_prisma_migrations` table nahi hai.
+
+Steps:
+
+1. `npx prisma migrate status` run karo. Expected: "_prisma_migrations table does
+   not exist" ya similar message. Table count already 40 hona chahiye.
+2. Verify karo ke existing schema baseline se match karta hai:
+   `node scripts/baseline/capture-catalog.cjs` (rehearsal par, production nahi)
+3. `npx prisma migrate resolve --applied 20260101000000_baseline` run karo.
+   Yeh manually mark karega ke baseline already applied hai, bina SQL run kiye.
+   `_prisma_migrations` table create hoga aur entry insert hogi.
+4. `npx prisma migrate status` verify karo. Expected: 20260101000000_baseline
+   status = "Applied".
+5. Integration tests chalao. Expected: all pass.
+6. Row counts compare karo `backups/table-row-counts.json` se. Drift sirf tab
+   acceptable hai agar documented ho.
+7. Expert approval checkpoint. Evidence bhejo.
+
+### Common Next Steps (Dono Paths Ke Baad)
+
+1. CP4 - Expert approval checkpoint. Rehearsal green hone ka evidence expert ko
    bhejo. Approval ke baghair production par kuch nahi.
-5. Production par `migrate deploy` (ek baar, rollback plan ready ke saath).
+2. Production par appropriate path follow karo (Path B for production, kyunki
+   production already populated hai).
+3. Production par `migrate deploy` ya `migrate resolve` (Path B) - ek baar,
+   rollback plan ready ke saath.
 
 ## 4. Failure Checkpoints and Immediate Actions
 

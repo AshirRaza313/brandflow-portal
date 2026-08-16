@@ -69,11 +69,19 @@ jobs:
     env:
       INTEGRATION_DATABASE_URL: postgresql://valtriox_test:valtriox_test_pass@localhost:5432/valtriox_test
       REHEARSAL_DATABASE_URL: postgresql://valtriox_test:valtriox_test_pass@localhost:5432/valtriox_test
+      DATABASE_URL: postgresql://valtriox_test:valtriox_test_pass@localhost:5432/valtriox_test
+      DIRECT_DATABASE_URL: postgresql://valtriox_test:valtriox_test_pass@localhost:5432/valtriox_test
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
           node-version: 24
       - run: npm ci
-      - run: node scripts/baseline/replay-baseline.cjs
-      - run: npx vitest run tests/integration --reporter=verbose
+      - name: Prisma generate
+        run: npx prisma generate
+      - name: Prisma migrate deploy (baseline replay via Prisma)
+        run: npx prisma migrate deploy
+      - name: Verify migration status
+        run: npx prisma migrate status
+      - name: Integration tests
+        run: npx vitest run tests/integration --reporter=verbose
