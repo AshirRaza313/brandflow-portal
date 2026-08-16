@@ -163,7 +163,12 @@ export const POST = withRateLimit(withAuth(async (req: NextRequest, authCtx) => 
       });
     }, 2, 500);
 
-    const freshRole = vtm?.role || membership?.role || authCtx.role;
+    const stalePlatformNoVtm =
+      !vtm &&
+      (authCtx.role.startsWith("platform_") || authCtx.role === "valtriox_team");
+    const freshRole = stalePlatformNoVtm
+      ? membership?.role || "member"
+      : vtm?.role || membership?.role || authCtx.role;
     let hasTeamManage = false;
     if (
       membership?.roleDef &&
@@ -269,7 +274,13 @@ export const POST = withRateLimit(withAuth(async (req: NextRequest, authCtx) => 
 
     // ── Role Hierarchy Enforcement ──
     const targetRole = role.toLowerCase().trim();
-    const targetLevel = ROLE_LEVELS[targetRole] ?? -1;
+    if (!ROLE_LEVELS[targetRole]) {
+      return NextResponse.json(
+        { error: "Invalid role", code: "INVALID_ROLE" },
+        { status: 403 }
+      );
+    }
+    const targetLevel = ROLE_LEVELS[targetRole];
 
     if (PLATFORM_ONLY_ROLES.includes(targetRole)) {
       return NextResponse.json({
@@ -442,7 +453,6 @@ export const POST = withRateLimit(withAuth(async (req: NextRequest, authCtx) => 
     // Get role label
     let roleLabel = targetRole;
     try {
-      const { getRoleByName } = await import("@/lib/roles");
       const roleDef = getRoleByName(targetRole);
       roleLabel = roleDef?.label || targetRole;
     } catch (e: unknown) {
