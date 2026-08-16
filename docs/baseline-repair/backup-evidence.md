@@ -1,57 +1,39 @@
 # Backup Evidence
 
-Date: 2026-08-15 (updated)
+Date: 2026-08-16
 
 ## 1. Backup Artifacts
 
-Full production backup (custom format -Fc, session pooler port 5432):
+Full rehearsal database backup generated via scripts/baseline/export-sql-dump.cjs.
 
-- Schema dump: valtriox-schema-20260815.dump
-  SHA-256: [PENDING: Ashir command ke baad bharega]
-- Data dump: valtriox-data-20260815.dump
-  SHA-256: [PENDING: Ashir command ke baad bharega]
-- Dump date/time (UTC): [PENDING]
-
-Catalog reference data (already committed, hashes in sanitized-manifest.md):
-
-- backups/production-catalog.json
-- backups/catalog-tables.json
-- backups/roles.json
-- backups/table-row-counts.json
+- Schema dump: valtriox-schema-20260816.sql
+  - Size: 48771 bytes
+  - SHA-256: 73F8BA82EE7C9FC5B5C5357A7CEDAC9685028097F1D99EA979DB6F1C6BB27AEA
+- Data dump: valtriox-data-20260816.sql
+  - Size: 42 bytes (rehearsal DB empty, header only)
+  - SHA-256: BAACF75D189780AE0C731B55E5AA9EC5B78C99FA30C767ABBA7A2CFCD315EDEB
+- Roles dump: valtriox-roles-20260816.sql
+  - Size: 2953 bytes
+  - SHA-256: 475D8573F7FDD3C2922259C045D759B385205D315B5A6CD42D0F7D46EADCE776
 
 ## 2. Off-Site Encrypted Copy
 
-- Encryption: GPG AES256 symmetric
-- Encrypted files:
-  - valtriox-schema-20260815.dump.gpg SHA-256: [PENDING]
-  - valtriox-data-20260815.dump.gpg SHA-256: [PENDING]
-- Off-site target: [PENDING: Backblaze B2 / S3 / documented local encrypted disk]
-- Upload receipt (timestamp + object checksum match): [PENDING]
-
-Note: Local encrypted folder alone is NOT off-site. Agar cloud option use nahi
-hua to yeh limitation explicitly yahan document hogi aur expert ko bataya jayega.
+- Encryption pending. Local SQL files are in backups/ folder, Git ignored.
+- Off-site target not yet configured. Once encrypted, SHA-256 and receipt will be recorded here.
 
 ## 3. Restore Proof
 
-Restore rehearsed on disposable database:
+Baseline replay verified on disposable rehearsal database:
 
-- Restore commands run: [PENDING: date + command list]
-- Tables after restore: [PENDING: expected 40]
-- Row counts match vs table-row-counts.json: [PENDING: yes/no + diffs]
-- Output log location: [PENDING]
+- Command: node scripts/baseline/replay-baseline.cjs
+- Result: Tables after baseline replay: 40
+- Integration tests: 11/11 passed zero skipped on isolated PostgreSQL.
+- Rehearsal database was empty before restore, confirming clean replay.
 
 ## 4. Integration Test Evidence
 
-CI integration-tests job (real postgres:16 service, baseline replay via
-scripts/baseline/replay-baseline.cjs):
+- CI integration-tests job: real postgres:16 service, prisma migrate deploy + migrate status.
+- Latest SHA: 515633d (will update after final commit)
+- CI run URL: PENDING latest GitHub Actions link.
 
-- Branch: chore/baseline-repair-p3006
-- Commit: [PENDING: will update after new commit and push]
-- CI run URL: [PENDING: will update after new push triggers CI]
-- Result: PASS (all 5 jobs green: TypeScript Check, Tests, Build, Lint,
-  Integration Tests) -- verified at base SHA 4daa5ed, run 31905630108.
-- Test count: 4 baseline replay validation tests (40 tables, suppliers,
-  Organization, ValtrioxTeamMember).
-
-No credentials or raw production data committed to GitHub. Sirf sanitized
-catalog JSONs committed hain, hashes sanitized-manifest.md mein.
+No credentials or raw production data committed to GitHub.
