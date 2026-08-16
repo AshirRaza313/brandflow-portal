@@ -37,3 +37,43 @@ Baseline replay verified on disposable rehearsal database:
 - CI run URL: PENDING latest GitHub Actions link.
 
 No credentials or raw production data committed to GitHub.
+
+## 5. Production Catalog Comparison
+
+- Script: scripts/baseline/compare-catalogs.cjs
+- Production full catalog: backups/production-full-catalog.json (40 tables)
+- Rehearsal full catalog: backups/rehearsal-full-catalog.json (40 tables)
+- Result: NO_DIFFS (exact structural match - columns, defaults, nullability,
+  constraints, FKs, indexes)
+- Manual supplier CHECK constraints were removed from rehearsal before
+  comparison to match production pre-PR6 state.
+
+## 6. Populated Production-Like Path B Rehearsal
+
+- Rehearsal DB seeded with representative Organization, User,
+  OrganizationMember, and Supplier rows.
+- Command: npx prisma migrate resolve --schema prisma/schema.prisma --applied 20260101000000_baseline
+- Result: Migration 20260101000000_baseline marked as applied.
+- Command: npx prisma migrate status --schema prisma/schema.prisma
+- Result: Database schema is up to date! (1 migration found)
+- Row counts captured before and after resolve, no data loss detected.
+
+## 5. Production Catalog Comparison
+
+- Script: scripts/baseline/compare-catalogs.cjs
+- Production full catalog: backups/production-full-catalog.json (40 tables)
+- Rehearsal full catalog: backups/rehearsal-full-catalog.json (40 tables)
+- Result: NO_DIFFS (exact structural match - columns, defaults, nullability,
+  constraints, FKs, indexes)
+- Manual supplier CHECK constraints were removed from rehearsal before
+  comparison to match production pre-PR6 state.
+
+## 6. Populated Production-Like Path B Rehearsal
+
+- Rehearsal DB seeded with representative Organization, User,
+  OrganizationMember, and Supplier rows.
+- Command: npx prisma migrate resolve --schema prisma/schema.prisma --applied 20260101000000_baseline
+- Result: Migration 20260101000000_baseline marked as applied.
+- Command: npx prisma migrate status --schema prisma/schema.prisma
+- Result: Database schema is up to date! (1 migration found)
+- Row counts captured before and after resolve, no data loss detected.

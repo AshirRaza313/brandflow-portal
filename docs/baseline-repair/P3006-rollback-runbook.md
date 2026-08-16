@@ -154,3 +154,34 @@ restore possible ho.
 5. Suppliers route authorization smoke test (PR6 ke baad).
 6. Evidence (commands + outputs) backup-evidence.md mein append karo aur
    expert ko final report bhejo.
+## 3A. Path B - Existing Populated Database Adoption
+
+Yeh path tab use hota hai jab database already populated production-like ho,
+aur baseline SQL direct execute nahi karna hota.
+
+Steps:
+
+1. Production catalog aur baseline ka exact structural comparison karo:
+   - Script: scripts/baseline/compare-catalogs.cjs
+   - Result must be NO_DIFFS (columns, defaults, nullability, constraints,
+     FKs, indexes). Agar diff aaye to ROKO aur expert se approve karwao.
+
+2. Full backup le lo, encrypted off-site receipt mandatory.
+
+3. Row counts capture karo before resolve:
+   - backups/table-row-counts.json
+
+4. Baseline ko Prisma history mein applied mark karo:
+   npx prisma migrate resolve --schema prisma/schema.prisma --applied 20260101000000_baseline
+
+5. Verify migrate status:
+   npx prisma migrate status --schema prisma/schema.prisma
+   Expected: Database schema is up to date!
+
+6. Row counts dobara capture karke compare karo. Data loss zero hona chahiye.
+
+7. Forward migration (PR #6) deploy karo, staging pehle.
+
+8. Supplier CRUD aur authorization smoke tests chalao.
+
+9. Expert approval ke baad production execute karo.
