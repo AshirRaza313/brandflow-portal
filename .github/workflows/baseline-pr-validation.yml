@@ -83,5 +83,24 @@ jobs:
         run: npx prisma migrate deploy
       - name: Verify migration status
         run: npx prisma migrate status
+      - name: Capture CI catalog from replayed baseline
+        env:
+          CATALOG_DB_URL: postgresql://valtriox_test:valtriox_test_pass@localhost:5432/valtriox_test
+          CATALOG_OUTPUT: backups/ci-captured-catalog.json
+        run: node scripts/baseline/capture-full-catalog.cjs
+      - name: Compare CI catalog against expected baseline fixture
+        env:
+          PROD_CATALOG: tests/fixtures/expected-baseline-catalog.json
+          REH_CATALOG: backups/ci-captured-catalog.json
+        run: node scripts/baseline/compare-catalogs.cjs
       - name: Integration tests
         run: npx vitest run tests/integration --reporter=verbose
+      - name: Upload catalog artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: catalog-comparison-${{ github.sha }}
+          path: |
+            backups/ci-captured-catalog.json
+            docs/baseline-repair/catalog-comparison.txt
+          retention-days: 30

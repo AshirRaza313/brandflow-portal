@@ -1,3 +1,8 @@
+// scripts/baseline/capture-full-catalog.cjs
+// Captures full catalog (columns, constraints, indexes) from a database.
+// Used for production-vs-rehearsal structural comparison.
+// CATALOG_DB_URL must point to the target database.
+
 const { Pool } = require('pg');
 const fs = require('fs');
 const url = process.env.CATALOG_DB_URL;
@@ -12,7 +17,7 @@ async function capture() {
   const tables = await pool.query(`
     SELECT table_name
     FROM information_schema.tables
-    WHERE table_schema = 'public' AND table_type = 'BASE TABLE'
+    WHERE table_schema = 'public' AND table_type = 'BASE TABLE' AND table_name != '_prisma_migrations'
     ORDER BY table_name
   `);
 
@@ -20,7 +25,18 @@ async function capture() {
   for (const t of tables.rows) {
     const name = t.table_name;
     const columns = await pool.query(`
-      SELECT column_name, data_type, is_nullable, column_default
+      SELECT
+        column_name,
+        data_type,
+        is_nullable,
+        column_default,
+        character_maximum_length,
+        numeric_precision,
+        numeric_scale,
+        udt_name,
+        is_identity,
+        is_generated,
+        collation_name
       FROM information_schema.columns
       WHERE table_schema = 'public' AND table_name = $1
       ORDER BY ordinal_position
@@ -32,11 +48,21 @@ async function capture() {
     };
   }
 
+  // Constraints: join pg_class for unquoted table names.
+  // Previously used conrelid::regclass::text which produces quoted names
+  // for mixed-case tables (e.g. "User" instead of User), causing silent
+  // constraint skip when catalog keys are unquoted.
   const constraints = await pool.query(`
-    SELECT conrelid::regclass::text AS table_name, conname, contype, pg_get_constraintdef(oid) AS definition
-    FROM pg_constraint
-    WHERE connamespace = 'public'::regnamespace
-    ORDER BY table_name, conname
+    SELECT
+      c.relname AS table_name,
+      con.conname,
+      con.contype,
+      pg_get_constraintdef(con.oid) AS definition
+    FROM pg_constraint con
+    JOIN pg_class c ON con.conrelid = c.oid
+    JOIN pg_namespace n ON c.relnamespace = n.oid
+    WHERE n.nspname = 'public'
+    ORDER BY c.relname, con.conname
   `);
   for (const c of constraints.rows) {
     if (catalog[c.table_name]) {

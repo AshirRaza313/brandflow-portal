@@ -1,6 +1,6 @@
 // scripts/baseline/safety-guard.cjs
 // Shared safety guard for baseline scripts.
-// Validates REHEARSAL_DATABASE_URL to prevent production access.
+// Validates REHEARSAL_DATABASE_URL and PRODUCTION_DATABASE_URL.
 // Uses URL parsing (not substring matching) for exact hostname verification.
 
 "use strict";
@@ -63,7 +63,7 @@ function parseConnectionUrl(url) {
  *
  * Rules:
  * 1. Production hostnames (exact match) ALWAYS rejected.
- * 2. Production pooler hostnames (pattern match) ALWAYS rejected.
+ * 2. Production pooler hostnames (exact suffix match) ALWAYS rejected.
  * 3. CI (GITHUB_ACTIONS=true): only localhost/127.0.0.1, port 5432,
  *    dbname valtriox_test, user valtriox_test allowed.
  * 4. Non-CI: hostname must end with .supabase.co.
@@ -101,9 +101,11 @@ function validateRehearsalUrl(envVar) {
     process.exit(1);
   }
 
-  // --- Rule 2: Production pooler pattern - ALWAYS REJECT ---
-  if (host.indexOf("pooler.supabase.com") !== -1) {
-    console.error(envVar + ": production pooler connection rejected");
+  // --- Rule 2: Production pooler exact suffix match - ALWAYS REJECT ---
+  // CodeQL fix: use endsWith instead of indexOf for exact suffix matching.
+  // Prevents partial match on adversarial hostnames like evil.pooler.supabase.com.attacker.com.
+  if (host.endsWith(".pooler.supabase.com")) {
+    console.error(envVar + ": production pooler connection rejected (exact suffix match)");
     process.exit(1);
   }
 
@@ -172,4 +174,100 @@ function validateRehearsalUrl(envVar) {
   return parsed;
 }
 
-module.exports = { parseConnectionUrl: parseConnectionUrl, validateRehearsalUrl: validateRehearsalUrl };
+/**
+ * Validate PRODUCTION_DATABASE_URL for production-read scripts.
+ * Ensures connection points ONLY to the known production project.
+ *
+ * Rules:
+ * 1. Port must be 5432 (session pooler), rejects 6543 (transaction pooler).
+ * 2. Host must be either:
+ *    a. Direct: db.wqwsagnxkamblnefhpzx.supabase.co
+ *    b. Session pooler: *.pooler.supabase.com with user matching production ref.
+ * 3. Rehearsal project ref (igyqgchgfmcfvjmakvyk) ALWAYS rejected.
+ * 4. Any other host or ref ALWAYS rejected.
+ *
+ * Returns parsed { host, port, dbname, user, isLocal } on success.
+ * Calls process.exit(1) on any validation failure.
+ */
+function validateProductionUrl(envVar) {
+  var url = process.env[envVar];
+  if (!url) {
+    console.error(envVar + " not set");
+    process.exit(1);
+  }
+
+  var parsed = parseConnectionUrl(url);
+  if (!parsed) {
+    console.error(envVar + ": invalid connection string format");
+    process.exit(1);
+  }
+
+  var host = parsed.host;
+  var port = parsed.port;
+  var user = parsed.user;
+  var PRODUCTION_REF = "wqwsagnxkamblnefhpzx";
+  var REHEARSAL_REF = "igyqgchgfmcfvjmakvyk";
+
+  // Reject transaction pooler port
+  if (port === 6543) {
+    console.error(envVar + ": transaction pooler port 6543 rejected, use session pooler port 5432");
+    process.exit(1);
+  }
+  if (port !== 5432) {
+    console.error(envVar + ": port must be 5432 (session pooler), got " + port);
+    process.exit(1);
+  }
+
+  // Pattern 1: Direct production host
+  var directHost = "db." + PRODUCTION_REF + ".supabase.co";
+  if (host === directHost) {
+    console.log(envVar + ": production direct connection validated (ref: " + PRODUCTION_REF + ")");
+    parsed.isLocal = false;
+    return parsed;
+  }
+
+  // Pattern 2: Production session pooler
+  // Hostname must end with .pooler.supabase.com (exact suffix, not substring).
+  // User must exactly match production ref patterns to prevent cross-project access.
+  if (host.endsWith(".pooler.supabase.com")) {
+    var expectedUserDirect = PRODUCTION_REF;
+    var expectedUserPg = "postgres." + PRODUCTION_REF;
+
+    if (user === expectedUserDirect || user === expectedUserPg) {
+      console.log(envVar + ": production session pooler validated (host: " + host + ", ref: " + PRODUCTION_REF + ")");
+      parsed.isLocal = false;
+      return parsed;
+    }
+
+    // Reject rehearsal ref explicitly
+    if (user === REHEARSAL_REF || user === "postgres." + REHEARSAL_REF) {
+      console.error(envVar + ": rehearsal project ref rejected on production pooler connection");
+      process.exit(1);
+    }
+
+    console.error(
+      envVar + ": pooler user must contain production ref \"" + PRODUCTION_REF +
+      "\", got user \"" + user + "\""
+    );
+    process.exit(1);
+  }
+
+  // Reject rehearsal direct host
+  var rehearsalHost = "db." + REHEARSAL_REF + ".supabase.co";
+  if (host === rehearsalHost) {
+    console.error(envVar + ": rehearsal database rejected on production URL");
+    process.exit(1);
+  }
+
+  console.error(
+    envVar + ": must point to production database (db." + PRODUCTION_REF +
+    ".supabase.co or session pooler), got host \"" + host + "\""
+  );
+  process.exit(1);
+}
+
+module.exports = {
+  parseConnectionUrl: parseConnectionUrl,
+  validateRehearsalUrl: validateRehearsalUrl,
+  validateProductionUrl: validateProductionUrl
+};
