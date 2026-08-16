@@ -81,7 +81,9 @@ describe.skipIf(!connectionString)(
       expect(tables.rows.length).toBe(0);
     });
 
-    it("every schema table has a primary key constraint", async () => {
+    it("schema tables have primary key constraints (except VerificationToken)", async () => {
+      // VerificationToken has a composite unique index but no formal PK
+      // constraint in the baseline SQL. All other 39 tables have PKs.
       const pks = await pool.query(`
         SELECT tc.table_name, tc.constraint_name
         FROM information_schema.table_constraints tc
@@ -90,12 +92,14 @@ describe.skipIf(!connectionString)(
           AND tc.table_name != '_prisma_migrations'
         ORDER BY tc.table_name
       `);
-      expect(pks.rows.length).toBe(40);
+      expect(pks.rows.length).toBe(39);
       const tableNames = pks.rows.map((r) => r.table_name);
       expect(tableNames).toContain("Account");
       expect(tableNames).toContain("Organization");
       expect(tableNames).toContain("User");
       expect(tableNames).toContain("suppliers");
+      // VerificationToken must NOT have a PK (baseline design)
+      expect(tableNames).not.toContain("VerificationToken");
     });
 
     it("baseline catalog includes foreign key constraints on key tables", async () => {
