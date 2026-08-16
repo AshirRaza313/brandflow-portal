@@ -1,6 +1,8 @@
 # Backup Evidence
 
-Date: 2026-08-16
+Date: 2026-08-16 (updated)
+Owner: Muhammad Ashir Raza
+Reviewer: Abdul Nafay
 
 ## 1. Backup Artifacts
 
@@ -21,59 +23,66 @@ Full rehearsal database backup generated via scripts/baseline/export-sql-dump.cj
 - Encryption pending. Local SQL files are in backups/ folder, Git ignored.
 - Off-site target not yet configured. Once encrypted, SHA-256 and receipt will be recorded here.
 
-## 3. Restore Proof
+## 3. Restore Proof (Path A - Empty Database)
 
 Baseline replay verified on disposable rehearsal database:
 
-- Command: node scripts/baseline/replay-baseline.cjs
-- Result: Tables after baseline replay: 40
-- Integration tests: 11/11 passed zero skipped on isolated PostgreSQL.
-- Rehearsal database was empty before restore, confirming clean replay.
-
-## 4. Integration Test Evidence
-
-- CI integration-tests job: real postgres:16 service, prisma migrate deploy + migrate status.
-- Latest SHA: 515633d (will update after final commit)
-- CI run URL: PENDING latest GitHub Actions link.
+- Command: npx prisma migrate deploy (CI integration-tests job)
+- Result: 40 public tables created, _prisma_migrations table with baseline entry
+- Integration tests: 11/11 passed, zero skipped on isolated PostgreSQL
+- Rehearsal database was empty before restore, confirming clean replay
+- CI commit SHA: PENDING (update after push)
+- CI run URL: PENDING (update after push)
 
 No credentials or raw production data committed to GitHub.
 
-## 5. Production Catalog Comparison
+## 4. Integration Test Evidence
+
+- CI integration-tests job: real postgres:16 service, prisma migrate deploy + migrate status
+- Latest local commit: f2cdd56 (catalog scripts safety guards + CI comparison)
+- Fixture commit: 4b9c2db (expected baseline catalog, 40 tables)
+- Tests: 188 unit + 11 integration = 199 total
+
+## 5. Catalog Comparison Evidence
 
 - Script: scripts/baseline/compare-catalogs.cjs
-- Production full catalog: backups/production-full-catalog.json (40 tables)
-- Rehearsal full catalog: backups/rehearsal-full-catalog.json (40 tables)
-- Result: NO_DIFFS (exact structural match - columns, defaults, nullability,
-  constraints, FKs, indexes)
-- Manual supplier CHECK constraints were removed from rehearsal before
-  comparison to match production pre-PR6 state.
+- Expected baseline fixture: tests/fixtures/expected-baseline-catalog.json (40 tables, committed to git)
+- CI captures live catalog from replayed baseline, compares against fixture
+- Any structural diff causes CI failure (non-zero exit)
+- CI artifacts uploaded: backups/ci-captured-catalog.json + docs/baseline-repair/catalog-comparison.txt
+- Artifact retention: 30 days
+- Current result: NO_DIFFS (exact structural match - columns, constraints, indexes)
 
-## 6. Populated Production-Like Path B Rehearsal
+## 6. Path B Evidence (Populated Production-Like Rehearsal)
 
-- Rehearsal DB seeded with representative Organization, User,
-  OrganizationMember, and Supplier rows.
-- Command: npx prisma migrate resolve --schema prisma/schema.prisma --applied 20260101000000_baseline
-- Result: Migration 20260101000000_baseline marked as applied.
-- Command: npx prisma migrate status --schema prisma/schema.prisma
-- Result: Database schema is up to date! (1 migration found)
-- Row counts captured before and after resolve, no data loss detected.
+- Rehearsal DB seeded with representative rows: Organization, User, OrganizationMember, Supplier
+- Script: scripts/baseline/seed-rehearsal-for-pathb.cjs (guarded with safety-guard.cjs)
+- Before/after row counts: separate files (before-resolve-row-counts.json, after-resolve-row-counts.json)
+- Guarded wrapper: scripts/baseline/guarded-migrate-resolve.cjs (proves exact target, captures delta)
+- Command: npx prisma migrate resolve --applied 20260101000000_baseline
+- Expected delta: _prisma_migrations table only (1 row added), zero data loss in other tables
+- Status: PENDING (requires Ashir to run on rehearsal DB and provide evidence)
 
-## 5. Production Catalog Comparison
+## 7. Marketing-Table Discrepancy Finding
 
-- Script: scripts/baseline/compare-catalogs.cjs
-- Production full catalog: backups/production-full-catalog.json (40 tables)
-- Rehearsal full catalog: backups/rehearsal-full-catalog.json (40 tables)
-- Result: NO_DIFFS (exact structural match - columns, defaults, nullability,
-  constraints, FKs, indexes)
-- Manual supplier CHECK constraints were removed from rehearsal before
-  comparison to match production pre-PR6 state.
+- Expert reported 9 Marketing tables in earlier audit.
+- Investigation: production catalog (40 tables), baseline SQL, and CI fixture (40 tables) all confirm ZERO marketing/campaign/promo/advert tables.
+- Conclusion: Marketing tables never existed in this project baseline schema. Earlier audit report was incorrect or referenced a different project state.
+- No action needed. No deleted tables to restore.
 
-## 6. Populated Production-Like Path B Rehearsal
+## 8. Safety Guards Summary
 
-- Rehearsal DB seeded with representative Organization, User,
-  OrganizationMember, and Supplier rows.
-- Command: npx prisma migrate resolve --schema prisma/schema.prisma --applied 20260101000000_baseline
-- Result: Migration 20260101000000_baseline marked as applied.
-- Command: npx prisma migrate status --schema prisma/schema.prisma
-- Result: Database schema is up to date! (1 migration found)
-- Row counts captured before and after resolve, no data loss detected.
+All mutating scripts now use shared safety-guard.cjs validation:
+
+- validateRehearsalUrl: rejects production hostname, pooler pattern, validates CI/staging
+- validateProductionUrl: rejects rehearsal, transaction pooler, validates exact production ref
+- CodeQL fix: endsWith() instead of indexOf() for pooler hostname matching
+
+Guarded scripts (7 total):
+- scripts/baseline/safety-guard.cjs (shared module)
+- scripts/baseline/seed-rehearsal-for-pathb.cjs
+- scripts/baseline/drop-manual-supplier-constraints.cjs
+- scripts/baseline/export-sql-dump.cjs
+- scripts/baseline/capture-production-catalog.cjs
+- scripts/baseline/capture-row-counts.cjs
+- scripts/baseline/guarded-migrate-resolve.cjs (new)

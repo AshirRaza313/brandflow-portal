@@ -1,18 +1,21 @@
-const { Pool } = require('pg');
-const fs = require('fs');
-const connectionString = process.env.REHEARSAL_DATABASE_URL;
-if (!connectionString) {
-  console.error('REHEARSAL_DATABASE_URL not set');
-  process.exit(1);
-}
+// scripts/baseline/export-sql-dump.cjs
+// Generates schema + data + roles SQL dumps from rehearsal database.
+// Safety guard: rejects production, validates CI credentials, enforces staging allowlist.
 
-const pool = new Pool({
-  connectionString,
-  ssl: { rejectUnauthorized: false },
+var Pool = require("pg").Pool;
+var fs = require("fs");
+var validateRehearsalUrl = require("./safety-guard.cjs").validateRehearsalUrl;
+
+var parsed = validateRehearsalUrl("REHEARSAL_DATABASE_URL");
+var connectionString = process.env.REHEARSAL_DATABASE_URL;
+
+var pool = new Pool({
+  connectionString: connectionString,
+  ssl: parsed.isLocal ? undefined : { rejectUnauthorized: false },
 });
 
 async function schemaDump() {
-  const tables = await pool.query(`
+  var tables = await pool.query(`
     SELECT table_name
     FROM information_schema.tables
     WHERE table_schema = 'public'
@@ -21,21 +24,21 @@ async function schemaDump() {
     ORDER BY table_name
   `);
 
-  let ddl = '-- Schema dump generated from rehearsal DB\n\n';
-  for (const t of tables.rows) {
-    const tableName = t.table_name;
-    const columns = await pool.query(`
+  var ddl = '-- Schema dump generated from rehearsal DB\n\n';
+  for (var i = 0; i < tables.rows.length; i++) {
+    var tableName = tables.rows[i].table_name;
+    var columns = await pool.query(`
       SELECT column_name, data_type, is_nullable, column_default
       FROM information_schema.columns
       WHERE table_schema = 'public' AND table_name = $1
       ORDER BY ordinal_position
     `, [tableName]);
 
-    ddl += `CREATE TABLE "public"."${tableName}" (\n`;
-    const colDefs = columns.rows.map((c) => {
-      let def = `  "${c.column_name}" ${c.data_type}`;
+    ddl += 'CREATE TABLE "public"."' + tableName + '" (\n';
+    var colDefs = columns.rows.map(function (c) {
+      var def = '  "' + c.column_name + '" ' + c.data_type;
       if (c.is_nullable === 'NO') def += ' NOT NULL';
-      if (c.column_default) def += ` DEFAULT ${c.column_default}`;
+      if (c.column_default) def += ' DEFAULT ' + c.column_default;
       return def;
     });
     ddl += colDefs.join(',\n');
@@ -43,7 +46,7 @@ async function schemaDump() {
   }
 
   // Indexes
-  const indexes = await pool.query(`
+  var indexes = await pool.query(`
     SELECT tablename, indexname, indexdef
     FROM pg_indexes
     WHERE schemaname = 'public'
@@ -51,21 +54,30 @@ async function schemaDump() {
     ORDER BY tablename, indexname
   `);
   ddl += '-- Indexes\n';
-  for (const idx of indexes.rows) {
-    ddl += `${idx.indexdef};\n`;
+  for (var j = 0; j < indexes.rows.length; j++) {
+    ddl += indexes.rows[j].indexdef + ';\n';
   }
 
-  // Constraints (non-primary/foreign/check)
-  const constraints = await pool.query(`
-    SELECT conrelid::regclass AS table_name, contype, conname, pg_get_constraintdef(oid) AS definition
-    FROM pg_constraint
-    WHERE connamespace = 'public'::regnamespace
-    ORDER BY conrelid::regclass::text, conname
+  // Constraints: join pg_class for unquoted table names.
+  // Previously used conrelid::regclass which produces quoted names
+  // for mixed-case tables, causing ALTER TABLE with wrong identifiers.
+  var constraints = await pool.query(`
+    SELECT
+      c.relname AS table_name,
+      con.contype,
+      con.conname,
+      pg_get_constraintdef(con.oid) AS definition
+    FROM pg_constraint con
+    JOIN pg_class c ON con.conrelid = c.oid
+    JOIN pg_namespace n ON c.relnamespace = n.oid
+    WHERE n.nspname = 'public'
+    ORDER BY c.relname, con.conname
   `);
   ddl += '\n-- Constraints\n';
-  for (const c of constraints.rows) {
-    if (['p', 'f', 'c'].includes(c.contype)) {
-      ddl += `ALTER TABLE "public"."${c.table_name}" ADD CONSTRAINT "${c.conname}" ${c.definition};\n`;
+  for (var k = 0; k < constraints.rows.length; k++) {
+    var cr = constraints.rows[k];
+    if (cr.contype === 'p' || cr.contype === 'f' || cr.contype === 'c') {
+      ddl += 'ALTER TABLE "public"."' + cr.table_name + '" ADD CONSTRAINT "' + cr.conname + '" ' + cr.definition + ';\n';
     }
   }
 
@@ -73,7 +85,7 @@ async function schemaDump() {
 }
 
 async function dataDump() {
-  const tables = await pool.query(`
+  var tables = await pool.query(`
     SELECT table_name
     FROM information_schema.tables
     WHERE table_schema = 'public'
@@ -82,16 +94,17 @@ async function dataDump() {
     ORDER BY table_name
   `);
 
-  let sql = '-- Data dump generated from rehearsal DB\n\n';
-  for (const t of tables.rows) {
-    const tableName = t.table_name;
-    const result = await pool.query(`SELECT * FROM "public"."${tableName}"`);
+  var sql = '-- Data dump generated from rehearsal DB\n\n';
+  for (var i = 0; i < tables.rows.length; i++) {
+    var tableName = tables.rows[i].table_name;
+    var result = await pool.query('SELECT * FROM "public"."' + tableName + '"');
     if (result.rows.length === 0) continue;
-    const cols = Object.keys(result.rows[0]);
-    sql += `COPY "public"."${tableName}" (${cols.map(c => `"${c}"`).join(', ')}) FROM stdin;\n`;
-    for (const row of result.rows) {
-      sql += cols.map(c => {
-        const v = row[c];
+    var cols = Object.keys(result.rows[0]);
+    sql += 'COPY "public"."' + tableName + '" (' + cols.map(function (c) { return '"' + c + '"'; }).join(', ') + ') FROM stdin;\n';
+    for (var j = 0; j < result.rows.length; j++) {
+      var row = result.rows[j];
+      sql += cols.map(function (c) {
+        var v = row[c];
         if (v === null || v === undefined) return '\\N';
         if (typeof v === 'string') return v.replace(/\\/g, '\\\\').replace(/\t/g, '\\t').replace(/\n/g, '\\n').replace(/\r/g, '\\r');
         return String(v);
@@ -103,18 +116,21 @@ async function dataDump() {
 }
 
 async function rolesDump() {
-  const roles = await pool.query(`SELECT rolname, rolsuper, rolcreatedb, rolcreaterole, rolcanlogin FROM pg_roles ORDER BY rolname`);
-  let sql = '-- Roles dump (sanitized)\n\n';
-  for (const r of roles.rows) {
-    sql += `-- role: ${r.rolname}, superuser: ${r.rolsuper}, createdb: ${r.rolcreatedb}, createrole: ${r.rolcreaterole}, canlogin: ${r.rolcanlogin}\n`;
+  var roles = await pool.query(
+    'SELECT rolname, rolsuper, rolcreatedb, rolcreaterole, rolcanlogin FROM pg_roles ORDER BY rolname'
+  );
+  var sql = '-- Roles dump (sanitized)\n\n';
+  for (var i = 0; i < roles.rows.length; i++) {
+    var r = roles.rows[i];
+    sql += '-- role: ' + r.rolname + ', superuser: ' + r.rolsuper + ', createdb: ' + r.rolcreatedb + ', createrole: ' + r.rolcreaterole + ', canlogin: ' + r.rolcanlogin + '\n';
   }
   return sql;
 }
 
 (async () => {
-  const schema = await schemaDump();
-  const data = await dataDump();
-  const roles = await rolesDump();
+  var schema = await schemaDump();
+  var data = await dataDump();
+  var roles = await rolesDump();
 
   fs.mkdirSync('backups', { recursive: true });
   fs.writeFileSync('backups/valtriox-schema-20260816.sql', schema);
@@ -127,7 +143,7 @@ async function rolesDump() {
   console.log('Roles bytes:', roles.length);
 
   await pool.end();
-})().catch((e) => {
+})().catch(function (e) {
   console.error(e);
   process.exit(1);
 });
