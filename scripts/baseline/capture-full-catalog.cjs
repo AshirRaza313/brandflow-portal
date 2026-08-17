@@ -5,13 +5,20 @@
 
 const { Pool } = require('pg');
 const fs = require('fs');
+const { parseConnectionUrl } = require('./safety-guard.cjs');
 const url = process.env.CATALOG_DB_URL;
 if (!url) {
   console.error('CATALOG_DB_URL not set');
   process.exit(1);
 }
+const parsed = parseConnectionUrl(url);
+if (!parsed) {
+  console.error('CATALOG_DB_URL: invalid connection string format');
+  process.exit(1);
+}
+const isLocal = (parsed.host === 'localhost' || parsed.host === '127.0.0.1');
 const outputFile = process.env.CATALOG_OUTPUT || 'backups/full-catalog.json';
-const pool = new Pool({ connectionString: url, ssl: { rejectUnauthorized: false } });
+const pool = new Pool({ connectionString: url, ssl: isLocal ? undefined : { rejectUnauthorized: false } });
 
 async function capture() {
   const tables = await pool.query(`
