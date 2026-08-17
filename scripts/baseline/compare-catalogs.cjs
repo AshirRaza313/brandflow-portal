@@ -15,6 +15,30 @@ if (!fs.existsSync(prodPath) || !fs.existsSync(rehPath)) {
 const prod = JSON.parse(fs.readFileSync(prodPath, 'utf8'));
 const reh = JSON.parse(fs.readFileSync(rehPath, 'utf8'));
 
+// Guard: block empty or malformed catalogs from producing NO_DIFFS
+const prodKeys = Object.keys(prod);
+const rehKeys = Object.keys(reh);
+if (prodKeys.length === 0) {
+  console.error('FATAL: Production catalog is empty (0 tables). Cannot compare.');
+  process.exit(1);
+}
+if (rehKeys.length === 0) {
+  console.error('FATAL: Rehearsal catalog is empty (0 tables). Cannot compare.');
+  process.exit(1);
+}
+// Validate nested structure: first table must have columns array
+var sampleProd = prod[prodKeys[0]];
+var sampleReh = reh[rehKeys[0]];
+if (!sampleProd || !Array.isArray(sampleProd.columns)) {
+  console.error('FATAL: Production catalog malformed - expected nested { tableName: { columns: [...] } } format.');
+  process.exit(1);
+}
+if (!sampleReh || !Array.isArray(sampleReh.columns)) {
+  console.error('FATAL: Rehearsal catalog malformed - expected nested { tableName: { columns: [...] } } format.');
+  process.exit(1);
+}
+console.log('Catalogs loaded: production=' + prodKeys.length + ' tables, rehearsal=' + rehKeys.length + ' tables');
+
 const diffs = [];
 const allTables = new Set([...Object.keys(prod), ...Object.keys(reh)]);
 
