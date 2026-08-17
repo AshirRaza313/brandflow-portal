@@ -25,6 +25,23 @@ for (const table of allTables) {
   // Column comparison
   const pCols = prod[table].columns || [];
   const rCols = reh[table].columns || [];
+
+  // Shape validation: column count must match exactly
+  if (pCols.length !== rCols.length) {
+    diffs.push(`COLUMN_COUNT_DIFF: ${table} prod=${pCols.length} reh=${rCols.length}`);
+  }
+
+  // Column order validation: column names at each position must match
+  const maxColLen = Math.max(pCols.length, rCols.length);
+  for (let i = 0; i < maxColLen; i++) {
+    const pName = pCols[i] ? pCols[i].column_name : undefined;
+    const rName = rCols[i] ? rCols[i].column_name : undefined;
+    if (pName !== rName) {
+      diffs.push(`COLUMN_ORDER_DIFF: ${table} position=${i} prod=${pName} reh=${rName}`);
+    }
+  }
+
+  // Per-column detail comparison (by name)
   const pColMap = new Map(pCols.map(c => [c.column_name, c]));
   const rColMap = new Map(rCols.map(c => [c.column_name, c]));
   const cols = new Set([...pColMap.keys(), ...rColMap.keys()]);
@@ -55,16 +72,26 @@ for (const table of allTables) {
       diffs.push(`COLUMN_UDT_DIFF: ${table}.${col} prod=${pc.udt_name} reh=${rc.udt_name}`);
     }
     if ((pc.is_identity ?? null) !== (rc.is_identity ?? null)) {
-      diffs.push(`COLUMN_IDENTITY_DIFF: ${table}.${col} prod=${pc.is_identity} reh=${rc.is_identity}`);
+      diffs.push(`COLUMN_IDENTITY_DIFF: ${table}.${col} prod=${pc.is_identity} reh=${pc.is_identity}`);
     }
     if ((pc.is_generated ?? null) !== (rc.is_generated ?? null)) {
       diffs.push(`COLUMN_GENERATED_DIFF: ${table}.${col} prod=${pc.is_generated} reh=${rc.is_generated}`);
+    }
+    // Collation check
+    if ((pc.collation_name ?? null) !== (rc.collation_name ?? null)) {
+      diffs.push(`COLUMN_COLLATION_DIFF: ${table}.${col} prod=${pc.collation_name} reh=${rc.collation_name}`);
     }
   }
 
   // Constraint comparison
   const pCon = prod[table].constraints || [];
   const rCon = reh[table].constraints || [];
+
+  // Shape validation: constraint count must match exactly
+  if (pCon.length !== rCon.length) {
+    diffs.push(`CONSTRAINT_COUNT_DIFF: ${table} prod=${pCon.length} reh=${rCon.length}`);
+  }
+
   const pConMap = new Map(pCon.map(c => [c.name, c]));
   const rConMap = new Map(rCon.map(c => [c.name, c]));
   const conNames = new Set([...pConMap.keys(), ...rConMap.keys()]);
@@ -72,12 +99,20 @@ for (const table of allTables) {
   for (const cn of conNames) {
     if (!pConMap.has(cn)) { diffs.push(`CONSTRAINT_MISSING_IN_PRODUCTION: ${table}.${cn}`); continue; }
     if (!rConMap.has(cn)) { diffs.push(`CONSTRAINT_MISSING_IN_REHEARSAL: ${table}.${cn}`); continue; }
+    // Constraint type check (p=primary, f=foreign, u=unique, c=check)
+    if (pConMap.get(cn).type !== rConMap.get(cn).type) diffs.push(`CONSTRAINT_TYPE_DIFF: ${table}.${cn} prod=${pConMap.get(cn).type} reh=${rConMap.get(cn).type}`);
     if (pConMap.get(cn).definition !== rConMap.get(cn).definition) diffs.push(`CONSTRAINT_DEF_DIFF: ${table}.${cn}`);
   }
 
   // Index comparison
   const pIdx = prod[table].indexes || [];
   const rIdx = reh[table].indexes || [];
+
+  // Shape validation: index count must match exactly
+  if (pIdx.length !== rIdx.length) {
+    diffs.push(`INDEX_COUNT_DIFF: ${table} prod=${pIdx.length} reh=${rIdx.length}`);
+  }
+
   const pIdxMap = new Map(pIdx.map(i => [i.name, i]));
   const rIdxMap = new Map(rIdx.map(i => [i.name, i]));
   const idxNames = new Set([...pIdxMap.keys(), ...rIdxMap.keys()]);
