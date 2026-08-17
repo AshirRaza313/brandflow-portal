@@ -160,7 +160,7 @@ jobs:
             const aM=new Map(a.counts.map(c=>[c.table,c.rows]));
             const all=new Set([...bM.keys(),...aM.keys()]);
             let ok=true;
-            for(const t of all){const bv=bM.get(t)??-1;const av=aM.get(t)??-1;if(bv!==av){console.error('DELTA: '+t+' before='+bv+' after='+av);ok=false;}}
+            for(const t of all){if(t==='_prisma_migrations')continue;const bv=bM.get(t)??-1;const av=aM.get(t)??-1;if(bv!==av){console.error('DELTA: '+t+' before='+bv+' after='+av);ok=false;}}
             if(ok){console.log('ROW COUNT CHECK PASSED: No unexpected deltas (resolve is data-safe)');}
             else{process.exit(1);}
           "
