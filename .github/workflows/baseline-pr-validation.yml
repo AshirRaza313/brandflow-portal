@@ -95,6 +95,8 @@ jobs:
         run: node scripts/baseline/compare-catalogs.cjs
       - name: Integration tests
         run: npx vitest run tests/integration --reporter=verbose
+      - name: Verify live catalog exists before upload
+        run: test -f backups/ci-captured-catalog.json
       - name: Upload catalog artifacts
         if: always()
         uses: actions/upload-artifact@v4
