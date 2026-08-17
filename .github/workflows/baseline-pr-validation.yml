@@ -139,22 +139,9 @@ jobs:
         run: npx prisma migrate deploy
       - name: Identify and remove last migration (simulate pending)
         run: |
-          LAST_MIGRATION=$(node -e "
-            const {Pool}=require('pg');
-            const p=new Pool({connectionString:process.env.DATABASE_URL});
-            p.query('SELECT migration_name FROM _prisma_migrations ORDER BY finished_at DESC LIMIT 1')
-              .then(r=>{console.log(r.rows[0].migration_name);p.end();})
-              .catch(e=>{console.error(e);process.exit(1);});
-          ")
+          LAST_MIGRATION=$(node scripts/baseline/ci-remove-last-migration.cjs)
           echo "LAST_MIGRATION=$LAST_MIGRATION" >> $GITHUB_ENV
           echo "Simulating pending migration: $LAST_MIGRATION"
-          node -e "
-            const {Pool}=require('pg');
-            const p=new Pool({connectionString:process.env.DATABASE_URL});
-            p.query(\"DELETE FROM _prisma_migrations WHERE migration_name='\"+process.env.LAST_MIGRATION+\"'\")
-              .then(()=>{console.log('Removed from history: '+process.env.LAST_MIGRATION);p.end();})
-              .catch(e=>{console.error(e);process.exit(1);});
-          "
       - name: Capture BEFORE resolve row counts
         run: node scripts/baseline/ci-capture-row-counts.cjs before-resolve
       - name: Execute prisma migrate resolve (Path B)
@@ -162,19 +149,7 @@ jobs:
       - name: Capture AFTER resolve row counts
         run: node scripts/baseline/ci-capture-row-counts.cjs after-resolve
       - name: Migration history proof
-        run: |
-          node -e "
-            const {Pool}=require('pg');
-            const p=new Pool({connectionString:process.env.DATABASE_URL});
-            p.query(\"SELECT migration_name,applied_steps_count FROM _prisma_migrations WHERE migration_name='\"+process.env.LAST_MIGRATION+\"'\")
-              .then(r=>{
-                if(r.rows.length===0){console.error('FATAL: migration not found after resolve');process.exit(1);}
-                console.log('MIGRATION HISTORY PROOF:');
-                console.log('  name: '+r.rows[0].migration_name);
-                console.log('  steps: '+r.rows[0].applied_steps_count);
-                p.end();
-              }).catch(e=>{console.error(e);process.exit(1);});
-          "
+        run: node scripts/baseline/ci-verify-migration.cjs "$LAST_MIGRATION"
       - name: Compare before/after row counts
         run: |
           node -e "
