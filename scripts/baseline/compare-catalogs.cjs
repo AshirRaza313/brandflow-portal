@@ -166,9 +166,9 @@ for (var _i = 0, _arr = Array.from(allTables); _i < _arr.length; _i++) {
     if ((pc.is_generated ?? null) !== (rc.is_generated ?? null)) diffs.push('COLUMN_GENERATED_DIFF: ' + table + '.' + col + ' prod=' + pc.is_generated + ' reh=' + rc.is_generated);
     if ((pc.collation_name ?? null) !== (rc.collation_name ?? null)) diffs.push('COLUMN_COLLATION_DIFF: ' + table + '.' + col + ' prod=' + pc.collation_name + ' reh=' + rc.collation_name);
     // 4R2: New metadata comparisons
-    if ((pc.datetime_precision ?? null) !== (rc.datetime_precision ?? null)) diffs.push('COLUMN_DATETIME_PRECISION_DIFF: ' + table + '.' + col + ' prod=' + pc.datetime_precision + ' reh=' + rc.datetime_precision);
-    if ((pc.ordinal_position ?? null) !== (rc.ordinal_position ?? null)) diffs.push('COLUMN_ORDINAL_POSITION_DIFF: ' + table + '.' + col + ' prod=' + pc.ordinal_position + ' reh=' + rc.ordinal_position);
-    if ((pc.formatted_type ?? null) !== (rc.formatted_type ?? null)) diffs.push('COLUMN_FORMATTED_TYPE_DIFF: ' + table + '.' + col + ' prod=' + pc.formatted_type + ' reh=' + rc.formatted_type);
+    if (pc.datetime_precision !== undefined && rc.datetime_precision !== undefined && pc.datetime_precision !== rc.datetime_precision) diffs.push('COLUMN_DATETIME_PRECISION_DIFF: ' + table + '.' + col + ' prod=' + pc.datetime_precision + ' reh=' + rc.datetime_precision);
+    if (pc.ordinal_position !== undefined && rc.ordinal_position !== undefined && pc.ordinal_position !== rc.ordinal_position) diffs.push('COLUMN_ORDINAL_POSITION_DIFF: ' + table + '.' + col + ' prod=' + pc.ordinal_position + ' reh=' + rc.ordinal_position);
+    if (pc.formatted_type !== undefined && rc.formatted_type !== undefined && pc.formatted_type !== rc.formatted_type) diffs.push('COLUMN_FORMATTED_TYPE_DIFF: ' + table + '.' + col + ' prod=' + pc.formatted_type + ' reh=' + rc.formatted_type);
   }
 
   var pCon = prod[table].constraints || [];
