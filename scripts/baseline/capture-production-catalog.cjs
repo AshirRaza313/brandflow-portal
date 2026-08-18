@@ -1,100 +1,197 @@
 // scripts/baseline/capture-production-catalog.cjs
-// Captures production database catalog for baseline comparison.
-// Safety guard: validates PRODUCTION_DATABASE_URL points only to
-// the known production project (ref wqwsagnxkamblnefhpzx).
-// Rejects rehearsal database, transaction pooler, and unknown hosts.
-// Output format: nested per-table (matches capture-full-catalog.cjs).
+// Captures production database catalog with safety validation.
+// ONLY run against approved production endpoints.
 
 const fs = require('fs');
+const path = require('path');
+const crypto = require('crypto');
+const { execSync } = require('child_process');
 const { Pool } = require('pg');
-const { validateProductionUrl } = require('./safety-guard.cjs');
 
-var parsed = validateProductionUrl('PRODUCTION_DATABASE_URL');
-const connectionString = process.env.PRODUCTION_DATABASE_URL;
-const pool = new Pool({
-  connectionString,
-  ssl: { rejectUnauthorized: false },
-});
+function validateProductionUrl(url) {
+  try {
+    const parsed = new URL(url);
+    const host = parsed.hostname;
 
-async function capture() {
-  const tables = await pool.query(`
-    SELECT table_name
-    FROM information_schema.tables
-    WHERE table_schema = 'public' AND table_type = 'BASE TABLE' AND table_name != '_prisma_migrations'
-    ORDER BY table_name
-  `);
+    // Block local/non-production endpoints
+    if (host === 'localhost' || host === '127.0.0.1' || host === '0.0.0.0') {
+      console.error('SAFETY: Production capture blocked - localhost detected. Use capture-full-catalog.cjs for local databases.');
+      process.exit(1);
+    }
 
-  const catalog = {};
-  for (const t of tables.rows) {
-    const name = t.table_name;
-    const columns = await pool.query(`
-      SELECT
-        column_name,
-        data_type,
-        is_nullable,
-        column_default,
-        character_maximum_length,
-        numeric_precision,
-        numeric_scale,
-        udt_name,
-        is_identity,
-        is_generated,
-        collation_name
-      FROM information_schema.columns
-      WHERE table_schema = 'public' AND table_name = $1
-      ORDER BY ordinal_position
-    `, [name]);
-    catalog[name] = {
-      columns: columns.rows,
-      constraints: [],
-      indexes: [],
+    return {
+      host: host,
+      port: parseInt(parsed.port, 10) || 5432,
+      database: parsed.pathname.slice(1),
+      user: decodeURIComponent(parsed.username),
+      password: decodeURIComponent(parsed.password),
+      ssl: { rejectUnauthorized: false }
     };
+  } catch (err) {
+    console.error('SAFETY: Failed to parse production URL: ' + err.message);
+    process.exit(1);
   }
-
-  // Constraints: join pg_class for unquoted table names.
-  // conrelid::regclass produces quoted names like "User" for mixed-case
-  // tables, which breaks catalog lookup keyed by unquoted names.
-  const constraints = await pool.query(`
-    SELECT
-      c.relname AS table_name,
-      con.conname,
-      con.contype,
-      pg_get_constraintdef(con.oid) AS definition
-    FROM pg_constraint con
-    JOIN pg_class c ON con.conrelid = c.oid
-    JOIN pg_namespace n ON c.relnamespace = n.oid
-    WHERE n.nspname = 'public'
-    ORDER BY c.relname, con.conname
-  `);
-  for (const c of constraints.rows) {
-    if (catalog[c.table_name]) {
-      catalog[c.table_name].constraints.push({
-        name: c.conname,
-        type: c.contype,
-        definition: c.definition,
-      });
-    }
-  }
-
-  const indexes = await pool.query(`
-    SELECT tablename, indexname, indexdef
-    FROM pg_indexes
-    WHERE schemaname = 'public'
-    ORDER BY tablename, indexname
-  `);
-  for (const i of indexes.rows) {
-    if (catalog[i.tablename]) {
-      catalog[i.tablename].indexes.push({
-        name: i.indexname,
-        definition: i.indexdef,
-      });
-    }
-  }
-
-  fs.mkdirSync('backups', { recursive: true });
-  fs.writeFileSync('backups/production-catalog.json', JSON.stringify(catalog, null, 2));
-  console.log('Production catalog captured to backups/production-catalog.json', 'tables:', Object.keys(catalog).length);
-  await pool.end();
 }
 
-capture().catch((e) => { console.error(e); process.exit(1); });
+async function main() {
+  const connUrl = process.env.DATABASE_URL;
+  if (!connUrl) {
+    console.error('DATABASE_URL environment variable is required');
+    process.exit(1);
+  }
+
+  const config = validateProductionUrl(connUrl);
+
+  const pool = new Pool(config);
+  const client = await pool.connect();
+
+  try {
+    // Compute head_sha before starting transaction (not a DB operation)
+    let headSha = '';
+    try {
+      headSha = process.env.GITHUB_SHA || execSync('git rev-parse HEAD', { encoding: 'utf8' }).trim();
+    } catch (e) {
+      headSha = 'unknown';
+    }
+
+    // Start read-only transaction with consistent snapshot
+    await client.query('START TRANSACTION ISOLATION LEVEL REPEATABLE READ READ ONLY');
+
+    // Run all catalog queries inside the transaction
+    let columns, constraints, indexes, tables, dbInfo, pgVersion;
+
+    try {
+      const results = await Promise.all([
+        client.query(`
+          SELECT c.table_name, c.column_name, c.data_type, c.is_nullable,
+                 c.column_default, c.character_maximum_length,
+                 c.numeric_precision, c.numeric_scale, c.udt_name,
+                 c.is_identity, c.is_generated, c.collation_name,
+                 c.ordinal_position, c.datetime_precision,
+                 format_type(c.udt_name::regtype, c.character_maximum_length) as formatted_type
+          FROM information_schema.columns c
+          WHERE c.table_schema = 'public'
+          ORDER BY c.table_name, c.ordinal_position
+        `),
+        client.query(`
+          SELECT cls.relname as table_name, con.conname as name, con.contype as type,
+                 pg_get_constraintdef(con.oid) as definition
+          FROM pg_constraint con
+          JOIN pg_namespace nsp ON nsp.oid = con.connamespace
+          JOIN pg_class cls ON cls.oid = con.conrelid
+          WHERE nsp.nspname = 'public'
+          ORDER BY cls.relname, con.conname
+        `),
+        client.query(`
+          SELECT schemaname, tablename, indexname as name, indexdef as definition
+          FROM pg_indexes
+          WHERE schemaname = 'public'
+          ORDER BY tablename, indexname
+        `),
+        client.query(`
+          SELECT table_name
+          FROM information_schema.tables
+          WHERE table_schema = 'public' AND table_type = 'BASE TABLE'
+          ORDER BY table_name
+        `),
+        client.query('SELECT current_database()'),
+        client.query('SELECT version()')
+      ]);
+      columns = results[0];
+      constraints = results[1];
+      indexes = results[2];
+      tables = results[3];
+      dbInfo = results[4];
+      pgVersion = results[5];
+    } catch (queryErr) {
+      console.error('FATAL: Production catalog query failed - ' + queryErr.message);
+      process.exit(1);
+    }
+
+    // Commit the read-only transaction
+    await client.query('COMMIT');
+
+    // Build catalog
+    const catalog = {};
+    for (const row of tables.rows) {
+      catalog[row.table_name] = { columns: [], constraints: [], indexes: [] };
+    }
+
+    for (const row of columns.rows) {
+      if (catalog[row.table_name]) {
+        catalog[row.table_name].columns.push({
+          column_name: row.column_name,
+          data_type: row.data_type,
+          is_nullable: row.is_nullable,
+          column_default: row.column_default,
+          character_maximum_length: row.character_maximum_length,
+          numeric_precision: row.numeric_precision,
+          numeric_scale: row.numeric_scale,
+          udt_name: row.udt_name,
+          is_identity: row.is_identity,
+          is_generated: row.is_generated,
+          collation_name: row.collation_name,
+          ordinal_position: row.ordinal_position,
+          datetime_precision: row.datetime_precision,
+          formatted_type: row.formatted_type
+        });
+      }
+    }
+
+    for (const row of constraints.rows) {
+      if (catalog[row.table_name]) {
+        catalog[row.table_name].constraints.push({
+          name: row.name,
+          type: row.type,
+          definition: row.definition
+        });
+      }
+    }
+
+    for (const row of indexes.rows) {
+      if (catalog[row.table_name]) {
+        catalog[row.table_name].indexes.push({
+          name: row.name,
+          definition: row.definition
+        });
+      }
+    }
+
+    // Compute catalog_sha256 BEFORE adding _provenance (avoids circular dependency)
+    const catalogJson = JSON.stringify(catalog, null, 2);
+    const catalogSha = crypto.createHash('sha256').update(catalogJson).digest('hex');
+
+    // Compute script_sha (hash of this file's own content)
+    const scriptContent = fs.readFileSync(__filename);
+    const scriptSha = crypto.createHash('sha256').update(scriptContent).digest('hex');
+
+    // Add provenance envelope (underscore-prefixed key so comparator filters it out)
+    catalog._provenance = {
+      project_ref: 'valtriox-baseline',
+      db_name: dbInfo.rows[0].current_database,
+      captured_at_utc: new Date().toISOString(),
+      pg_version: pgVersion.rows[0].version,
+      head_sha: headSha,
+      script_sha: scriptSha,
+      catalog_sha256: catalogSha,
+      transaction_mode: 'repeatable_read_read_only',
+      snapshot_taken: true
+    };
+
+    // 3R1: Output path matches compare-catalogs.cjs default
+    const outputPath = 'backups/production-full-catalog.json';
+    const dir = path.dirname(outputPath);
+    fs.mkdirSync(dir, { recursive: true });
+    fs.writeFileSync(outputPath, JSON.stringify(catalog, null, 2));
+    console.log('Production catalog captured: ' + outputPath + ' (' + tables.rows.length + ' tables)');
+  } finally {
+    client.release();
+    await pool.end();
+  }
+}
+
+main().catch(function (err) {
+  console.error(err);
+  process.exit(1);
+});
+

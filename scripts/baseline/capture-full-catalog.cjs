@@ -1,108 +1,196 @@
 // scripts/baseline/capture-full-catalog.cjs
-// Captures full catalog (columns, constraints, indexes) from a database.
-// Used for production-vs-rehearsal structural comparison.
-// CATALOG_DB_URL must point to the target database.
+// Captures complete database catalog from any PostgreSQL database.
+// Usage: node capture-full-catalog.cjs <connection-url> [output-path]
 
-const { Pool } = require('pg');
 const fs = require('fs');
-const { parseConnectionUrl } = require('./safety-guard.cjs');
-const url = process.env.CATALOG_DB_URL;
-if (!url) {
-  console.error('CATALOG_DB_URL not set');
-  process.exit(1);
-}
-const parsed = parseConnectionUrl(url);
-if (!parsed) {
-  console.error('CATALOG_DB_URL: invalid connection string format');
-  process.exit(1);
-}
-const isLocal = (parsed.host === 'localhost' || parsed.host === '127.0.0.1');
-const outputFile = process.env.CATALOG_OUTPUT || 'backups/full-catalog.json';
-const pool = new Pool({ connectionString: url, ssl: isLocal ? undefined : { rejectUnauthorized: false } });
+const path = require('path');
+const crypto = require('crypto');
+const { execSync } = require('child_process');
+const { Pool } = require('pg');
 
-async function capture() {
-  const tables = await pool.query(`
-    SELECT table_name
-    FROM information_schema.tables
-    WHERE table_schema = 'public' AND table_type = 'BASE TABLE' AND table_name != '_prisma_migrations'
-    ORDER BY table_name
-  `);
-
-  const catalog = {};
-  for (const t of tables.rows) {
-    const name = t.table_name;
-    const columns = await pool.query(`
-      SELECT
-        column_name,
-        data_type,
-        is_nullable,
-        column_default,
-        character_maximum_length,
-        numeric_precision,
-        numeric_scale,
-        udt_name,
-        is_identity,
-        is_generated,
-        collation_name
-      FROM information_schema.columns
-      WHERE table_schema = 'public' AND table_name = $1
-      ORDER BY ordinal_position
-    `, [name]);
-    catalog[name] = {
-      columns: columns.rows,
-      constraints: [],
-      indexes: [],
+async function parseConnectionUrl(url) {
+  try {
+    const parsed = new URL(url);
+    return {
+      host: parsed.hostname,
+      port: parseInt(parsed.port, 10) || 5432,
+      database: parsed.pathname.slice(1),
+      user: decodeURIComponent(parsed.username),
+      password: decodeURIComponent(parsed.password),
+      ssl: false
     };
+  } catch (err) {
+    console.error('Failed to parse connection URL: ' + err.message);
+    process.exit(1);
   }
-
-  // Constraints: join pg_class for unquoted table names.
-  // Previously used conrelid::regclass::text which produces quoted names
-  // for mixed-case tables (e.g. "User" instead of User), causing silent
-  // constraint skip when catalog keys are unquoted.
-  const constraints = await pool.query(`
-    SELECT
-      c.relname AS table_name,
-      con.conname,
-      con.contype,
-      pg_get_constraintdef(con.oid) AS definition
-    FROM pg_constraint con
-    JOIN pg_class c ON con.conrelid = c.oid
-    JOIN pg_namespace n ON c.relnamespace = n.oid
-    WHERE n.nspname = 'public'
-    ORDER BY c.relname, con.conname
-  `);
-  for (const c of constraints.rows) {
-    if (catalog[c.table_name]) {
-      catalog[c.table_name].constraints.push({
-        name: c.conname,
-        type: c.contype,
-        definition: c.definition,
-      });
-    }
-  }
-
-  const indexes = await pool.query(`
-    SELECT tablename, indexname, indexdef
-    FROM pg_indexes
-    WHERE schemaname = 'public'
-    ORDER BY tablename, indexname
-  `);
-  for (const i of indexes.rows) {
-    if (catalog[i.tablename]) {
-      catalog[i.tablename].indexes.push({
-        name: i.indexname,
-        definition: i.indexdef,
-      });
-    }
-  }
-
-  fs.mkdirSync('backups', { recursive: true });
-  fs.writeFileSync(outputFile, JSON.stringify(catalog, null, 2));
-  console.log('Full catalog captured to', outputFile, 'tables:', Object.keys(catalog).length);
-  await pool.end();
 }
 
-capture().catch((e) => {
-  console.error(e);
+async function main() {
+  const connUrl = process.argv[2];
+  const outputPath = process.argv[3] || 'backups/rehearsal-full-catalog.json';
+
+  if (!connUrl) {
+    console.error('Usage: node capture-full-catalog.cjs <connection-url> [output-path]');
+    process.exit(1);
+  }
+
+  const config = await parseConnectionUrl(connUrl);
+
+  // Conditional SSL for non-localhost connections
+  if (config.host === 'localhost' || config.host === '127.0.0.1') {
+    config.ssl = false;
+  } else {
+    config.ssl = { rejectUnauthorized: false };
+  }
+
+  const pool = new Pool(config);
+  const client = await pool.connect();
+
+  try {
+    // Compute head_sha before starting transaction (not a DB operation)
+    let headSha = '';
+    try {
+      headSha = process.env.GITHUB_SHA || execSync('git rev-parse HEAD', { encoding: 'utf8' }).trim();
+    } catch (e) {
+      headSha = 'unknown';
+    }
+
+    // Start read-only transaction with consistent snapshot
+    await client.query('START TRANSACTION ISOLATION LEVEL REPEATABLE READ READ ONLY');
+
+    // Run all catalog queries inside the transaction
+    let columns, constraints, indexes, tables, dbInfo, pgVersion;
+
+    try {
+      const results = await Promise.all([
+        client.query(`
+          SELECT c.table_name, c.column_name, c.data_type, c.is_nullable,
+                 c.column_default, c.character_maximum_length,
+                 c.numeric_precision, c.numeric_scale, c.udt_name,
+                 c.is_identity, c.is_generated, c.collation_name,
+                 c.ordinal_position, c.datetime_precision,
+                 format_type(c.udt_name::regtype, c.character_maximum_length) as formatted_type
+          FROM information_schema.columns c
+          WHERE c.table_schema = 'public'
+          ORDER BY c.table_name, c.ordinal_position
+        `),
+        client.query(`
+          SELECT cls.relname as table_name, con.conname as name, con.contype as type,
+                 pg_get_constraintdef(con.oid) as definition
+          FROM pg_constraint con
+          JOIN pg_namespace nsp ON nsp.oid = con.connamespace
+          JOIN pg_class cls ON cls.oid = con.conrelid
+          WHERE nsp.nspname = 'public'
+          ORDER BY cls.relname, con.conname
+        `),
+        client.query(`
+          SELECT schemaname, tablename, indexname as name, indexdef as definition
+          FROM pg_indexes
+          WHERE schemaname = 'public'
+          ORDER BY tablename, indexname
+        `),
+        client.query(`
+          SELECT table_name
+          FROM information_schema.tables
+          WHERE table_schema = 'public' AND table_type = 'BASE TABLE'
+          ORDER BY table_name
+        `),
+        client.query('SELECT current_database()'),
+        client.query('SELECT version()')
+      ]);
+      columns = results[0];
+      constraints = results[1];
+      indexes = results[2];
+      tables = results[3];
+      dbInfo = results[4];
+      pgVersion = results[5];
+    } catch (queryErr) {
+      console.error('FATAL: Catalog query failed - ' + queryErr.message);
+      process.exit(1);
+    }
+
+    // Commit the read-only transaction
+    await client.query('COMMIT');
+
+    // Build catalog
+    const catalog = {};
+    for (const row of tables.rows) {
+      catalog[row.table_name] = { columns: [], constraints: [], indexes: [] };
+    }
+
+    for (const row of columns.rows) {
+      if (catalog[row.table_name]) {
+        catalog[row.table_name].columns.push({
+          column_name: row.column_name,
+          data_type: row.data_type,
+          is_nullable: row.is_nullable,
+          column_default: row.column_default,
+          character_maximum_length: row.character_maximum_length,
+          numeric_precision: row.numeric_precision,
+          numeric_scale: row.numeric_scale,
+          udt_name: row.udt_name,
+          is_identity: row.is_identity,
+          is_generated: row.is_generated,
+          collation_name: row.collation_name,
+          ordinal_position: row.ordinal_position,
+          datetime_precision: row.datetime_precision,
+          formatted_type: row.formatted_type
+        });
+      }
+    }
+
+    for (const row of constraints.rows) {
+      if (catalog[row.table_name]) {
+        catalog[row.table_name].constraints.push({
+          name: row.name,
+          type: row.type,
+          definition: row.definition
+        });
+      }
+    }
+
+    for (const row of indexes.rows) {
+      if (catalog[row.table_name]) {
+        catalog[row.table_name].indexes.push({
+          name: row.name,
+          definition: row.definition
+        });
+      }
+    }
+
+    // Compute catalog_sha256 BEFORE adding _provenance (avoids circular dependency)
+    const catalogJson = JSON.stringify(catalog, null, 2);
+    const catalogSha = crypto.createHash('sha256').update(catalogJson).digest('hex');
+
+    // Compute script_sha (hash of this file's own content)
+    const scriptContent = fs.readFileSync(__filename);
+    const scriptSha = crypto.createHash('sha256').update(scriptContent).digest('hex');
+
+    // Add provenance envelope (underscore-prefixed key so comparator filters it out)
+    catalog._provenance = {
+      project_ref: 'valtriox-baseline',
+      db_name: dbInfo.rows[0].current_database,
+      captured_at_utc: new Date().toISOString(),
+      pg_version: pgVersion.rows[0].version,
+      head_sha: headSha,
+      script_sha: scriptSha,
+      catalog_sha256: catalogSha,
+      transaction_mode: 'repeatable_read_read_only',
+      snapshot_taken: true
+    };
+
+    // Write output (includes _provenance in the file)
+    const dir = path.dirname(outputPath);
+    fs.mkdirSync(dir, { recursive: true });
+    fs.writeFileSync(outputPath, JSON.stringify(catalog, null, 2));
+    console.log('Catalog captured: ' + outputPath + ' (' + tables.rows.length + ' tables)');
+  } finally {
+    client.release();
+    await pool.end();
+  }
+}
+
+main().catch(function (err) {
+  console.error(err);
   process.exit(1);
 });
