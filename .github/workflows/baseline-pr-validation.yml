@@ -87,7 +87,7 @@ jobs:
         env:
           CATALOG_DB_URL: postgresql://valtriox_test:valtriox_test_pass@localhost:5432/valtriox_test
           CATALOG_OUTPUT: backups/ci-captured-catalog.json
-        run: node scripts/baseline/capture-full-catalog.cjs
+        run: node scripts/baseline/capture-full-catalog.cjs "$CATALOG_DB_URL" "$CATALOG_OUTPUT"
       - name: Compare CI catalog against expected baseline fixture
         env:
           PROD_CATALOG: tests/fixtures/expected-baseline-catalog.json
