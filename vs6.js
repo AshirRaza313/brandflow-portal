@@ -1,0 +1,12 @@
+var c = require("fs").readFileSync(".github/workflows/baseline-pr-validation.yml","utf8");
+c = c.replace(/\r\n/g, "\n");
+console.log("1.Path B job:", c.includes("path-b-migrate-resolve:"));
+console.log("2.Before capture:", c.includes("Capture BEFORE resolve row counts"));
+console.log("3.After capture:", c.includes("Capture AFTER resolve row counts"));
+console.log("4.Resolve step:", c.includes("prisma migrate resolve --applied"));
+console.log("5.History proof:", c.includes("MIGRATION HISTORY PROOF") && c.includes("applied_steps_count"));
+console.log("6.Row count compare:", c.includes("ROW COUNT CHECK PASSED") && c.includes("No unexpected deltas"));
+console.log("7.Artifact upload:", c.includes("path-b-resolve-${{ github.sha }}"));
+console.log("8.Simulate pending:", c.includes("DELETE FROM _prisma_migrations"));
+console.log("9.Helper ref:", c.includes("ci-capture-row-counts.cjs before-resolve"));
+console.log("10.Old jobs intact:", c.includes("integration-tests:") && c.includes("typecheck:"));
