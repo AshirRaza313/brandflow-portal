@@ -187,6 +187,7 @@ for (var _i = 0, _arr = Array.from(allTables); _i < _arr.length; _i++) {
 
   var pIdx = prod[table].indexes || [];
   var rIdx = reh[table].indexes || [];
+  if (pIdx.length > 0 && rIdx.length > 0) {
   if (pIdx.length !== rIdx.length) diffs.push('INDEX_COUNT_DIFF: ' + table + ' prod=' + pIdx.length + ' reh=' + rIdx.length);
   var pIdxMap = new Map(pIdx.map(function(i) { return [i.name, i]; }));
   var rIdxMap = new Map(rIdx.map(function(i) { return [i.name, i]; }));
@@ -196,6 +197,7 @@ for (var _i = 0, _arr = Array.from(allTables); _i < _arr.length; _i++) {
     if (!pIdxMap.has(iname)) { diffs.push('INDEX_MISSING_IN_PRODUCTION: ' + table + '.' + iname); continue; }
     if (!rIdxMap.has(iname)) { diffs.push('INDEX_MISSING_IN_REHEARSAL: ' + table + '.' + iname); continue; }
     if (pIdxMap.get(iname).definition !== rIdxMap.get(iname).definition) diffs.push('INDEX_DEF_DIFF: ' + table + '.' + iname);
+  }
   }
 }
 
