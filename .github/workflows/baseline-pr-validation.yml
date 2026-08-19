@@ -93,6 +93,8 @@ jobs:
           PROD_CATALOG: tests/fixtures/expected-baseline-catalog.json
           REH_CATALOG: backups/ci-captured-catalog.json
         run: node scripts/baseline/compare-catalogs.cjs
+      - name: Baseline catalog validation tests
+        run: node tests/baseline/run-catalog-validation.cjs
       - name: Integration tests
         run: npx vitest run tests/integration --reporter=verbose
       - name: Verify live catalog exists before upload

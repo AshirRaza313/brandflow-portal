@@ -69,9 +69,9 @@ async function main() {
                  c.numeric_precision, c.numeric_scale, c.udt_name,
                  c.is_identity, c.is_generated, c.collation_name,
                  c.ordinal_position, c.datetime_precision,
-                 format_type(c.udt_name::regtype, c.character_maximum_length) as formatted_type
+                 format_type(a.atttypid, a.atttypmod) as formatted_type
           FROM information_schema.columns c
-          WHERE c.table_schema = 'public'
+          JOIN pg_attribute a ON a.attname = c.column_name JOIN pg_class cls ON cls.relname = c.table_name AND cls.relnamespace = (SELECT oid FROM pg_namespace WHERE nspname = 'public') AND a.attrelid = cls.oid AND a.attnum > 0 AND NOT a.attisdropped WHERE c.table_schema = 'public'
           ORDER BY c.table_name, c.ordinal_position
         `),
         client.query(`
@@ -84,7 +84,7 @@ async function main() {
           ORDER BY cls.relname, con.conname
         `),
         client.query(`
-          SELECT schemaname, tablename, indexname as name, indexdef as definition
+          SELECT schemaname, tablename AS table_name, indexname as name, indexdef as definition
           FROM pg_indexes
           WHERE schemaname = 'public'
           ORDER BY tablename, indexname
@@ -168,7 +168,7 @@ async function main() {
 
     // Add provenance envelope (underscore-prefixed key so comparator filters it out)
     catalog._provenance = {
-      project_ref: 'valtriox-baseline',
+      project_ref: require('../../package.json').name || 'valtriox-baseline',
       db_name: dbInfo.rows[0].current_database,
       captured_at_utc: new Date().toISOString(),
       pg_version: pgVersion.rows[0].version,

@@ -51,7 +51,7 @@ function validateCatalogStructure(label, catalog) {
       diffs.push('MALFORMED_TABLE: ' + label + '.' + table + ' - columns array is empty');
     }
     // 5R2: Required typed fields for columns
-    var reqColFields = ['column_name', 'data_type', 'is_nullable'];
+    var reqColFields = ['column_name', 'data_type', 'is_nullable', 'formatted_type'];
     for (var ci = 0; ci < entry.columns.length; ci++) {
       var col = entry.columns[ci];
       for (var fi = 0; fi < reqColFields.length; fi++) {
@@ -68,11 +68,13 @@ function validateCatalogStructure(label, catalog) {
       var con = entry.constraints[cni];
       if (typeof con.name !== 'string') diffs.push('MALFORMED_CONSTRAINT: ' + label + '.' + table + ' - name is not a string');
       if (typeof con.type !== 'string') diffs.push('MALFORMED_CONSTRAINT: ' + label + '.' + table + '.' + (con.name || '?') + ' - type is not a string');
+      if (typeof con.definition !== 'string') diffs.push('MALFORMED_CONSTRAINT: ' + label + '.' + table + '.' + (con.name || '?') + ' - definition is not a string');
     }
     // 5R2: Required typed fields for indexes
     for (var ii = 0; ii < entry.indexes.length; ii++) {
       var idx = entry.indexes[ii];
       if (typeof idx.name !== 'string') diffs.push('MALFORMED_INDEX: ' + label + '.' + table + ' - name is not a string');
+      if (typeof idx.definition !== 'string') diffs.push('MALFORMED_INDEX: ' + label + '.' + table + '.' + (idx.name || '?') + ' - definition is not a string');
     }
     // 5R3: Duplicate column names
     var colNames = entry.columns.map(function(c) { return c.column_name; });
@@ -117,6 +119,11 @@ var rehKeys = Object.keys(reh).filter(function(k) { return !k.startsWith('_'); }
 // --- 5R4: Exact table count verification ---
 if (prodKeys.length !== rehKeys.length) {
   diffs.push('TABLE_COUNT_DIFF: production=' + prodKeys.length + ' rehearsal=' + rehKeys.length);
+}
+var APPROVED_TABLES = new Set(['Account','Attendance','Automation','BetaInvite','ClientMessage','Coupon','Customer','EmailTemplate','Expense','Feedback','IntegrationConnection','Invoice','Lead','LegalPage','Notification','Order','OrderItem','Organization','OrganizationMember','PaymentProof','PlatformDocument','PlatformSettings','Product','Proposal','PushSubscription','ReportExport','Role','Session','Subscription','SubscriptionPlan','SupportConversation','SupportMessage','SystemSetting','TeamInvitation','TeamTask','User','ValtrioxTeamInvitation','ValtrioxTeamMember','VerificationToken','suppliers']);
+if (prodKeys.length === 40 && rehKeys.length === 40) {
+  var _allN = [].concat(prodKeys, rehKeys);
+  for (var _a = 0; _a < _allN.length; _a++) { if (!APPROVED_TABLES.has(_allN[_a])) diffs.push('UNAPPROVED_TABLE: ' + _allN[_a] + ' is not in the approved 40-table set'); }
 }
 
 console.log('Catalogs loaded: production=' + prodKeys.length + ' tables, rehearsal=' + rehKeys.length + ' tables');
@@ -187,7 +194,6 @@ for (var _i = 0, _arr = Array.from(allTables); _i < _arr.length; _i++) {
 
   var pIdx = prod[table].indexes || [];
   var rIdx = reh[table].indexes || [];
-  if (pIdx.length > 0 && rIdx.length > 0) {
   if (pIdx.length !== rIdx.length) diffs.push('INDEX_COUNT_DIFF: ' + table + ' prod=' + pIdx.length + ' reh=' + rIdx.length);
   var pIdxMap = new Map(pIdx.map(function(i) { return [i.name, i]; }));
   var rIdxMap = new Map(rIdx.map(function(i) { return [i.name, i]; }));
@@ -197,7 +203,6 @@ for (var _i = 0, _arr = Array.from(allTables); _i < _arr.length; _i++) {
     if (!pIdxMap.has(iname)) { diffs.push('INDEX_MISSING_IN_PRODUCTION: ' + table + '.' + iname); continue; }
     if (!rIdxMap.has(iname)) { diffs.push('INDEX_MISSING_IN_REHEARSAL: ' + table + '.' + iname); continue; }
     if (pIdxMap.get(iname).definition !== rIdxMap.get(iname).definition) diffs.push('INDEX_DEF_DIFF: ' + table + '.' + iname);
-  }
   }
 }
 
