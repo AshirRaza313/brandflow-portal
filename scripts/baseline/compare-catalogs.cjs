@@ -122,10 +122,8 @@ if (prodKeys.length !== rehKeys.length) {
   diffs.push('TABLE_COUNT_DIFF: production=' + prodKeys.length + ' rehearsal=' + rehKeys.length);
 }
 var APPROVED_TABLES = new Set(['Account','Attendance','Automation','BetaInvite','ClientMessage','Coupon','Customer','EmailTemplate','Expense','Feedback','IntegrationConnection','Invoice','Lead','LegalPage','Notification','Order','OrderItem','Organization','OrganizationMember','PaymentProof','PlatformDocument','PlatformSettings','Product','Proposal','PushSubscription','ReportExport','Role','Session','Subscription','SubscriptionPlan','SupportConversation','SupportMessage','SystemSetting','TeamInvitation','TeamTask','User','ValtrioxTeamInvitation','ValtrioxTeamMember','VerificationToken','suppliers']);
-if (prodKeys.length === 40 && rehKeys.length === 40) {
-  var _allN = [].concat(prodKeys, rehKeys);
+var _allN = [].concat(prodKeys, rehKeys);
   for (var _a = 0; _a < _allN.length; _a++) { if (!APPROVED_TABLES.has(_allN[_a])) diffs.push('UNAPPROVED_TABLE: ' + _allN[_a] + ' is not in the approved 40-table set'); }
-}
 
 console.log('Catalogs loaded: production=' + prodKeys.length + ' tables, rehearsal=' + rehKeys.length + ' tables');
 

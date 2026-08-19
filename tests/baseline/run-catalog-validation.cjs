@@ -170,8 +170,8 @@ function test4() {
   var tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'catalog-test-'));
   try {
     var validCatalog = {
-      "Users": validTable(['id', 'email', 'name']),
-      "Orders": validTable(['id', 'user_id', 'total'])
+      "User": validTable(['id', 'email', 'name']),
+      "Account": validTable(['id', 'user_id', 'total'])
     };
     var prodPath = path.join(tmpDir, 'prod.json');
     var rehPath = path.join(tmpDir, 'reh.json');

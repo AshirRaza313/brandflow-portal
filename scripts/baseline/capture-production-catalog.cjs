@@ -165,6 +165,14 @@ async function main() {
     const scriptContent = fs.readFileSync(__filename);
     const scriptSha = crypto.createHash('sha256').update(scriptContent).digest('hex');
 
+    // 3R2: Assert queried-vs-attached row counts
+    var _attC=0,_attCon=0,_attI=0;
+    var _tk=Object.keys(catalog);
+    for(var _ti=0;_ti<_tk.length;_ti++){_attC+=catalog[_tk[_ti]].columns.length;_attCon+=catalog[_tk[_ti]].constraints.length;_attI+=catalog[_tk[_ti]].indexes.length;}
+    if(columns.rows.length!==_attC){console.error('FATAL: Column count mismatch - queried '+columns.rows.length+' attached '+_attC);process.exit(1);}
+    if(constraints.rows.length!==_attCon){console.error('FATAL: Constraint count mismatch - queried '+constraints.rows.length+' attached '+_attCon);process.exit(1);}
+    if(indexes.rows.length!==_attI){console.error('FATAL: Index count mismatch - queried '+indexes.rows.length+' attached '+_attI);process.exit(1);}
+
     // Add provenance envelope (underscore-prefixed key so comparator filters it out)
     catalog._provenance = {
       project_ref: require('../../package.json').name || 'valtriox-baseline',
