@@ -125,6 +125,17 @@ var APPROVED_TABLES = new Set(['Account','Attendance','Automation','BetaInvite',
 var _allN = [].concat(prodKeys, rehKeys);
   for (var _a = 0; _a < _allN.length; _a++) { if (!APPROVED_TABLES.has(_allN[_a])) diffs.push('UNAPPROVED_TABLE: ' + _allN[_a] + ' is not in the approved 40-table set'); }
 
+// Exact 40-table set enforcement (CATALOG_TEST_MODE skips for unit tests)
+if (!process.env.CATALOG_TEST_MODE) {
+  if (prodKeys.length !== 40) diffs.push('EXACT_TABLE_COUNT: production catalog has ' + prodKeys.length + ' tables, expected exactly 40');
+  if (rehKeys.length !== 40) diffs.push('EXACT_TABLE_COUNT: rehearsal catalog has ' + rehKeys.length + ' tables, expected exactly 40');
+  var _approvedArr = Array.from(APPROVED_TABLES);
+  for (var _p = 0; _p < _approvedArr.length; _p++) {
+    if (prodKeys.indexOf(_approvedArr[_p]) === -1) diffs.push('MISSING_APPROVED_TABLE: ' + _approvedArr[_p] + ' missing in production catalog');
+    if (rehKeys.indexOf(_approvedArr[_p]) === -1) diffs.push('MISSING_APPROVED_TABLE: ' + _approvedArr[_p] + ' missing in rehearsal catalog');
+  }
+}
+
 console.log('Catalogs loaded: production=' + prodKeys.length + ' tables, rehearsal=' + rehKeys.length + ' tables');
 
 var allTables = new Set([].concat(prodKeys, rehKeys));
@@ -171,7 +182,11 @@ for (var _i = 0, _arr = Array.from(allTables); _i < _arr.length; _i++) {
     if ((pc.is_identity ?? null) !== (rc.is_identity ?? null)) diffs.push('COLUMN_IDENTITY_DIFF: ' + table + '.' + col + ' prod=' + pc.is_identity + ' reh=' + rc.is_identity);
     if ((pc.is_generated ?? null) !== (rc.is_generated ?? null)) diffs.push('COLUMN_GENERATED_DIFF: ' + table + '.' + col + ' prod=' + pc.is_generated + ' reh=' + rc.is_generated);
     if ((pc.collation_name ?? null) !== (rc.collation_name ?? null)) diffs.push('COLUMN_COLLATION_DIFF: ' + table + '.' + col + ' prod=' + pc.collation_name + ' reh=' + rc.collation_name);
-    // 4R2: New metadata comparisons
+    // 4R2: One-sided metadata gap detection (non-fatal, prompts fixture regeneration)
+    if ((pc.formatted_type !== undefined) !== (rc.formatted_type !== undefined)) console.log('METADATA_SIDE_GAP: ' + table + '.' + col + ' - formatted_type present on ' + (pc.formatted_type !== undefined ? 'production' : 'rehearsal') + ' only');
+    if ((pc.ordinal_position !== undefined) !== (rc.ordinal_position !== undefined)) console.log('METADATA_SIDE_GAP: ' + table + '.' + col + ' - ordinal_position present on ' + (pc.ordinal_position !== undefined ? 'production' : 'rehearsal') + ' only');
+    if ((pc.datetime_precision !== undefined) !== (rc.datetime_precision !== undefined)) console.log('METADATA_SIDE_GAP: ' + table + '.' + col + ' - datetime_precision present on ' + (pc.datetime_precision !== undefined ? 'production' : 'rehearsal') + ' only');
+    // 4R2: Soft metadata comparisons (only when both sides have the value)
     if (pc.datetime_precision !== undefined && rc.datetime_precision !== undefined && pc.datetime_precision !== rc.datetime_precision) diffs.push('COLUMN_DATETIME_PRECISION_DIFF: ' + table + '.' + col + ' prod=' + pc.datetime_precision + ' reh=' + rc.datetime_precision);
     if (pc.ordinal_position !== undefined && rc.ordinal_position !== undefined && pc.ordinal_position !== rc.ordinal_position) diffs.push('COLUMN_ORDINAL_POSITION_DIFF: ' + table + '.' + col + ' prod=' + pc.ordinal_position + ' reh=' + rc.ordinal_position);
     if (pc.formatted_type !== undefined && rc.formatted_type !== undefined && pc.formatted_type !== rc.formatted_type) diffs.push('COLUMN_FORMATTED_TYPE_DIFF: ' + table + '.' + col + ' prod=' + pc.formatted_type + ' reh=' + rc.formatted_type);
@@ -214,3 +229,5 @@ if (diffs.length > 0) {
   console.error('Catalog comparison found ' + diffs.length + ' difference(s)');
   process.exit(1);
 }
+
+
