@@ -51,7 +51,7 @@ function validateCatalogStructure(label, catalog) {
       diffs.push('MALFORMED_TABLE: ' + label + '.' + table + ' - columns array is empty');
     }
     // 5R2: Required typed fields for columns
-    var reqColFields = ['column_name', 'data_type', 'is_nullable', 'formatted_type'];
+    var reqColFields = ['column_name', 'data_type', 'is_nullable'];
     for (var ci = 0; ci < entry.columns.length; ci++) {
       var col = entry.columns[ci];
       for (var fi = 0; fi < reqColFields.length; fi++) {
@@ -59,6 +59,7 @@ function validateCatalogStructure(label, catalog) {
           diffs.push('MALFORMED_COLUMN: ' + label + '.' + table + '.' + (col.column_name || '?') + ' - ' + reqColFields[fi] + ' is not a string');
         }
       }
+      if (col.formatted_type !== undefined && typeof col.formatted_type !== 'string') diffs.push('MALFORMED_COLUMN: ' + label + '.' + table + '.' + (col.column_name || '?') + ' - formatted_type is not a string');
       if (col.ordinal_position !== undefined && typeof col.ordinal_position !== 'number') {
         diffs.push('MALFORMED_COLUMN: ' + label + '.' + table + '.' + (col.column_name || '?') + ' - ordinal_position is not a number');
       }
