@@ -1,110 +1,104 @@
-# P3006 Rollback Runbook
+# P3006 Baseline Adoption and Recovery Runbook
 
-Date: 2026-08-16 (updated)
-Owner: Muhammad Ashir Raza
-Approver: Abdul Nafay (expert reviewer)
-Branch: chore/baseline-repair-p3006
+Status: production execution is **not authorized** by this document.
 
-Scope: Yeh runbook production baseline adoption ke failure scenarios ko cover karta hai. Production par koi bhi action sirf expert approval ke baad hoga.
+The immutable migration `20260101000000_baseline` represents the approved
+pre-forward-migration schema. Merging this repository change does not adopt the
+baseline in an existing database. Production remains unchanged until every
+release gate below is independently evidenced and a human approver gives GO.
 
-## 1. Pre-Requisites
+## Non-negotiable rules
 
-- Disposable rehearsal database available (Supabase temp project ya local Docker postgres).
-- Full production backup verified: schema dump + data dump + off-site encrypted copy. Evidence: docs/baseline-repair/backup-evidence.md
-- Session pooler connection on port 5432 available (transaction pooler 6543 use nahi karna, deprecated direct db.* host use nahi karna).
-- No `prisma migrate dev` on staging ya production. Sirf disposable rehearsal DB par.
-- `npx prisma migrate status` output screenshot/output saved before every action.
-- Expert (Abdul Nafay) ka written GO production par har step se pehle.
+- Never run `prisma migrate dev` or `prisma db push` on Preview, staging, or production.
+- Never execute baseline DDL on an existing populated database.
+- Never point rehearsal scripts at production. Their guard intentionally rejects it.
+- Use a direct or session-pooler connection on port 5432; never transaction-pooler port 6543.
+- Keep Preview/staging and Production on distinct Supabase projects.
+- Do not place database URLs, dumps, or production row data in GitHub artifacts.
 
-## 2. Identify Current Migration State
+## Path A: empty disposable database
 
-Command: npx prisma migrate status --schema prisma/schema.prisma
+This is an automated schema-replay proof only.
 
-Expected healthy state before baseline adoption:
-- Production database: exactly one applied migration record matching 20260101000000_baseline (post-adoption).
-- Pre-adoption state: existing migration history intact, zero failed entries.
+1. Start a clean PostgreSQL database.
+2. Set `DATABASE_URL` and `DIRECT_DATABASE_URL` to that database.
+3. Run `npx prisma migrate deploy --schema prisma/schema.prisma`.
+4. Run `npx prisma migrate status --schema prisma/schema.prisma` and require exit 0.
+5. Capture the full catalog and compare it with the committed fixture.
+6. Run all integration tests with zero skips.
+7. Run `migrate deploy` again and require a no-op.
 
-Checkpoint CP0: Agar "migration failed" ya "database is not empty" dikhe, BASELINE ADOPTION ROKEIN. Yeh already-broken state hai, adoption se pehle expert se clarify karein.
+The `Integration Tests` CI job proves the clean-database portion on PostgreSQL 16.
+It does not prove production parity or backup recovery.
 
-## 3. Path A - Empty Database (Fresh Supabase Project ya Disposable Docker)
+## Path B: populated schema without Prisma history
 
-Yeh path use karo jab target database bilkul empty ho (zero tables, no data).
+First rehearse on an isolated clone or synthetic populated database. Do not use
+production for this step.
 
-Steps:
-1. npx prisma migrate status run karo. Expected: Database is empty ya zero migrations.
-2. npx prisma migrate deploy run karo. Yeh baseline migration SQL replay karega aur _prisma_migrations table bhi create karega. Expected: 40 tables created, baseline marked as applied.
-3. npx prisma migrate status verify karo. Expected: 20260101000000_baseline status = Applied.
-4. Integration tests chalao (INTEGRATION_DATABASE_URL set karo): npx vitest run tests/integration. Expected: all pass, zero failures.
-5. Row counts capture karo aur backups/table-row-counts.json se compare karo. Empty DB mein row counts zero honge - yeh expected hai.
-6. Expert approval checkpoint. Evidence bhejo.
+1. Restore/replay the 40-table application schema without `_prisma_migrations`.
+2. Seed or restore FK-valid representative data.
+3. Set the exact rehearsal allowlist and target-identity variables.
+4. Run:
 
-Path A CI verification: GitHub Actions integration-tests job automatically proves this path on every PR push (postgres:16 service, migrate deploy, 11 integration tests).
+   `node scripts/baseline/guarded-migrate-resolve.cjs 20260101000000_baseline`
 
-## 4. Path B - Existing Populated Database (Production ya Staging with Data)
+The wrapper fails unless all of these are true:
 
-Yeh path use karo jab target database mein already 40 tables aur data hai (jaise production Supabase). Baseline migration ka SQL already manually ya db.push se applied ho chuka hai, lekin _prisma_migrations table nahi hai.
+- target URL and connected PostgreSQL identity are the approved rehearsal target;
+- `_prisma_migrations` is absent;
+- representative data exists;
+- the complete pre-resolve catalog matches the committed fixture;
+- Prisma reports exactly the pinned baseline as pending;
+- after resolve, schema and per-table data fingerprints are unchanged;
+- exactly one clean baseline history row exists with the expected checksum;
+- `migrate status` is clean and a second `migrate deploy` is a no-op.
 
-Steps:
-1. npx prisma migrate status run karo. Expected: _prisma_migrations table does not exist ya similar message. Table count already 40 hona chahiye.
-2. Verify karo ke existing schema baseline se match karta hai:
-   - Production catalog capture: node scripts/baseline/capture-production-catalog.cjs
-   - Rehearsal catalog capture: node scripts/baseline/capture-full-catalog.cjs
-   - Compare: node scripts/baseline/compare-catalogs.cjs
-   - Result must be NO_DIFFS.
-3. Full backup le lo, encrypted off-site receipt mandatory. Row counts capture karo before resolve: node scripts/baseline/capture-row-counts.cjs
-4. Baseline ko Prisma history mein applied mark karo (guarded wrapper): node scripts/baseline/guarded-migrate-resolve.cjs 20260101000000_baseline. Yeh automatically: target validate, before counts, migrate resolve, after counts, delta compare karega. Expected: zero unexpected deltas.
-5. Verify migrate status: npx prisma migrate status --schema prisma/schema.prisma. Expected: Database schema is up to date!
-6. Row counts dobara capture karke compare karo. Data loss zero hona chahiye. before-resolve-row-counts.json vs after-resolve-row-counts.json
-7. Integration tests chalao. Expected: all pass.
-8. Expert approval checkpoint. Evidence bhejo.
+CI calls this a **Synthetic Adoption Proof**. It is not production-recovery proof.
 
-## 5. Failure Checkpoints and Immediate Actions
+## Production evidence gate
 
-- CP0 fail (broken state): adoption roko, expert ko status output bhejo.
-- CP1/CP2 fail (rehearsal): zero production impact. Rehearsal DB drop karo, root cause fix karo, dobara se shuru.
-- Production deploy fail: Section 6 ya 7 follow karo, decision expert ke saath.
+Before any production `migrate resolve` or `migrate deploy`:
 
-## 6. Rollback Option A - Compensating Migration (Preferred)
+1. Use the trusted-main `Production Catalog Evidence` workflow, or run the same
+   reviewed scripts from a pinned local checkout. Candidate PR code must never
+   receive production secrets in pull-request CI.
+2. Require a fresh read-only production catalog, explicit nine-Marketing-table
+   presence report, exact source identity, SHA-256 manifest, and comparison report.
+3. Take real `pg_dump -Fc` schema+data backups and the approved roles/globals
+   export. Encrypt and store them off-site.
+4. Restore those exact artifacts to a disposable database and compare complete
+   schema plus per-table row counts/fingerprints.
+5. Rehearse Path B on that restored clone.
+6. Record a human approval and maintenance-window owner.
 
-Jab: naya migration partially applied ho aur data loss nahi hua.
+Only then may an operator bind Prisma's `DATABASE_URL` and `DIRECT_DATABASE_URL`
+to the separately verified production target and mark the baseline applied. The
+baseline SQL itself must not execute on the populated production database.
 
-Steps:
-1. Failed migration ka exact SQL nikalo (prisma/migrations/<name>/migration.sql).
-2. Uska reverse SQL likho (drop constraints, drop policy, drop table sirf tab agar woh migration ne create kiya).
-3. New forward migration folder banao: prisma/migrations/<timestamp>_rollback_<name>/ with reverse SQL.
-4. Rehearsal DB par apply + verify (CP1-CP3).
-5. Expert approval, phir production migrate deploy.
+## Forward migration train
 
-Note: Baseline migration (20260101000000_baseline) immutable hai. Usko kabhi edit nahi karna. Agar baseline khud ghalt hai to Option B use hota hai.
+After PR #7 is merged and production baseline adoption is evidenced:
 
-## 7. Rollback Option B - Restore From Backup
+1. Rebase PR #6 onto the new `main`.
+2. Confirm there is exactly one active baseline migration plus one post-baseline
+   forward Supplier migration; no duplicate `CREATE TABLE suppliers` migration.
+3. Replay baseline+forward on a clean disposable database.
+4. Apply the baseline-history repair then forward migration on the restored clone.
+5. Apply to isolated staging and prove real Prisma CRUD, constraints, grants/RLS
+   posture, Data API denial, and rollback.
+6. Obtain final human GO before production execution.
 
-Jab: data corruption ya baseline khud reject karna ho.
+## Failure and rollback
 
-Pre-steps:
-1. Application maintenance mode ON (Vercel deployment pause ya env-based flag).
-2. Expert written approval.
+- Before production action: stop; discard/rebuild rehearsal. Production impact is zero.
+- Resolve-only failure: do not run baseline DDL. Preserve status/history/catalog
+  evidence and investigate. A history-only correction must be independently reviewed.
+- Forward-migration failure without data loss: ship a reviewed compensating forward
+  migration; never edit an applied migration.
+- Suspected corruption/data loss: enable maintenance mode and restore the exact
+  encrypted, checksummed backup that already passed the disposable restore drill.
 
-Restore commands (session pooler, port 5432, placeholders apne credentials se replace karo):
-
-pg_restore --clean --if-exists --no-owner --no-privileges --dbname "<SESSION_POOLER_URL>" valtriox-schema-<date>.dump
-
-pg_restore --data-only --disable-triggers --no-owner --no-privileges --dbname "<SESSION_POOLER_URL>" valtriox-data-<date>.dump
-
-Custom-format dumps use karo (-Fc), plain SQL nahi, taake parallel/selective restore possible ho.
-
-## 8. Owners and Escalation
-
-- Executor: Muhammad Ashir Raza
-- Approver/Escalation: Abdul Nafay (expert reviewer)
-- Production execution ke liye dono ka agreement zaroori hai.
-- Har production action se pehle aur baad mein migrate status output save karo.
-
-## 9. Post-Rollback Verification
-
-1. npx prisma migrate status - clean, expected migrations applied.
-2. Table count query: expected 40 public tables (pre-PR6 state) ya post-PR6 expected count.
-3. Row counts vs backups/table-row-counts.json compare.
-4. Application health: /api/health ya equivalent endpoint 200.
-5. Suppliers route authorization smoke test (PR6 ke baad).
-6. Evidence (commands + outputs) backup-evidence.md mein append karo aur expert ko final report bhejo.
+Restore commands and formats must match the artifacts actually created. For
+custom-format dumps, use `pg_restore`; do not describe a baseline replay as a
+backup restore.

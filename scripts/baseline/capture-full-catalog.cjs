@@ -1,171 +1,294 @@
-// scripts/baseline/capture-full-catalog.cjs
-// Captures complete database catalog from any PostgreSQL database.
-// Usage: node capture-full-catalog.cjs <connection-url> [output-path]
+"use strict";
 
-const fs = require('fs');
-const path = require('path');
-const crypto = require('crypto');
-const { execSync } = require('child_process');
-const { Pool } = require('pg');
+const fs = require("fs");
+const path = require("path");
+const { execFileSync } = require("child_process");
+const { Pool } = require("pg");
+const { canonicalJson, sha256, structuralSha256 } = require("./catalog-contract.cjs");
+const { assertConnectedIdentity } = require("./safety-guard.cjs");
 
-async function parseConnectionUrl(url) {
+function parseConnectionUrl(connectionString) {
+  let parsed;
   try {
-    const parsed = new URL(url);
-    return {
-      host: parsed.hostname,
-      port: parseInt(parsed.port, 10) || 5432,
-      database: parsed.pathname.slice(1),
-      user: decodeURIComponent(parsed.username),
-      password: decodeURIComponent(parsed.password),
-      ssl: false
-    };
-  } catch (err) {
-    console.error('Failed to parse connection URL: ' + err.message);
-    process.exit(1);
+    parsed = new URL(connectionString);
+  } catch (error) {
+    throw new Error(`Invalid PostgreSQL connection URL: ${error.message}`);
+  }
+  if (parsed.protocol !== "postgres:" && parsed.protocol !== "postgresql:") {
+    throw new Error("Connection URL must use postgres:// or postgresql://");
+  }
+  const host = parsed.hostname.replace(/^\[|\]$/g, "");
+  const port = Number(parsed.port || 5432);
+  const dbName = decodeURIComponent(parsed.pathname.replace(/^\//, ""));
+  const user = decodeURIComponent(parsed.username);
+  if (!host || !Number.isInteger(port) || !dbName || !user) {
+    throw new Error("Connection URL must include host, port, database, and user");
+  }
+  return {
+    host,
+    port,
+    dbName,
+    user,
+    isLocal: host === "localhost" || host === "127.0.0.1" || host === "::1",
+  };
+}
+
+function currentHeadSha(explicitHeadSha) {
+  if (explicitHeadSha) return explicitHeadSha;
+  if (process.env.PR_HEAD_SHA) return process.env.PR_HEAD_SHA;
+  try {
+    return execFileSync("git", ["rev-parse", "HEAD"], { encoding: "utf8" }).trim();
+  } catch {
+    throw new Error("PR_HEAD_SHA is required when Git HEAD cannot be resolved");
   }
 }
 
-async function main() {
-  const connUrl = process.argv[2];
-  const outputPath = process.argv[3] || 'backups/rehearsal-full-catalog.json';
+function fileSha256(filePath) {
+  return sha256(fs.readFileSync(filePath));
+}
 
-  if (!connUrl) {
-    console.error('Usage: node capture-full-catalog.cjs <connection-url> [output-path]');
-    process.exit(1);
+function assertAttachedCounts(catalog, rowsByKind) {
+  const attached = { columns: 0, constraints: 0, indexes: 0 };
+  for (const table of Object.keys(catalog)) {
+    attached.columns += catalog[table].columns.length;
+    attached.constraints += catalog[table].constraints.length;
+    attached.indexes += catalog[table].indexes.length;
   }
-
-  const config = await parseConnectionUrl(connUrl);
-
-  // Conditional SSL for non-localhost connections
-  if (config.host === 'localhost' || config.host === '127.0.0.1') {
-    config.ssl = false;
-  } else {
-    config.ssl = { rejectUnauthorized: false };
+  for (const kind of Object.keys(attached)) {
+    if (attached[kind] !== rowsByKind[kind].length) {
+      throw new Error(
+        `${kind} attachment mismatch: queried ${rowsByKind[kind].length}, attached ${attached[kind]}`
+      );
+    }
   }
+}
 
-  const pool = new Pool(config);
+async function captureFullCatalog(options) {
+  const {
+    connectionString,
+    outputPath,
+    projectRef,
+    headSha,
+    mergeSha = process.env.MERGE_SHA || process.env.GITHUB_SHA || null,
+    runId = process.env.GITHUB_RUN_ID || "local",
+    runAttempt = process.env.GITHUB_RUN_ATTEMPT || "local",
+    extraScriptPaths = [],
+    expectedConnectedRole,
+  } = options;
+  if (!connectionString) throw new Error("connectionString is required");
+  if (!outputPath) throw new Error("outputPath is required");
+  if (!projectRef) throw new Error("projectRef is required");
+
+  const target = parseConnectionUrl(connectionString);
+  const pool = new Pool({
+    connectionString,
+    ssl: target.isLocal ? undefined : { rejectUnauthorized: true },
+    connectionTimeoutMillis: 15_000,
+  });
   const client = await pool.connect();
+  let transactionOpen = false;
 
   try {
-    // Compute head_sha before starting transaction (not a DB operation)
-    let headSha = '';
-    try {
-      headSha = process.env.GITHUB_EVENT_PULL_REQUEST_HEAD_SHA || process.env.GITHUB_SHA || execSync('git rev-parse HEAD', { encoding: 'utf8' }).trim();
-    } catch (e) {
-      headSha = 'unknown';
-    }
+    await client.query("BEGIN ISOLATION LEVEL REPEATABLE READ READ ONLY");
+    transactionOpen = true;
 
-    // Start read-only transaction with consistent snapshot
-    await client.query(`START TRANSACTION ISOLATION LEVEL REPEATABLE READ READ ONLY`);
+    const columns = await client.query(`
+      SELECT
+        c.table_name,
+        c.column_name,
+        c.ordinal_position,
+        c.data_type,
+        format_type(a.atttypid, a.atttypmod) AS formatted_type,
+        c.is_nullable,
+        c.column_default,
+        c.character_maximum_length,
+        c.numeric_precision,
+        c.numeric_scale,
+        c.datetime_precision,
+        c.udt_schema,
+        c.udt_name,
+        c.domain_schema,
+        c.domain_name,
+        c.is_identity,
+        c.identity_generation,
+        c.is_generated,
+        c.generation_expression,
+        c.collation_name
+      FROM information_schema.columns c
+      JOIN pg_namespace ns ON ns.nspname = c.table_schema
+      JOIN pg_class cls
+        ON cls.relnamespace = ns.oid
+       AND cls.relname = c.table_name
+       AND cls.relkind IN ('r', 'p')
+      JOIN pg_attribute a
+        ON a.attrelid = cls.oid
+       AND a.attname = c.column_name
+       AND a.attnum > 0
+       AND NOT a.attisdropped
+      WHERE c.table_schema = 'public'
+        AND c.table_name <> '_prisma_migrations'
+      ORDER BY c.table_name, c.ordinal_position
+    `);
+    const constraints = await client.query(`
+      SELECT
+        cls.relname AS table_name,
+        con.conname AS name,
+        con.contype AS type,
+        pg_get_constraintdef(con.oid) AS definition
+      FROM pg_constraint con
+      JOIN pg_class cls ON cls.oid = con.conrelid
+      JOIN pg_namespace ns ON ns.oid = cls.relnamespace
+      WHERE ns.nspname = 'public'
+        AND cls.relkind IN ('r', 'p')
+        AND cls.relname <> '_prisma_migrations'
+      ORDER BY cls.relname, con.conname
+    `);
+    const indexes = await client.query(`
+      SELECT idx.tablename AS table_name, idx.indexname AS name, idx.indexdef AS definition
+      FROM pg_indexes idx
+      JOIN pg_namespace ns ON ns.nspname = idx.schemaname
+      JOIN pg_class cls
+        ON cls.relnamespace = ns.oid
+       AND cls.relname = idx.tablename
+       AND cls.relkind IN ('r', 'p')
+      WHERE idx.schemaname = 'public'
+        AND idx.tablename <> '_prisma_migrations'
+      ORDER BY idx.tablename, idx.indexname
+    `);
+    const tables = await client.query(`
+      SELECT cls.relname AS table_name
+      FROM pg_class cls
+      JOIN pg_namespace ns ON ns.oid = cls.relnamespace
+      WHERE ns.nspname = 'public'
+        AND cls.relkind IN ('r', 'p')
+        AND cls.relname <> '_prisma_migrations'
+      ORDER BY cls.relname
+    `);
+    const identity = await client.query(`
+      SELECT
+        current_database() AS db_name,
+        current_user AS db_user,
+        session_user AS session_user,
+        COALESCE(inet_server_addr()::text, 'local') AS server_address,
+        inet_server_port() AS server_port,
+        version() AS pg_version,
+        current_setting('transaction_read_only') AS transaction_read_only,
+        current_setting('transaction_isolation') AS transaction_isolation,
+        txid_current_snapshot()::text AS snapshot_id
+    `);
 
-    // Run all catalog queries inside the transaction
-    let columns, constraints, indexes, tables, dbInfo, pgVersion;
-
-    try {
-      columns = await client.query(`SELECT c.table_name, c.column_name, c.data_type, c.is_nullable, c.column_default, c.character_maximum_length, c.numeric_precision, c.numeric_scale, c.udt_name, c.is_identity, c.is_generated, c.collation_name, c.ordinal_position, c.datetime_precision, format_type(a.atttypid, a.atttypmod) as formatted_type FROM information_schema.columns c JOIN pg_attribute a ON a.attname = c.column_name JOIN pg_class cls ON cls.relname = c.table_name AND cls.relnamespace = (SELECT oid FROM pg_namespace WHERE nspname = 'public') AND a.attrelid = cls.oid AND a.attnum > 0 AND NOT a.attisdropped WHERE c.table_schema = 'public' ORDER BY c.table_name, c.ordinal_position`);
-      constraints = await client.query(`SELECT cls.relname as table_name, con.conname as name, con.contype as type, pg_get_constraintdef(con.oid) as definition FROM pg_constraint con JOIN pg_namespace nsp ON nsp.oid = con.connamespace JOIN pg_class cls ON cls.oid = con.conrelid WHERE nsp.nspname = 'public' ORDER BY cls.relname, con.conname`);
-      indexes = await client.query(`SELECT schemaname, tablename AS table_name, indexname as name, indexdef as definition FROM pg_indexes WHERE schemaname = 'public' ORDER BY tablename, indexname`);
-      tables = await client.query(`SELECT table_name FROM information_schema.tables WHERE table_schema = 'public' AND table_type = 'BASE TABLE' ORDER BY table_name`);
-      dbInfo = await client.query(`SELECT current_database()`);
-      pgVersion = await client.query(`SELECT version()`);
-    } catch (queryErr) {
-      console.error('FATAL: Catalog query failed - ' + queryErr.message);
-      process.exit(1);
-    }
-
-    // Commit the read-only transaction
-    await client.query(`COMMIT`);
-
-    // Build catalog
     const catalog = {};
     for (const row of tables.rows) {
       catalog[row.table_name] = { columns: [], constraints: [], indexes: [] };
     }
-
     for (const row of columns.rows) {
-      if (catalog[row.table_name]) {
-        catalog[row.table_name].columns.push({
-          column_name: row.column_name,
-          data_type: row.data_type,
-          is_nullable: row.is_nullable,
-          column_default: row.column_default,
-          character_maximum_length: row.character_maximum_length,
-          numeric_precision: row.numeric_precision,
-          numeric_scale: row.numeric_scale,
-          udt_name: row.udt_name,
-          is_identity: row.is_identity,
-          is_generated: row.is_generated,
-          collation_name: row.collation_name,
-          ordinal_position: row.ordinal_position,
-          datetime_precision: row.datetime_precision,
-          formatted_type: row.formatted_type
-        });
-      }
+      if (!catalog[row.table_name]) throw new Error(`Column attached to unknown table: ${row.table_name}`);
+      catalog[row.table_name].columns.push({
+        column_name: row.column_name,
+        ordinal_position: row.ordinal_position,
+        data_type: row.data_type,
+        formatted_type: row.formatted_type,
+        is_nullable: row.is_nullable,
+        column_default: row.column_default,
+        character_maximum_length: row.character_maximum_length,
+        numeric_precision: row.numeric_precision,
+        numeric_scale: row.numeric_scale,
+        datetime_precision: row.datetime_precision,
+        udt_schema: row.udt_schema,
+        udt_name: row.udt_name,
+        domain_schema: row.domain_schema,
+        domain_name: row.domain_name,
+        is_identity: row.is_identity,
+        identity_generation: row.identity_generation,
+        is_generated: row.is_generated,
+        generation_expression: row.generation_expression,
+        collation_name: row.collation_name,
+      });
     }
-
     for (const row of constraints.rows) {
-      if (catalog[row.table_name]) {
-        catalog[row.table_name].constraints.push({
-          name: row.name,
-          type: row.type,
-          definition: row.definition
-        });
-      }
+      if (!catalog[row.table_name]) throw new Error(`Constraint attached to unknown table: ${row.table_name}`);
+      catalog[row.table_name].constraints.push({ name: row.name, type: row.type, definition: row.definition });
     }
-
     for (const row of indexes.rows) {
-      if (catalog[row.table_name]) {
-        catalog[row.table_name].indexes.push({
-          name: row.name,
-          definition: row.definition
-        });
-      }
+      if (!catalog[row.table_name]) throw new Error(`Index attached to unknown table: ${row.table_name}`);
+      catalog[row.table_name].indexes.push({ name: row.name, definition: row.definition });
     }
+    assertAttachedCounts(catalog, {
+      columns: columns.rows,
+      constraints: constraints.rows,
+      indexes: indexes.rows,
+    });
 
-    // Compute catalog_sha256 BEFORE adding _provenance (avoids circular dependency)
-    const catalogJson = JSON.stringify(catalog, null, 2);
-    const catalogSha = crypto.createHash('sha256').update(catalogJson).digest('hex');
-
-    // Compute script_sha (hash of this file's own content)
-    const scriptContent = fs.readFileSync(__filename);
-    const scriptSha = crypto.createHash('sha256').update(scriptContent).digest('hex');
-
-    // 3R2: Assert queried-vs-attached row counts
-    var _attC=0,_attCon=0,_attI=0;
-    var _tk=Object.keys(catalog);
-    for(var _ti=0;_ti<_tk.length;_ti++){_attC+=catalog[_tk[_ti]].columns.length;_attCon+=catalog[_tk[_ti]].constraints.length;_attI+=catalog[_tk[_ti]].indexes.length;}
-    if(columns.rows.length!==_attC){console.error('FATAL: Column count mismatch - queried '+columns.rows.length+' attached '+_attC);process.exit(1);}
-    if(constraints.rows.length!==_attCon){console.error('FATAL: Constraint count mismatch - queried '+constraints.rows.length+' attached '+_attCon);process.exit(1);}
-    if(indexes.rows.length!==_attI){console.error('FATAL: Index count mismatch - queried '+indexes.rows.length+' attached '+_attI);process.exit(1);}
-
-    // Add provenance envelope (underscore-prefixed key so comparator filters it out)
+    const db = identity.rows[0];
+    const connectedIdentity = await assertConnectedIdentity(client, {
+      host: target.host,
+      port: target.port,
+      dbname: target.dbName,
+      user: target.user,
+      projectRef,
+      expectedConnectedRole: expectedConnectedRole || target.user,
+    });
+    const scriptHashes = { capture_engine: fileSha256(__filename) };
+    for (const scriptPath of extraScriptPaths) {
+      scriptHashes[path.basename(scriptPath)] = fileSha256(scriptPath);
+    }
     catalog._provenance = {
-      project_ref: process.env.SUPABASE_PROJECT_REF || require('../../package.json').name || 'valtriox-baseline',
-      db_name: dbInfo.rows[0].current_database,
+      source_kind: "database_capture",
+      project_ref: projectRef,
+      db_name: db.db_name,
+      db_user: db.db_user,
+      session_user: db.session_user,
+      client_user: target.user,
+      source_host: target.host,
+      source_port: target.port,
+      server_address: db.server_address,
       captured_at_utc: new Date().toISOString(),
-      pg_version: pgVersion.rows[0].version,
-      head_sha: headSha,
-      script_sha: scriptSha,
-      catalog_sha256: catalogSha,
-      transaction_mode: 'repeatable_read_read_only',
-      snapshot_taken: true
+      pg_version: db.pg_version,
+      head_sha: currentHeadSha(headSha),
+      merge_sha: mergeSha,
+      run_id: runId,
+      run_attempt: runAttempt,
+      capture_engine_sha256: scriptHashes.capture_engine,
+      supporting_script_sha256: scriptHashes,
+      catalog_sha256: structuralSha256(catalog),
+      transaction_mode: "repeatable_read_read_only",
+      transaction_read_only: db.transaction_read_only,
+      transaction_isolation: db.transaction_isolation,
+      snapshot_id: db.snapshot_id,
+      connected_identity: connectedIdentity,
     };
 
-    // Write output (includes _provenance in the file)
-    const dir = path.dirname(outputPath);
-    fs.mkdirSync(dir, { recursive: true });
-    fs.writeFileSync(outputPath, JSON.stringify(catalog, null, 2));
-    console.log('Catalog captured: ' + outputPath + ' (' + tables.rows.length + ' tables)');
+    await client.query("COMMIT");
+    transactionOpen = false;
+
+    fs.mkdirSync(path.dirname(outputPath), { recursive: true });
+    const tempPath = `${outputPath}.tmp`;
+    fs.writeFileSync(tempPath, `${canonicalJson(catalog)}\n`);
+    fs.renameSync(tempPath, outputPath);
+    console.log(`Catalog captured: ${outputPath} (${tables.rows.length} application tables)`);
+    return catalog;
+  } catch (error) {
+    if (transactionOpen) await client.query("ROLLBACK").catch(() => undefined);
+    throw error;
   } finally {
     client.release();
     await pool.end();
   }
 }
 
-main().catch(function (err) {
-  console.error(err);
-  process.exit(1);
-});
+async function cli() {
+  const connectionString = process.env.CATALOG_DB_URL || process.argv[2];
+  const outputPath = process.env.CATALOG_OUTPUT || process.argv[3] || "backups/rehearsal-full-catalog.json";
+  const parsed = connectionString ? parseConnectionUrl(connectionString) : null;
+  const projectRef = process.env.CATALOG_PROJECT_REF || (parsed && parsed.isLocal ? "ci-localhost" : null);
+  await captureFullCatalog({ connectionString, outputPath, projectRef, headSha: process.env.PR_HEAD_SHA });
+}
 
+if (require.main === module) {
+  cli().catch((error) => {
+    console.error(`Catalog capture failed: ${error.message}`);
+    process.exit(1);
+  });
+}
 
-
+module.exports = { captureFullCatalog, parseConnectionUrl };

@@ -1,0 +1,120 @@
+name: Production Catalog Evidence
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  trust-production-main:
+    name: Trust Gate - Main Only
+    runs-on: ubuntu-latest
+    steps:
+      - name: Reject non-main dispatches
+        run: test "$GITHUB_REF" = "refs/heads/main"
+
+  capture-production-evidence:
+    name: Trusted Main Production Catalog Evidence
+    needs: trust-production-main
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    environment: production-evidence
+    env:
+      EVIDENCE_HEAD_SHA: ${{ github.sha }}
+      PR_HEAD_SHA: ${{ github.sha }}
+      MERGE_SHA: ${{ github.sha }}
+      PRODUCTION_CATALOG_OUTPUT: backups/production-full-catalog.json
+      MARKETING_EVIDENCE_OUTPUT: backups/marketing-table-evidence.json
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Verify trusted main ancestry
+        shell: bash
+        run: |
+          [[ "$EVIDENCE_HEAD_SHA" =~ ^[0-9a-f]{40}$ ]]
+          test "$(git rev-parse HEAD)" = "$EVIDENCE_HEAD_SHA"
+          git show-ref --verify --quiet refs/remotes/origin/main
+          git merge-base --is-ancestor "$EVIDENCE_HEAD_SHA" refs/remotes/origin/main
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+      - name: Install reviewed dependencies without production secrets
+        run: npm ci --ignore-scripts --omit=dev
+      - name: Verify reviewed capture scripts are unchanged
+        run: |
+          node --check scripts/baseline/capture-full-catalog.cjs
+          node --check scripts/baseline/capture-production-catalog.cjs
+          node --check scripts/baseline/capture-marketing-table-evidence.cjs
+          node --check scripts/baseline/safety-guard.cjs
+          git diff --exit-code
+      - name: Capture read-only production catalog
+        env:
+          PRODUCTION_DATABASE_URL: ${{ secrets.PRODUCTION_READONLY_DATABASE_URL }}
+          PRODUCTION_EXPECTED_HOST: ${{ secrets.PRODUCTION_EXPECTED_HOST }}
+          PRODUCTION_EXPECTED_DB_USER: ${{ secrets.PRODUCTION_EXPECTED_DB_USER }}
+          PRODUCTION_EXPECTED_DB_ROLE: ${{ secrets.PRODUCTION_EXPECTED_DB_ROLE }}
+          PRODUCTION_EXPECTED_DB_NAME: postgres
+        run: node scripts/baseline/capture-production-catalog.cjs
+      - name: Capture explicit Marketing-table presence
+        env:
+          PRODUCTION_DATABASE_URL: ${{ secrets.PRODUCTION_READONLY_DATABASE_URL }}
+          PRODUCTION_EXPECTED_HOST: ${{ secrets.PRODUCTION_EXPECTED_HOST }}
+          PRODUCTION_EXPECTED_DB_USER: ${{ secrets.PRODUCTION_EXPECTED_DB_USER }}
+          PRODUCTION_EXPECTED_DB_ROLE: ${{ secrets.PRODUCTION_EXPECTED_DB_ROLE }}
+          PRODUCTION_EXPECTED_DB_NAME: postgres
+        run: node scripts/baseline/capture-marketing-table-evidence.cjs
+      - name: Compare production against approved baseline
+        id: compare
+        continue-on-error: true
+        env:
+          PROD_CATALOG: backups/production-full-catalog.json
+          REH_CATALOG: tests/fixtures/expected-baseline-catalog.json
+          CATALOG_REPORT: backups/production-catalog-comparison.txt
+          PROD_EXPECTED_SOURCE_KIND: database_capture
+          PROD_EXPECTED_PROJECT_REF: wqwsagnxkamblnefhpzx
+          PROD_EXPECTED_HEAD_SHA: ${{ github.sha }}
+          PROD_EXPECTED_CAPTURE_PROFILE: production
+          REH_EXPECTED_SOURCE_KIND: versioned_baseline_fixture
+        run: node scripts/baseline/compare-catalogs.cjs
+      - name: Build immutable evidence checksums
+        id: evidence_bundle
+        if: always()
+        run: |
+          test -s backups/production-full-catalog.json
+          test -s backups/marketing-table-evidence.json
+          test -s backups/production-catalog-comparison.txt
+          sha256sum \
+            backups/production-full-catalog.json \
+            backups/marketing-table-evidence.json \
+            backups/production-catalog-comparison.txt \
+            > backups/production-evidence-sha256.txt
+      - name: Upload protected production evidence
+        id: upload_evidence
+        if: steps.evidence_bundle.outcome == 'success'
+        uses: actions/upload-artifact@v4
+        with:
+          name: production-catalog-${{ github.sha }}-${{ github.run_id }}-${{ github.run_attempt }}
+          path: |
+            backups/production-full-catalog.json
+            backups/marketing-table-evidence.json
+            backups/production-catalog-comparison.txt
+            backups/production-evidence-sha256.txt
+          if-no-files-found: error
+          retention-days: 30
+      - name: Publish immutable artifact receipt
+        if: steps.upload_evidence.outcome == 'success'
+        run: |
+          {
+            echo "### Production catalog evidence"
+            echo "- Artifact ID: ${{ steps.upload_evidence.outputs.artifact-id }}"
+            echo "- Artifact URL: ${{ steps.upload_evidence.outputs.artifact-url }}"
+            echo "- Artifact SHA-256: ${{ steps.upload_evidence.outputs.artifact-digest }}"
+            echo "- Trusted main SHA: $EVIDENCE_HEAD_SHA"
+          } >> "$GITHUB_STEP_SUMMARY"
+      - name: Preserve comparison failure after evidence upload
+        if: always() && steps.compare.outcome != 'success'
+        run: exit 1

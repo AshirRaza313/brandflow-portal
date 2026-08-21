@@ -1,37 +1,70 @@
-// scripts/baseline/seed-rehearsal-for-pathb.cjs
-// Seeds representative rows into rehearsal DB for Path B testing.
-// Safety guard: rejects production, validates CI credentials, enforces staging allowlist.
+"use strict";
 
-var Pool = require("pg").Pool;
-var validateRehearsalUrl = require("./safety-guard.cjs").validateRehearsalUrl;
+const { Pool } = require("pg");
+const { assertConnectedIdentity, validateRehearsalUrl } = require("./safety-guard.cjs");
 
-var parsed = validateRehearsalUrl("REHEARSAL_DATABASE_URL");
-var connectionString = process.env.REHEARSAL_DATABASE_URL;
+async function main() {
+  const parsed = validateRehearsalUrl("REHEARSAL_DATABASE_URL");
+  const pool = new Pool({
+    connectionString: process.env.REHEARSAL_DATABASE_URL,
+    ssl: parsed.isLocal ? undefined : { rejectUnauthorized: true },
+    connectionTimeoutMillis: 15_000,
+  });
+  const client = await pool.connect();
+  try {
+    await assertConnectedIdentity(client, parsed);
+    await client.query("BEGIN");
+    await client.query(
+      `INSERT INTO public."Organization"
+        ("id", "name", "slug", "email", "createdAt", "updatedAt")
+       VALUES ($1, $2, $3, $4, NOW(), NOW())`,
+      ["org-pathb", "Path B Organization", "path-b-organization", "path-b-org@example.invalid"]
+    );
+    await client.query(
+      `INSERT INTO public."User"
+        ("id", "name", "email", "role", "createdAt", "updatedAt")
+       VALUES ($1, $2, $3, $4, NOW(), NOW())`,
+      ["user-pathb", "Path B User", "path-b-user@example.invalid", "brand_owner"]
+    );
+    await client.query(
+      `INSERT INTO public."OrganizationMember"
+        ("id", "organizationId", "userId", "role", "joinedAt")
+       VALUES ($1, $2, $3, $4, NOW())`,
+      ["member-pathb", "org-pathb", "user-pathb", "brand_owner"]
+    );
+    await client.query(
+      `INSERT INTO public.suppliers
+        ("id", "organization_id", "name", "status", "rating", "created_at", "updated_at")
+       VALUES ($1, $2, $3, $4, $5, NOW(), NOW())`,
+      ["supplier-pathb", "org-pathb", "Path B Supplier", "active", 4]
+    );
 
-var pool = new Pool({
-  connectionString: connectionString,
-  ssl: parsed.isLocal ? undefined : { rejectUnauthorized: false },
-});
+    const proof = await client.query(`
+      SELECT COUNT(*)::int AS count
+      FROM public."Organization" o
+      JOIN public."OrganizationMember" m ON m."organizationId" = o.id
+      JOIN public."User" u ON u.id = m."userId"
+      JOIN public.suppliers s ON s.organization_id = o.id
+      WHERE o.id = 'org-pathb'
+        AND m.id = 'member-pathb'
+        AND u.id = 'user-pathb'
+        AND s.id = 'supplier-pathb'
+    `);
+    if (proof.rows[0].count !== 1) {
+      throw new Error("Seed verification failed: FK-valid graph was not created");
+    }
+    await client.query("COMMIT");
+    console.log("Path-B seed committed: Organization -> User/Member -> Supplier graph");
+  } catch (error) {
+    await client.query("ROLLBACK").catch(() => undefined);
+    throw error;
+  } finally {
+    client.release();
+    await pool.end();
+  }
+}
 
-(async () => {
-  var org = await pool.query(
-    `INSERT INTO "public"."Organization" ("id","name","slug","email","createdAt","updatedAt") VALUES ('org-pathb','PathB Org','pathb-org','pathb@example.com',NOW(),NOW()) RETURNING id`
-  );
-  var orgId = org.rows[0].id;
-  await pool.query(
-    `INSERT INTO "public"."User" ("id","name","email","role","createdAt","updatedAt") VALUES ('user-pathb','PathB User','user-pathb@example.com','brand_owner',NOW(),NOW())`
-  );
-  await pool.query(
-    `INSERT INTO "public"."OrganizationMember" ("id","organizationId","userId","role","joinedAt") VALUES ('member-pathb',$1,'user-pathb','brand_owner',NOW())`,
-    [orgId]
-  );
-  await pool.query(
-    `INSERT INTO "public"."suppliers" ("id","organization_id","name","status","rating","created_at","updated_at") VALUES ('sup-pathb',$1,'PathB Supplier','active',4,NOW(),NOW())`,
-    [orgId]
-  );
-  console.log("Seed rows inserted: 1 Organization, 1 User, 1 OrganizationMember, 1 Supplier");
-  await pool.end();
-})().catch(function (e) {
-  console.error(e);
+main().catch((error) => {
+  console.error(error.message);
   process.exit(1);
 });

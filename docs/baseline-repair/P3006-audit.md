@@ -20,13 +20,20 @@ Branch: chore/baseline-repair-p3006
 
 ## Current State
 
-Production database does not have `_prisma_migrations` table. The four orphaned migration directories were never applied through Prisma Migrate. Their SQL may or may not have been applied manually or through `prisma db push`.
+The historical audit reported no `_prisma_migrations` table. That statement must
+be re-verified in the fresh, source-identified production evidence session before
+any adoption action. The repository alone cannot prove current production state.
 
-## Archive Plan
+The SQL represented by the four legacy folders may already exist in production
+through earlier manual changes or `prisma db push`; exact catalog parity, not the
+folder names, is the required adoption precondition.
 
-- Do not delete the orphaned directories in this PR.
-- Move them to an archive folder before marking the baseline as applied.
-- After baseline replay and validation, archive folder can be removed in a follow-up cleanup PR.
+## Archive State
+
+- The four legacy directories are preserved under `prisma/migrations-archive/`.
+- Active migration history contains only the immutable baseline and lock file.
+- Archived SQL must not be reintroduced into active migration history after the
+  baseline is adopted.
 
 ## Verification SQL
 

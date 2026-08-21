@@ -1,29 +1,49 @@
-# P3006 Offsite Backup Recommendation
+# Production Backup, Encryption, and Restore Gate
 
-Date: 2026-08-14
+This is an operator procedure, not evidence that a backup already exists.
 
-## Roles Backup
+## Create the backup
 
-Use direct/session connection on port 5432 only, never transaction pooler 6543.
+Use an exact validated direct/session connection on port 5432 and a local
+`PGPASSFILE` (or interactive password prompt). Do not place passwords in command
+history, repository files, GitHub Secrets used by PR code, or process arguments.
 
-Command example:
+Create one full custom-format database dump containing schema and data:
 
-pg_dumpall --roles-only --dbname "postgresql://postgres:password@db.project-ref.supabase.co:5432/postgres" > valtriox-roles-20260814.sql
+`pg_dump --format=custom --no-owner --no-privileges --file valtriox-production.dump "$PRODUCTION_URL"`
 
-## Offsite Storage Options
+Create an approved roles/globals export separately where permissions allow:
 
-- Backblaze B2 (recommended, cheap and S3-compatible)
-- AWS S3 with versioning and lifecycle rules
-- Local encrypted disk if no cloud option is acceptable
+`pg_dumpall --roles-only --file valtriox-roles.sql --database "$PRODUCTION_URL"`
 
-Do not store backups in GitHub Secrets or repository.
+If Supabase Storage contains application objects, export/inventory those objects
+separately; a PostgreSQL dump does not contain bucket files.
 
-## Encryption
+## Hash, encrypt, and store off-site
 
-Encrypt the dump before upload:
+1. Compute SHA-256 for the unencrypted dump and roles file.
+2. Encrypt both with the team's approved tool/key (for example age or GPG).
+3. Compute SHA-256 for each encrypted object.
+4. Upload encrypted objects to versioned off-site storage.
+5. Retain the provider receipt/object version, UTC timestamp, size, and encrypted hash.
 
-gpg --symmetric --cipher-algo AES256 valtriox-roles-20260814.sql
+GitHub is not backup storage. Never commit dumps or upload production data as a
+GitHub Actions artifact.
 
-## Backup Retention
+## Restore rehearsal
 
-Keep at least 14 days of daily backups for roles and schema-only dumps.
+Restore the exact custom-format artifact to an isolated disposable database:
+
+`pg_restore --clean --if-exists --no-owner --no-privileges --dbname "$RESTORE_URL" valtriox-production.dump`
+
+Then retain:
+
+- restore exit code/log;
+- source and restored full-catalog comparison;
+- exact per-table row counts and data fingerprints;
+- explicit verification of `_prisma_migrations` state;
+- restored-clone Path B adoption evidence;
+- post-adoption `migrate status` and no-op deploy output.
+
+Production baseline adoption remains blocked until the encrypted off-site receipt
+and this exact restore rehearsal are independently reviewed.

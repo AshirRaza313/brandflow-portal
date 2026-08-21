@@ -1,88 +1,66 @@
-# Backup Evidence
+# Baseline Evidence Register
 
-Date: 2026-08-16 (updated)
-Owner: Muhammad Ashir Raza
-Reviewer: Abdul Nafay
+This file distinguishes automated repository evidence from production release
+evidence. A checked box requires a reviewable artifact and exact command/run
+output; a plan or local assertion is not evidence.
 
-## 1. Backup Artifacts
+## Automated repository evidence
 
-Full rehearsal database backup generated via scripts/baseline/export-sql-dump.cjs.
+- [x] Immutable baseline contains the approved 40-table repository schema.
+- [x] Clean PostgreSQL 16 `prisma migrate deploy` and `migrate status` are in CI.
+- [x] Strict catalog comparison validates every approved table, column metadata,
+  constraint, index, provenance field, and content hash.
+- [x] Synthetic Path B starts with schema/data but no Prisma history, verifies the
+  pinned baseline precondition, records data/schema fingerprints and exact history,
+  then proves a second deploy is a no-op.
+- [x] Vercel build no longer runs `prisma db push`.
 
-- Schema dump: valtriox-schema-20260816.sql
-  - Size: 48771 bytes
-  - SHA-256: 73F8BA82EE7C9FC5B5C5357A7CEDAC9685028097F1D99EA979DB6F1C6BB27AEA
-- Data dump: valtriox-data-20260816.sql
-  - Size: 42 bytes (rehearsal DB empty, header only)
-  - SHA-256: BAACF75D189780AE0C731B55E5AA9EC5B78C99FA30C767ABBA7A2CFCD315EDEB
-- Roles dump: valtriox-roles-20260816.sql
-  - Size: 2953 bytes
-  - SHA-256: 475D8573F7FDD3C2922259C045D759B385205D315B5A6CD42D0F7D46EADCE776
+Exact head SHA, run URL, artifact IDs, and artifact SHA-256 values belong in the
+PR description after the final pushed commit. CI artifacts contain only disposable
+PostgreSQL evidence—never production credentials or row data.
 
-## 2. Off-Site Encrypted Copy
+## Live production catalog evidence
 
-- Encryption pending. Local SQL files are in backups/ folder, Git ignored.
-- Off-site target not yet configured. Once encrypted, SHA-256 and receipt will be recorded here.
+- [ ] Trusted capture executed from an approved `main` commit or pinned local checkout.
+- [ ] Source identity verified: production project ref, database, login role,
+  connected role, host, port, PostgreSQL version, UTC capture time, and code SHA.
+- [ ] Full current-format catalog artifact retained with SHA-256.
+- [ ] Production-vs-baseline comparator output retained.
+- [ ] Explicit presence/absence output retained for all nine previously reported
+  tables: `Subscriber`, `SubscriberList`, `SubscriberListMembership`, `Campaign`,
+  `EmailCampaign`, `EmailDelivery`, `SocialAccount`, `SocialPost`, `ScheduledJob`.
 
-## 3. Restore Proof (Path A - Empty Database)
+Until these boxes are complete, the only valid statement is: migration SQL,
+committed fixture, and repository Prisma schema agree on the same 40-table set.
+Live-production Marketing-table presence remains unresolved.
 
-Baseline replay verified on disposable rehearsal database:
+## Production backup and restore evidence
 
-- Command: npx prisma migrate deploy (CI integration-tests job)
-- Result: 40 public tables created, _prisma_migrations table with baseline entry
-- Integration tests: 11/11 passed, zero skipped on isolated PostgreSQL
-- Rehearsal database was empty before restore, confirming clean replay
-- CI commit SHA: PENDING (update after push)
-- CI run URL: PENDING (update after push)
+- [ ] Real production schema+data custom-format dump created with `pg_dump -Fc`.
+- [ ] Approved globals/roles export created without committing secrets/passwords.
+- [ ] Artifact timestamps and SHA-256 values recorded.
+- [ ] Backup encrypted before leaving the operator machine.
+- [ ] Encrypted off-site object receipt/path and SHA-256 recorded.
+- [ ] Those exact artifacts restored to a disposable database.
+- [ ] Restore log, exact 40-table catalog comparison, and per-table row-count/data
+  fingerprint parity retained.
+- [ ] Restored-clone Path B adoption rehearsal completed with clean status and
+  unchanged application data.
 
-No credentials or raw production data committed to GitHub.
+The older 42-byte empty rehearsal data file was not a production backup and is
+not accepted as recovery evidence.
 
-## 4. Integration Test Evidence
+## External configuration evidence
 
-- CI integration-tests job: real postgres:16 service, prisma migrate deploy + migrate status
-- Latest local commit: f2cdd56 (catalog scripts safety guards + CI comparison)
-- Fixture commit: 4b9c2db (expected baseline catalog, 40 tables)
-- Tests: 188 unit + 11 integration = 199 total
+- [ ] GitHub environment `production-evidence` restricts deployment branches to
+  `main`, requires an independent reviewer, and prevents self-review.
+- [ ] Environment secrets are scoped to a read-only production database user:
+  `PRODUCTION_READONLY_DATABASE_URL`, `PRODUCTION_EXPECTED_HOST`,
+  `PRODUCTION_EXPECTED_DB_USER`, and, for a pooler, `PRODUCTION_EXPECTED_DB_ROLE`.
+- [ ] Preview/staging and Production Vercel environments point to distinct Supabase
+  project refs; sanitized refs/screenshots are retained.
 
-## 5. Catalog Comparison Evidence
+## Release decision
 
-- Script: scripts/baseline/compare-catalogs.cjs
-- Expected baseline fixture: tests/fixtures/expected-baseline-catalog.json (40 tables, committed to git)
-- CI captures live catalog from replayed baseline, compares against fixture
-- Any structural diff causes CI failure (non-zero exit)
-- CI artifacts uploaded: backups/ci-captured-catalog.json + docs/baseline-repair/catalog-comparison.txt
-- Artifact retention: 30 days
-- Current result: NO_DIFFS (exact structural match - columns, constraints, indexes)
-
-## 6. Path B Evidence (Populated Production-Like Rehearsal)
-
-- Rehearsal DB seeded with representative rows: Organization, User, OrganizationMember, Supplier
-- Script: scripts/baseline/seed-rehearsal-for-pathb.cjs (guarded with safety-guard.cjs)
-- Before/after row counts: separate files (before-resolve-row-counts.json, after-resolve-row-counts.json)
-- Guarded wrapper: scripts/baseline/guarded-migrate-resolve.cjs (proves exact target, captures delta)
-- Command: npx prisma migrate resolve --applied 20260101000000_baseline
-- Expected delta: _prisma_migrations table only (1 row added), zero data loss in other tables
-- Status: PENDING (requires Ashir to run on rehearsal DB and provide evidence)
-
-## 7. Marketing-Table Discrepancy Finding
-
-- Expert reported 9 Marketing tables in earlier audit.
-- Investigation: production catalog (40 tables), baseline SQL, and CI fixture (40 tables) all confirm ZERO marketing/campaign/promo/advert tables.
-- Conclusion: Marketing tables never existed in this project baseline schema. Earlier audit report was incorrect or referenced a different project state.
-- No action needed. No deleted tables to restore.
-
-## 8. Safety Guards Summary
-
-All mutating scripts now use shared safety-guard.cjs validation:
-
-- validateRehearsalUrl: rejects production hostname, pooler pattern, validates CI/staging
-- validateProductionUrl: rejects rehearsal, transaction pooler, validates exact production ref
-- CodeQL fix: endsWith() instead of indexOf() for pooler hostname matching
-
-Guarded scripts (7 total):
-- scripts/baseline/safety-guard.cjs (shared module)
-- scripts/baseline/seed-rehearsal-for-pathb.cjs
-- scripts/baseline/drop-manual-supplier-constraints.cjs
-- scripts/baseline/export-sql-dump.cjs
-- scripts/baseline/capture-production-catalog.cjs
-- scripts/baseline/capture-row-counts.cjs
-- scripts/baseline/guarded-migrate-resolve.cjs (new)
+- [ ] Independent human approval recorded.
+- [ ] No production resolve/deploy/db-push occurred before every required box above.

@@ -1,44 +1,34 @@
-// scripts/baseline/capture-production-catalog.cjs
-// Production catalog capture - thin wrapper around shared capture engine.
-// Validates PRODUCTION_DATABASE_URL via safety-guard.cjs, then delegates
-// to capture-full-catalog.cjs (CI-tested, sequential queries, full provenance).
+"use strict";
 
-const path = require('path');
-const { execFileSync } = require('child_process');
-const fs = require('fs');
+const path = require("path");
+const { captureFullCatalog } = require("./capture-full-catalog.cjs");
+const { validateProductionUrl, PRODUCTION_REF } = require("./safety-guard.cjs");
 
-// Use shared safety guard for production URL validation
-const { validateProductionUrl } = require('./safety-guard.cjs');
+async function main() {
+  if (!/^[0-9a-f]{40}$/.test(process.env.EVIDENCE_HEAD_SHA || "")) {
+    throw new Error("EVIDENCE_HEAD_SHA must be the exact 40-character reviewed commit SHA");
+  }
+  const parsed = validateProductionUrl("PRODUCTION_DATABASE_URL");
+  const outputPath = process.env.PRODUCTION_CATALOG_OUTPUT || "backups/production-full-catalog.json";
 
-var parsed = validateProductionUrl('PRODUCTION_DATABASE_URL');
+  console.log("=== Read-only Production Catalog Capture ===");
+  console.log(`Validated target: ${parsed.host}:${parsed.port}/${parsed.dbname}`);
+  console.log(`Expected database user: ${parsed.user}`);
 
-console.log('=== Production Catalog Capture ===');
-console.log('Target host:', parsed.host);
-console.log('Target port:', parsed.port);
-console.log('Target dbname:', parsed.dbname);
-
-// Delegate to shared capture engine
-var captureScript = path.resolve(__dirname, 'capture-full-catalog.cjs');
-var outputPath = 'backups/production-full-catalog.json';
-
-// Pass production project ref so provenance records Supabase identity, not package name
-var env = Object.assign({}, process.env, {
-  SUPABASE_PROJECT_REF: process.env.SUPABASE_PROJECT_REF || 'wqwsagnxkamblnefhpzx'
-});
-
-try {
-  execFileSync('node', [captureScript, process.env.PRODUCTION_DATABASE_URL, outputPath], {
-    env: env,
-    stdio: 'inherit'
+  await captureFullCatalog({
+    connectionString: process.env.PRODUCTION_DATABASE_URL,
+    outputPath,
+    projectRef: PRODUCTION_REF,
+    headSha: process.env.EVIDENCE_HEAD_SHA,
+    expectedConnectedRole: parsed.expectedConnectedRole,
+    extraScriptPaths: [
+      __filename,
+      path.resolve(__dirname, "safety-guard.cjs"),
+    ],
   });
-} catch (e) {
-  console.error('Production catalog capture failed');
-  process.exit(1);
 }
 
-if (!fs.existsSync(outputPath)) {
-  console.error('FATAL: Production catalog file not created at ' + outputPath);
+main().catch((error) => {
+  console.error(`Production catalog capture failed: ${error.message}`);
   process.exit(1);
-}
-
-console.log('Production catalog capture complete: ' + outputPath);
+});

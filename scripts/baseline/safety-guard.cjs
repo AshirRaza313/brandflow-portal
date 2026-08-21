@@ -1,273 +1,151 @@
-// scripts/baseline/safety-guard.cjs
-// Shared safety guard for baseline scripts.
-// Validates REHEARSAL_DATABASE_URL and PRODUCTION_DATABASE_URL.
-// Uses URL parsing (not substring matching) for exact hostname verification.
-
 "use strict";
 
-/**
- * Parse a PostgreSQL connection string into components.
- * Handles postgresql:// and postgres:// schemes.
- * Returns { host, port, dbname, user } or null on failure.
- */
-function parseConnectionUrl(url) {
-  if (!url || typeof url !== "string") return null;
+const PRODUCTION_REF = "wqwsagnxkamblnefhpzx";
+
+function fail(message) {
+  console.error(message);
+  process.exit(1);
+}
+
+function parseConnectionUrl(value) {
+  if (!value || typeof value !== "string") return null;
   try {
-    // Strip protocol: postgres:// or postgresql://
-    var cleaned = url.replace(/^postgres(ql)?(s)?:\/\//, "");
-    if (!cleaned) return null;
-
-    var atIdx = cleaned.indexOf("@");
-    if (atIdx < 0) return null;
-
-    var credentials = cleaned.substring(0, atIdx);
-    var rest = cleaned.substring(atIdx + 1);
-    var slashIdx = rest.indexOf("/");
-    if (slashIdx < 0) return null;
-
-    var hostPort = rest.substring(0, slashIdx);
-    var dbname = rest.substring(slashIdx + 1).split("?")[0];
-
-    // Handle IPv6 [::1] hostnames and regular host:port
-    var host, port;
-    if (hostPort.startsWith("[")) {
-      var bracketEnd = hostPort.indexOf("]");
-      host = hostPort.substring(0, bracketEnd + 1);
-      var afterBracket = hostPort.substring(bracketEnd + 1);
-      port = afterBracket.startsWith(":")
-        ? parseInt(afterBracket.substring(1), 10)
-        : 5432;
-    } else {
-      var lastColon = hostPort.lastIndexOf(":");
-      if (lastColon >= 0) {
-        host = hostPort.substring(0, lastColon);
-        port = parseInt(hostPort.substring(lastColon + 1), 10);
-      } else {
-        host = hostPort;
-        port = 5432;
-      }
-    }
-
-    var user = credentials.split(":")[0];
-
-    if (!host || !dbname || !user || isNaN(port)) return null;
-
-    return { host: host, port: port, dbname: dbname, user: user };
-  } catch (e) {
+    const parsed = new URL(value);
+    if (parsed.protocol !== "postgres:" && parsed.protocol !== "postgresql:") return null;
+    const host = parsed.hostname.replace(/^\[|\]$/g, "").toLowerCase();
+    const port = Number(parsed.port || 5432);
+    const dbname = decodeURIComponent(parsed.pathname.replace(/^\//, ""));
+    const user = decodeURIComponent(parsed.username);
+    if (!host || !Number.isInteger(port) || !dbname || !user) return null;
+    return { host, port, dbname, user };
+  } catch {
     return null;
   }
 }
 
-/**
- * Validate REHEARSAL_DATABASE_URL against safety rules.
- *
- * Rules:
- * 1. Production hostnames (exact match) ALWAYS rejected.
- * 2. Production pooler hostnames (exact suffix match) ALWAYS rejected.
- * 3. CI (GITHUB_ACTIONS=true): only localhost/127.0.0.1, port 5432,
- *    dbname valtriox_test, user valtriox_test allowed.
- * 4. Non-CI: hostname must end with .supabase.co.
- *    Production project ref (wqwsagnxkamblnefhpzx) ALWAYS rejected.
- *    Staging allowlist checked via ALLOWED_STAGING_REFS env var (comma-separated).
- *
- * Returns parsed { host, port, dbname, user, isLocal } on success.
- * Calls process.exit(1) on any validation failure.
- */
-function validateRehearsalUrl(envVar) {
-  var url = process.env[envVar];
-  if (!url) {
-    console.error(envVar + " not set");
-    process.exit(1);
+function projectRefFor(parsed) {
+  const direct = parsed.host.match(/^db\.([a-z0-9]+)\.supabase\.co$/);
+  if (direct) return direct[1];
+  if (parsed.host.endsWith(".pooler.supabase.com")) {
+    const match = parsed.user.match(/(?:^|\.)([a-z0-9]{20})$/);
+    return match ? match[1] : null;
   }
-
-  var parsed = parseConnectionUrl(url);
-  if (!parsed) {
-    console.error(envVar + ": invalid connection string format");
-    process.exit(1);
-  }
-
-  var host = parsed.host;
-  var port = parsed.port;
-  var dbname = parsed.dbname;
-  var user = parsed.user;
-  var isLocal = (host === "localhost" || host === "127.0.0.1");
-
-  // --- Rule 1: Production hostname exact match - ALWAYS REJECT ---
-  var PRODUCTION_HOSTS = [
-    "db.wqwsagnxkamblnefhpzx.supabase.co",
-  ];
-  if (PRODUCTION_HOSTS.indexOf(host) !== -1) {
-    console.error(envVar + ": production database rejected (exact hostname match)");
-    process.exit(1);
-  }
-
-  // --- Rule 2: Production pooler exact suffix match - ALWAYS REJECT ---
-  // CodeQL fix: use endsWith instead of indexOf for exact suffix matching.
-  // Prevents partial match on adversarial hostnames like evil.pooler.supabase.com.attacker.com.
-  if (host.endsWith(".pooler.supabase.com")) {
-    console.error(envVar + ": production pooler connection rejected (exact suffix match)");
-    process.exit(1);
-  }
-
-  var isCI = process.env.GITHUB_ACTIONS === "true";
-
-  if (isCI) {
-    // --- Rule 3: CI - strict localhost/127.0.0.1 with exact test credentials ---
-    var allowedCIHosts = ["localhost", "127.0.0.1"];
-    if (allowedCIHosts.indexOf(host) === -1) {
-      console.error(
-        envVar + ": CI hostname must be localhost or 127.0.0.1, got \"" + host + "\""
-      );
-      process.exit(1);
-    }
-    if (port !== 5432) {
-      console.error(envVar + ": CI port must be 5432, got " + port);
-      process.exit(1);
-    }
-    if (dbname !== "valtriox_test") {
-      console.error(
-        envVar + ": CI database must be valtriox_test, got \"" + dbname + "\""
-      );
-      process.exit(1);
-    }
-    if (user !== "valtriox_test") {
-      console.error(
-        envVar + ": CI user must be valtriox_test, got \"" + user + "\""
-      );
-      process.exit(1);
-    }
-  } else {
-    // --- Rule 4: Non-CI - must be Supabase with staging allowlist ---
-    if (!host.endsWith(".supabase.co")) {
-      console.error(
-        envVar + ": must point to a Supabase database (hostname must end with .supabase.co)"
-      );
-      process.exit(1);
-    }
-
-    // Extract project ref from hostname patterns:
-    //   db.<ref>.supabase.co  or  <ref>.supabase.co
-    var refMatch = host.match(/^(db\.)?([a-z0-9]+)\.supabase\.co$/);
-    if (refMatch) {
-      var projectRef = refMatch[2];
-
-      // Always reject production project ref
-      if (projectRef === "wqwsagnxkamblnefhpzx") {
-        console.error(envVar + ": production project ref rejected");
-        process.exit(1);
-      }
-
-      // Check staging allowlist if ALLOWED_STAGING_REFS is defined
-      var stagingRefs = (process.env.ALLOWED_STAGING_REFS || "")
-        .split(",")
-        .filter(Boolean);
-      if (stagingRefs.length > 0 && stagingRefs.indexOf(projectRef) === -1) {
-        console.error(
-          envVar + ": project ref \"" + projectRef + "\" not in staging allowlist (set ALLOWED_STAGING_REFS)"
-        );
-        process.exit(1);
-      }
-    }
-  }
-
-  parsed.isLocal = isLocal;
-  return parsed;
+  return null;
 }
 
-/**
- * Validate PRODUCTION_DATABASE_URL for production-read scripts.
- * Ensures connection points ONLY to the known production project.
- *
- * Rules:
- * 1. Port must be 5432 (session pooler), rejects 6543 (transaction pooler).
- * 2. Host must be either:
- *    a. Direct: db.wqwsagnxkamblnefhpzx.supabase.co
- *    b. Session pooler: *.pooler.supabase.com with user matching production ref.
- * 3. Rehearsal project ref (igyqgchgfmcfvjmakvyk) ALWAYS rejected.
- * 4. Any other host or ref ALWAYS rejected.
- *
- * Returns parsed { host, port, dbname, user, isLocal } on success.
- * Calls process.exit(1) on any validation failure.
- */
-function validateProductionUrl(envVar) {
-  var url = process.env[envVar];
-  if (!url) {
-    console.error(envVar + " not set");
-    process.exit(1);
+function requireExpectedIdentity(parsed, prefix) {
+  const expectedHost = process.env[`${prefix}_EXPECTED_HOST`];
+  const expectedUser = process.env[`${prefix}_EXPECTED_DB_USER`];
+  const expectedDb = process.env[`${prefix}_EXPECTED_DB_NAME`] || "postgres";
+  if (!expectedHost || !expectedUser) {
+    fail(`${prefix}_EXPECTED_HOST and ${prefix}_EXPECTED_DB_USER are required`);
   }
-
-  var parsed = parseConnectionUrl(url);
-  if (!parsed) {
-    console.error(envVar + ": invalid connection string format");
-    process.exit(1);
+  if (parsed.host !== expectedHost.toLowerCase()) {
+    fail(`${prefix}: host mismatch; expected ${expectedHost}, got ${parsed.host}`);
   }
-
-  var host = parsed.host;
-  var port = parsed.port;
-  var user = parsed.user;
-  var PRODUCTION_REF = "wqwsagnxkamblnefhpzx";
-  var REHEARSAL_REF = "igyqgchgfmcfvjmakvyk";
-
-  // Reject transaction pooler port
-  if (port === 6543) {
-    console.error(envVar + ": transaction pooler port 6543 rejected, use session pooler port 5432");
-    process.exit(1);
+  if (parsed.user !== expectedUser) {
+    fail(`${prefix}: database user mismatch`);
   }
-  if (port !== 5432) {
-    console.error(envVar + ": port must be 5432 (session pooler), got " + port);
-    process.exit(1);
+  if (parsed.dbname !== expectedDb) {
+    fail(`${prefix}: database name must be ${expectedDb}, got ${parsed.dbname}`);
   }
+  const isPooler = parsed.host.endsWith(".pooler.supabase.com");
+  const expectedRole = process.env[`${prefix}_EXPECTED_DB_ROLE`] || (isPooler ? "" : parsed.user);
+  if (!expectedRole) {
+    fail(`${prefix}_EXPECTED_DB_ROLE is required for a Supabase pooler connection`);
+  }
+  parsed.expectedConnectedRole = expectedRole;
+}
 
-  // Pattern 1: Direct production host
-  var directHost = "db." + PRODUCTION_REF + ".supabase.co";
-  if (host === directHost) {
-    console.log(envVar + ": production direct connection validated (ref: " + PRODUCTION_REF + ")");
-    parsed.isLocal = false;
+function validateRehearsalUrl(envVar) {
+  const parsed = parseConnectionUrl(process.env[envVar]);
+  if (!parsed) fail(`${envVar}: invalid PostgreSQL connection string`);
+  const isLocal = ["localhost", "127.0.0.1", "::1"].includes(parsed.host);
+  const isGithubCi = process.env.CI === "true" && process.env.GITHUB_ACTIONS === "true";
+
+  if (isLocal) {
+    if (!isGithubCi) fail(`${envVar}: localhost is allowed only in GitHub Actions CI`);
+    if (parsed.port !== 5432 || parsed.dbname !== "valtriox_test" || parsed.user !== "valtriox_test") {
+      fail(`${envVar}: CI target must be valtriox_test@localhost:5432/valtriox_test`);
+    }
+    parsed.isLocal = true;
+    parsed.projectRef = "ci-localhost";
+    parsed.expectedConnectedRole = parsed.user;
     return parsed;
   }
 
-  // Pattern 2: Production session pooler
-  // Hostname must end with .pooler.supabase.com (exact suffix, not substring).
-  // User must exactly match production ref patterns to prevent cross-project access.
-  if (host.endsWith(".pooler.supabase.com")) {
-    var expectedUserDirect = PRODUCTION_REF;
-    var expectedUserPg = "postgres." + PRODUCTION_REF;
+  if (parsed.port !== 5432) fail(`${envVar}: remote rehearsal must use session/direct port 5432`);
+  const projectRef = projectRefFor(parsed);
+  if (!projectRef) fail(`${envVar}: unable to derive Supabase project ref from validated URL`);
+  if (projectRef === PRODUCTION_REF) fail(`${envVar}: production project is never a rehearsal target`);
 
-    if (user === expectedUserDirect || user === expectedUserPg) {
-      console.log(envVar + ": production session pooler validated (host: " + host + ", ref: " + PRODUCTION_REF + ")");
-      parsed.isLocal = false;
-      return parsed;
-    }
+  const allowed = (process.env.ALLOWED_STAGING_REFS || "")
+    .split(",")
+    .map((value) => value.trim())
+    .filter(Boolean);
+  if (allowed.length === 0) fail("ALLOWED_STAGING_REFS must contain the exact staging project ref");
+  if (!allowed.includes(projectRef)) fail(`${envVar}: project ref ${projectRef} is not allowlisted`);
+  requireExpectedIdentity(parsed, "REHEARSAL");
 
-    // Reject rehearsal ref explicitly
-    if (user === REHEARSAL_REF || user === "postgres." + REHEARSAL_REF) {
-      console.error(envVar + ": rehearsal project ref rejected on production pooler connection");
-      process.exit(1);
-    }
+  parsed.isLocal = false;
+  parsed.projectRef = projectRef;
+  return parsed;
+}
 
-    console.error(
-      envVar + ": pooler user must contain production ref \"" + PRODUCTION_REF +
-      "\", got user \"" + user + "\""
-    );
-    process.exit(1);
+function validateProductionUrl(envVar) {
+  const parsed = parseConnectionUrl(process.env[envVar]);
+  if (!parsed) fail(`${envVar}: invalid PostgreSQL connection string`);
+  if (parsed.port !== 5432) fail(`${envVar}: production evidence requires direct/session port 5432`);
+
+  const projectRef = projectRefFor(parsed);
+  if (projectRef !== PRODUCTION_REF) {
+    fail(`${envVar}: target is not the approved production project`);
   }
+  requireExpectedIdentity(parsed, "PRODUCTION");
 
-  // Reject rehearsal direct host
-  var rehearsalHost = "db." + REHEARSAL_REF + ".supabase.co";
-  if (host === rehearsalHost) {
-    console.error(envVar + ": rehearsal database rejected on production URL");
-    process.exit(1);
+  parsed.isLocal = false;
+  parsed.projectRef = projectRef;
+  return parsed;
+}
+
+async function assertConnectedIdentity(queryable, parsed) {
+  const result = await queryable.query(`
+    SELECT
+      current_database() AS db_name,
+      current_user AS db_user,
+      session_user AS session_user,
+      COALESCE(inet_server_addr()::text, 'local') AS server_address,
+      inet_server_port() AS server_port
+  `);
+  const identity = result.rows[0];
+  if (identity.db_name !== parsed.dbname) {
+    throw new Error(`Connected database mismatch: expected ${parsed.dbname}, got ${identity.db_name}`);
   }
-
-  console.error(
-    envVar + ": must point to production database (db." + PRODUCTION_REF +
-    ".supabase.co or session pooler), got host \"" + host + "\""
-  );
-  process.exit(1);
+  const expectedRole = parsed.expectedConnectedRole || parsed.user;
+  if (identity.db_user !== expectedRole || identity.session_user !== expectedRole) {
+    throw new Error("Connected database user/session_user does not match the validated URL");
+  }
+  if (identity.server_port !== parsed.port) {
+    throw new Error(`Connected server port mismatch: expected ${parsed.port}, got ${identity.server_port}`);
+  }
+  return {
+    db_name: identity.db_name,
+    db_user: identity.db_user,
+    session_user: identity.session_user,
+    client_user: parsed.user,
+    expected_connected_role: expectedRole,
+    server_address: identity.server_address,
+    server_port: identity.server_port,
+    validated_host: parsed.host,
+    project_ref: parsed.projectRef,
+  };
 }
 
 module.exports = {
-  parseConnectionUrl: parseConnectionUrl,
-  validateRehearsalUrl: validateRehearsalUrl,
-  validateProductionUrl: validateProductionUrl
+  PRODUCTION_REF,
+  assertConnectedIdentity,
+  parseConnectionUrl,
+  projectRefFor,
+  validateProductionUrl,
+  validateRehearsalUrl,
 };
