@@ -5,8 +5,10 @@ const tls = require("tls");
 const { Client } = require("pg");
 const {
   SUPABASE_ROOT_CA_SHA256,
+  SUPABASE_ROOT_CA_PATH,
   certificateSha256,
   rejectTlsUrlOverrides,
+  strictPrismaConnectionUrl,
   strictSupabaseTls,
   validateSupabaseRootCa,
 } = require("../../scripts/baseline/supabase-tls.cjs");
@@ -47,7 +49,15 @@ check("missing CA is rejected", () => {
   assert.throws(() => validateSupabaseRootCa(""), /missing/);
 });
 
-for (const parameter of ["ssl", "sslmode", "sslcert", "sslkey", "sslrootcert", "sslnegotiation"]) {
+for (const parameter of [
+  "ssl",
+  "sslaccept",
+  "sslmode",
+  "sslcert",
+  "sslkey",
+  "sslrootcert",
+  "sslnegotiation",
+]) {
   check(`URL override ${parameter} is rejected`, () => {
     assert.throws(
       () => rejectTlsUrlOverrides(`${remoteUrl}?${parameter}=require`),
@@ -69,6 +79,25 @@ check("effective node-postgres config retains the pinned CA", () => {
   assert.equal(
     client.connectionParameters.ssl.servername,
     "aws-1-ap-south-1.pooler.supabase.com"
+  );
+});
+
+check("remote Prisma CLI URL requires strict validation with the pinned CA", () => {
+  const derivedUrl = strictPrismaConnectionUrl(remoteUrl);
+  assert.ok(derivedUrl.startsWith(`${remoteUrl}?`));
+  const prismaUrl = new URL(derivedUrl);
+  assert.equal(prismaUrl.hostname, "aws-1-ap-south-1.pooler.supabase.com");
+  assert.equal(prismaUrl.port, "5432");
+  assert.equal(prismaUrl.username, "reader.projectref");
+  assert.equal(prismaUrl.searchParams.get("sslmode"), "require");
+  assert.equal(prismaUrl.searchParams.get("sslaccept"), "strict");
+  assert.equal(prismaUrl.searchParams.get("sslcert"), SUPABASE_ROOT_CA_PATH);
+});
+
+check("Prisma CLI URL rejects caller-controlled query parameters", () => {
+  assert.throws(
+    () => strictPrismaConnectionUrl(`${remoteUrl}?sslaccept=accept_invalid_certs`),
+    /must not contain query parameters/,
   );
 });
 
@@ -95,6 +124,11 @@ check("localhost capture keeps TLS disabled", () => {
     ),
     undefined
   );
+});
+
+check("localhost Prisma CLI URL remains parameter-free", () => {
+  const localUrl = "postgresql://valtriox_test@localhost:5432/valtriox_test";
+  assert.equal(strictPrismaConnectionUrl(localUrl, true), localUrl);
 });
 
 check("localhost URL cannot smuggle an SSL override", () => {

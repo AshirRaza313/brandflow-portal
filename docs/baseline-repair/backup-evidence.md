@@ -11,8 +11,10 @@ output; a plan or local assertion is not evidence.
 - [x] Strict catalog comparison validates every approved table, column metadata,
   constraint, index, provenance field, and content hash.
 - [x] Synthetic Path B starts with schema/data but no Prisma history, verifies the
-  pinned baseline precondition, records data/schema fingerprints and exact history,
-  then proves a second deploy is a no-op.
+  pinned baseline precondition, proves history-only baseline adoption leaves schema
+  and data unchanged, then applies the exact Supplier forward migration on the same
+  populated target. It records exact two-row history, unchanged data fingerprints,
+  reviewed constraint/security postconditions, and a final no-op deploy.
 - [x] Vercel build no longer runs `prisma db push`.
 
 Exact head SHA, run URL, artifact IDs, and artifact SHA-256 values belong in the

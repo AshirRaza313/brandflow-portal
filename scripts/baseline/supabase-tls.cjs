@@ -12,6 +12,7 @@ const SUPABASE_ROOT_CA_SHA256 =
   "807025ad50d4ed219d2c9c7d299c004f824eb00cf7f65afef607d07b72e6cafa";
 const TLS_OVERRIDE_PARAMETERS = Object.freeze([
   "ssl",
+  "sslaccept",
   "sslcert",
   "sslkey",
   "sslmode",
@@ -48,9 +49,12 @@ function rejectTlsUrlOverrides(connectionString) {
     throw new Error(`Invalid PostgreSQL connection URL: ${error.message}`);
   }
   const overrides = [...new Set(parsed.searchParams.keys())].sort();
-  if (overrides.length > 0) {
+  if (overrides.length > 0 || connectionString.includes("?")) {
+    const details = overrides.length > 0
+      ? overrides.join(", ")
+      : "empty query string";
     throw new Error(
-      `PostgreSQL URL must not contain query parameters that override pinned TLS settings: ${overrides.join(", ")}`
+      `PostgreSQL URL must not contain query parameters that override pinned TLS settings: ${details}`
     );
   }
   return parsed;
@@ -70,12 +74,26 @@ function strictSupabaseTls(connectionString, isLocal = false, caPem) {
   };
 }
 
+function strictPrismaConnectionUrl(connectionString, isLocal = false) {
+  rejectTlsUrlOverrides(connectionString);
+  if (isLocal) return connectionString;
+  const ca = fs.readFileSync(SUPABASE_ROOT_CA_PATH, "utf8");
+  validateSupabaseRootCa(ca);
+  const parameters = new URLSearchParams({
+    sslmode: "require",
+    sslaccept: "strict",
+    sslcert: SUPABASE_ROOT_CA_PATH,
+  });
+  return `${connectionString}?${parameters.toString()}`;
+}
+
 module.exports = {
   SUPABASE_ROOT_CA_PATH,
   SUPABASE_ROOT_CA_SHA256,
   TLS_OVERRIDE_PARAMETERS,
   certificateSha256,
   rejectTlsUrlOverrides,
+  strictPrismaConnectionUrl,
   strictSupabaseTls,
   validateSupabaseRootCa,
 };

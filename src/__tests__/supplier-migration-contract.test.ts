@@ -12,12 +12,28 @@ const workflow = readFileSync(
   resolve(process.cwd(), ".github/workflows/pr-validation.yml"),
   "utf8",
 ).replace(/\r\n?/g, "\n");
+const baselineWorkflow = readFileSync(
+  resolve(process.cwd(), ".github/workflows/baseline-pr-validation.yml"),
+  "utf8",
+).replace(/\r\n?/g, "\n");
 const integrationScript = readFileSync(
   resolve(process.cwd(), "scripts/test-supplier-forward-migration.cjs"),
   "utf8",
 );
 const runbook = readFileSync(
   resolve(process.cwd(), "docs/supplier-forward-migration-runbook.md"),
+  "utf8",
+);
+const guardedBaselineResolve = readFileSync(
+  resolve(process.cwd(), "scripts/baseline/guarded-migrate-resolve.cjs"),
+  "utf8",
+);
+const prepareBaselineOnly = readFileSync(
+  resolve(process.cwd(), "scripts/baseline/prepare-baseline-only-prisma.cjs"),
+  "utf8",
+);
+const preparePathBCiRoles = readFileSync(
+  resolve(process.cwd(), "scripts/baseline/prepare-pathb-ci-roles.cjs"),
   "utf8",
 );
 
@@ -99,5 +115,60 @@ describe("Supplier forward migration contract", () => {
     expect(runbook).toContain("post-`COMMIT` failure case");
     expect(runbook).toContain("exact-target `--applied`");
     expect(runbook).toContain("Raw `prisma migrate resolve` is forbidden");
+  });
+
+  it("separates baseline catalog proof, then runs the populated forward train", () => {
+    expect(prepareBaselineOnly).toContain(
+      'const BASELINE_MIGRATION = "20260101000000_baseline"',
+    );
+    expect(prepareBaselineOnly).toContain(
+      "Baseline-only Prisma bundle contains an unexpected migration",
+    );
+    expect(baselineWorkflow).toContain(
+      "npx prisma migrate deploy --schema backups/baseline-only-prisma/schema.prisma",
+    );
+    expect(baselineWorkflow).toContain(
+      "Apply full repository migration train via Prisma",
+    );
+    expect(guardedBaselineResolve).toContain(
+      'const FORWARD_MIGRATION = "20260815_add_supplier_constraints_and_security"',
+    );
+    expect(guardedBaselineResolve).not.toContain("PATH_B_PRISMA_SCHEMA");
+    expect(
+      baselineWorkflow.match(/Prepare isolated baseline-only Prisma history/g),
+    ).toHaveLength(1);
+    expect(baselineWorkflow).not.toContain("PATH_B_PRISMA_SCHEMA");
+    expect(guardedBaselineResolve).toContain(
+      'runPrismaStatus("before-forward")',
+    );
+    expect(guardedBaselineResolve).toContain(
+      'runPrismaDeploy("forward-migration")',
+    );
+    expect(guardedBaselineResolve).toContain(
+      '"supplier-forward-security.json"',
+    );
+    const resolveIndex = guardedBaselineResolve.indexOf('"--applied"');
+    const forwardDeployIndex = guardedBaselineResolve.indexOf(
+      'runPrismaDeploy("forward-migration")',
+    );
+    expect(resolveIndex).toBeGreaterThan(-1);
+    expect(forwardDeployIndex).toBeGreaterThan(resolveIndex);
+    expect(baselineWorkflow).toContain("baseline-adoption-history.json");
+    expect(baselineWorkflow).toContain("after-forward-catalog-delta.txt");
+    expect(baselineWorkflow).toContain(
+      "supplier-privileges-before-forward.json",
+    );
+    expect(baselineWorkflow).toContain(
+      "node scripts/baseline/prepare-pathb-ci-roles.cjs",
+    );
+    expect(preparePathBCiRoles).toContain(
+      "allowed only on the exact GitHub CI localhost target",
+    );
+    expect(preparePathBCiRoles).toContain(
+      "TO anon, authenticated, service_role",
+    );
+    expect(guardedBaselineResolve).toContain(
+      "Required Supplier denial role is absent",
+    );
   });
 });

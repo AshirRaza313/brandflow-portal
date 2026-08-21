@@ -90,10 +90,12 @@ jobs:
       - run: npm ci
       - name: Prisma generate
         run: npx prisma generate
-      - name: Prisma migrate deploy (baseline replay via Prisma)
-        run: npx prisma migrate deploy
-      - name: Verify migration status
-        run: npx prisma migrate status
+      - name: Prepare isolated baseline-only Prisma history
+        run: node scripts/baseline/prepare-baseline-only-prisma.cjs
+      - name: Prisma migrate deploy (isolated baseline only)
+        run: npx prisma migrate deploy --schema backups/baseline-only-prisma/schema.prisma
+      - name: Verify isolated baseline migration status
+        run: npx prisma migrate status --schema backups/baseline-only-prisma/schema.prisma
       - name: Capture CI catalog from replayed baseline
         env:
           CATALOG_DB_URL: postgresql://valtriox_test:valtriox_test_pass@localhost:5432/valtriox_test
@@ -116,6 +118,12 @@ jobs:
         run: node tests/baseline/run-safety-guard-validation.cjs
       - name: Supabase pinned TLS tests
         run: node tests/baseline/run-supabase-tls-validation.cjs
+      - name: Apply full repository migration train via Prisma
+        run: npx prisma migrate deploy --schema prisma/schema.prisma
+      - name: Verify full repository migration status
+        run: npx prisma migrate status --schema prisma/schema.prisma
+      - name: Verify full repository deploy is idempotent
+        run: npx prisma migrate deploy --schema prisma/schema.prisma
       - name: Integration tests
         run: npx vitest run tests/integration --reporter=verbose
       - name: Verify live catalog exists before upload
@@ -158,6 +166,7 @@ jobs:
       PR_HEAD_SHA: ${{ github.event.pull_request.head.sha }}
       MERGE_SHA: ${{ github.sha }}
       MIGRATION_NAME: 20260101000000_baseline
+      FORWARD_MIGRATION_NAME: 20260815_add_supplier_constraints_and_security
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -168,9 +177,11 @@ jobs:
         run: npx prisma generate
       - name: Replay baseline schema without Prisma history
         run: node scripts/baseline/replay-baseline.cjs
+      - name: Create CI Data API roles with privileges to revoke
+        run: node scripts/baseline/prepare-pathb-ci-roles.cjs
       - name: Seed representative FK-valid data
         run: node scripts/baseline/seed-rehearsal-for-pathb.cjs
-      - name: Run guarded synthetic Path-B adoption
+      - name: Run guarded synthetic Path-B adoption and forward train
         run: node scripts/baseline/guarded-migrate-resolve.cjs "$MIGRATION_NAME"
       - name: Verify complete Path-B evidence
         run: |
@@ -181,9 +192,18 @@ jobs:
             after-resolve-catalog.json \
             before-resolve-catalog-precondition.txt \
             before-resolve-migrate-status.txt \
-            after-resolve-migrate-status.txt \
-            no-op-after-resolve-migrate-deploy.txt \
-            final-after-no-op-deploy-migrate-status.txt \
+            before-forward-migrate-status.txt \
+            baseline-adoption-history.json \
+            before-forward-data-state.json \
+            supplier-privileges-before-forward.json \
+            forward-migration-migrate-deploy.txt \
+            after-forward-migrate-status.txt \
+            after-forward-data-state.json \
+            after-forward-catalog.json \
+            after-forward-catalog-delta.txt \
+            supplier-forward-security.json \
+            no-op-after-forward-migrate-deploy.txt \
+            final-after-no-op-forward-migrate-status.txt \
             migration-history.json \
             target-identity.json \
             manifest.json; do
@@ -191,7 +211,7 @@ jobs:
           done
           tar -czf backups/path-b-evidence.tgz -C backups path-b-evidence
           sha256sum backups/path-b-evidence.tgz > backups/path-b-evidence.tgz.sha256
-          export PATH_B_ARTIFACT_NAME="path-b-synthetic-${MIGRATION_NAME}-${PR_HEAD_SHA}-${MERGE_SHA}-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
+          export PATH_B_ARTIFACT_NAME="path-b-synthetic-${MIGRATION_NAME}-${FORWARD_MIGRATION_NAME}-${PR_HEAD_SHA}-${MERGE_SHA}-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
           echo "PATH_B_ARTIFACT_NAME=$PATH_B_ARTIFACT_NAME" >> "$GITHUB_ENV"
           node -e "
             const fs=require('fs'),crypto=require('crypto');
@@ -200,7 +220,7 @@ jobs:
               evidence_kind:'synthetic_path_b_upload_bundle',
               artifact_name:process.env.PATH_B_ARTIFACT_NAME,
               inner_bundle_sha256:crypto.createHash('sha256').update(bundle).digest('hex'),
-              migration_name:process.env.MIGRATION_NAME,
+              migration_names:[process.env.MIGRATION_NAME,process.env.FORWARD_MIGRATION_NAME],
               pr_head_sha:process.env.PR_HEAD_SHA,
               tested_merge_sha:process.env.MERGE_SHA,
               run_id:process.env.GITHUB_RUN_ID,
@@ -222,7 +242,7 @@ jobs:
       - name: Publish Path B artifact receipt
         run: |
           {
-            echo "### Synthetic Path-B evidence"
+            echo "### Synthetic Path-B baseline + Supplier forward evidence"
             echo "- Artifact ID: ${{ steps.upload_path_b.outputs.artifact-id }}"
             echo "- Artifact URL: ${{ steps.upload_path_b.outputs.artifact-url }}"
             echo "- Artifact SHA-256: ${{ steps.upload_path_b.outputs.artifact-digest }}"

@@ -2,12 +2,13 @@
 
 const { Pool } = require("pg");
 const { assertConnectedIdentity, validateRehearsalUrl } = require("./safety-guard.cjs");
+const { strictSupabaseTls } = require("./supabase-tls.cjs");
 
 async function main() {
   const parsed = validateRehearsalUrl("REHEARSAL_DATABASE_URL");
   const pool = new Pool({
     connectionString: process.env.REHEARSAL_DATABASE_URL,
-    ssl: parsed.isLocal ? undefined : { rejectUnauthorized: true },
+    ssl: strictSupabaseTls(process.env.REHEARSAL_DATABASE_URL, parsed.isLocal),
     connectionTimeoutMillis: 15_000,
   });
   const client = await pool.connect();
