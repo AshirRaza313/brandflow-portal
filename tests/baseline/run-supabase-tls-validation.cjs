@@ -101,6 +101,20 @@ check("Prisma CLI URL rejects caller-controlled query parameters", () => {
   );
 });
 
+check("remote Node TLS rejects URL fragments", () => {
+  assert.throws(
+    () => strictSupabaseTls(`${remoteUrl}#sslmode=disable`),
+    /must not contain a fragment/
+  );
+});
+
+check("remote Prisma CLI URL rejects URL fragments before deriving TLS parameters", () => {
+  assert.throws(
+    () => strictPrismaConnectionUrl(`${remoteUrl}#fragment`),
+    /must not contain a fragment/
+  );
+});
+
 check("authority routing cannot be replaced by URL query parameters", () => {
   const smuggled = `${remoteUrl}?host=other.pooler.supabase.com&user=other&port=6543`;
   assert.throws(
@@ -138,6 +152,16 @@ check("localhost URL cannot smuggle an SSL override", () => {
       true
     ),
     /must not contain query parameters/
+  );
+});
+
+check("localhost URL cannot smuggle a fragment", () => {
+  assert.throws(
+    () => strictPrismaConnectionUrl(
+      "postgresql://valtriox_test@localhost:5432/valtriox_test#fragment",
+      true
+    ),
+    /must not contain a fragment/
   );
 });
 

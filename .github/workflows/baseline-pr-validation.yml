@@ -84,6 +84,8 @@ jobs:
       CATALOG_PROJECT_REF: ci-localhost
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
       - uses: actions/setup-node@v4
         with:
           node-version: 24
@@ -118,6 +120,8 @@ jobs:
         run: node tests/baseline/run-safety-guard-validation.cjs
       - name: Supabase pinned TLS tests
         run: node tests/baseline/run-supabase-tls-validation.cjs
+      - name: Supplier migration recovery classifier tests
+        run: node tests/baseline/run-supplier-recovery-validation.cjs
       - name: Apply full repository migration train via Prisma
         run: npx prisma migrate deploy --schema prisma/schema.prisma
       - name: Verify full repository migration status
@@ -126,6 +130,116 @@ jobs:
         run: npx prisma migrate deploy --schema prisma/schema.prisma
       - name: Integration tests
         run: npx vitest run tests/integration --reporter=verbose
+      - name: Guarded Supplier migration recovery integration
+        run: node tests/baseline/run-supplier-recovery-integration.cjs
+      - name: Verify complete Supplier recovery evidence
+        run: |
+          for file in \
+            manifest.json \
+            rolled-back/application-data-before.json \
+            rolled-back/capture-prestate-1-wrapper-evidence/manifest.json \
+            rolled-back/capture-prestate-1-wrapper-evidence/prestate-receipt.json \
+            rolled-back/failed-deploy-1-output.txt \
+            rolled-back/failed-deploy-1-history.json \
+            rolled-back/wrong-applied-output.txt \
+            rolled-back/wrong-applied-history-before.json \
+            rolled-back/wrong-applied-history-after.json \
+            rolled-back/resolve-rolled-back-1-wrapper-evidence/recovery-result.json \
+            rolled-back/capture-prestate-2-wrapper-evidence/manifest.json \
+            rolled-back/capture-prestate-2-wrapper-evidence/prestate-receipt.json \
+            rolled-back/failed-deploy-2-output.txt \
+            rolled-back/failed-deploy-2-history.json \
+            rolled-back/resolve-rolled-back-2-wrapper-evidence/recovery-result.json \
+            rolled-back/retry-deploy-output.txt \
+            rolled-back/retry-status-output.txt \
+            rolled-back/no-op-deploy-output.txt \
+            rolled-back/post-no-op-status-output.txt \
+            rolled-back/application-data-after.json \
+            rolled-back/integration-final-proof.json \
+            partial-rejected/capture-prestate-wrapper-evidence/prestate-receipt.json \
+            partial-rejected/history-before.json \
+            partial-rejected/partial-applied-rejection-output.txt \
+            partial-rejected/history-after.json \
+            partial-rejected/integration-final-proof.json \
+            applied/application-data-before.json \
+            applied/capture-prestate-wrapper-evidence/prestate-receipt.json \
+            applied/wrong-rolled-back-output.txt \
+            applied/wrong-rolled-back-history-before.json \
+            applied/wrong-rolled-back-history-after.json \
+            applied/resolve-applied-wrapper-evidence/recovery-result.json \
+            applied/post-resolve-status-output.txt \
+            applied/no-op-deploy-output.txt \
+            applied/post-no-op-status-output.txt \
+            applied/application-data-after.json \
+            applied/integration-final-proof.json; do
+            test -s "backups/supplier-recovery-integration/$file"
+          done
+          for attempt in 1 2; do
+            output="backups/supplier-recovery-integration/rolled-back/failed-deploy-$attempt-output.txt"
+            grep -q 'P3018' "$output"
+            grep -q '23514' "$output"
+            grep -q '20260815_add_supplier_constraints_and_security' "$output"
+            grep -q '"resolve_flag": "--rolled-back"' \
+              "backups/supplier-recovery-integration/rolled-back/resolve-rolled-back-$attempt-wrapper-evidence/recovery-result.json"
+          done
+          grep -q '"resolve_flag": "--applied"' \
+            backups/supplier-recovery-integration/applied/resolve-applied-wrapper-evidence/recovery-result.json
+          node - <<'NODE'
+          const crypto = require('crypto');
+          const fs = require('fs');
+          const path = require('path');
+          const root = path.resolve('backups/supplier-recovery-integration');
+          const manifest = JSON.parse(fs.readFileSync(path.join(root, 'manifest.json'), 'utf8'));
+          const sha256 = (data) => crypto.createHash('sha256').update(data).digest('hex');
+          const migration = fs.readFileSync(
+            'prisma/migrations/20260815_add_supplier_constraints_and_security/migration.sql'
+          );
+          if (manifest.evidence_kind !== 'synthetic_supplier_recovery_integration' ||
+              manifest.production_recovery_proof !== false ||
+              manifest.migration_name !== '20260815_add_supplier_constraints_and_security' ||
+              manifest.migration_checksum !== sha256(migration) ||
+              manifest.pr_head_sha !== process.env.PR_HEAD_SHA ||
+              manifest.checkout_sha !== process.env.MERGE_SHA ||
+              manifest.tested_merge_sha !== process.env.MERGE_SHA ||
+              manifest.run_id !== process.env.GITHUB_RUN_ID ||
+              manifest.run_attempt !== process.env.GITHUB_RUN_ATTEMPT ||
+              manifest.integration_script_sha256 !== sha256(
+                fs.readFileSync('tests/baseline/run-supplier-recovery-integration.cjs')
+              )) {
+            throw new Error('Supplier recovery integration manifest metadata mismatch');
+          }
+          const actual = [];
+          const walk = (directory) => {
+            for (const entry of fs.readdirSync(directory, { withFileTypes: true })) {
+              const absolute = path.join(directory, entry.name);
+              if (entry.isSymbolicLink()) throw new Error(`Evidence symlink: ${absolute}`);
+              if (entry.isDirectory()) walk(absolute);
+              else if (entry.isFile() && absolute !== path.join(root, 'manifest.json')) {
+                const data = fs.readFileSync(absolute);
+                actual.push({
+                  path: path.relative(root, absolute).split(path.sep).join('/'),
+                  bytes: data.length,
+                  sha256: sha256(data),
+                });
+              }
+            }
+          };
+          walk(root);
+          actual.sort((left, right) => left.path.localeCompare(right.path));
+          if (JSON.stringify(actual) !== JSON.stringify(manifest.files)) {
+            throw new Error('Supplier recovery integration manifest file/hash mismatch');
+          }
+          if (manifest.files_sha256 !== sha256(JSON.stringify(actual, null, 2))) {
+            throw new Error('Supplier recovery integration aggregate hash mismatch');
+          }
+          NODE
+      - name: Upload Supplier recovery evidence
+        uses: actions/upload-artifact@v4
+        with:
+          name: supplier-recovery-20260815_add_supplier_constraints_and_security-${{ github.event.pull_request.head.sha }}-${{ github.sha }}-${{ github.run_id }}-${{ github.run_attempt }}
+          path: backups/supplier-recovery-integration
+          if-no-files-found: error
+          retention-days: 30
       - name: Verify live catalog exists before upload
         run: |
           test -s backups/ci-captured-catalog.json

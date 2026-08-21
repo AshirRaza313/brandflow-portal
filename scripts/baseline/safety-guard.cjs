@@ -18,7 +18,8 @@ function parseConnectionUrl(value) {
     const user = decodeURIComponent(parsed.username);
     if (!host || !Number.isInteger(port) || !dbname || !user) return null;
     const urlSearchParameters = [...new Set(parsed.searchParams.keys())].sort();
-    return { host, port, dbname, user, urlSearchParameters };
+    const hasUrlFragment = parsed.hash.length > 0 || value.includes("#");
+    return { host, port, dbname, user, urlSearchParameters, hasUrlFragment };
   } catch {
     return null;
   }
@@ -61,6 +62,9 @@ function requireExpectedIdentity(parsed, prefix) {
 function validateRehearsalUrl(envVar) {
   const parsed = parseConnectionUrl(process.env[envVar]);
   if (!parsed) fail(`${envVar}: invalid PostgreSQL connection string`);
+  if (parsed.hasUrlFragment) {
+    fail(`${envVar}: URL fragments are not allowed`);
+  }
   if (parsed.urlSearchParameters.length > 0) {
     fail(`${envVar}: URL query parameters are not allowed`);
   }
@@ -99,6 +103,9 @@ function validateRehearsalUrl(envVar) {
 function validateProductionUrl(envVar) {
   const parsed = parseConnectionUrl(process.env[envVar]);
   if (!parsed) fail(`${envVar}: invalid PostgreSQL connection string`);
+  if (parsed.hasUrlFragment) {
+    fail(`${envVar}: URL fragments are not allowed`);
+  }
   if (parsed.urlSearchParameters.length > 0) {
     fail(`${envVar}: URL query parameters are not allowed`);
   }

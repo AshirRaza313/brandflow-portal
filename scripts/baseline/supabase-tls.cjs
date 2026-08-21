@@ -48,6 +48,9 @@ function rejectTlsUrlOverrides(connectionString) {
   } catch (error) {
     throw new Error(`Invalid PostgreSQL connection URL: ${error.message}`);
   }
+  if (parsed.hash.length > 0 || connectionString.includes("#")) {
+    throw new Error("PostgreSQL URL must not contain a fragment");
+  }
   const overrides = [...new Set(parsed.searchParams.keys())].sort();
   if (overrides.length > 0 || connectionString.includes("?")) {
     const details = overrides.length > 0
@@ -75,16 +78,15 @@ function strictSupabaseTls(connectionString, isLocal = false, caPem) {
 }
 
 function strictPrismaConnectionUrl(connectionString, isLocal = false) {
-  rejectTlsUrlOverrides(connectionString);
+  const parsed = rejectTlsUrlOverrides(connectionString);
   if (isLocal) return connectionString;
   const ca = fs.readFileSync(SUPABASE_ROOT_CA_PATH, "utf8");
   validateSupabaseRootCa(ca);
-  const parameters = new URLSearchParams({
-    sslmode: "require",
-    sslaccept: "strict",
-    sslcert: SUPABASE_ROOT_CA_PATH,
-  });
-  return `${connectionString}?${parameters.toString()}`;
+  parsed.searchParams.set("sslmode", "require");
+  parsed.searchParams.set("sslaccept", "strict");
+  parsed.searchParams.set("sslcert", SUPABASE_ROOT_CA_PATH);
+  parsed.hash = "";
+  return parsed.toString();
 }
 
 module.exports = {

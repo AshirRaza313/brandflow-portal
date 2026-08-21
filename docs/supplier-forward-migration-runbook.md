@@ -60,6 +60,10 @@ deploy.
    ```
 
    The expected pre-deploy result is zero rows.
+   Migration SQL is byte-sensitive in Prisma history. The repository pins
+   every `prisma/migrations/**/migration.sql` file to LF through
+   `.gitattributes`; the guarded wrapper hard-fails a CRLF checkout instead of
+   creating a platform-dependent checksum.
 2. On a clean disposable PostgreSQL database, run `prisma migrate deploy` and
    the real Prisma Supplier CRUD/integration suite.
 3. On a restored, isolated production clone, adopt the baseline history using
@@ -128,13 +132,78 @@ when:
 
 Do not choose either `prisma migrate resolve` mode until the database state is
 classified. Prisma can retain a failed migration-history row even though
-PostgreSQL rolled the SQL transaction back. Correct the cause and prove whether
-any constraints or privilege changes survived. After PR #7 is merged and this
-branch is rebased, exact-target recovery wrappers for the classified
-`--rolled-back` and `--applied` cases must be implemented, reviewed, and tested
-before any recovery. Those wrappers do not exist in this branch yet.
-Raw `prisma migrate resolve` is forbidden. Production also requires a fresh
-human GO for recovery.
+PostgreSQL rolled the SQL transaction back. Raw `prisma migrate resolve` is forbidden.
+
+The branch includes a rehearsal-only, exact-target wrapper:
+
+```text
+scripts/baseline/guarded-supplier-migration-recovery.cjs
+```
+
+It reuses the rehearsal URL allowlist, connected-identity assertion, pinned
+Supabase CA, strict Prisma child-process URL, exact repository migration train,
+baseline fixture, and migration checksums. Production is rejected by the
+shared safety guard. Capture the immutable prestate before the first forward
+deploy:
+
+```powershell
+$env:SUPPLIER_RECOVERY_EVIDENCE_DIR = "backups/supplier-recovery-evidence/prestate-<UTC>-<exact-head>"
+node scripts/baseline/guarded-supplier-migration-recovery.cjs --capture-prestate
+```
+
+For a remote rehearsal target, also set
+`RECOVERY_MAINTENANCE_APPROVED=I_UNDERSTAND_WRITERS_AND_MIGRATORS_ARE_PAUSED`
+only after application writers, scheduled jobs, and every other Prisma
+migration operator are actually paused. The prestate capture hard-fails unless
+both invalid Supplier counts are zero.
+
+The evidence directory must be a new, unique direct child of
+`backups/supplier-recovery-evidence`; the wrapper refuses to overwrite an
+existing directory. Preserve its `supplier-forward-recovery-prestate.json`,
+`prestate-receipt.json`, and `manifest.json` outside the target. If a deploy
+later fails, point `SUPPLIER_RECOVERY_PRESTATE_FILE` at that exact prestate and
+provide its printed `SUPPLIER_RECOVERY_PRESTATE_SHA256`. Use a second new
+evidence directory for the recovery attempt, then invoke exactly one reviewed
+mode. If classification proves that no migration SQL survived, use only:
+
+```powershell
+$env:SUPPLIER_RECOVERY_EVIDENCE_DIR = "backups/supplier-recovery-evidence/resolve-<UTC>-<exact-head>"
+node scripts/baseline/guarded-supplier-migration-recovery.cjs --rolled-back
+```
+
+If classification instead proves that every reviewed SQL postcondition
+committed while Prisma history remained unfinished, use only:
+
+```powershell
+$env:SUPPLIER_RECOVERY_EVIDENCE_DIR = "backups/supplier-recovery-evidence/resolve-<UTC>-<exact-head>"
+node scripts/baseline/guarded-supplier-migration-recovery.cjs --applied
+```
+
+The wrapper refuses a requested flag that does not match its classification.
+It verifies the exact Git checkout/PR head/merge identity, exact migration-row
+IDs and checksums, full per-table data fingerprints, the full catalog, Supplier
+owner and complete non-Data-API ACL posture, and the requested Prisma history
+transition. During classification and resolve it takes an advisory recovery
+lock plus `SHARE ROW EXCLUSIVE` locks on every approved application table.
+Pause application writers and every other migration operator for the entire
+capture/deploy/recovery sequence; the wrapper deliberately does not lock
+`_prisma_migrations`, because Prisma must update it through a separate
+connection, and it revalidates history immediately before and after that
+update. A reviewed retry may capture a fresh prestate only when all earlier
+attempts are exact rolled-back history rows.
+
+This wrapper is rehearsal proof only. A production recovery still requires
+restored-clone evidence, a fresh production-specific human GO, and a separately
+reviewed operator path; never substitute a rehearsal URL or weaken the
+production rejection.
+
+The PostgreSQL 16 integration job exercises both recovery branches: a real
+transactional migration failure followed by guarded `--rolled-back`, a clean
+retry and idempotent deploy; and a synthetic post-`COMMIT`/unfinished-history
+state followed by guarded `--applied`. Negative wrong-mode and partial-state
+attempts must leave exact migration history unchanged. Every immutable evidence
+directory and the integration manifest are uploaded with per-file hashes, the
+exact PR head, tested merge SHA, run ID, and run attempt.
 
 There is a separate post-`COMMIT` failure case: PostgreSQL can commit all SQL
 successfully and the Prisma process can then fail before finalizing its
@@ -149,13 +218,15 @@ FROM public._prisma_migrations
 WHERE migration_name = '20260815_add_supplier_constraints_and_security';
 ```
 
-- If the SQL transaction rolled back, neither new constraint exists and the
-  pre-migration grants remain. Only the not-yet-built, reviewed
-  `--rolled-back` wrapper may repair history before a retry.
+- If the SQL transaction rolled back, neither new constraint exists, the full
+  catalog matches the approved baseline, and the Supplier security state
+  matches the hashed prestate. Only the guarded `--rolled-back` mode may repair
+  history before a separately reviewed retry.
 - If every SQL postcondition exists but history is unfinished, do not rerun the
-  SQL and do not mark it rolled back. A separate exact-target `--applied`
-  finalization path must be implemented and reviewed after the PR #7 rebase,
-  with exact migration checksum and restored-clone proof.
+  SQL and do not mark it rolled back. The guarded exact-target `--applied` mode requires the
+  exact two validated constraint definitions, exact catalog delta, every
+  effective ACL denial, disabled/unforced RLS with zero policies, and the exact
+  unfinished migration checksum before it can finalize rehearsal history.
 - Any mixed/partial schema state contradicts the atomic transaction. Stop the
   release and investigate; neither resolve mode is authorized.
 

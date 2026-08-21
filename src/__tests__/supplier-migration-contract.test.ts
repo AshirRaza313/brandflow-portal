@@ -36,6 +36,31 @@ const preparePathBCiRoles = readFileSync(
   resolve(process.cwd(), "scripts/baseline/prepare-pathb-ci-roles.cjs"),
   "utf8",
 );
+const guardedSupplierRecovery = readFileSync(
+  resolve(
+    process.cwd(),
+    "scripts/baseline/guarded-supplier-migration-recovery.cjs",
+  ),
+  "utf8",
+);
+const supplierRecoveryClassifier = readFileSync(
+  resolve(
+    process.cwd(),
+    "scripts/baseline/classify-supplier-migration-recovery.cjs",
+  ),
+  "utf8",
+);
+const supplierRecoveryIntegration = readFileSync(
+  resolve(
+    process.cwd(),
+    "tests/baseline/run-supplier-recovery-integration.cjs",
+  ),
+  "utf8",
+);
+const gitAttributes = readFileSync(
+  resolve(process.cwd(), ".gitattributes"),
+  "utf8",
+);
 
 describe("Supplier forward migration contract", () => {
   it("is a single explicit forward-only transaction with bounded locks", () => {
@@ -115,6 +140,40 @@ describe("Supplier forward migration contract", () => {
     expect(runbook).toContain("post-`COMMIT` failure case");
     expect(runbook).toContain("exact-target `--applied`");
     expect(runbook).toContain("Raw `prisma migrate resolve` is forbidden");
+    expect(baselineWorkflow).toContain(
+      "node tests/baseline/run-supplier-recovery-validation.cjs",
+    );
+    expect(guardedSupplierRecovery).toContain(
+      'validateRehearsalUrl("REHEARSAL_DATABASE_URL")',
+    );
+    expect(guardedSupplierRecovery).toContain(
+      "SUPPLIER_RECOVERY_PRESTATE_SHA256",
+    );
+    expect(guardedSupplierRecovery).toContain(
+      'strictPrismaConnectionUrl(',
+    );
+    expect(supplierRecoveryClassifier).toContain(
+      'allowedResolveFlag: "--rolled-back"',
+    );
+    expect(supplierRecoveryClassifier).toContain(
+      'allowedResolveFlag: "--applied"',
+    );
+    expect(baselineWorkflow).toContain(
+      "node tests/baseline/run-supplier-recovery-integration.cjs",
+    );
+    expect(supplierRecoveryIntegration).toContain(
+      'recover(scenario, "resolve-rolled-back-1", "--rolled-back", prestate1)',
+    );
+    expect(supplierRecoveryIntegration).toContain(
+      'recover(scenario, "resolve-applied", "--applied", prestate)',
+    );
+    expect(gitAttributes).toContain(
+      "prisma/migrations/**/migration.sql text eol=lf",
+    );
+    expect(guardedSupplierRecovery).toContain(
+      "Migration SQL must be checked out with LF line endings",
+    );
+    expect(guardedSupplierRecovery).toContain("repositoryFileSha256(WRAPPER_PATH)");
   });
 
   it("separates baseline catalog proof, then runs the populated forward train", () => {
