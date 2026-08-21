@@ -148,6 +148,15 @@ function compareCatalogs(production, rehearsal, expectations = {}) {
       rehearsalTable.columns.map((column) => [column.column_name, column])
     );
     const columnNames = new Set([...productionColumns.keys(), ...rehearsalColumns.keys()]);
+    const productionColumnOrder = [...productionTable.columns]
+      .sort((left, right) => left.ordinal_position - right.ordinal_position)
+      .map((column) => column.column_name);
+    const rehearsalColumnOrder = [...rehearsalTable.columns]
+      .sort((left, right) => left.ordinal_position - right.ordinal_position)
+      .map((column) => column.column_name);
+    if (JSON.stringify(productionColumnOrder) !== JSON.stringify(rehearsalColumnOrder)) {
+      diffs.push(`COLUMN_ORDER_DIFF: ${table}`);
+    }
     for (const columnName of [...columnNames].sort()) {
       if (!productionColumns.has(columnName)) {
         diffs.push(`COLUMN_MISSING_IN_PRODUCTION: ${table}.${columnName}`);
@@ -160,6 +169,10 @@ function compareCatalogs(production, rehearsal, expectations = {}) {
       const productionColumn = productionColumns.get(columnName);
       const rehearsalColumn = rehearsalColumns.get(columnName);
       for (const field of COLUMN_FIELDS) {
+        // PostgreSQL keeps physical ordinal gaps after columns are dropped.
+        // Baseline replay intentionally creates only the current columns, so
+        // compare their relative order above instead of raw attnum values.
+        if (field === "ordinal_position") continue;
         if (!sameValue(productionColumn[field], rehearsalColumn[field])) {
           diffs.push(`COLUMN_${field.toUpperCase()}_DIFF: ${table}.${columnName}`);
         }

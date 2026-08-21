@@ -815,8 +815,8 @@ CREATE TABLE "public"."suppliers" (
     CONSTRAINT "suppliers_pkey" PRIMARY KEY ("id")
 );
 
--- CreateIndex
-CREATE UNIQUE INDEX "Account_provider_providerAccountId_key" ON "public"."Account"("provider" ASC, "providerAccountId" ASC);
+-- AddConstraint
+ALTER TABLE "public"."Account" ADD CONSTRAINT "Account_provider_providerAccountId_key" UNIQUE ("provider", "providerAccountId");
 
 -- CreateIndex
 CREATE INDEX "Account_userId_idx" ON "public"."Account"("userId" ASC);
@@ -830,8 +830,8 @@ CREATE INDEX "Attendance_organizationId_status_idx" ON "public"."Attendance"("or
 -- CreateIndex
 CREATE INDEX "Attendance_userId_date_idx" ON "public"."Attendance"("userId" ASC, "date" ASC);
 
--- CreateIndex
-CREATE UNIQUE INDEX "Attendance_userId_organizationId_date_key" ON "public"."Attendance"("userId" ASC, "organizationId" ASC, "date" ASC);
+-- AddConstraint
+ALTER TABLE "public"."Attendance" ADD CONSTRAINT "Attendance_userId_organizationId_date_key" UNIQUE ("userId", "organizationId", "date");
 
 -- CreateIndex
 CREATE INDEX "Automation_enabled_idx" ON "public"."Automation"("enabled" ASC);
@@ -947,8 +947,8 @@ CREATE INDEX "Lead_status_createdAt_idx" ON "public"."Lead"("status" ASC, "creat
 -- CreateIndex
 CREATE INDEX "Lead_status_idx" ON "public"."Lead"("status" ASC);
 
--- CreateIndex
-CREATE UNIQUE INDEX "LegalPage_slug_key" ON "public"."LegalPage"("slug" ASC);
+-- AddConstraint
+ALTER TABLE "public"."LegalPage" ADD CONSTRAINT "LegalPage_slug_key" UNIQUE ("slug");
 
 -- CreateIndex
 CREATE INDEX "Notification_createdAt_idx" ON "public"."Notification"("createdAt" ASC);
@@ -1001,14 +1001,14 @@ CREATE INDEX "Organization_isActive_idx" ON "public"."Organization"("isActive" A
 -- CreateIndex
 CREATE INDEX "Organization_plan_idx" ON "public"."Organization"("plan" ASC);
 
--- CreateIndex
-CREATE UNIQUE INDEX "Organization_slug_key" ON "public"."Organization"("slug" ASC);
+-- AddConstraint
+ALTER TABLE "public"."Organization" ADD CONSTRAINT "Organization_slug_key" UNIQUE ("slug");
 
 -- CreateIndex
 CREATE INDEX "OrganizationMember_organizationId_role_idx" ON "public"."OrganizationMember"("organizationId" ASC, "role" ASC);
 
--- CreateIndex
-CREATE UNIQUE INDEX "OrganizationMember_organizationId_userId_key" ON "public"."OrganizationMember"("organizationId" ASC, "userId" ASC);
+-- AddConstraint
+ALTER TABLE "public"."OrganizationMember" ADD CONSTRAINT "OrganizationMember_organizationId_userId_key" UNIQUE ("organizationId", "userId");
 
 -- CreateIndex
 CREATE INDEX "PaymentProof_organizationId_idx" ON "public"."PaymentProof"("organizationId" ASC);
@@ -1079,8 +1079,8 @@ CREATE INDEX "ReportExport_organizationId_idx" ON "public"."ReportExport"("organ
 -- CreateIndex
 CREATE INDEX "ReportExport_type_idx" ON "public"."ReportExport"("type" ASC);
 
--- CreateIndex
-CREATE UNIQUE INDEX "Role_name_key" ON "public"."Role"("name" ASC);
+-- AddConstraint
+ALTER TABLE "public"."Role" ADD CONSTRAINT "Role_name_key" UNIQUE ("name");
 
 -- CreateIndex
 CREATE UNIQUE INDEX "Session_sessionToken_key" ON "public"."Session"("sessionToken" ASC);
@@ -1088,8 +1088,8 @@ CREATE UNIQUE INDEX "Session_sessionToken_key" ON "public"."Session"("sessionTok
 -- CreateIndex
 CREATE INDEX "Session_userId_idx" ON "public"."Session"("userId" ASC);
 
--- CreateIndex
-CREATE UNIQUE INDEX "Subscription_organizationId_key" ON "public"."Subscription"("organizationId" ASC);
+-- AddConstraint
+ALTER TABLE "public"."Subscription" ADD CONSTRAINT "Subscription_organizationId_key" UNIQUE ("organizationId");
 
 -- CreateIndex
 CREATE INDEX "Subscription_organizationId_status_idx" ON "public"."Subscription"("organizationId" ASC, "status" ASC);
@@ -1097,8 +1097,8 @@ CREATE INDEX "Subscription_organizationId_status_idx" ON "public"."Subscription"
 -- CreateIndex
 CREATE INDEX "Subscription_status_idx" ON "public"."Subscription"("status" ASC);
 
--- CreateIndex
-CREATE UNIQUE INDEX "SubscriptionPlan_name_key" ON "public"."SubscriptionPlan"("name" ASC);
+-- AddConstraint
+ALTER TABLE "public"."SubscriptionPlan" ADD CONSTRAINT "SubscriptionPlan_name_key" UNIQUE ("name");
 
 -- CreateIndex
 CREATE INDEX "SupportConversation_lastMessageAt_idx" ON "public"."SupportConversation"("lastMessageAt" ASC);
@@ -1139,8 +1139,8 @@ CREATE INDEX "TeamTask_organizationId_priority_idx" ON "public"."TeamTask"("orga
 -- CreateIndex
 CREATE INDEX "TeamTask_organizationId_status_idx" ON "public"."TeamTask"("organizationId" ASC, "status" ASC);
 
--- CreateIndex
-CREATE UNIQUE INDEX "User_email_key" ON "public"."User"("email" ASC);
+-- AddConstraint
+ALTER TABLE "public"."User" ADD CONSTRAINT "User_email_key" UNIQUE ("email");
 
 -- CreateIndex
 CREATE INDEX "User_role_idx" ON "public"."User"("role" ASC);
@@ -1163,8 +1163,8 @@ CREATE INDEX "ValtrioxTeamMember_status_idx" ON "public"."ValtrioxTeamMember"("s
 -- CreateIndex
 CREATE UNIQUE INDEX "ValtrioxTeamMember_userId_key" ON "public"."ValtrioxTeamMember"("userId" ASC);
 
--- CreateIndex
-CREATE UNIQUE INDEX "VerificationToken_identifier_token_key" ON "public"."VerificationToken"("identifier" ASC, "token" ASC);
+-- AddConstraint
+ALTER TABLE "public"."VerificationToken" ADD CONSTRAINT "VerificationToken_identifier_token_key" UNIQUE ("identifier", "token");
 
 -- CreateIndex
 CREATE UNIQUE INDEX "VerificationToken_token_key" ON "public"."VerificationToken"("token" ASC);

@@ -368,12 +368,18 @@ function validateCatalog(label, catalog) {
     entry.columns.forEach((column) => validateColumn(label, table, column, errors));
 
     const columnNames = entry.columns.map((column) => column.column_name);
+    const columnOrdinals = entry.columns
+      .map((column) => column && column.ordinal_position)
+      .filter((ordinal) => Number.isInteger(ordinal));
     const constraintNames = entry.constraints.map((constraint) => constraint && constraint.name);
     const indexNames = entry.indexes.map((index) => index && index.name);
     for (const [kind, names] of [["COLUMNS", columnNames], ["CONSTRAINTS", constraintNames], ["INDEXES", indexNames]]) {
       if (new Set(names).size !== names.length) {
         errors.push(`DUPLICATE_${kind}: ${label}.${table}`);
       }
+    }
+    if (new Set(columnOrdinals).size !== columnOrdinals.length) {
+      errors.push(`DUPLICATE_COLUMN_ORDINALS: ${label}.${table}`);
     }
 
     for (const constraint of entry.constraints) {

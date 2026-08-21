@@ -65,6 +65,10 @@ expectDiff("duplicate columns fail", (catalog) => {
   catalog.Account.columns.push(clone(catalog.Account.columns[0]));
 }, "DUPLICATE_COLUMNS");
 
+expectDiff("duplicate column ordinals fail", (catalog) => {
+  catalog.Account.columns[1].ordinal_position = catalog.Account.columns[0].ordinal_position;
+}, "DUPLICATE_COLUMN_ORDINALS");
+
 expectDiff("duplicate constraints fail", (catalog) => {
   const table = Object.keys(catalog).find((key) => !key.startsWith("_") && catalog[key].constraints.length > 0);
   catalog[table].constraints.push(clone(catalog[table].constraints[0]));
@@ -98,6 +102,22 @@ expectDiff("missing datetime_precision fails", (catalog) => {
 expectDiff("one-sided formatted type difference fails", (catalog) => {
   catalog.Account.columns[0].formatted_type = "integer";
 }, "COLUMN_FORMATTED_TYPE_DIFF");
+
+expectDiff("relative column order difference fails", (catalog) => {
+  const first = catalog.Account.columns[0].ordinal_position;
+  catalog.Account.columns[0].ordinal_position = catalog.Account.columns[1].ordinal_position;
+  catalog.Account.columns[1].ordinal_position = first;
+}, "COLUMN_ORDER_DIFF");
+
+test("physical ordinal gaps with unchanged relative order are accepted", () => {
+  const rehearsal = clone(fixture);
+  for (const column of rehearsal.Account.columns) {
+    column.ordinal_position = (column.ordinal_position * 2) + 3;
+  }
+  rehash(rehearsal);
+  const diffs = compareCatalogs(fixture, rehearsal);
+  assert(diffs.length === 0, diffs.join(" | "));
+});
 
 expectDiff("one-sided index difference fails", (catalog) => {
   const table = Object.keys(catalog).find((key) => !key.startsWith("_") && catalog[key].indexes.length > 0);

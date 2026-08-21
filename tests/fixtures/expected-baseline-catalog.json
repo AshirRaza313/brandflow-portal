@@ -256,6 +256,11 @@
     ],
     "constraints": [
       {
+        "name": "Account_provider_providerAccountId_key",
+        "type": "u",
+        "definition": "UNIQUE (provider, \"providerAccountId\")"
+      },
+      {
         "name": "Account_pkey",
         "type": "p",
         "definition": "PRIMARY KEY (id)"
@@ -567,6 +572,11 @@
         "name": "Attendance_pkey",
         "type": "p",
         "definition": "PRIMARY KEY (id)"
+      },
+      {
+        "name": "Attendance_userId_organizationId_date_key",
+        "type": "u",
+        "definition": "UNIQUE (\"userId\", \"organizationId\", date)"
       },
       {
         "name": "Attendance_userId_fkey",
@@ -5005,6 +5015,11 @@
         "name": "LegalPage_pkey",
         "type": "p",
         "definition": "PRIMARY KEY (id)"
+      },
+      {
+        "name": "LegalPage_slug_key",
+        "type": "u",
+        "definition": "UNIQUE (slug)"
       }
     ],
     "indexes": [
@@ -6679,6 +6694,11 @@
         "name": "Organization_pkey",
         "type": "p",
         "definition": "PRIMARY KEY (id)"
+      },
+      {
+        "name": "Organization_slug_key",
+        "type": "u",
+        "definition": "UNIQUE (slug)"
       }
     ],
     "indexes": [
@@ -6918,6 +6938,11 @@
         "name": "OrganizationMember_organizationId_fkey",
         "type": "f",
         "definition": "FOREIGN KEY (\"organizationId\") REFERENCES \"Organization\"(id) ON UPDATE CASCADE ON DELETE CASCADE"
+      },
+      {
+        "name": "OrganizationMember_organizationId_userId_key",
+        "type": "u",
+        "definition": "UNIQUE (\"organizationId\", \"userId\")"
       },
       {
         "name": "OrganizationMember_pkey",
@@ -10288,6 +10313,11 @@
     ],
     "constraints": [
       {
+        "name": "Role_name_key",
+        "type": "u",
+        "definition": "UNIQUE (name)"
+      },
+      {
         "name": "Role_pkey",
         "type": "p",
         "definition": "PRIMARY KEY (id)"
@@ -10680,6 +10710,11 @@
         "definition": "FOREIGN KEY (\"organizationId\") REFERENCES \"Organization\"(id) ON UPDATE CASCADE ON DELETE CASCADE"
       },
       {
+        "name": "Subscription_organizationId_key",
+        "type": "u",
+        "definition": "UNIQUE (\"organizationId\")"
+      },
+      {
         "name": "Subscription_pkey",
         "type": "p",
         "definition": "PRIMARY KEY (id)"
@@ -11007,6 +11042,11 @@
       }
     ],
     "constraints": [
+      {
+        "name": "SubscriptionPlan_name_key",
+        "type": "u",
+        "definition": "UNIQUE (name)"
+      },
       {
         "name": "SubscriptionPlan_pkey",
         "type": "p",
@@ -12472,6 +12512,11 @@
     ],
     "constraints": [
       {
+        "name": "User_email_key",
+        "type": "u",
+        "definition": "UNIQUE (email)"
+      },
+      {
         "name": "User_pkey",
         "type": "p",
         "definition": "PRIMARY KEY (id)"
@@ -13125,7 +13170,13 @@
         "collation_name": null
       }
     ],
-    "constraints": [],
+    "constraints": [
+      {
+        "name": "VerificationToken_identifier_token_key",
+        "type": "u",
+        "definition": "UNIQUE (identifier, token)"
+      }
+    ],
     "indexes": [
       {
         "name": "VerificationToken_identifier_token_key",
@@ -13446,11 +13497,11 @@
   },
   "_provenance": {
     "source_kind": "versioned_baseline_fixture",
-    "generated_at_utc": "2026-08-21T03:33:54.411Z",
+    "generated_at_utc": "2026-08-21T07:44:56.590Z",
     "source_fixture_commit_sha": "d190d11fffcc320797ae280c2096bab58db6a07b",
     "source_fixture_blob_sha1": "0ba8754c14ab6c4cd9c682d04941772d784a8876",
-    "baseline_migration_sha256": "31f4710a4547a98ff5d3bc4b4259115c498c00f3a7ff003394412d92716c2f48",
-    "generator_sha256": "9fa17248d108a786c42e9747b15caea0fbea36c1a948f0a394823dbc9c0a9093",
-    "catalog_sha256": "55dace13f1cbca3f7e1854df8c7fcb44df56e7ab5e60ce790da6991449f7a92c"
+    "baseline_migration_sha256": "c324b379884884f2e1750e701e9871a5579a4814d90bb3d562a5719a74e36bcb",
+    "generator_sha256": "7a04449d8800d10c4315fd61644775cc0763029710dd1b807577ee5f14e7d098",
+    "catalog_sha256": "9959107e589f22711ecdf804813391b54e3284cad51292b8d330084bae2fab2e"
   }
 }

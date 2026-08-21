@@ -228,3 +228,37 @@ jobs:
             echo "- Artifact SHA-256: ${{ steps.upload_path_b.outputs.artifact-digest }}"
             echo "- Inner bundle manifest: backups/path-b-upload-manifest.json"
           } >> "$GITHUB_STEP_SUMMARY"
+
+  baseline-validation-gate:
+    name: Baseline Validation Gate
+    needs:
+      - typecheck
+      - unit-tests
+      - build
+      - lint
+      - integration-tests
+      - path-b-migrate-resolve
+    if: ${{ always() }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Require every baseline validation job
+        env:
+          TYPECHECK_RESULT: ${{ needs.typecheck.result }}
+          TESTS_RESULT: ${{ needs.unit-tests.result }}
+          BUILD_RESULT: ${{ needs.build.result }}
+          LINT_RESULT: ${{ needs.lint.result }}
+          INTEGRATION_RESULT: ${{ needs.integration-tests.result }}
+          PATH_B_RESULT: ${{ needs.path-b-migrate-resolve.result }}
+        run: |
+          for result in \
+            "$TYPECHECK_RESULT" \
+            "$TESTS_RESULT" \
+            "$BUILD_RESULT" \
+            "$LINT_RESULT" \
+            "$INTEGRATION_RESULT" \
+            "$PATH_B_RESULT"; do
+            if [ "$result" != "success" ]; then
+              echo "A required baseline validation job finished with: $result" >&2
+              exit 1
+            fi
+          done

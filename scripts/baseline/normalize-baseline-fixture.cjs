@@ -20,6 +20,36 @@ const migrationPath = path.resolve(
   "prisma/migrations/20260101000000_baseline/migration.sql"
 );
 
+// Production was created with UNIQUE constraints for these keys. The legacy
+// fixture represented them only as unique indexes, so restore the pg_constraint
+// entries while retaining the automatically-backed indexes.
+const productionUniqueConstraints = Object.freeze({
+  Account: [
+    ["Account_provider_providerAccountId_key", "UNIQUE (provider, \"providerAccountId\")"],
+  ],
+  Attendance: [
+    [
+      "Attendance_userId_organizationId_date_key",
+      "UNIQUE (\"userId\", \"organizationId\", date)",
+    ],
+  ],
+  LegalPage: [["LegalPage_slug_key", "UNIQUE (slug)"]],
+  Organization: [["Organization_slug_key", "UNIQUE (slug)"]],
+  OrganizationMember: [
+    [
+      "OrganizationMember_organizationId_userId_key",
+      "UNIQUE (\"organizationId\", \"userId\")",
+    ],
+  ],
+  Role: [["Role_name_key", "UNIQUE (name)"]],
+  Subscription: [["Subscription_organizationId_key", "UNIQUE (\"organizationId\")"]],
+  SubscriptionPlan: [["SubscriptionPlan_name_key", "UNIQUE (name)"]],
+  User: [["User_email_key", "UNIQUE (email)"]],
+  VerificationToken: [
+    ["VerificationToken_identifier_token_key", "UNIQUE (identifier, token)"],
+  ],
+});
+
 function formattedType(column) {
   if (column.data_type === "text") return "text";
   if (column.data_type === "timestamp without time zone") {
@@ -62,6 +92,18 @@ for (const [table, entry] of Object.entries(catalog)) {
     collation_name: column.collation_name ?? null,
   }));
   if (!entry.columns.length) throw new Error(`Fixture table ${table} has no columns`);
+
+  for (const [name, definition] of productionUniqueConstraints[table] || []) {
+    const existing = entry.constraints.find((constraint) => constraint.name === name);
+    if (existing) {
+      if (existing.type !== "u" || existing.definition !== definition) {
+        throw new Error(`Fixture constraint ${table}.${name} conflicts with production`);
+      }
+      continue;
+    }
+    entry.constraints.push({ name, type: "u", definition });
+  }
+  entry.constraints.sort((left, right) => left.name.localeCompare(right.name));
 }
 
 const generatedAtUtc =
