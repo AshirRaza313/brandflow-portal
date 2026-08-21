@@ -199,6 +199,27 @@ function validateProvenance(label, catalog, errors) {
     if (provenance.transaction_mode !== "repeatable_read_read_only") {
       errors.push(`MALFORMED_PROVENANCE: ${label} transaction_mode is invalid`);
     }
+    const localCapture = ["localhost", "127.0.0.1", "::1"].includes(
+      provenance.source_host
+    );
+    if (localCapture) {
+      if (provenance.tls_mode !== "disabled_localhost") {
+        errors.push(`MALFORMED_PROVENANCE: ${label}.tls_mode must be disabled_localhost`);
+      }
+      if (provenance.tls_servername !== null || provenance.tls_ca_sha256 !== null) {
+        errors.push(`MALFORMED_PROVENANCE: ${label} localhost TLS evidence is invalid`);
+      }
+    } else {
+      if (provenance.tls_mode !== "verify-full") {
+        errors.push(`MALFORMED_PROVENANCE: ${label}.tls_mode must be verify-full`);
+      }
+      if (provenance.tls_servername !== provenance.source_host) {
+        errors.push(`MALFORMED_PROVENANCE: ${label}.tls_servername mismatch`);
+      }
+      if (!isHex(provenance.tls_ca_sha256, 64)) {
+        errors.push(`MALFORMED_PROVENANCE: ${label}.tls_ca_sha256 must be SHA-256`);
+      }
+    }
     if (!isIsoTimestamp(provenance.captured_at_utc)) {
       errors.push(`MALFORMED_PROVENANCE: ${label}.captured_at_utc must be an ISO timestamp`);
     }

@@ -10,6 +10,10 @@ const {
   structuralSha256,
 } = require("./catalog-contract.cjs");
 const { assertConnectedIdentity } = require("./safety-guard.cjs");
+const {
+  SUPABASE_ROOT_CA_SHA256,
+  strictSupabaseTls,
+} = require("./supabase-tls.cjs");
 
 function parseConnectionUrl(connectionString) {
   let parsed;
@@ -86,7 +90,7 @@ async function captureFullCatalog(options) {
   const target = parseConnectionUrl(connectionString);
   const pool = new Pool({
     connectionString,
-    ssl: target.isLocal ? undefined : { rejectUnauthorized: true },
+    ssl: strictSupabaseTls(connectionString, target.isLocal),
     connectionTimeoutMillis: 15_000,
   });
   const client = await pool.connect();
@@ -259,6 +263,9 @@ async function captureFullCatalog(options) {
       transaction_read_only: db.transaction_read_only,
       transaction_isolation: db.transaction_isolation,
       snapshot_id: db.snapshot_id,
+      tls_mode: target.isLocal ? "disabled_localhost" : "verify-full",
+      tls_servername: target.isLocal ? null : target.host,
+      tls_ca_sha256: target.isLocal ? null : SUPABASE_ROOT_CA_SHA256,
       connected_identity: connectedIdentity,
     };
 

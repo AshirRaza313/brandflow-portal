@@ -17,7 +17,8 @@ function parseConnectionUrl(value) {
     const dbname = decodeURIComponent(parsed.pathname.replace(/^\//, ""));
     const user = decodeURIComponent(parsed.username);
     if (!host || !Number.isInteger(port) || !dbname || !user) return null;
-    return { host, port, dbname, user };
+    const urlSearchParameters = [...new Set(parsed.searchParams.keys())].sort();
+    return { host, port, dbname, user, urlSearchParameters };
   } catch {
     return null;
   }
@@ -60,6 +61,9 @@ function requireExpectedIdentity(parsed, prefix) {
 function validateRehearsalUrl(envVar) {
   const parsed = parseConnectionUrl(process.env[envVar]);
   if (!parsed) fail(`${envVar}: invalid PostgreSQL connection string`);
+  if (parsed.urlSearchParameters.length > 0) {
+    fail(`${envVar}: URL query parameters are not allowed`);
+  }
   const isLocal = ["localhost", "127.0.0.1", "::1"].includes(parsed.host);
   const isGithubCi = process.env.CI === "true" && process.env.GITHUB_ACTIONS === "true";
 
@@ -95,6 +99,9 @@ function validateRehearsalUrl(envVar) {
 function validateProductionUrl(envVar) {
   const parsed = parseConnectionUrl(process.env[envVar]);
   if (!parsed) fail(`${envVar}: invalid PostgreSQL connection string`);
+  if (parsed.urlSearchParameters.length > 0) {
+    fail(`${envVar}: URL query parameters are not allowed`);
+  }
   if (parsed.port !== 5432) fail(`${envVar}: production evidence requires direct/session port 5432`);
 
   const projectRef = projectRefFor(parsed);

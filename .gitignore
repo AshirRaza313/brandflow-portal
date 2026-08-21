@@ -23,6 +23,7 @@ node_modules
 # misc
 .DS_Store
 *.pem
+!scripts/baseline/certs/supabase-root-2021-ca.pem
 
 # debug
 npm-debug.log*

@@ -13,6 +13,11 @@ const {
   repositoryFileSha256,
   sha256,
 } = require("./catalog-contract.cjs");
+const {
+  SUPABASE_ROOT_CA_PATH,
+  SUPABASE_ROOT_CA_SHA256,
+  strictSupabaseTls,
+} = require("./supabase-tls.cjs");
 
 const MARKETING_TABLES = [
   "Subscriber",
@@ -34,7 +39,7 @@ async function main() {
   const outputPath = process.env.MARKETING_EVIDENCE_OUTPUT || "backups/marketing-table-evidence.json";
   const pool = new Pool({
     connectionString: process.env.PRODUCTION_DATABASE_URL,
-    ssl: { rejectUnauthorized: true },
+    ssl: strictSupabaseTls(process.env.PRODUCTION_DATABASE_URL),
     connectionTimeoutMillis: 15_000,
   });
   const client = await pool.connect();
@@ -65,10 +70,17 @@ async function main() {
       evidence_head_sha: process.env.EVIDENCE_HEAD_SHA,
       connected_identity: connectedIdentity,
       transaction_mode: "repeatable_read_read_only",
+      tls_mode: "verify-full",
+      tls_servername: parsed.host,
+      tls_ca_sha256: SUPABASE_ROOT_CA_SHA256,
       capture_script_sha256: repositoryFileSha256(__filename),
       safety_guard_sha256: repositoryFileSha256(
         path.resolve(__dirname, "safety-guard.cjs")
       ),
+      tls_helper_sha256: repositoryFileSha256(
+        path.resolve(__dirname, "supabase-tls.cjs")
+      ),
+      supabase_root_ca_sha256: repositoryFileSha256(SUPABASE_ROOT_CA_PATH),
       tables: result.rows,
     };
     evidence.sha256 = sha256(canonicalJson(evidence));

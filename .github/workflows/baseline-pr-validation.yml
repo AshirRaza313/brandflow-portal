@@ -114,6 +114,8 @@ jobs:
         run: node tests/baseline/run-catalog-validation.cjs
       - name: Database target safety guard tests
         run: node tests/baseline/run-safety-guard-validation.cjs
+      - name: Supabase pinned TLS tests
+        run: node tests/baseline/run-supabase-tls-validation.cjs
       - name: Integration tests
         run: npx vitest run tests/integration --reporter=verbose
       - name: Verify live catalog exists before upload

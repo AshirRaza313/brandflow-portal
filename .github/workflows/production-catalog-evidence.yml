@@ -50,6 +50,9 @@ jobs:
           node --check scripts/baseline/capture-production-catalog.cjs
           node --check scripts/baseline/capture-marketing-table-evidence.cjs
           node --check scripts/baseline/safety-guard.cjs
+          node --check scripts/baseline/supabase-tls.cjs
+          node --check tests/baseline/run-supabase-tls-validation.cjs
+          node tests/baseline/run-supabase-tls-validation.cjs
           git diff --exit-code
       - name: Capture read-only production catalog
         env:

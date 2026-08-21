@@ -3,6 +3,7 @@
 const path = require("path");
 const { captureFullCatalog } = require("./capture-full-catalog.cjs");
 const { validateProductionUrl, PRODUCTION_REF } = require("./safety-guard.cjs");
+const { SUPABASE_ROOT_CA_PATH } = require("./supabase-tls.cjs");
 
 async function main() {
   if (!/^[0-9a-f]{40}$/.test(process.env.EVIDENCE_HEAD_SHA || "")) {
@@ -24,6 +25,8 @@ async function main() {
     extraScriptPaths: [
       __filename,
       path.resolve(__dirname, "safety-guard.cjs"),
+      path.resolve(__dirname, "supabase-tls.cjs"),
+      SUPABASE_ROOT_CA_PATH,
     ],
   });
 }

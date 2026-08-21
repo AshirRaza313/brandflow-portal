@@ -8,6 +8,7 @@ const {
   repositoryFileSha256,
   validateCatalog,
 } = require("./catalog-contract.cjs");
+const { SUPABASE_ROOT_CA_SHA256 } = require("./supabase-tls.cjs");
 
 const BASELINE_MIGRATION_PATH = path.resolve(
   "prisma/migrations/20260101000000_baseline/migration.sql"
@@ -16,6 +17,10 @@ const FIXTURE_GENERATOR_PATH = path.resolve("scripts/baseline/normalize-baseline
 const CAPTURE_ENGINE_PATH = path.resolve("scripts/baseline/capture-full-catalog.cjs");
 const PRODUCTION_CAPTURE_PATH = path.resolve("scripts/baseline/capture-production-catalog.cjs");
 const SAFETY_GUARD_PATH = path.resolve("scripts/baseline/safety-guard.cjs");
+const SUPABASE_TLS_PATH = path.resolve("scripts/baseline/supabase-tls.cjs");
+const SUPABASE_ROOT_CA_PATH = path.resolve(
+  "scripts/baseline/certs/supabase-root-2021-ca.pem"
+);
 
 function sameValue(left, right) {
   return JSON.stringify(left) === JSON.stringify(right);
@@ -88,6 +93,16 @@ function validateRepositoryHashes(label, catalog, expectation = {}) {
         PRODUCTION_CAPTURE_PATH
       );
       expectedScripts["safety-guard.cjs"] = repositoryFileSha256(SAFETY_GUARD_PATH);
+      expectedScripts["supabase-tls.cjs"] = repositoryFileSha256(SUPABASE_TLS_PATH);
+      expectedScripts["supabase-root-2021-ca.pem"] = repositoryFileSha256(
+        SUPABASE_ROOT_CA_PATH
+      );
+      if (provenance.tls_mode !== "verify-full") {
+        errors.push(`PROVENANCE_TLS_MODE_MISMATCH: ${label}`);
+      }
+      if (provenance.tls_ca_sha256 !== SUPABASE_ROOT_CA_SHA256) {
+        errors.push(`PROVENANCE_TLS_CA_MISMATCH: ${label}`);
+      }
     } else if (expectation.captureProfile !== "generic") {
       errors.push(`PROVENANCE_CAPTURE_PROFILE_MISSING: ${label}`);
     }
