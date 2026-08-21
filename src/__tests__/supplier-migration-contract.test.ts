@@ -43,6 +43,10 @@ const guardedSupplierRecovery = readFileSync(
   ),
   "utf8",
 );
+const captureFullCatalog = readFileSync(
+  resolve(process.cwd(), "scripts/baseline/capture-full-catalog.cjs"),
+  "utf8",
+);
 const supplierRecoveryClassifier = readFileSync(
   resolve(
     process.cwd(),
@@ -63,11 +67,15 @@ const gitAttributes = readFileSync(
 );
 
 describe("Supplier forward migration contract", () => {
-  it("is a single explicit forward-only transaction with bounded locks", () => {
-    expect(migration.match(/^BEGIN;$/gm)).toHaveLength(1);
-    expect(migration.match(/^COMMIT;$/gm)).toHaveLength(1);
-    expect(migration).toContain("SET LOCAL lock_timeout = '10s'");
-    expect(migration).toContain("SET LOCAL statement_timeout = '5min'");
+  it("is one atomic forward-only statement with fail-closed limits", () => {
+    expect(migration.match(/^DO \$supplier_migration\$$/gm)).toHaveLength(1);
+    expect(migration.match(/^DO \$[a-z_]+\$$/gm)).toHaveLength(1);
+    expect(migration).not.toMatch(/^BEGIN;$/gm);
+    expect(migration).not.toMatch(/^COMMIT;$/gm);
+    expect(migration).toContain("SET lock_timeout = '10s'");
+    expect(migration).toContain("SET statement_timeout = '5min'");
+    expect(migration).toContain("RESET lock_timeout;");
+    expect(migration).toContain("RESET statement_timeout;");
     expect(migration).not.toMatch(/\bCREATE\s+TABLE\s+[^;]*suppliers/i);
   });
 
@@ -82,7 +90,7 @@ describe("Supplier forward migration contract", () => {
     expect(migration).toContain("a target constraint name already exists");
   });
 
-  it("adds both checks as NOT VALID and validates them before commit", () => {
+  it("adds both checks as NOT VALID and validates them atomically", () => {
     for (const name of [
       "suppliers_rating_check",
       "suppliers_status_check",
@@ -167,6 +175,15 @@ describe("Supplier forward migration contract", () => {
     expect(supplierRecoveryIntegration).toContain(
       'recover(scenario, "resolve-applied", "--applied", prestate)',
     );
+    expect(supplierRecoveryIntegration).toContain(
+      "proveExactMigrationFailure(pool, scenario, attempt)",
+    );
+    expect(supplierRecoveryIntegration).toContain(
+      'failureMode: "prisma_p3018_with_history_log"',
+    );
+    expect(baselineWorkflow).toContain(
+      "failed-deploy-$attempt-proof.json",
+    );
     expect(gitAttributes).toContain(
       "prisma/migrations/**/migration.sql text eol=lf",
     );
@@ -174,6 +191,25 @@ describe("Supplier forward migration contract", () => {
       "Migration SQL must be checked out with LF line endings",
     );
     expect(guardedSupplierRecovery).toContain("repositoryFileSha256(WRAPPER_PATH)");
+    expect(guardedSupplierRecovery).toContain(
+      "SET LOCAL idle_in_transaction_session_timeout = '10min'",
+    );
+    expect(guardedSupplierRecovery).toContain(
+      'require.resolve("prisma/build/index.js")',
+    );
+    expect(guardedSupplierRecovery).toContain("resolve-command-result.json");
+    expect(guardedSupplierRecovery).toContain(
+      "recovery-failure-after-resolve.json",
+    );
+    expect(guardedSupplierRecovery).toContain("requires_fresh_reclassification");
+    expect(guardedSupplierRecovery).toContain("files_sha256");
+    expect(captureFullCatalog).toContain("statementTimeoutMs");
+    expect(captureFullCatalog).toContain("query_timeout: queryTimeoutMs");
+    expect(baselineWorkflow).toContain("timeout-minutes: 20");
+    expect(baselineWorkflow).toContain(
+      "Upload clearly labeled Supplier recovery failure diagnostics",
+    );
+    expect(runbook).toContain("perform a fresh classification");
   });
 
   it("separates baseline catalog proof, then runs the populated forward train", () => {

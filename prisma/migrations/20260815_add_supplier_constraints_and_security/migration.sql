@@ -16,14 +16,18 @@
 --   * RLS remains a separate, fail-closed migration after the exact Prisma
 --     runtime role has been proved in staging.
 
-BEGIN;
-
-SET LOCAL lock_timeout = '10s';
-SET LOCAL statement_timeout = '5min';
-
 -- Fail before taking a table lock if the baseline shape or current security
 -- posture is not the one reviewed for this migration.
-DO $supplier_preflight$
+--
+-- Keep every schema and ACL mutation in one PostgreSQL DO statement. A failed
+-- preflight, DDL operation, privilege change, or postflight check therefore
+-- rolls back the statement atomically while leaving Prisma able to record the
+-- original error. Timeout settings are temporary session guards for that DO
+-- and are reset after a successful statement.
+SET lock_timeout = '10s';
+SET statement_timeout = '5min';
+
+DO $supplier_migration$
 DECLARE
   supplier_oid oid := to_regclass('public.suppliers');
   supplier_kind "char";
@@ -32,6 +36,9 @@ DECLARE
   invalid_rating_count bigint;
   invalid_status_count bigint;
   column_problem_count integer;
+  target_role text;
+  target_privilege text;
+  target_column text;
 BEGIN
   IF supplier_oid IS NULL THEN
     RAISE EXCEPTION USING
@@ -141,40 +148,41 @@ BEGIN
       DETAIL = format('%s supplier row(s) have an unsupported status', invalid_status_count),
       HINT = 'Correct and review the invalid rows before retrying prisma migrate deploy.';
   END IF;
-END
-$supplier_preflight$;
 
 -- NOT VALID separates constraint creation from validation, but this migration
--- deliberately keeps one explicit transaction for atomicity. PostgreSQL holds
--- the ADD CONSTRAINT ACCESS EXCLUSIVE lock until COMMIT, so production deploy
+-- deliberately keeps one atomic statement. PostgreSQL holds the ADD CONSTRAINT
+-- ACCESS EXCLUSIVE lock until the statement completes, so production deploy
 -- requires reviewed table-size, lock-wait, and maintenance-window evidence.
-ALTER TABLE public.suppliers
-  ADD CONSTRAINT suppliers_rating_check
-  CHECK (rating IS NULL OR (rating >= 1 AND rating <= 5))
-  NOT VALID;
+  EXECUTE '
+    ALTER TABLE public.suppliers
+      ADD CONSTRAINT suppliers_rating_check
+      CHECK (rating IS NULL OR (rating >= 1 AND rating <= 5))
+      NOT VALID;
+  ';
 
-ALTER TABLE public.suppliers
-  ADD CONSTRAINT suppliers_status_check
-  CHECK (status IN ('active', 'inactive', 'blacklisted'))
-  NOT VALID;
+  EXECUTE '
+    ALTER TABLE public.suppliers
+      ADD CONSTRAINT suppliers_status_check
+      CHECK (status IN (''active'', ''inactive'', ''blacklisted''))
+      NOT VALID;
+  ';
 
-ALTER TABLE public.suppliers
-  VALIDATE CONSTRAINT suppliers_rating_check;
+  EXECUTE '
+    ALTER TABLE public.suppliers
+      VALIDATE CONSTRAINT suppliers_rating_check;
+  ';
 
-ALTER TABLE public.suppliers
-  VALIDATE CONSTRAINT suppliers_status_check;
+  EXECUTE '
+    ALTER TABLE public.suppliers
+      VALIDATE CONSTRAINT suppliers_status_check;
+  ';
 
 -- Deny browser/Data API roles. Supplier access is Prisma-only; the Supabase
 -- service-role client is used for Storage, not Supplier SQL. PUBLIC is always
 -- present. Supabase roles are conditional so the migration also replays on
 -- disposable PostgreSQL.
-REVOKE ALL PRIVILEGES ON TABLE public.suppliers FROM PUBLIC;
+  EXECUTE 'REVOKE ALL PRIVILEGES ON TABLE public.suppliers FROM PUBLIC';
 
-DO $supplier_role_revoke$
-DECLARE
-  target_role text;
-  target_column text;
-BEGIN
   FOR target_column IN
     SELECT attribute.attname
     FROM pg_catalog.pg_attribute AS attribute
@@ -215,18 +223,9 @@ BEGIN
       END LOOP;
     END IF;
   END LOOP;
-END
-$supplier_role_revoke$;
 
--- Postconditions are part of the transaction: any incomplete constraint or
--- effective Data API privilege rolls the entire migration back.
-DO $supplier_postflight$
-DECLARE
-  supplier_oid oid := 'public.suppliers'::regclass;
-  target_role text;
-  target_privilege text;
-  target_column text;
-BEGIN
+-- Postconditions are part of the atomic statement: any incomplete constraint
+-- or effective Data API privilege rolls the entire migration back.
   IF EXISTS (
     SELECT 1
     FROM pg_catalog.pg_constraint
@@ -364,6 +363,7 @@ BEGIN
       MESSAGE = 'Supplier hardening postflight failed: this migration must not silently enable RLS';
   END IF;
 END
-$supplier_postflight$;
+$supplier_migration$;
 
-COMMIT;
+RESET lock_timeout;
+RESET statement_timeout;

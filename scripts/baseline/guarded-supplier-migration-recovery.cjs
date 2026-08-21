@@ -83,9 +83,9 @@ process.env.DATABASE_URL = prismaConnectionString;
 process.env.DIRECT_DATABASE_URL = prismaConnectionString;
 
 const prismaSchema = path.resolve("prisma/schema.prisma");
+const prismaCli = require.resolve("prisma/build/index.js");
 const migrationRoot = path.resolve("prisma/migrations");
 const fixturePath = path.resolve("tests/fixtures/expected-baseline-catalog.json");
-const npx = process.platform === "win32" ? "npx.cmd" : "npx";
 
 function assertRepositoryTrain() {
   if (!fs.existsSync(prismaSchema) || !fs.existsSync(fixturePath)) {
@@ -197,6 +197,9 @@ function writeEvidenceManifest(gitIdentity, phase) {
     production_recovery_proof: false,
     phase,
     migration_name: TARGET_MIGRATION,
+    migration_checksum: migrationChecksum(TARGET_MIGRATION),
+    recovery_wrapper_sha256: repositoryFileSha256(WRAPPER_PATH),
+    recovery_classifier_sha256: repositoryFileSha256(CLASSIFIER_PATH),
     source_head_sha: gitIdentity.sourceHeadSha,
     checkout_sha: gitIdentity.checkoutSha,
     tested_merge_sha: gitIdentity.mergeSha,
@@ -204,6 +207,7 @@ function writeEvidenceManifest(gitIdentity, phase) {
     run_attempt: process.env.GITHUB_RUN_ATTEMPT || "local",
     created_at_utc: new Date().toISOString(),
     files,
+    files_sha256: sha256(canonicalJson(files)),
   });
 }
 
@@ -224,6 +228,7 @@ async function beginMaintenanceSnapshot(pool) {
     await client.query("BEGIN");
     await client.query("SET LOCAL lock_timeout = '15s'");
     await client.query("SET LOCAL statement_timeout = '120s'");
+    await client.query("SET LOCAL idle_in_transaction_session_timeout = '10min'");
     await client.query(
       "SELECT pg_catalog.pg_advisory_xact_lock(pg_catalog.hashtext('valtriox_supplier_migration_recovery'))",
     );
@@ -474,6 +479,8 @@ async function captureCatalogComparison(poolLabel, gitIdentity) {
     runId: process.env.GITHUB_RUN_ID || "recovery",
     runAttempt: process.env.GITHUB_RUN_ATTEMPT || "local",
     expectedConnectedRole: parsed.expectedConnectedRole,
+    statementTimeoutMs: 60_000,
+    queryTimeoutMs: 75_000,
   });
   const fixture = JSON.parse(fs.readFileSync(fixturePath, "utf8"));
   const diffs = compareCatalogs(fixture, catalog, {
@@ -658,9 +665,9 @@ function loadAndVerifyPrestate(identity, gitIdentity) {
 
 function runResolve(flag) {
   const result = spawnSync(
-    npx,
+    process.execPath,
     [
-      "prisma",
+      prismaCli,
       "migrate",
       "resolve",
       "--schema",
@@ -682,15 +689,20 @@ function runResolve(flag) {
   if (result.error) {
     throw new Error(`Prisma migrate resolve could not complete: ${result.error.message}`);
   }
-  if (result.status !== 0) {
+  if (result.signal !== null || result.status !== 0) {
     throw new Error(`Prisma migrate resolve failed with exit code ${String(result.status)}`);
   }
+  return {
+    exit_code: result.status,
+    signal: result.signal,
+    output_sha256: sha256(output),
+  };
 }
 
 function runStatus(label) {
   const result = spawnSync(
-    npx,
-    ["prisma", "migrate", "status", "--schema", prismaSchema],
+    process.execPath,
+    [prismaCli, "migrate", "status", "--schema", prismaSchema],
     {
       encoding: "utf8",
       env: process.env,
@@ -703,12 +715,13 @@ function runStatus(label) {
   if (result.error) {
     throw new Error(`Prisma migrate status could not complete: ${result.error.message}`);
   }
-  return { status: result.status, output };
+  return { status: result.status, signal: result.signal, output };
 }
 
 function assertExpectedPendingStatus(status) {
   if (
     status.status !== 1 ||
+    status.signal !== null ||
     !status.output.includes(TARGET_MIGRATION) ||
     !/(not yet been applied|not in sync)/i.test(status.output) ||
     /(?:\bP\d{4}\b|\berror:|authentication failed|can't reach database|schema engine)/i.test(
@@ -790,6 +803,61 @@ function assertPostResolveHistory(rows, flag, beforeRows, currentAttempt, priorR
   ) {
     throw new Error("--rolled-back did not mark the exact forward attempt rolled back");
   }
+}
+
+async function recordRecoveryFailure({
+  pool,
+  gitIdentity,
+  requestedFlag,
+  stage,
+  error,
+  resolveAttempt,
+  historyBefore,
+  maintenanceRollbackError,
+}) {
+  let observedHistory = null;
+  let historyObservationError = null;
+  if (resolveAttempt.invoked) {
+    try {
+      observedHistory = await readHistory(pool);
+    } catch (historyError) {
+      historyObservationError = historyError.message;
+    }
+  }
+  const filename = resolveAttempt.invoked
+    ? "recovery-failure-after-resolve.json"
+    : "recovery-failure-before-resolve.json";
+  writeJson(filename, {
+    evidence_kind: "guarded_supplier_recovery_failure",
+    production_recovery_proof: false,
+    success: false,
+    stage,
+    resolve_flag: requestedFlag,
+    resolve_invoked: resolveAttempt.invoked,
+    resolve_exit_zero_observed: resolveAttempt.completed,
+    resolve_command_result: resolveAttempt.result,
+    migration_name: TARGET_MIGRATION,
+    migration_checksum: migrationChecksum(TARGET_MIGRATION),
+    git_identity: gitIdentity,
+    failed_at_utc: new Date().toISOString(),
+    error: {
+      name: error.name || "Error",
+      message: error.message,
+      code: error.code || null,
+    },
+    maintenance_transaction_rollback_error: maintenanceRollbackError,
+    history_before_sha256: historyBefore
+      ? sha256(canonicalJson(historyBefore))
+      : null,
+    history_observed_after_failure: observedHistory,
+    history_observation_error: historyObservationError,
+    history_observation_may_be_transitional: resolveAttempt.invoked,
+    requires_fresh_reclassification: resolveAttempt.invoked,
+  });
+  writeEvidenceManifest(
+    gitIdentity,
+    resolveAttempt.invoked ? "resolve-postcheck-failed" : "pre-resolve-rejected",
+  );
 }
 
 async function capturePrestate(pool, identity, gitIdentity) {
@@ -882,8 +950,12 @@ async function recover(pool, identity, gitIdentity, requestedFlag) {
   createImmutableEvidenceDirectory();
   const { prestate, expectedHash, resolved } = loadAndVerifyPrestate(identity, gitIdentity);
   let client = await beginMaintenanceSnapshot(pool);
+  let stage = "pre-resolve-validation";
+  let historyBeforeForReceipt = null;
+  const resolveAttempt = { invoked: false, completed: false, result: null };
   try {
     const beforeHistory = await readHistory(client);
+    historyBeforeForReceipt = beforeHistory;
     assertCleanBaselineHistory(beforeHistory);
     if (beforeHistory.length !== prestate.history_prefix.length + 1) {
       throw new Error("Recovery history must equal the captured prefix plus one unresolved attempt");
@@ -945,8 +1017,21 @@ async function recover(pool, identity, gitIdentity, requestedFlag) {
     if (canonicalJson(beforeHistory) !== canonicalJson(immediatelyBeforeResolve)) {
       throw new Error("Migration history changed after classification and before resolve");
     }
-    runResolve(requestedFlag);
+    stage = "prisma-resolve";
+    resolveAttempt.invoked = true;
+    resolveAttempt.result = runResolve(requestedFlag);
+    resolveAttempt.completed = true;
+    writeJson("resolve-command-result.json", {
+      evidence_kind: "supplier_migration_resolve_command_result",
+      resolve_flag: requestedFlag,
+      migration_name: TARGET_MIGRATION,
+      migration_checksum: migrationChecksum(TARGET_MIGRATION),
+      history_before_sha256: sha256(canonicalJson(beforeHistory)),
+      completed_at_utc: new Date().toISOString(),
+      ...resolveAttempt.result,
+    });
 
+    stage = "post-resolve-verification";
     const afterHistory = await readHistory(client);
     assertPostResolveHistory(
       afterHistory,
@@ -968,7 +1053,10 @@ async function recover(pool, identity, gitIdentity, requestedFlag) {
       throw new Error("Application data fingerprints changed during migrate resolve");
     }
     const status = runStatus("after-recovery");
-    if (requestedFlag === "--applied" && status.status !== 0) {
+    if (
+      requestedFlag === "--applied" &&
+      (status.status !== 0 || status.signal !== null)
+    ) {
       throw new Error("Migration status is not clean after committed-SQL --applied recovery");
     }
     if (requestedFlag === "--rolled-back") assertExpectedPendingStatus(status);
@@ -992,8 +1080,34 @@ async function recover(pool, identity, gitIdentity, requestedFlag) {
     });
     await closeMaintenanceSnapshot(client, true);
     client = null;
+    stage = "success-evidence-manifest";
     writeEvidenceManifest(gitIdentity, "resolve");
     console.log(`Guarded Supplier recovery completed with ${requestedFlag}`);
+  } catch (error) {
+    let maintenanceRollbackError = null;
+    if (client) {
+      try {
+        await closeMaintenanceSnapshot(client, false);
+      } catch (rollbackError) {
+        maintenanceRollbackError = rollbackError.message;
+      }
+      client = null;
+    }
+    try {
+      await recordRecoveryFailure({
+        pool,
+        gitIdentity,
+        requestedFlag,
+        stage,
+        error,
+        resolveAttempt,
+        historyBefore: historyBeforeForReceipt,
+        maintenanceRollbackError,
+      });
+    } catch (receiptError) {
+      console.error(`Could not write recovery failure receipt: ${receiptError.message}`);
+    }
+    throw error;
   } finally {
     if (client) await closeMaintenanceSnapshot(client, false);
   }
@@ -1007,6 +1121,7 @@ async function main() {
     connectionString,
     ssl: strictSupabaseTls(connectionString, parsed.isLocal),
     connectionTimeoutMillis: 15_000,
+    query_timeout: 75_000,
   });
   try {
     const identity = await assertConnectedIdentity(pool, parsed);

@@ -10,6 +10,7 @@ const { Pool } = require("pg");
 const {
   APPROVED_TABLES,
   canonicalJson,
+  repositoryFileSha256,
   sha256,
 } = require("../../scripts/baseline/catalog-contract.cjs");
 const {
@@ -46,6 +47,12 @@ const migrationSql = fs.readFileSync(
   "utf8",
 );
 const migrationChecksum = sha256(Buffer.from(migrationSql));
+const recoveryWrapperPath = path.resolve(
+  "scripts/baseline/guarded-supplier-migration-recovery.cjs",
+);
+const recoveryClassifierPath = path.resolve(
+  "scripts/baseline/classify-supplier-migration-recovery.cjs",
+);
 const checkoutSha = execFileSync("git", ["rev-parse", "HEAD"], {
   encoding: "utf8",
 }).trim();
@@ -97,27 +104,39 @@ function runCaptured(command, args, outputPath, extraEnv = {}) {
     timeout: COMMAND_TIMEOUT_MS,
     killSignal: "SIGTERM",
   });
-  if (result.error) throw result.error;
   const stdout = result.stdout || "";
   const stderr = result.stderr || "";
+  const status = Number.isInteger(result.status) ? result.status : null;
+  const signal = result.signal || null;
+  const spawnError = result.error ? String(result.error.message || result.error) : null;
   writeImmutable(
     outputPath,
-    `exit_code=${result.status}\n[stdout]\n${stdout}\n[stderr]\n${stderr}\n`,
+    `exit_code=${status}\nsignal=${signal || "none"}\nspawn_error=${spawnError || "none"}\n` +
+      `[stdout]\n${stdout}\n[stderr]\n${stderr}\n`,
   );
   if (stdout) process.stdout.write(stdout);
   if (stderr) process.stderr.write(stderr);
-  return { status: result.status, combined: `${stdout}\n${stderr}` };
+  if (result.error) throw result.error;
+  return { status, signal, spawnError, combined: `${stdout}\n${stderr}` };
 }
 
 function runSuccess(command, args, outputPath, extraEnv = {}) {
   const result = runCaptured(command, args, outputPath, extraEnv);
-  if (result.status !== 0) fail(`Command failed: ${command} ${args.join(" ")}`);
+  if (result.status !== 0 || result.signal !== null) {
+    fail(`Command failed: ${command} ${args.join(" ")}`);
+  }
   return result;
 }
 
 function runFailure(command, args, outputPath, extraEnv = {}) {
   const result = runCaptured(command, args, outputPath, extraEnv);
-  if (result.status === 0) fail(`Expected command to fail: ${command} ${args.join(" ")}`);
+  if (
+    !Number.isInteger(result.status) ||
+    result.status <= 0 ||
+    result.signal !== null
+  ) {
+    fail(`Expected a normal nonzero exit: ${command} ${args.join(" ")}`);
+  }
   return result;
 }
 
@@ -126,10 +145,43 @@ function newWrapperDir(label) {
   return path.join(wrapperRoot, `${safe}-${runId}-${runAttempt}-${crypto.randomUUID()}`);
 }
 
+function verifyWrapperManifest(directory) {
+  const manifestPath = path.join(directory, "manifest.json");
+  if (!fs.existsSync(manifestPath)) fail(`Wrapper manifest missing: ${directory}`);
+  const manifest = JSON.parse(fs.readFileSync(manifestPath, "utf8"));
+  const files = fs
+    .readdirSync(directory, { withFileTypes: true })
+    .filter((entry) => entry.isFile() && entry.name !== "manifest.json")
+    .map((entry) => ({
+      path: entry.name,
+      size: fs.statSync(path.join(directory, entry.name)).size,
+      sha256: sha256(fs.readFileSync(path.join(directory, entry.name))),
+    }))
+    .sort((left, right) => left.path.localeCompare(right.path));
+  if (
+    manifest.evidence_kind !== "supplier_migration_recovery_manifest" ||
+    manifest.production_recovery_proof !== false ||
+    manifest.migration_name !== FORWARD_MIGRATION ||
+    manifest.migration_checksum !== migrationChecksum ||
+    manifest.source_head_sha !== headSha ||
+    manifest.checkout_sha !== mergeSha ||
+    manifest.tested_merge_sha !== mergeSha ||
+    manifest.run_id !== runId ||
+    manifest.run_attempt !== runAttempt ||
+    manifest.recovery_wrapper_sha256 !== repositoryFileSha256(recoveryWrapperPath) ||
+    manifest.recovery_classifier_sha256 !== repositoryFileSha256(recoveryClassifierPath) ||
+    canonicalJson(manifest.files) !== canonicalJson(files) ||
+    manifest.files_sha256 !== sha256(canonicalJson(files))
+  ) {
+    fail(`Wrapper manifest metadata or file hashes are invalid: ${directory}`);
+  }
+}
+
 function preserveWrapper(source, destination) {
   if (!fs.existsSync(source) || fs.readdirSync(source).length === 0) {
     fail(`Wrapper evidence missing or empty: ${source}`);
   }
+  verifyWrapperManifest(source);
   if (fs.existsSync(destination)) fail(`Preserved evidence already exists: ${destination}`);
   fs.mkdirSync(path.dirname(destination), { recursive: true });
   fs.cpSync(source, destination, { recursive: true, errorOnExist: true });
@@ -392,6 +444,77 @@ async function captureSecurity(pool) {
   };
 }
 
+async function captureInvalidSupplierCounts(pool) {
+  const result = await pool.query(`
+    SELECT
+      count(*) FILTER (
+        WHERE rating IS NOT NULL AND (rating < 1 OR rating > 5)
+      )::int AS invalid_rating_count,
+      count(*) FILTER (
+        WHERE status NOT IN ('active', 'inactive', 'blacklisted')
+      )::int AS invalid_status_count
+    FROM public.suppliers
+  `);
+  return result.rows[0];
+}
+
+async function proveExactMigrationFailure(pool, scenario, attempt) {
+  const invalidCounts = await captureInvalidSupplierCounts(pool);
+  if (
+    invalidCounts.invalid_rating_count !== 1 ||
+    invalidCounts.invalid_status_count !== 0
+  ) {
+    fail(`Failure ${attempt} does not have the exact invalid-rating precondition`);
+  }
+
+  const securityBefore = await captureSecurity(pool);
+  const dataBefore = await captureData(pool);
+  const client = await pool.connect();
+  let migrationError = null;
+  try {
+    await client.query(migrationSql);
+  } catch (error) {
+    migrationError = error;
+  } finally {
+    await client.query("ROLLBACK").catch(() => {});
+    client.release();
+  }
+  if (
+    !migrationError ||
+    migrationError.code !== "23514" ||
+    !/invalid rating data exists/i.test(migrationError.message || "")
+  ) {
+    fail(`Failure ${attempt} did not reproduce the exact SQLSTATE 23514 preflight`);
+  }
+
+  const securityAfter = await captureSecurity(pool);
+  const dataAfter = await captureData(pool);
+  if (canonicalJson(securityBefore) !== canonicalJson(securityAfter)) {
+    fail(`Failure ${attempt} exact SQL probe changed Supplier schema/security`);
+  }
+  if (canonicalJson(dataBefore) !== canonicalJson(dataAfter)) {
+    fail(`Failure ${attempt} exact SQL probe changed application data`);
+  }
+
+  const proof = {
+    evidence_kind: "exact_forward_migration_failure_probe",
+    migration_name: FORWARD_MIGRATION,
+    migration_checksum: migrationChecksum,
+    sqlstate: migrationError.code,
+    message: migrationError.message,
+    detail: migrationError.detail || null,
+    hint: migrationError.hint || null,
+    invalid_supplier_counts: invalidCounts,
+    transaction_rolled_back: true,
+    supplier_state_sha256_before: sha256(canonicalJson(securityBefore)),
+    supplier_state_sha256_after: sha256(canonicalJson(securityAfter)),
+    application_data_sha256_before: dataBefore.aggregate_sha256,
+    application_data_sha256_after: dataAfter.aggregate_sha256,
+  };
+  writeJson(scenarioPath(scenario, `exact-sql-failure-${attempt}.json`), proof);
+  return proof;
+}
+
 function assertPostconditions(security, label) {
   if (
     !hasExactCommittedConstraints(security.constraints) ||
@@ -413,7 +536,7 @@ async function assertData(pool, expected, label) {
   return actual;
 }
 
-function assertFailedDeploy(result, history, label) {
+function assertFailedDeploy(result, history, exactSqlProof, label) {
   for (const token of ["P3018", FORWARD_MIGRATION, "23514"]) {
     if (!result.combined.includes(token)) fail(`${label} output is missing ${token}`);
   }
@@ -421,26 +544,54 @@ function assertFailedDeploy(result, history, label) {
   if (unresolved.length !== 1) fail(`${label} did not create one unresolved row`);
   const row = unresolved[0];
   const logs = String(row.logs || "");
+  if (!row.id || row.checksum !== migrationChecksum || !row.started_at ||
+      row.applied_steps_count !== 0) {
+    fail(`${label} history row is not an exact unresolved migration attempt`);
+  }
+
   if (
-    !row.id || row.checksum !== migrationChecksum || !row.started_at ||
-    row.applied_steps_count !== 0 || !logs.includes("23514") ||
-    !/invalid rating/i.test(logs)
-  ) fail(`${label} history does not prove SQLSTATE 23514 invalid-rating failure`);
-  return row;
+    !logs.includes("23514") ||
+    !/invalid rating/i.test(logs) ||
+    exactSqlProof.sqlstate !== "23514" ||
+    !/invalid rating data exists/i.test(exactSqlProof.message)
+  ) {
+    fail(`${label} does not prove the exact SQLSTATE 23514 invalid-rating failure`);
+  }
+  return {
+    row,
+    failureMode: "prisma_p3018_with_history_log",
+  };
 }
 
 async function createFailure(pool, scenario, attempt) {
   await pool.query("UPDATE public.suppliers SET rating=0 WHERE id='supplier-pathb'");
+  const exactSqlProof = await proveExactMigrationFailure(pool, scenario, attempt);
   const result = runFailure(
     npx,
     ["prisma", "migrate", "deploy", "--schema", "prisma/schema.prisma"],
     scenarioPath(scenario, `failed-deploy-${attempt}-output.txt`),
   );
   const history = await readHistory(pool);
-  const row = assertFailedDeploy(result, history, `Failed deploy ${attempt}`);
+  const { row, failureMode } = assertFailedDeploy(
+    result,
+    history,
+    exactSqlProof,
+    `Failed deploy ${attempt}`,
+  );
   writeJson(scenarioPath(scenario, `failed-deploy-${attempt}-history.json`), history);
+  writeJson(scenarioPath(scenario, `failed-deploy-${attempt}-proof.json`), {
+    evidence_kind: "prisma_failed_forward_migration_attempt",
+    migration_name: FORWARD_MIGRATION,
+    migration_checksum: migrationChecksum,
+    prisma_exit_code: result.status,
+    prisma_signal: result.signal,
+    prisma_spawn_error: result.spawnError,
+    failure_mode: failureMode,
+    exact_sql_failure_probe: exactSqlProof,
+    unresolved_history_row: row,
+  });
   await pool.query("UPDATE public.suppliers SET rating=4 WHERE id='supplier-pathb'");
-  return { row, history };
+  return { row, history, failureMode };
 }
 
 async function verifyFinal(pool, scenario, expectedData, history, details) {
@@ -540,6 +691,7 @@ async function exerciseRolledBack(pool) {
   assertUnchanged(afterRetry, afterNoOp, "Rolled-back no-op deploy");
   await verifyFinal(pool, scenario, expectedData, afterNoOp, {
     retained_failed_row_ids: [failed1.row.id, failed2.row.id],
+    failure_modes: [failed1.failureMode, failed2.failureMode],
     applied_row_id: applied[0].id,
   });
 }
@@ -707,7 +859,7 @@ async function main() {
     await exerciseApplied(pool);
     writeManifest();
     console.log(
-      "Supplier recovery integration passed: P3018/23514, two-attempt rollback/retry, wrong/partial rejection, applied recovery, status/no-op, security, data, and manifest proofs",
+      "Supplier recovery integration passed: exact 23514/Prisma transaction-failure proof, two-attempt rollback/retry, wrong/partial rejection, applied recovery, status/no-op, security, data, and manifest proofs",
     );
   } finally {
     await pool.end();

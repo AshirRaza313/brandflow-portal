@@ -29,20 +29,23 @@ reviewed role/policy design.
 The GitHub `Supplier Migration Synthetic SQL/ACL Contract` matrix executes this
 SQL directly against isolated PostgreSQL 16 and 17 services. PostgreSQL 17
 also exercises the version-gated `MAINTAIN` privilege check. It proves the SQL,
-constraints, ACL denials, owner CRUD, and transactional failure behavior. It
+constraints, ACL denials, owner CRUD, and atomic-statement failure behavior. It
 is not a `prisma migrate deploy` rehearsal, not a restored-clone proof, and not
 production recovery evidence. The required `Build` check fails closed unless
 both matrix entries pass.
 
 ## Locking and maintenance window
 
-`ADD CONSTRAINT ... NOT VALID` separates creation from validation, but the
-explicit transaction is intentionally atomic and PostgreSQL retains its
-`ACCESS EXCLUSIVE` lock until `COMMIT`. Before staging or production, capture
-the Supplier table size/row count, observe lock wait and execution duration on
-the restored clone, check for long-running transactions, and approve a bounded
-maintenance window. Do not describe this migration as a low-lock or online
-deploy.
+`ADD CONSTRAINT ... NOT VALID` separates creation from validation, but every
+schema and ACL mutation is intentionally contained in one atomic PostgreSQL
+`DO` statement. PostgreSQL retains its `ACCESS EXCLUSIVE` lock until that
+statement completes. The migration sets a 10-second lock timeout and a
+5-minute statement timeout before the `DO`, then resets both session settings
+after a successful statement. Before staging or production,
+capture the Supplier table size/row count, observe lock wait and execution
+duration on the restored clone, check for long-running transactions, and
+approve a bounded maintenance window. Do not describe this migration as a
+low-lock or online deploy.
 
 ## Required evidence before production
 
@@ -119,8 +122,8 @@ deploy.
 
 ## Failure behavior
 
-The migration is one explicit transaction. It fails and rolls everything back
-when:
+The migration has one atomic schema/ACL mutation statement. It fails and rolls
+every mutation back when:
 
 - the table or required baseline columns differ;
 - either target constraint name already exists;
@@ -132,7 +135,11 @@ when:
 
 Do not choose either `prisma migrate resolve` mode until the database state is
 classified. Prisma can retain a failed migration-history row even though
-PostgreSQL rolled the SQL transaction back. Raw `prisma migrate resolve` is forbidden.
+PostgreSQL rolled the atomic statement back.
+Raw `prisma migrate resolve` is forbidden.
+CI must prove that a real invalid-rating deploy surfaces the target migration,
+`P3018`, and SQLSTATE `23514`, and that the unresolved history log
+retains the same failure before guarded recovery is allowed.
 
 The branch includes a rehearsal-only, exact-target wrapper:
 
@@ -189,7 +196,13 @@ Pause application writers and every other migration operator for the entire
 capture/deploy/recovery sequence; the wrapper deliberately does not lock
 `_prisma_migrations`, because Prisma must update it through a separate
 connection, and it revalidates history immediately before and after that
-update. A reviewed retry may capture a fresh prestate only when all earlier
+update. The maintenance transaction also has a bounded idle timeout. If a
+Prisma child times out, is signalled, or exits ambiguously, treat the outcome as
+unknown: stop, preserve the failure receipt, and perform a fresh classification
+before any retry or resolve action. If a post-resolve verification fails, the
+wrapper writes a non-success receipt with the freshly observed history and
+requires the same reclassification; that receipt is never success evidence.
+A reviewed retry may capture a fresh prestate only when all earlier
 attempts are exact rolled-back history rows.
 
 This wrapper is rehearsal proof only. A production recovery still requires
@@ -198,7 +211,7 @@ reviewed operator path; never substitute a rehearsal URL or weaken the
 production rejection.
 
 The PostgreSQL 16 integration job exercises both recovery branches: a real
-transactional migration failure followed by guarded `--rolled-back`, a clean
+atomic-statement migration failure followed by guarded `--rolled-back`, a clean
 retry and idempotent deploy; and a synthetic post-`COMMIT`/unfinished-history
 state followed by guarded `--applied`. Negative wrong-mode and partial-state
 attempts must leave exact migration history unchanged. Every immutable evidence
@@ -218,7 +231,7 @@ FROM public._prisma_migrations
 WHERE migration_name = '20260815_add_supplier_constraints_and_security';
 ```
 
-- If the SQL transaction rolled back, neither new constraint exists, the full
+- If the atomic SQL statement rolled back, neither new constraint exists, the full
   catalog matches the approved baseline, and the Supplier security state
   matches the hashed prestate. Only the guarded `--rolled-back` mode may repair
   history before a separately reviewed retry.
@@ -227,7 +240,7 @@ WHERE migration_name = '20260815_add_supplier_constraints_and_security';
   exact two validated constraint definitions, exact catalog delta, every
   effective ACL denial, disabled/unforced RLS with zero policies, and the exact
   unfinished migration checksum before it can finalize rehearsal history.
-- Any mixed/partial schema state contradicts the atomic transaction. Stop the
+- Any mixed/partial schema state contradicts the atomic statement. Stop the
   release and investigate; neither resolve mode is authorized.
 
 ## Compensating rollback
@@ -237,13 +250,18 @@ emergency decision requires removing only the two data constraints, create a
 new forward compensating migration containing:
 
 ```sql
-BEGIN;
-SET LOCAL lock_timeout = '10s';
-ALTER TABLE public.suppliers
-  DROP CONSTRAINT IF EXISTS suppliers_rating_check;
-ALTER TABLE public.suppliers
-  DROP CONSTRAINT IF EXISTS suppliers_status_check;
-COMMIT;
+SET lock_timeout = '10s';
+SET statement_timeout = '5min';
+DO $supplier_compensation$
+BEGIN
+  EXECUTE 'ALTER TABLE public.suppliers
+    DROP CONSTRAINT IF EXISTS suppliers_rating_check';
+  EXECUTE 'ALTER TABLE public.suppliers
+    DROP CONSTRAINT IF EXISTS suppliers_status_check';
+END
+$supplier_compensation$;
+RESET lock_timeout;
+RESET statement_timeout;
 ```
 
 Keep the `PUBLIC`/`anon`/`authenticated`/`service_role` revokes. Never

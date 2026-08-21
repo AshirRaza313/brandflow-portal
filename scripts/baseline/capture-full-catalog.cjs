@@ -82,16 +82,27 @@ async function captureFullCatalog(options) {
     runAttempt = process.env.GITHUB_RUN_ATTEMPT || "local",
     extraScriptPaths = [],
     expectedConnectedRole,
+    statementTimeoutMs,
+    queryTimeoutMs,
   } = options;
   if (!connectionString) throw new Error("connectionString is required");
   if (!outputPath) throw new Error("outputPath is required");
   if (!projectRef) throw new Error("projectRef is required");
+  for (const [label, value] of [
+    ["statementTimeoutMs", statementTimeoutMs],
+    ["queryTimeoutMs", queryTimeoutMs],
+  ]) {
+    if (value !== undefined && (!Number.isInteger(value) || value <= 0)) {
+      throw new Error(`${label} must be a positive integer when provided`);
+    }
+  }
 
   const target = parseConnectionUrl(connectionString);
   const pool = new Pool({
     connectionString,
     ssl: strictSupabaseTls(connectionString, target.isLocal),
     connectionTimeoutMillis: 15_000,
+    ...(queryTimeoutMs === undefined ? {} : { query_timeout: queryTimeoutMs }),
   });
   const client = await pool.connect();
   let transactionOpen = false;
@@ -99,6 +110,12 @@ async function captureFullCatalog(options) {
   try {
     await client.query("BEGIN ISOLATION LEVEL REPEATABLE READ READ ONLY");
     transactionOpen = true;
+    if (statementTimeoutMs !== undefined) {
+      await client.query(
+        "SELECT pg_catalog.set_config('statement_timeout', $1, true)",
+        [`${statementTimeoutMs}ms`],
+      );
+    }
 
     const columns = await client.query(`
       SELECT

@@ -60,6 +60,7 @@ jobs:
   integration-tests:
     name: Integration Tests
     runs-on: ubuntu-latest
+    timeout-minutes: 20
     services:
       postgres:
         image: postgres:16
@@ -139,16 +140,20 @@ jobs:
             rolled-back/application-data-before.json \
             rolled-back/capture-prestate-1-wrapper-evidence/manifest.json \
             rolled-back/capture-prestate-1-wrapper-evidence/prestate-receipt.json \
+            rolled-back/exact-sql-failure-1.json \
             rolled-back/failed-deploy-1-output.txt \
             rolled-back/failed-deploy-1-history.json \
+            rolled-back/failed-deploy-1-proof.json \
             rolled-back/wrong-applied-output.txt \
             rolled-back/wrong-applied-history-before.json \
             rolled-back/wrong-applied-history-after.json \
             rolled-back/resolve-rolled-back-1-wrapper-evidence/recovery-result.json \
             rolled-back/capture-prestate-2-wrapper-evidence/manifest.json \
             rolled-back/capture-prestate-2-wrapper-evidence/prestate-receipt.json \
+            rolled-back/exact-sql-failure-2.json \
             rolled-back/failed-deploy-2-output.txt \
             rolled-back/failed-deploy-2-history.json \
+            rolled-back/failed-deploy-2-proof.json \
             rolled-back/resolve-rolled-back-2-wrapper-evidence/recovery-result.json \
             rolled-back/retry-deploy-output.txt \
             rolled-back/retry-status-output.txt \
@@ -179,6 +184,12 @@ jobs:
             grep -q 'P3018' "$output"
             grep -q '23514' "$output"
             grep -q '20260815_add_supplier_constraints_and_security' "$output"
+            grep -q '"sqlstate": "23514"' \
+              "backups/supplier-recovery-integration/rolled-back/exact-sql-failure-$attempt.json"
+            grep -q '"transaction_rolled_back": true' \
+              "backups/supplier-recovery-integration/rolled-back/exact-sql-failure-$attempt.json"
+            grep -q '"failure_mode": "prisma_p3018_with_history_log"' \
+              "backups/supplier-recovery-integration/rolled-back/failed-deploy-$attempt-proof.json"
             grep -q '"resolve_flag": "--rolled-back"' \
               "backups/supplier-recovery-integration/rolled-back/resolve-rolled-back-$attempt-wrapper-evidence/recovery-result.json"
           done
@@ -240,6 +251,16 @@ jobs:
           path: backups/supplier-recovery-integration
           if-no-files-found: error
           retention-days: 30
+      - name: Upload clearly labeled Supplier recovery failure diagnostics
+        if: ${{ failure() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: supplier-recovery-failure-debug-${{ github.event.pull_request.head.sha }}-${{ github.sha }}-${{ github.run_id }}-${{ github.run_attempt }}
+          path: |
+            backups/supplier-recovery-integration
+            backups/supplier-recovery-evidence
+          if-no-files-found: warn
+          retention-days: 7
       - name: Verify live catalog exists before upload
         run: |
           test -s backups/ci-captured-catalog.json
