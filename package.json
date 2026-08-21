@@ -15,6 +15,7 @@
     "db:seed": "tsx prisma/seed.ts",
     "db:reset": "prisma migrate reset",
     "test": "vitest run",
+    "test:migration:supplier": "node scripts/test-supplier-forward-migration.cjs",
     "test:watch": "vitest"
   },
   "dependencies": {
