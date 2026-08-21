@@ -186,6 +186,15 @@ $env:SUPPLIER_RECOVERY_EVIDENCE_DIR = "backups/supplier-recovery-evidence/resolv
 node scripts/baseline/guarded-supplier-migration-recovery.cjs --applied
 ```
 
+With Prisma 6.19.3, `prisma migrate status` returns exit code `0` and
+`Database schema is up to date!` after either resolve mode. For
+`--rolled-back`, that message does **not** mean the migration SQL was applied:
+the exact history row must be marked rolled back, and the next separately
+reviewed `prisma migrate deploy` must retry the migration. The wrapper requires
+the exact clean post-resolve status, while the CI sequence separately proves
+the rolled-back history transition, retry deploy, clean status, and no-op
+second deploy.
+
 The wrapper refuses a requested flag that does not match its classification.
 It verifies the exact Git checkout/PR head/merge identity, exact migration-row
 IDs and checksums, full per-table data fingerprints, the full catalog, Supplier

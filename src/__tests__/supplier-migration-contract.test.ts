@@ -202,6 +202,9 @@ describe("Supplier forward migration contract", () => {
       "recovery-failure-after-resolve.json",
     );
     expect(guardedSupplierRecovery).toContain("requires_fresh_reclassification");
+    expect(guardedSupplierRecovery).toContain(
+      "database schema is up to date!",
+    );
     expect(guardedSupplierRecovery).toContain("files_sha256");
     expect(captureFullCatalog).toContain("statementTimeoutMs");
     expect(captureFullCatalog).toContain("query_timeout: queryTimeoutMs");
@@ -210,6 +213,7 @@ describe("Supplier forward migration contract", () => {
       "Upload clearly labeled Supplier recovery failure diagnostics",
     );
     expect(runbook).toContain("perform a fresh classification");
+    expect(runbook).toContain("returns exit code `0`");
   });
 
   it("separates baseline catalog proof, then runs the populated forward train", () => {

@@ -718,17 +718,21 @@ function runStatus(label) {
   return { status: result.status, signal: result.signal, output };
 }
 
-function assertExpectedPendingStatus(status) {
+function assertExpectedPostResolveStatus(status) {
+  // Prisma 6.19.3 reports a clean status after either resolve mode because a
+  // matching migration-name row exists. Exact history assertions above remain
+  // authoritative; the integration runner separately proves --rolled-back is
+  // retried by the next deploy.
   if (
-    status.status !== 1 ||
+    status.status !== 0 ||
     status.signal !== null ||
-    !status.output.includes(TARGET_MIGRATION) ||
-    !/(not yet been applied|not in sync)/i.test(status.output) ||
+    !status.output.includes(`${APPROVED_MIGRATIONS.length} migrations found`) ||
+    !/database schema is up to date!/i.test(status.output) ||
     /(?:\bP\d{4}\b|\berror:|authentication failed|can't reach database|schema engine)/i.test(
       status.output,
     )
   ) {
-    throw new Error("Rolled-back recovery did not leave the exact forward-only pending status");
+    throw new Error("Recovery did not leave Prisma's exact clean post-resolve status");
   }
 }
 
@@ -1053,13 +1057,7 @@ async function recover(pool, identity, gitIdentity, requestedFlag) {
       throw new Error("Application data fingerprints changed during migrate resolve");
     }
     const status = runStatus("after-recovery");
-    if (
-      requestedFlag === "--applied" &&
-      (status.status !== 0 || status.signal !== null)
-    ) {
-      throw new Error("Migration status is not clean after committed-SQL --applied recovery");
-    }
-    if (requestedFlag === "--rolled-back") assertExpectedPendingStatus(status);
+    assertExpectedPostResolveStatus(status);
     writeJson("recovery-result.json", {
       evidence_kind: "guarded_supplier_rehearsal_recovery",
       production_recovery_proof: false,
