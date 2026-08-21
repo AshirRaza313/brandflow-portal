@@ -242,7 +242,7 @@ export function ContactSection({ onLegalClick }: ContactSectionProps) {
                 </div>
                 <div className="flex-1">
                   <p className="text-sm font-medium text-white">Chat on WhatsApp</p>
-                  <p className="text-xs text-slate-400">Instant response during business hours</p>
+                  <p className="text-xs text-slate-400">Message our team during business hours</p>
                 </div>
                 <ChevronRight className="h-4 w-4 text-green-400" />
               </a>
@@ -252,10 +252,10 @@ export function ContactSection({ onLegalClick }: ContactSectionProps) {
             <div className="pt-4 space-y-3">
               <p className="text-xs text-slate-500 uppercase tracking-wider font-medium">Why Choose Us</p>
               {[
-                { icon: Shield, text: "Enterprise-grade security & encryption" },
+                { icon: Shield, text: "Role-based access & encrypted connections" },
                 { icon: Zap, text: "Quick setup with dedicated support" },
-                { icon: Users, text: "150+ brands already growing with us" },
-                { icon: Globe, text: "Growing rapidly across Pakistan" },
+                { icon: Users, text: "Invite-only beta access" },
+                { icon: Globe, text: "Starting in Pakistan, built to expand regionally" },
               ].map((item, i) => (
                 <div key={i} className="flex items-center gap-3">
                   <item.icon className="h-4 w-4 text-amber-400 flex-shrink-0" />

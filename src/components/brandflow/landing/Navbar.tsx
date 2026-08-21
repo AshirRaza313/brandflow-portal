@@ -38,7 +38,7 @@ export function Navbar({ onAuthClick }: NavbarProps) {
     { label: "Features", href: "#features" },
     { label: "How It Works", href: "#how-it-works" },
     { label: "Pricing", href: "#pricing" },
-    { label: "Testimonials", href: "#testimonials" },
+    { label: "Early Access", href: "#early-access" },
     { label: "About", href: "/about" },
     { label: "Contact", href: "/contact" },
   ];

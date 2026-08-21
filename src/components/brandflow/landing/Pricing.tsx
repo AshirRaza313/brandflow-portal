@@ -63,7 +63,7 @@ const plans = [
     baseMonthly: 14999,
     periodLabel: "/month",
     description: "Scale your brand with expanded channels, campaigns, and automation. Built for growing businesses that need more power.",
-    badge: "Most Popular",
+    badge: "For Growing Teams",
     features: [
       "Advanced Brand Dashboard",
       "Up to 200 Products",
@@ -124,7 +124,7 @@ const plans = [
       "White-Label Portal",
       "Custom Integrations & Development",
       "Full API + Webhooks",
-      "99.99% Uptime SLA",
+      "Contractual Availability Terms",
       "Warehouse Management",
       "Audit Log & SLA Engine",
     ],
@@ -135,13 +135,11 @@ const plans = [
   },
 ];
 
-const roiStats = [
-  { label: "Marketing Efficiency", value: "+45%" },
-  { label: "Brand Consistency", value: "+60%" },
-  { label: "Lead Generation", value: "+50%" },
-  { label: "Operational Costs", value: "-30%" },
-  { label: "Time-to-Market", value: "-40%" },
-  { label: "Campaign ROI", value: "+200%" },
+const betaHighlights = [
+  { label: "Connected Operations", value: "One Workspace" },
+  { label: "Your Own Baseline", value: "Measurable" },
+  { label: "Beta Onboarding", value: "Guided" },
+  { label: "Product Feedback", value: "Direct" },
 ];
 
 export function Pricing({ onAuthClick }: PricingProps) {
@@ -167,7 +165,7 @@ export function Pricing({ onAuthClick }: PricingProps) {
           </h2>
           <div className="mt-2 inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-amber-500/10 border border-amber-500/20">
             <span className="w-1.5 h-1.5 rounded-full bg-amber-400 animate-pulse" />
-            <span className="text-xs text-amber-300 font-medium">Beta Launch Special | All plans include extended trials</span>
+            <span className="text-xs text-amber-300 font-medium">Beta Launch | All plans include a 14-day free trial</span>
           </div>
           <p className="mt-4 text-lg text-slate-400">
             Transparent pricing with no hidden fees. Every plan includes a 14-day free trial.
@@ -175,7 +173,7 @@ export function Pricing({ onAuthClick }: PricingProps) {
           </p>
         </motion.div>
 
-        {/* ROI Stats Bar */}
+        {/* Beta highlights */}
         <motion.div
           initial={{ opacity: 0, y: 10 }}
           whileInView={{ opacity: 1, y: 0 }}
@@ -183,7 +181,7 @@ export function Pricing({ onAuthClick }: PricingProps) {
           transition={{ duration: 0.5, delay: 0.1 }}
           className="flex flex-wrap justify-center gap-4 sm:gap-6 mb-12 max-w-4xl mx-auto"
         >
-          {roiStats.map((stat) => (
+          {betaHighlights.map((stat) => (
             <div key={stat.label} className="text-center px-3 sm:px-4">
               <p className="text-lg sm:text-xl font-bold text-amber-400">{stat.value}</p>
               <p className="text-[11px] sm:text-xs text-slate-500">{stat.label}</p>

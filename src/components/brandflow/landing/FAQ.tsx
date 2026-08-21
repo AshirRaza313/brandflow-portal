@@ -28,7 +28,7 @@ const faqs = [
   {
     question: "Is my data secure?",
     answer:
-      "Enterprise-grade security is at the core of Valtriox. We use AES-256 encryption for data at rest, TLS 1.3 for data in transit, and our infrastructure is hosted on secure cloud providers with SOC 2 Type II compliance.",
+      "Security controls are built into Valtriox, including password hashing, authenticated sessions, role-based access, organization-level data isolation, audit logging, rate limiting, and encrypted HTTPS connections. We continue testing and hardening these controls throughout the beta.",
   },
   {
     question: "Do you offer custom branding?",

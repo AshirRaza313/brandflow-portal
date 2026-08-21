@@ -58,20 +58,20 @@ export function AboutPage() {
       icon: Shield,
       title: "Security From Day One",
       description:
-        "Your data is not an afterthought. We use bcrypt password hashing, JWT sessions, rate limiting, role based access control, audit logging, and encrypted connections on every single request. The same standards a bank would use.",
+        "Your data is not an afterthought. We use password hashing, authenticated sessions, rate limiting, role based access control, audit logging, and encrypted network connections, then keep testing those controls as the beta grows.",
     },
     {
       icon: Zap,
       title: "Fast Where It Matters",
       description:
-        "Pages load in under 200 milliseconds. The dashboard works on a slow 3G connection. Images optimize themselves. We obsess over performance because every second of lag is a second your team wastes, a thousand times a day.",
+        "We optimize page payloads, images, and responsive layouts, then measure performance as real beta workflows grow. Speed is a product discipline, not an unsupported benchmark.",
     },
   ];
 
   // ── Stats ──
   const stats = [
-    { value: "100+", label: "Brands Onboarded", icon: Users },
-    { value: "Enterprise", label: "Grade Reliability", icon: Shield },
+    { value: "Beta", label: "Early Access Open", icon: Users },
+    { value: "Founder-Led", label: "Product & Onboarding", icon: Shield },
     { value: "2024", label: "Idea Born", icon: Zap },
     { value: "2026", label: "Beta Launched", icon: Award },
   ];
@@ -128,7 +128,7 @@ export function AboutPage() {
       year: "2026, 2nd Half",
       title: "Beta Phase Launched",
       event:
-        "Opened Valtriox in beta to real brands across Pakistan. Fashion, food, electronics, and services teams started running their daily operations on it. Their feedback shaped the product. Most features that exist today came directly from those early beta conversations.",
+        "Opened Valtriox as an invite-only beta for early adopters in Pakistan. Guided onboarding and direct feedback now shape what gets refined and what ships next.",
       icon: TrendingUp,
     },
     {
@@ -156,9 +156,9 @@ export function AboutPage() {
     },
     {
       icon: Lock,
-      title: "Enterprise-Grade Security",
+      title: "Practical Security Controls",
       description:
-        "Role based access control with Owner, Admin, Manager, Staff, and Viewer roles. Audit logging on every action. Data isolation per organization. GDPR-compliant data handling. Security is not a paid add-on.",
+        "Role based access control, audit logging, and organization-level data isolation are built into the platform. We continue validating and hardening those controls throughout the beta.",
     },
     {
       icon: Cpu,
@@ -191,7 +191,7 @@ export function AboutPage() {
               </span>
             </h1>
             <p className="text-lg sm:text-xl text-slate-400 leading-relaxed max-w-3xl mx-auto">
-              {companyName} started with an idea in 2024, was planned through 2025, and built daily for months in 2026 before opening in beta. Today it runs over 100 brands across Pakistan. Still run by the founder who wrote the first line of code, with a 2027 upgrade already in planning to stay ahead of every competitor.
+              {companyName} started with an idea in 2024, was planned through 2025, and built daily for months in 2026 before opening in beta. Today it is welcoming early adopters in Pakistan, with their feedback guiding what ships next. It is still run by the founder who wrote the first line of code.
             </p>
             <div className="mt-10 flex flex-wrap items-center justify-center gap-4">
               <a
@@ -261,7 +261,7 @@ export function AboutPage() {
               <Eye className="h-10 w-10 text-amber-400 mb-6" />
               <h2 className="text-2xl sm:text-3xl font-bold text-white mb-4">Our Vision</h2>
               <p className="text-slate-400 leading-relaxed">
-                We are building the default operating system for modern brands across South Asia and the Middle East. A platform that scales from a single founder working from their bedroom to a multinational team with warehouses in three countries, without ever forcing a migration or a re-platform. The vision is simple in words and hard in execution. One login, one dashboard, every tool your brand will ever need, all running on infrastructure that does not break when you grow.
+                We are building the default operating system for modern brands across South Asia and the Middle East. A platform designed to support a single founder today and increasingly complex teams as they grow. The vision is simple in words and hard in execution: one login, one dashboard, and connected tools that evolve with the needs of each business.
               </p>
             </motion.div>
           </div>
@@ -510,7 +510,7 @@ export function AboutPage() {
             className="text-center mb-16"
           >
             <h2 className="text-3xl sm:text-4xl font-bold mb-4">How We Got Here</h2>
-            <p className="text-lg text-slate-400">From one person with an idea to a platform running 100+ brands.</p>
+            <p className="text-lg text-slate-400">From one person with an idea to an invite-only beta built alongside early adopters.</p>
           </motion.div>
           <div className="relative">
             {milestones.map((milestone, i) => (

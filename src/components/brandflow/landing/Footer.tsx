@@ -51,7 +51,7 @@ export function Footer({ onLegalClick }: FooterProps) {
   // "Too few internal links (4)". We now spread links across all real
   // indexable routes and section anchors that exist on the site:
   //   /about, /contact, /privacy, /terms, /cookies, /refund,
-  //   /#features, /#pricing, /#about, /#how-it-works, /#testimonials, /#faq
+  //   /#features, /#pricing, /#about, /#how-it-works, /#early-access, /#faq
   // This gives 12+ unique internal URLs for crawlers to discover.
   const linkRouteMap: Record<string, string> = {
     // Product → section anchors + dedicated routes
@@ -71,7 +71,7 @@ export function Footer({ onLegalClick }: FooterProps) {
     "Community": "/contact",
     "Status": "/contact",
     "API Docs": "/#how-it-works",
-    "Tutorials": "/#testimonials",
+    "Early Access": "/#early-access",
   };
 
   // Only 4 social icons: Instagram, LinkedIn, Discord, Reddit
@@ -85,7 +85,7 @@ export function Footer({ onLegalClick }: FooterProps) {
   const footerLinks = {
     Product: ["Features", "Pricing", "Integrations", "Changelog", "Documentation"],
     Company: ["About", "Blog", "Careers", "Press", "Partners"],
-    Resources: ["Help Center", "Community", "Status", "API Docs", "Tutorials"],
+    Resources: ["Help Center", "Community", "Status", "API Docs", "Early Access"],
     Legal: ["Privacy Policy", "Terms of Service", "Cookie Policy", "Refund Policy"],
   };
 

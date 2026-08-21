@@ -443,7 +443,7 @@ export function ContactPage() {
                   </div>
                   <div>
                     <p className="text-xs text-slate-500 uppercase tracking-wider mb-0.5">Support Hours</p>
-                    <p className="text-sm font-medium text-white">{identity.supportHours || "24/7 Customer Support"}</p>
+                    <p className="text-sm font-medium text-white">{identity.supportHours || "Mon-Fri: 9AM-6PM PKT"}</p>
                   </div>
                 </div>
               </div>
@@ -461,7 +461,7 @@ export function ContactPage() {
                   </div>
                   <div className="flex-1">
                     <p className="text-sm font-medium text-white">Chat on WhatsApp</p>
-                    <p className="text-xs text-slate-400">Get an instant response from our team</p>
+                    <p className="text-xs text-slate-400">Message our team during business hours</p>
                   </div>
                   <ChevronRight className="h-4 w-4 text-green-400" />
                 </a>
@@ -660,7 +660,7 @@ export function ContactPage() {
                   </div>
                   <div className="flex-1">
                     <p className="text-sm font-medium text-white">Chat on WhatsApp</p>
-                    <p className="text-xs text-slate-400">Instant response during business hours</p>
+                    <p className="text-xs text-slate-400">Message our team during business hours</p>
                   </div>
                   <ChevronRight className="h-4 w-4 text-green-400" />
                 </a>
@@ -670,9 +670,9 @@ export function ContactPage() {
               <div className="pt-4 space-y-3">
                 <p className="text-xs text-slate-500 uppercase tracking-wider font-medium">Why Choose Us</p>
                 {[
-                  { icon: Shield, text: "Enterprise-grade security & encryption" },
-                  { icon: Zap, text: "Setup in under 5 minutes" },
-                  { icon: Users, text: "100+ brands already growing with us" },
+                  { icon: Shield, text: "Role-based access & encrypted connections" },
+                  { icon: Zap, text: "Guided beta onboarding" },
+                  { icon: Users, text: "Personal onboarding for beta participants" },
                   { icon: Globe, text: "Built in Pakistan, for Pakistani brands" },
                 ].map((item, i) => (
                   <div key={i} className="flex items-center gap-3">

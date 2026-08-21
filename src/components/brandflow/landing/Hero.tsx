@@ -49,7 +49,7 @@ export function Hero({ onAuthClick }: HeroProps) {
 
             <p className="mt-2 inline-flex items-center gap-1.5 text-xs sm:text-sm text-amber-300/80 font-medium">
               <span className="w-1.5 h-1.5 rounded-full bg-amber-400 animate-pulse" />
-              Currently in Beta | Free for Early Adopters
+              Invite-only Beta | Guided Onboarding
             </p>
 
             <p className="mt-4 sm:mt-6 text-sm sm:text-base md:text-lg text-slate-400 max-w-xl leading-relaxed">
@@ -62,7 +62,7 @@ export function Hero({ onAuthClick }: HeroProps) {
                 href="/contact"
                 className="inline-flex items-center justify-center bg-amber-600 hover:bg-amber-700 text-white text-base px-8 h-12 rounded-xl shadow-lg shadow-amber-600/25 transition-colors"
               >
-                Get Started
+                Apply for Beta
               </a>
               <a
                 href="#features"
@@ -125,8 +125,8 @@ export function Hero({ onAuthClick }: HeroProps) {
                   <span className="text-amber-400 text-sm font-bold">+$</span>
                 </div>
                 <div>
-                  <p className="text-xs text-slate-400">Revenue</p>
-                  <p className="text-sm font-bold text-white">+24.5%</p>
+                  <p className="text-xs text-slate-400">Workspace</p>
+                  <p className="text-sm font-bold text-white">Unified</p>
                 </div>
               </div>
             </motion.div>
@@ -140,8 +140,8 @@ export function Hero({ onAuthClick }: HeroProps) {
                   <span className="text-amber-400 text-sm">⭐</span>
                 </div>
                 <div>
-                  <p className="text-xs text-slate-400">Satisfaction</p>
-                  <p className="text-sm font-bold text-white">4.8/5.0</p>
+                  <p className="text-xs text-slate-400">Access</p>
+                  <p className="text-sm font-bold text-white">Invite-only beta</p>
                 </div>
               </div>
             </motion.div>

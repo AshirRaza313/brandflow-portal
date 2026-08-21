@@ -7,7 +7,7 @@ const PAGE_URL = `${SITE_URL}/about`;
 
 const TITLE = "About Valtriox | Founded by Muhammad Ashir Raza";
 const DESCRIPTION =
-  "Valtriox is the universal brand operating system founded by Muhammad Ashir Raza. Idea born in 2024, planned through 2025, built daily for months in 2026, and launched in beta in the 2nd half of 2026. Now running 100+ brands across Pakistan, with a 2027 upgrade already in planning to stay ahead of every competitor.";
+  "Valtriox is the universal brand operating system founded by Muhammad Ashir Raza. Idea born in 2024, planned through 2025, built daily for months in 2026, and now welcoming early adopters through an invite-only beta in Pakistan.";
 
 export const metadata: Metadata = {
   title: TITLE,

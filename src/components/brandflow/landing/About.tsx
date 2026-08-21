@@ -27,15 +27,15 @@ export function About() {
     {
       icon: Globe,
       title: "Pakistan and Beyond",
-      description: "Built for Pakistani businesses with multi-currency and multi-language support. We're growing rapidly and expanding to serve brands across the region.",
+      description: "Built for Pakistani businesses with multi-currency and multi-language support. We're starting with an invite-only beta and shaping regional expansion with verified customer feedback.",
     },
   ];
 
   const stats = [
-    { value: "100+", label: "Brands Onboarded", icon: Users },
-    { value: "Enterprise", label: "Grade Reliability", icon: Shield },
+    { value: "Beta", label: "Early Access Open", icon: Users },
+    { value: "Founder-Led", label: "Product & Onboarding", icon: Shield },
     { value: "Pakistan", label: "Starting Market", icon: Globe },
-    { value: "Tiered", label: "Support Plans", icon: Award },
+    { value: "Feedback", label: "Guided Roadmap", icon: Award },
   ];
 
   const milestones = [
@@ -194,7 +194,7 @@ export function About() {
                 <p className="text-sm text-slate-400 leading-relaxed mb-5">
                   The visionary and engineer behind {companyName}. Muhammad Ashir Raza designed and built
                   the entire platform from the ground up, every feature, every integration, every line of
-                  code reflects a commitment to empowering brands with enterprise-grade tooling at an
+                  code reflects a commitment to empowering brands with connected operational tools at an
                   accessible price point. His mission: give every business the power to command its brand
                   universe from a single, beautiful dashboard.
                 </p>

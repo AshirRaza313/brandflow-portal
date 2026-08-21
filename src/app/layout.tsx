@@ -552,11 +552,6 @@ export default async function RootLayout({
                 priceCurrency: "PKR",
                 description: "Starter plan: Brand Dashboard (Basic), 3 Marketing Channels, Standard Analytics.",
               },
-              aggregateRating: {
-                "@type": "AggregateRating",
-                ratingValue: "4.8",
-                reviewCount: "127",
-              },
               featureList: [
                 "Brand Dashboard",
                 "Order Management",
