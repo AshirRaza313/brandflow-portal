@@ -1,0 +1,264 @@
+name: baseline-pr-validation
+
+on:
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  typecheck:
+    name: TypeScript Check
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+      - run: npm ci
+      - run: npx tsc --noEmit
+
+  unit-tests:
+    name: Tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+      - run: npm ci
+      - run: npx vitest run --exclude "tests/integration/**"
+
+  build:
+    name: Build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+      - run: npm ci
+      - run: npm run build
+
+  lint:
+    name: Lint
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+      - run: npm ci
+      - run: npx eslint "tests/integration/**/*.ts"
+      - name: Validate baseline script syntax
+        run: |
+          for file in scripts/baseline/*.cjs tests/baseline/*.cjs; do
+            node --check "$file"
+          done
+
+  integration-tests:
+    name: Integration Tests
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: valtriox_test
+          POSTGRES_PASSWORD: valtriox_test_pass
+          POSTGRES_DB: valtriox_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U valtriox_test"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+    env:
+      INTEGRATION_DATABASE_URL: postgresql://valtriox_test:valtriox_test_pass@localhost:5432/valtriox_test
+      REHEARSAL_DATABASE_URL: postgresql://valtriox_test:valtriox_test_pass@localhost:5432/valtriox_test
+      DATABASE_URL: postgresql://valtriox_test:valtriox_test_pass@localhost:5432/valtriox_test
+      DIRECT_DATABASE_URL: postgresql://valtriox_test:valtriox_test_pass@localhost:5432/valtriox_test
+      PR_HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+      MERGE_SHA: ${{ github.sha }}
+      CATALOG_PROJECT_REF: ci-localhost
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+      - run: npm ci
+      - name: Prisma generate
+        run: npx prisma generate
+      - name: Prisma migrate deploy (baseline replay via Prisma)
+        run: npx prisma migrate deploy
+      - name: Verify migration status
+        run: npx prisma migrate status
+      - name: Capture CI catalog from replayed baseline
+        env:
+          CATALOG_DB_URL: postgresql://valtriox_test:valtriox_test_pass@localhost:5432/valtriox_test
+          CATALOG_OUTPUT: backups/ci-captured-catalog.json
+        run: node scripts/baseline/capture-full-catalog.cjs
+      - name: Compare CI catalog against expected baseline fixture
+        env:
+          PROD_CATALOG: tests/fixtures/expected-baseline-catalog.json
+          REH_CATALOG: backups/ci-captured-catalog.json
+          CATALOG_REPORT: backups/catalog-comparison.txt
+          PROD_EXPECTED_SOURCE_KIND: versioned_baseline_fixture
+          REH_EXPECTED_SOURCE_KIND: database_capture
+          REH_EXPECTED_PROJECT_REF: ci-localhost
+          REH_EXPECTED_HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+          REH_EXPECTED_CAPTURE_PROFILE: generic
+        run: node scripts/baseline/compare-catalogs.cjs
+      - name: Baseline catalog validation tests
+        run: node tests/baseline/run-catalog-validation.cjs
+      - name: Database target safety guard tests
+        run: node tests/baseline/run-safety-guard-validation.cjs
+      - name: Supabase pinned TLS tests
+        run: node tests/baseline/run-supabase-tls-validation.cjs
+      - name: Integration tests
+        run: npx vitest run tests/integration --reporter=verbose
+      - name: Verify live catalog exists before upload
+        run: |
+          test -s backups/ci-captured-catalog.json
+          test -s backups/catalog-comparison.txt
+          grep -qx "NO_DIFFS" backups/catalog-comparison.txt
+      - name: Upload catalog artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: catalog-comparison-${{ github.event.pull_request.head.sha }}-${{ github.run_id }}-${{ github.run_attempt }}
+          path: |
+            backups/ci-captured-catalog.json
+            backups/catalog-comparison.txt
+          if-no-files-found: error
+          retention-days: 30
+
+  path-b-migrate-resolve:
+    name: Path B - Synthetic Adoption Proof
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: valtriox_test
+          POSTGRES_PASSWORD: valtriox_test_pass
+          POSTGRES_DB: valtriox_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U valtriox_test"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+    env:
+      CI: "true"
+      REHEARSAL_DATABASE_URL: postgresql://valtriox_test:valtriox_test_pass@localhost:5432/valtriox_test
+      DATABASE_URL: postgresql://valtriox_test:valtriox_test_pass@localhost:5432/valtriox_test
+      DIRECT_DATABASE_URL: postgresql://valtriox_test:valtriox_test_pass@localhost:5432/valtriox_test
+      PR_HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+      MERGE_SHA: ${{ github.sha }}
+      MIGRATION_NAME: 20260101000000_baseline
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+      - run: npm ci
+      - name: Prisma generate
+        run: npx prisma generate
+      - name: Replay baseline schema without Prisma history
+        run: node scripts/baseline/replay-baseline.cjs
+      - name: Seed representative FK-valid data
+        run: node scripts/baseline/seed-rehearsal-for-pathb.cjs
+      - name: Run guarded synthetic Path-B adoption
+        run: node scripts/baseline/guarded-migrate-resolve.cjs "$MIGRATION_NAME"
+      - name: Verify complete Path-B evidence
+        run: |
+          for file in \
+            before-resolve-data-state.json \
+            after-resolve-data-state.json \
+            before-resolve-catalog.json \
+            after-resolve-catalog.json \
+            before-resolve-catalog-precondition.txt \
+            before-resolve-migrate-status.txt \
+            after-resolve-migrate-status.txt \
+            no-op-after-resolve-migrate-deploy.txt \
+            final-after-no-op-deploy-migrate-status.txt \
+            migration-history.json \
+            target-identity.json \
+            manifest.json; do
+            test -s "backups/path-b-evidence/$file"
+          done
+          tar -czf backups/path-b-evidence.tgz -C backups path-b-evidence
+          sha256sum backups/path-b-evidence.tgz > backups/path-b-evidence.tgz.sha256
+          export PATH_B_ARTIFACT_NAME="path-b-synthetic-${MIGRATION_NAME}-${PR_HEAD_SHA}-${MERGE_SHA}-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
+          echo "PATH_B_ARTIFACT_NAME=$PATH_B_ARTIFACT_NAME" >> "$GITHUB_ENV"
+          node -e "
+            const fs=require('fs'),crypto=require('crypto');
+            const bundle=fs.readFileSync('backups/path-b-evidence.tgz');
+            const receipt={
+              evidence_kind:'synthetic_path_b_upload_bundle',
+              artifact_name:process.env.PATH_B_ARTIFACT_NAME,
+              inner_bundle_sha256:crypto.createHash('sha256').update(bundle).digest('hex'),
+              migration_name:process.env.MIGRATION_NAME,
+              pr_head_sha:process.env.PR_HEAD_SHA,
+              tested_merge_sha:process.env.MERGE_SHA,
+              run_id:process.env.GITHUB_RUN_ID,
+              run_attempt:process.env.GITHUB_RUN_ATTEMPT
+            };
+            fs.writeFileSync('backups/path-b-upload-manifest.json',JSON.stringify(receipt,null,2)+'\n');
+          "
+      - name: Upload Path B artifacts
+        id: upload_path_b
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ env.PATH_B_ARTIFACT_NAME }}
+          path: |
+            backups/path-b-evidence.tgz
+            backups/path-b-evidence.tgz.sha256
+            backups/path-b-upload-manifest.json
+          if-no-files-found: error
+          retention-days: 30
+      - name: Publish Path B artifact receipt
+        run: |
+          {
+            echo "### Synthetic Path-B evidence"
+            echo "- Artifact ID: ${{ steps.upload_path_b.outputs.artifact-id }}"
+            echo "- Artifact URL: ${{ steps.upload_path_b.outputs.artifact-url }}"
+            echo "- Artifact SHA-256: ${{ steps.upload_path_b.outputs.artifact-digest }}"
+            echo "- Inner bundle manifest: backups/path-b-upload-manifest.json"
+          } >> "$GITHUB_STEP_SUMMARY"
+
+  baseline-validation-gate:
+    name: Baseline Validation Gate
+    needs:
+      - typecheck
+      - unit-tests
+      - build
+      - lint
+      - integration-tests
+      - path-b-migrate-resolve
+    if: ${{ always() }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Require every baseline validation job
+        env:
+          TYPECHECK_RESULT: ${{ needs.typecheck.result }}
+          TESTS_RESULT: ${{ needs.unit-tests.result }}
+          BUILD_RESULT: ${{ needs.build.result }}
+          LINT_RESULT: ${{ needs.lint.result }}
+          INTEGRATION_RESULT: ${{ needs.integration-tests.result }}
+          PATH_B_RESULT: ${{ needs.path-b-migrate-resolve.result }}
+        run: |
+          for result in \
+            "$TYPECHECK_RESULT" \
+            "$TESTS_RESULT" \
+            "$BUILD_RESULT" \
+            "$LINT_RESULT" \
+            "$INTEGRATION_RESULT" \
+            "$PATH_B_RESULT"; do
+            if [ "$result" != "success" ]; then
+              echo "A required baseline validation job finished with: $result" >&2
+              exit 1
+            fi
+          done

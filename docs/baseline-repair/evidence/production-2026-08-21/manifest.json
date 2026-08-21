@@ -1,0 +1,63 @@
+{
+  "evidence_kind": "sanitized_production_baseline_parity",
+  "capture_code_sha": "7870dcab0cdff0a5837b014452021e64c4791eb3",
+  "validation_run_id": "32460618545",
+  "captured_at_utc": "2026-08-21T07:56:04.463Z",
+  "source": {
+    "project_ref": "wqwsagnxkamblnefhpzx",
+    "host": "aws-1-ap-south-1.pooler.supabase.com",
+    "port": 5432,
+    "database": "postgres",
+    "connected_role": "valtriox_evidence_ro"
+  },
+  "capture_guards": {
+    "transaction": "repeatable_read_read_only",
+    "tls_mode": "verify-full",
+    "tls_ca_der_sha256": "807025ad50d4ed219d2c9c7d299c004f824eb00cf7f65afef607d07b72e6cafa"
+  },
+  "catalog_counts": {
+    "application_tables": 40,
+    "columns": 576,
+    "constraints": 88,
+    "indexes": 160
+  },
+  "catalog_structural_sha256": "1fba6cc43e8789098904c3b50f15bd5f879bfadd2d8197581c0a423cd4c91286",
+  "comparison_result": "NO_DIFFS",
+  "explicit_marketing_tables_present": [],
+  "explicit_marketing_tables_absent": [
+    "Campaign",
+    "EmailCampaign",
+    "EmailDelivery",
+    "ScheduledJob",
+    "SocialAccount",
+    "SocialPost",
+    "Subscriber",
+    "SubscriberList",
+    "SubscriberListMembership"
+  ],
+  "files": {
+    "production-full-catalog.json": {
+      "bytes": 429495,
+      "sha256": "4b91ffeaf38efc530f78b8e0340bd48173850f979503cd3f5cd0f6fac7802569"
+    },
+    "marketing-table-evidence.json": {
+      "bytes": 2220,
+      "sha256": "03981baacf5317a6318816500ed71680010c7c6913a55cde482ca3e0975671cf"
+    },
+    "catalog-comparison.txt": {
+      "bytes": 9,
+      "sha256": "a94bf263da68d6aac36f21d72124e1a48d1dfe0eb9698fc996514e829d1578f1"
+    }
+  },
+  "content_safety": {
+    "contains_credentials": false,
+    "contains_connection_urls": false,
+    "contains_row_data": false,
+    "contains_schema_metadata": true
+  },
+  "remaining_release_gates": [
+    "verified production schema-data-roles backup and disposable restore",
+    "encrypted off-site receipt and hash",
+    "human approval"
+  ]
+}

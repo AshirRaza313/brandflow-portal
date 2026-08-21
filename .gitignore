@@ -23,6 +23,7 @@ node_modules
 # misc
 .DS_Store
 *.pem
+!scripts/baseline/certs/supabase-root-2021-ca.pem
 
 # debug
 npm-debug.log*
@@ -86,3 +87,7 @@ examples/
 .idea/
 .vscode/
 tool-results/
+backups/
+
+# CI-generated catalog comparison (recreated each run)
+docs/baseline-repair/catalog-comparison.txt
