@@ -11,7 +11,7 @@ const migration = readFileSync(
 const workflow = readFileSync(
   resolve(process.cwd(), ".github/workflows/pr-validation.yml"),
   "utf8",
-);
+).replace(/\r\n?/g, "\n");
 const integrationScript = readFileSync(
   resolve(process.cwd(), "scripts/test-supplier-forward-migration.cjs"),
   "utf8",
