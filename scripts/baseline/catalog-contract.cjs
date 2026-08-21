@@ -84,6 +84,15 @@ function sha256(value) {
   return crypto.createHash("sha256").update(input).digest("hex");
 }
 
+// Repository source files are text. Hash their canonical LF representation so
+// provenance is identical on Windows (core.autocrlf) and Linux CI checkouts.
+function repositoryFileSha256(filePath) {
+  const canonicalText = require("fs")
+    .readFileSync(filePath, "utf8")
+    .replace(/\r\n?/g, "\n");
+  return sha256(canonicalText);
+}
+
 function structuralSha256(catalog) {
   return sha256(canonicalJson(structuralCatalog(catalog)));
 }
@@ -376,6 +385,7 @@ module.exports = {
   APPROVED_TABLES,
   COLUMN_FIELDS,
   canonicalJson,
+  repositoryFileSha256,
   sha256,
   structuralCatalog,
   structuralSha256,

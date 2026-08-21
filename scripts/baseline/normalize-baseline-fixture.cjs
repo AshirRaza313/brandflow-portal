@@ -9,7 +9,7 @@ const path = require("path");
 const { execFileSync } = require("child_process");
 const {
   canonicalJson,
-  sha256,
+  repositoryFileSha256,
   structuralSha256,
 } = require("./catalog-contract.cjs");
 
@@ -91,8 +91,8 @@ catalog._provenance = {
   generated_at_utc: new Date(generatedAtUtc).toISOString(),
   source_fixture_commit_sha: sourceFixtureCommitSha,
   source_fixture_blob_sha1: sourceFixtureBlobSha1,
-  baseline_migration_sha256: sha256(fs.readFileSync(migrationPath)),
-  generator_sha256: sha256(fs.readFileSync(__filename)),
+  baseline_migration_sha256: repositoryFileSha256(migrationPath),
+  generator_sha256: repositoryFileSha256(__filename),
   catalog_sha256: structuralSha256(catalog),
 };
 

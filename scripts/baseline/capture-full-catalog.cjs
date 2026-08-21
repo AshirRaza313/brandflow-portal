@@ -4,7 +4,11 @@ const fs = require("fs");
 const path = require("path");
 const { execFileSync } = require("child_process");
 const { Pool } = require("pg");
-const { canonicalJson, sha256, structuralSha256 } = require("./catalog-contract.cjs");
+const {
+  canonicalJson,
+  repositoryFileSha256,
+  structuralSha256,
+} = require("./catalog-contract.cjs");
 const { assertConnectedIdentity } = require("./safety-guard.cjs");
 
 function parseConnectionUrl(connectionString) {
@@ -44,7 +48,7 @@ function currentHeadSha(explicitHeadSha) {
 }
 
 function fileSha256(filePath) {
-  return sha256(fs.readFileSync(filePath));
+  return repositoryFileSha256(filePath);
 }
 
 function assertAttachedCounts(catalog, rowsByKind) {

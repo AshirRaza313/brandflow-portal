@@ -8,7 +8,7 @@ const {
   validateProductionUrl,
   PRODUCTION_REF,
 } = require("./safety-guard.cjs");
-const { canonicalJson, sha256 } = require("./catalog-contract.cjs");
+const { canonicalJson, repositoryFileSha256 } = require("./catalog-contract.cjs");
 
 const MARKETING_TABLES = [
   "Subscriber",
@@ -61,7 +61,7 @@ async function main() {
       evidence_head_sha: process.env.EVIDENCE_HEAD_SHA,
       connected_identity: connectedIdentity,
       transaction_mode: "repeatable_read_read_only",
-      capture_script_sha256: sha256(fs.readFileSync(__filename)),
+      capture_script_sha256: repositoryFileSha256(__filename),
       safety_guard_sha256: sha256(
         fs.readFileSync(path.resolve(__dirname, "safety-guard.cjs"))
       ),

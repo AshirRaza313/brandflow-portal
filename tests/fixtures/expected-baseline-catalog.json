@@ -13449,8 +13449,8 @@
     "generated_at_utc": "2026-08-21T03:33:54.411Z",
     "source_fixture_commit_sha": "d190d11fffcc320797ae280c2096bab58db6a07b",
     "source_fixture_blob_sha1": "0ba8754c14ab6c4cd9c682d04941772d784a8876",
-    "baseline_migration_sha256": "cb0c3318a66ca18a3cecfea82b9a1306ed704bafb9eea237b600a7b31d6bbca9",
-    "generator_sha256": "833235025857e5a973236348780586e4e375880d33c4260298005be426988966",
+    "baseline_migration_sha256": "31f4710a4547a98ff5d3bc4b4259115c498c00f3a7ff003394412d92716c2f48",
+    "generator_sha256": "9fa17248d108a786c42e9747b15caea0fbea36c1a948f0a394823dbc9c0a9093",
     "catalog_sha256": "55dace13f1cbca3f7e1854df8c7fcb44df56e7ab5e60ce790da6991449f7a92c"
   }
 }

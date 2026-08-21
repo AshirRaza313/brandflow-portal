@@ -5,7 +5,7 @@ const path = require("path");
 const {
   APPROVED_TABLES,
   COLUMN_FIELDS,
-  sha256,
+  repositoryFileSha256,
   validateCatalog,
 } = require("./catalog-contract.cjs");
 
@@ -70,8 +70,8 @@ function validateRepositoryHashes(label, catalog, expectation = {}) {
   const provenance = catalog && catalog._provenance;
   if (!provenance || typeof provenance !== "object") return errors;
   if (provenance.source_kind === "versioned_baseline_fixture") {
-    const expectedMigrationHash = sha256(fs.readFileSync(BASELINE_MIGRATION_PATH));
-    const expectedGeneratorHash = sha256(fs.readFileSync(FIXTURE_GENERATOR_PATH));
+    const expectedMigrationHash = repositoryFileSha256(BASELINE_MIGRATION_PATH);
+    const expectedGeneratorHash = repositoryFileSha256(FIXTURE_GENERATOR_PATH);
     if (provenance.baseline_migration_sha256 !== expectedMigrationHash) {
       errors.push(`PROVENANCE_BASELINE_HASH_MISMATCH: ${label}`);
     }
@@ -81,13 +81,13 @@ function validateRepositoryHashes(label, catalog, expectation = {}) {
   }
   if (provenance.source_kind === "database_capture") {
     const expectedScripts = {
-      capture_engine: sha256(fs.readFileSync(CAPTURE_ENGINE_PATH)),
+      capture_engine: repositoryFileSha256(CAPTURE_ENGINE_PATH),
     };
     if (expectation.captureProfile === "production") {
-      expectedScripts["capture-production-catalog.cjs"] = sha256(
-        fs.readFileSync(PRODUCTION_CAPTURE_PATH)
+      expectedScripts["capture-production-catalog.cjs"] = repositoryFileSha256(
+        PRODUCTION_CAPTURE_PATH
       );
-      expectedScripts["safety-guard.cjs"] = sha256(fs.readFileSync(SAFETY_GUARD_PATH));
+      expectedScripts["safety-guard.cjs"] = repositoryFileSha256(SAFETY_GUARD_PATH);
     } else if (expectation.captureProfile !== "generic") {
       errors.push(`PROVENANCE_CAPTURE_PROFILE_MISSING: ${label}`);
     }
