@@ -1,0 +1,69 @@
+{
+  "evidence_kind": "explicit_marketing_table_presence",
+  "project_ref": "wqwsagnxkamblnefhpzx",
+  "source_host": "aws-1-ap-south-1.pooler.supabase.com",
+  "source_port": 5432,
+  "db_name": "postgres",
+  "db_user": "valtriox_evidence_ro",
+  "captured_at_utc": "2026-08-21T07:56:12.601Z",
+  "pg_version": "PostgreSQL 17.6 on aarch64-unknown-linux-gnu, compiled by gcc (GCC) 15.2.0, 64-bit",
+  "evidence_head_sha": "7870dcab0cdff0a5837b014452021e64c4791eb3",
+  "connected_identity": {
+    "db_name": "postgres",
+    "db_user": "valtriox_evidence_ro",
+    "session_user": "valtriox_evidence_ro",
+    "client_user": "valtriox_evidence_ro.wqwsagnxkamblnefhpzx",
+    "expected_connected_role": "valtriox_evidence_ro",
+    "server_address": "2406:da1a:6b0:f60d:7fc:82fe:ba99:80b4/128",
+    "server_port": 5432,
+    "validated_host": "aws-1-ap-south-1.pooler.supabase.com",
+    "project_ref": "wqwsagnxkamblnefhpzx"
+  },
+  "transaction_mode": "repeatable_read_read_only",
+  "tls_mode": "verify-full",
+  "tls_servername": "aws-1-ap-south-1.pooler.supabase.com",
+  "tls_ca_sha256": "807025ad50d4ed219d2c9c7d299c004f824eb00cf7f65afef607d07b72e6cafa",
+  "capture_script_sha256": "ac87cb61ec40c0ce9aa6246b4657034ab9826b48145620e3a123b6a1fb204614",
+  "safety_guard_sha256": "ef7400e909fb2376b1b0014e6ca6aabb37225baf0e3966a906694e97291bd931",
+  "tls_helper_sha256": "ac2c56e31924157979090b85ad4c5fb007a214a6e7851d31ec605eb6756167f6",
+  "supabase_root_ca_sha256": "700723581420dd1ac98fd7e9ac529f0ef210eadcaf87fc868a3ad7d114c2f3b7",
+  "tables": [
+    {
+      "name": "Campaign",
+      "present": false
+    },
+    {
+      "name": "EmailCampaign",
+      "present": false
+    },
+    {
+      "name": "EmailDelivery",
+      "present": false
+    },
+    {
+      "name": "ScheduledJob",
+      "present": false
+    },
+    {
+      "name": "SocialAccount",
+      "present": false
+    },
+    {
+      "name": "SocialPost",
+      "present": false
+    },
+    {
+      "name": "Subscriber",
+      "present": false
+    },
+    {
+      "name": "SubscriberList",
+      "present": false
+    },
+    {
+      "name": "SubscriberListMembership",
+      "present": false
+    }
+  ],
+  "sha256": "9cb238654dad9303b30469e6c88444531dcf79883040cab3c5bad881aa1c9d09"
+}
