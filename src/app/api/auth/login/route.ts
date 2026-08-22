@@ -87,6 +87,9 @@ export const POST = withRateLimit(async (req: NextRequest) => {
     if (!bodyResult.success) return bodyResult.response;
     const { email, password, pin, loginType } = bodyResult.data;
 
+        // TEMP DEBUG — remove after fixing
+    logger.info("[Login] Attempting login for email:", email?.toLowerCase(), "raw:", email);
+
     if (!email) {
       return NextResponse.json({ error: "Email is required" }, { status: 400 });
     }
