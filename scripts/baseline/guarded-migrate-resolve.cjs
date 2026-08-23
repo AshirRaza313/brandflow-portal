@@ -73,7 +73,8 @@ const headSha = process.env.PR_HEAD_SHA || execFileSync("git", ["rev-parse", "HE
 const mergeSha = process.env.MERGE_SHA || headSha;
 const runId = process.env.GITHUB_RUN_ID || "local";
 const runAttempt = process.env.GITHUB_RUN_ATTEMPT || "local";
-const npx = process.platform === "win32" ? "npx.cmd" : "npx";
+const prismaCli = require.resolve("prisma/build/index.js");
+const PRISMA_CHILD_TIMEOUT_MS = 300_000;
 
 function quoteIdentifier(value) {
   return `"${String(value).replace(/"/g, '""')}"`;
@@ -87,24 +88,83 @@ function writeJson(filename, value) {
 
 function runPrismaStatus(label) {
   const result = spawnSync(
-    npx,
-    ["prisma", "migrate", "status", "--schema", prismaSchema],
-    { encoding: "utf8", env: process.env }
+    process.execPath,
+    [prismaCli, "migrate", "status", "--schema", prismaSchema],
+    {
+      encoding: "utf8",
+      env: process.env,
+      timeout: PRISMA_CHILD_TIMEOUT_MS,
+      killSignal: "SIGTERM",
+    },
   );
-  const output = `${result.stdout || ""}${result.stderr || ""}`;
+  const spawnError = result.error ? `\nPRISMA_CHILD_ERROR: ${result.error.message}\n` : "";
+  const output = `${result.stdout || ""}${result.stderr || ""}${spawnError}`;
   fs.writeFileSync(path.join(EVIDENCE_DIR, `${label}-migrate-status.txt`), output);
-  return { status: result.status, output };
+  if (result.error) {
+    throw new Error(
+      `Prisma migrate status did not complete cleanly; target state must be freshly verified: ${result.error.message}`,
+    );
+  }
+  if (result.signal !== null) throw new Error(`Prisma migrate status ended by signal ${result.signal}`);
+  return { status: result.status, signal: result.signal, output };
 }
 
 function runPrismaDeploy(label) {
   const result = spawnSync(
-    npx,
-    ["prisma", "migrate", "deploy", "--schema", prismaSchema],
-    { encoding: "utf8", env: process.env }
+    process.execPath,
+    [prismaCli, "migrate", "deploy", "--schema", prismaSchema],
+    {
+      encoding: "utf8",
+      env: process.env,
+      timeout: PRISMA_CHILD_TIMEOUT_MS,
+      killSignal: "SIGTERM",
+    },
   );
-  const output = `${result.stdout || ""}${result.stderr || ""}`;
+  const spawnError = result.error ? `\nPRISMA_CHILD_ERROR: ${result.error.message}\n` : "";
+  const output = `${result.stdout || ""}${result.stderr || ""}${spawnError}`;
   fs.writeFileSync(path.join(EVIDENCE_DIR, `${label}-migrate-deploy.txt`), output);
-  return { status: result.status, output };
+  if (result.error) {
+    throw new Error(
+      `Prisma migrate deploy did not complete cleanly; target state must be freshly verified: ${result.error.message}`,
+    );
+  }
+  if (result.signal !== null) throw new Error(`Prisma migrate deploy ended by signal ${result.signal}`);
+  return { status: result.status, signal: result.signal, output };
+}
+
+function runPrismaResolveBaseline() {
+  const result = spawnSync(
+    process.execPath,
+    [
+      prismaCli,
+      "migrate",
+      "resolve",
+      "--schema",
+      prismaSchema,
+      "--applied",
+      BASELINE_MIGRATION,
+    ],
+    {
+      encoding: "utf8",
+      env: process.env,
+      timeout: PRISMA_CHILD_TIMEOUT_MS,
+      killSignal: "SIGTERM",
+    },
+  );
+  const spawnError = result.error ? `\nPRISMA_CHILD_ERROR: ${result.error.message}\n` : "";
+  const output = `${result.stdout || ""}${result.stderr || ""}${spawnError}`;
+  fs.writeFileSync(path.join(EVIDENCE_DIR, "baseline-migrate-resolve.txt"), output);
+  if (result.error) {
+    throw new Error(
+      `Prisma migrate resolve did not complete cleanly; target state must be freshly verified: ${result.error.message}`,
+    );
+  }
+  if (result.signal !== null || result.status !== 0) {
+    throw new Error(
+      `Prisma migrate resolve failed with exit code ${String(result.status)} and signal ${String(result.signal)}`,
+    );
+  }
+  return { status: result.status, signal: result.signal, output };
 }
 
 async function captureDataState(pool, label) {
@@ -515,19 +575,7 @@ async function main() {
       );
     }
 
-    execFileSync(
-      npx,
-      [
-        "prisma",
-        "migrate",
-        "resolve",
-        "--schema",
-        prismaSchema,
-        "--applied",
-        BASELINE_MIGRATION,
-      ],
-      { stdio: "inherit", env: process.env }
-    );
+    runPrismaResolveBaseline();
 
     const forwardPendingStatus = runPrismaStatus("before-forward");
     if (

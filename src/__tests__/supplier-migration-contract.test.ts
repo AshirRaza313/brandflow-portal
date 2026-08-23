@@ -232,6 +232,19 @@ describe("Supplier forward migration contract", () => {
     expect(guardedBaselineResolve).toContain(
       'const FORWARD_MIGRATION = "20260815_add_supplier_constraints_and_security"',
     );
+    expect(guardedBaselineResolve).toContain(
+      'require.resolve("prisma/build/index.js")',
+    );
+    expect(guardedBaselineResolve).toContain(
+      "spawnSync(\n    process.execPath",
+    );
+    expect(guardedBaselineResolve).toContain("PRISMA_CHILD_TIMEOUT_MS");
+    expect(guardedBaselineResolve).toContain("result.error");
+    expect(guardedBaselineResolve).toContain("result.signal");
+    expect(guardedBaselineResolve).toContain(
+      "target state must be freshly verified",
+    );
+    expect(guardedBaselineResolve).not.toContain("npx.cmd");
     expect(guardedBaselineResolve).not.toContain("PATH_B_PRISMA_SCHEMA");
     expect(
       baselineWorkflow.match(/Prepare isolated baseline-only Prisma history/g),
@@ -253,6 +266,7 @@ describe("Supplier forward migration contract", () => {
     expect(resolveIndex).toBeGreaterThan(-1);
     expect(forwardDeployIndex).toBeGreaterThan(resolveIndex);
     expect(baselineWorkflow).toContain("baseline-adoption-history.json");
+    expect(baselineWorkflow).toContain("baseline-migrate-resolve.txt");
     expect(baselineWorkflow).toContain("after-forward-catalog-delta.txt");
     expect(baselineWorkflow).toContain(
       "supplier-privileges-before-forward.json",

@@ -327,6 +327,7 @@ jobs:
             after-resolve-catalog.json \
             before-resolve-catalog-precondition.txt \
             before-resolve-migrate-status.txt \
+            baseline-migrate-resolve.txt \
             before-forward-migrate-status.txt \
             baseline-adoption-history.json \
             before-forward-data-state.json \
