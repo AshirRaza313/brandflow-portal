@@ -36,7 +36,16 @@ export const registerSchema = z.object({
 
 export const loginSchema = z.object({
   email: email,
-  password: z.string().min(1).max(128),
+  password: z.string().min(1).max(128).optional(),
+  pin: z.string().regex(/^\d{6}$/, "PIN must be exactly 6 digits").optional(),
+  loginType: z.enum(["password", "pin"]).default("password"),
+}).superRefine((input, context) => {
+  if (input.loginType === "pin" && !input.pin) {
+    context.addIssue({ code: "custom", path: ["pin"], message: "PIN is required" });
+  }
+  if (input.loginType === "password" && !input.password) {
+    context.addIssue({ code: "custom", path: ["password"], message: "Password is required" });
+  }
 });
 
 export const forgotPasswordSchema = z.object({

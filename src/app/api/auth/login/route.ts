@@ -1,19 +1,17 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db, withRetry} from "@/lib/db";
 import bcrypt from "bcryptjs";
-import { sanitizeEmail } from "@/lib/sanitize";
 import logger from "@/lib/logger";
 import { withRateLimit } from "@/lib/rate-limit";
 import { validateBody, loginSchema } from "@/lib/validations";
-import { z } from "zod";
 import { signAuthData } from "@/lib/auth-middleware";
+import { classifyDatabaseError, getDatabaseErrorInfo } from "@/lib/database-errors";
 
-/** Safely extract message from an unknown error */
-function getErrorMessage(e: unknown): string {
-  if (e && typeof e === "object" && "message" in e && typeof (e as Record<string, unknown>).message === "string") {
-    return (e as Record<string, unknown>).message as string;
-  }
-  return String(e);
+/** Log only stable error metadata; database messages can contain credentials. */
+function logSanitizedError(label: string, error: unknown): void {
+  const kind = classifyDatabaseError(error);
+  const { code } = getDatabaseErrorInfo(error);
+  logger.error(label, { kind, code: code || "unknown" });
 }
 
 /** Shape of user data passed to createLoginResponse */
@@ -80,10 +78,7 @@ function createLoginResponse(userData: LoginUserData, orgData: LoginOrgData | nu
 export const POST = withRateLimit(async (req: NextRequest) => {
   try {
     // Phase 3: Zod validation for login body
-    const bodyResult = await validateBody(req, loginSchema.extend({
-      pin: z.string().max(10).optional(),
-      loginType: z.enum(["password", "pin"]).optional(),
-    }));
+    const bodyResult = await validateBody(req, loginSchema);
     if (!bodyResult.success) return bodyResult.response;
     const { email, password, pin, loginType } = bodyResult.data;
 
@@ -100,10 +95,18 @@ export const POST = withRateLimit(async (req: NextRequest) => {
       return NextResponse.json({ error: "Email and PIN are required" }, { status: 400 });
     }
 
-    // Check if database is reachable - use explicit select to avoid referencing missing columns
+    if (!process.env.DATABASE_URL) {
+      return NextResponse.json(
+        { error: "Database not configured.", code: "DB_NOT_CONFIGURED" },
+        { status: 503 }
+      );
+    }
+
+    // Retry one genuine transient connection failure. Permanent configuration
+    // and schema failures are never retried or repaired at request time.
     let user;
     try {
-      user = await db.user.findUnique({
+      user = await withRetry(() => db.user.findUnique({
         where: { email: email.toLowerCase() },
         select: {
           id: true, name: true, email: true, image: true, role: true, password: true,
@@ -120,65 +123,32 @@ export const POST = withRateLimit(async (req: NextRequest) => {
             }
           }
         }
-      });
+      }), 1, 150);
     } catch (dbErr: unknown) {
-      const errMsg = getErrorMessage(dbErr);
-      logger.error("Database connection error:", errMsg);
-      if (!process.env.DATABASE_URL) {
+      const kind = classifyDatabaseError(dbErr);
+      logSanitizedError("[Login] Database query failed", dbErr);
+
+      if (kind === "configuration") {
         return NextResponse.json(
-          { error: "Database not configured.", code: "DB_NOT_CONFIGURED" },
+          { error: "Database configuration error.", code: "DB_CONFIGURATION_ERROR" },
           { status: 503 }
         );
       }
-      if (errMsg.includes('relation') || errMsg.includes('does not exist') || errMsg.includes('column')) {
-        // Schema mismatch - try auto-creating/updating tables
-        logger.info("[Login] Schema mismatch detected, attempting auto-fix...");
-        try {
-          logger.info("[Login] Attempting auto-fix via ensureDb...");
-          // Retry the full query after auto-fix
-          user = await db.user.findUnique({
-            where: { email: email.toLowerCase() },
-            select: {
-              id: true, name: true, email: true, image: true, role: true, password: true,
-              organization: {
-                select: {
-                  id: true, role: true, pin: true, pinCreatedAt: true, penaltyUntil: true,
-                  organizationId: true,
-                  organization: {
-                    select: {
-                      id: true, name: true, slug: true, logo: true, website: true, phone: true, email: true,
-                      currency: true, timezone: true, plan: true, workingHoursStart: true, workingHoursEnd: true,
-                    }
-                  }
-                }
-              }
-            }
-          });
-        } catch (fixErr: unknown) {
-          logger.error("[Login] Auto-fix failed:", getErrorMessage(fixErr));
-          // Last resort: try without includes
-          try {
-            user = await db.user.findUnique({
-              where: { email: email.toLowerCase() },
-              select: { id: true, name: true, email: true, image: true, role: true, password: true, organization: false }
-            });
-          } catch {
-            return NextResponse.json(
-              { error: "Database schema needs update. Please visit /setup to initialize.", code: "SCHEMA_MISMATCH" },
-              { status: 503 }
-            );
-          }
-        }
+      if (kind === "schema") {
+        return NextResponse.json(
+          { error: "Database schema needs update.", code: "SCHEMA_MISMATCH" },
+          { status: 503 }
+        );
       }
-      if (errMsg.includes('ECONNREFUSED') || errMsg.includes('timeout') || errMsg.includes('connect')) {
+      if (kind === "transient") {
         return NextResponse.json(
           { error: "Cannot connect to database.", code: "DB_CONNECTION_FAILED" },
           { status: 503 }
         );
       }
       return NextResponse.json(
-        { error: "Database connection failed.", code: "DB_ERROR" },
-        { status: 503 }
+        { error: "Database query failed.", code: "DB_QUERY_FAILED" },
+        { status: 500 }
       );
     }
 
@@ -297,7 +267,7 @@ export const POST = withRateLimit(async (req: NextRequest) => {
             }, 2, 500);
           }
         } catch (notifErr: unknown) {
-          logger.error("Failed to create notification:", getErrorMessage(notifErr));
+          logSanitizedError("[Login] Failed to create notification", notifErr);
         }
       }
 
@@ -323,7 +293,7 @@ export const POST = withRateLimit(async (req: NextRequest) => {
       );
     }
 
-    const isValid = await bcrypt.compare(password, user.password);
+    const isValid = await bcrypt.compare(password || "", user.password);
     if (!isValid) {
       return NextResponse.json({ error: "Invalid email or password" }, { status: 401 });
     }
@@ -389,7 +359,7 @@ export const POST = withRateLimit(async (req: NextRequest) => {
         }
       }
     } catch (autoOrgErr: unknown) {
-      logger.error("[Login] Auto-assign org for VT member failed:", getErrorMessage(autoOrgErr));
+      logSanitizedError("[Login] Auto-assign org for VT member failed", autoOrgErr);
     }
 
     return createLoginResponse(
@@ -405,7 +375,7 @@ export const POST = withRateLimit(async (req: NextRequest) => {
       } : null
     );
   } catch (err: unknown) {
-    logger.error("Login error", err);
+    logSanitizedError("Login error", err);
     return NextResponse.json({ error: "Login failed. Please try again." }, { status: 500 });
   }
 }, { maxRequests: 5, windowSeconds: 60 });
