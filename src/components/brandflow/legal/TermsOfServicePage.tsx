@@ -32,7 +32,7 @@ export function TermsOfServicePage({ onBack }: LegalPageProps) {
             Terms of Service
           </h1>
           <p className="text-slate-500 text-sm">
-            Last Updated: July 11, 2025 &nbsp;|&nbsp; Effective Date: July 11, 2025
+            Last Updated: August 24, 2026 &nbsp;|&nbsp; Effective Date: August 24, 2026
           </p>
           <div className="mt-4 p-4 bg-amber-50 border border-amber-200 rounded-lg">
             <p className="text-sm text-amber-800">
@@ -55,7 +55,7 @@ export function TermsOfServicePage({ onBack }: LegalPageProps) {
               By creating an account, accessing, or using the {identity.companyName} Portal, you acknowledge
               that you have read, understood, and agree to be bound by these Terms of Service
               and our{" "}
-              <span className="text-amber-600 font-medium cursor-pointer hover:underline">Privacy Policy</span>.
+              <a href="/privacy" className="text-amber-600 font-medium hover:underline">Privacy Policy</a>.
               These Terms constitute a legally binding agreement between you and {identity.companyName}.
             </p>
             <p className="text-slate-600 leading-relaxed mt-3">
@@ -76,20 +76,20 @@ export function TermsOfServicePage({ onBack }: LegalPageProps) {
               2. Service Description
             </h2>
             <p className="text-slate-600 leading-relaxed">
-              {identity.companyName} Portal is an all-in-one business operations platform designed to help
-              brands and businesses manage their operations efficiently. Our Services include,
-              but are not limited to:
+              {identity.companyName} Portal is an invite-only beta business-operations platform. Features
+              may be incomplete, changed, unavailable, or limited by role, plan, and onboarding
+              configuration. Current Services may include:
             </p>
             <ul className="list-disc pl-6 space-y-1.5 text-slate-600 mt-3">
               <li>Order management and tracking across multiple sales channels</li>
               <li>Product catalog management, pricing, and inventory control</li>
               <li>Customer relationship management (CRM) and loyalty programs</li>
               <li>Sales analytics, reporting, and business intelligence dashboards</li>
-              <li>Marketing campaign management (WhatsApp, email, social media)</li>
+              <li>Campaign planning and communication workflow tools</li>
               <li>Team management, attendance tracking, and payroll</li>
-              <li>WhatsApp Business API integration and messaging</li>
-              <li>AI-powered business assistance and automation tools</li>
-              <li>Third-party integrations and data import/export capabilities</li>
+              <li>Optional connector settings when separately configured and supported</li>
+              <li>Experimental reporting or assistance surfaces identified as beta</li>
+              <li>Import and export capabilities for supported formats</li>
             </ul>
             <p className="text-slate-600 leading-relaxed mt-3">
               We reserve the right to modify, suspend, or discontinue any part of the Services
@@ -139,14 +139,13 @@ export function TermsOfServicePage({ onBack }: LegalPageProps) {
             </p>
 
             <h3 className={isDark ? "text-lg font-medium text-slate-200 mt-6 mb-2" : "text-lg font-medium text-slate-800 mt-6 mb-2"}>
-              4.2 Free Trial
+              4.2 Beta Trial
             </h3>
             <p className="text-slate-600 leading-relaxed">
-              New users may be eligible for a 14-day free trial of the platform. During the
-              trial period, you will have access to the features of your selected plan. No
-              payment is required during the trial. At the end of the trial, you must subscribe
-              to a paid plan to continue using the Services. We will send a reminder before
-              your trial expires.
+              New users may be eligible for a trial. Its duration, enabled features, price,
+              and post-trial access are the terms shown in the applicable signup or invitation
+              flow. A public page does not override invitation-specific terms, and reminder
+              delivery is not guaranteed.
             </p>
 
             <h3 className={isDark ? "text-lg font-medium text-slate-200 mt-6 mb-2" : "text-lg font-medium text-slate-800 mt-6 mb-2"}>
@@ -154,7 +153,7 @@ export function TermsOfServicePage({ onBack }: LegalPageProps) {
             </h3>
             <p className="text-slate-600 leading-relaxed">
               Subscription fees are billed in advance according to the billing cycle selected
-              (monthly or annual). Payments are processed through our authorized payment
+              (monthly, quarterly, or annual). Payments are processed through our authorized payment
               channels. You are responsible for:
             </p>
             <ul className="list-disc pl-6 space-y-1.5 text-slate-600 mt-3">
@@ -246,35 +245,25 @@ export function TermsOfServicePage({ onBack }: LegalPageProps) {
               your explicit consent, except as required by law.
             </p>
             <p className="text-slate-600 leading-relaxed mt-3">
-              Upon termination of your account, you may request a full export of Your Data within
-              30 days. After this period, Your Data will be permanently deleted in accordance
-              with our data retention policies, subject to any legal obligations.
+              Export important data before termination. Export availability and post-termination
+              retention depend on the account state, current{" "}
+              <a href="/privacy" className="text-amber-600 font-medium hover:underline">Privacy Policy</a>, legal obligations,
+              and provider constraints; contact support to confirm the terms for your account.
             </p>
           </section>
 
           <section>
             <h2 className={isDark ? "text-xl font-semibold text-white mb-3 pb-2 border-b border-white/10" : "text-xl font-semibold text-slate-900 mb-3 pb-2 border-b border-slate-200"}>
-              8. Service Availability and SLA
+              8. Beta Service Availability
             </h2>
             <p className="text-slate-600 leading-relaxed">
-              We strive to maintain high availability of the Services. Our target uptime is
-              99.5% per calendar month, excluding scheduled maintenance windows. Scheduled
-              maintenance will be performed during off-peak hours (typically weekends, Pakistan
-              Standard Time) with at least 48 hours&apos; advance notice via email or in-app notification.
+              The Services are provided as a beta and may be interrupted for maintenance,
+              testing, security work, provider incidents, or feature changes. We do not publish
+              a general uptime, incident-response, maintenance-notice, or service-credit promise.
             </p>
             <p className="text-slate-600 leading-relaxed mt-3">
-              The Service Level Agreement (SLA) applies to paying subscribers and includes:
-            </p>
-            <ul className="list-disc pl-6 space-y-1.5 text-slate-600 mt-3">
-              <li><strong className={isDark ? "text-slate-300" : "text-slate-700"}>Uptime Commitment:</strong> 99.5% availability per month (excluding scheduled maintenance)</li>
-              <li><strong className={isDark ? "text-slate-300" : "text-slate-700"}>Response Time:</strong> Critical issues will be acknowledged within 4 hours during business hours</li>
-              <li><strong className={isDark ? "text-slate-300" : "text-slate-700"}>Support Hours:</strong> Monday to Friday, 9:00 AM to 6:00 PM Pakistan Standard Time (PKT)</li>
-              <li><strong className={isDark ? "text-slate-300" : "text-slate-700"}>Credit for Downtime:</strong> If uptime falls below 99.5%, subscribers may be eligible for service credits equal to 10% of the monthly subscription fee for each 0.5% below the SLA threshold</li>
-            </ul>
-            <p className="text-slate-600 leading-relaxed mt-3">
-              This SLA does not apply to downtime caused by factors beyond our reasonable control,
-              including but not limited to force majeure events, third-party service outages,
-              internet connectivity issues, or your own equipment or software.
+              A service level applies only if a separately signed order form or agreement states
+              the exact commitment. In that case, the written agreement controls over this public page.
             </p>
           </section>
 
@@ -306,12 +295,12 @@ export function TermsOfServicePage({ onBack }: LegalPageProps) {
               10.1 Termination by You
             </h3>
             <p className="text-slate-600 leading-relaxed">
-              You may cancel your subscription at any time through your account settings or by
-              contacting our support team. Upon cancellation, your access to paid features will
+              You may request cancellation by contacting our support team through a currently
+              published support channel. Upon cancellation, your access to paid features will
               continue until the end of the current billing period. No prorated refunds will be
               provided for unused time in the current billing cycle, unless otherwise required
               by applicable law or our{" "}
-              <span className="text-amber-600 font-medium cursor-pointer hover:underline">Refund Policy</span>.
+              <a href="/refund" className="text-amber-600 font-medium hover:underline">Refund Policy</a>.
             </p>
 
             <h3 className={isDark ? "text-lg font-medium text-slate-200 mt-6 mb-2" : "text-lg font-medium text-slate-800 mt-6 mb-2"}>
@@ -332,10 +321,11 @@ export function TermsOfServicePage({ onBack }: LegalPageProps) {
               10.3 Effect of Termination
             </h3>
             <p className="text-slate-600 leading-relaxed">
-              Upon termination: (a) your right to use the Services will cease immediately;
-              (b) provisions that by their nature should survive termination will remain in effect;
-              and (c) we will retain your data for 30 days to allow you to export it, after which
-              it will be permanently deleted subject to our data retention obligations.
+              Upon termination: (a) your right to use the Services will cease as stated in the
+              applicable account or subscription terms; (b) provisions that by their nature
+              should survive termination will remain in effect; and (c) data retention and export
+              availability follow the current{" "}
+              <a href="/privacy" className="text-amber-600 font-medium hover:underline">Privacy Policy</a>, legal obligations, and provider constraints.
             </p>
           </section>
 
@@ -386,7 +376,7 @@ export function TermsOfServicePage({ onBack }: LegalPageProps) {
             </p>
             <ul className="list-disc pl-6 space-y-1.5 text-slate-600 mt-3">
               <li>We will update the &quot;Last Updated&quot; date at the top of these Terms</li>
-              <li>We will provide at least 30 days&apos; advance notice via email or in-app notification</li>
+              <li>Where notice is required by law or a separate contract, we will use available email or in-app channels to provide the applicable notice</li>
               <li>Your continued use of the Services after the effective date constitutes acceptance of the changes</li>
             </ul>
             <p className="text-slate-600 leading-relaxed mt-3">
@@ -400,7 +390,13 @@ export function TermsOfServicePage({ onBack }: LegalPageProps) {
               14. General Provisions
             </h2>
             <ul className="list-disc pl-6 space-y-1.5 text-slate-600 mt-3">
-              <li><strong className={isDark ? "text-slate-300" : "text-slate-700"}>Entire Agreement:</strong> These Terms, together with the Privacy Policy, Refund Policy, and Cookie Policy, constitute the entire agreement between you and {identity.companyName} regarding the Services.</li>
+              <li>
+                <strong className={isDark ? "text-slate-300" : "text-slate-700"}>Entire Agreement:</strong>{" "}
+                These Terms, together with the{" "}
+                <a href="/privacy" className="text-amber-600 font-medium hover:underline">Privacy Policy</a>,{" "}
+                <a href="/refund" className="text-amber-600 font-medium hover:underline">Refund Policy</a>, and{" "}
+                <a href="/cookies" className="text-amber-600 font-medium hover:underline">Cookie Policy</a>, constitute the entire agreement between you and {identity.companyName} regarding the Services.
+              </li>
               <li><strong className={isDark ? "text-slate-300" : "text-slate-700"}>Severability:</strong> If any provision of these Terms is found to be unenforceable or invalid, that provision will be limited or eliminated to the minimum extent necessary, and the remaining provisions will remain in full force and effect.</li>
               <li><strong className={isDark ? "text-slate-300" : "text-slate-700"}>Waiver:</strong> The failure of either party to enforce any right or provision of these Terms will not constitute a waiver of such right or provision.</li>
               <li><strong className={isDark ? "text-slate-300" : "text-slate-700"}>Assignment:</strong> You may not assign or transfer these Terms or your rights hereunder without our prior written consent. We may assign our rights and obligations without restriction.</li>

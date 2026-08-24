@@ -32,7 +32,7 @@ export function PrivacyPolicyPage({ onBack }: LegalPageProps) {
             Privacy Policy
           </h1>
           <p className="text-slate-500 text-sm">
-            Last Updated: July 11, 2025
+            Last Updated: August 24, 2026
           </p>
           <div className="mt-4 p-4 bg-amber-50 border border-amber-200 rounded-lg">
             <p className="text-sm text-amber-800">
@@ -62,7 +62,7 @@ export function PrivacyPolicyPage({ onBack }: LegalPageProps) {
             <ul className="list-disc pl-6 space-y-1.5 text-slate-600 mt-3">
               <li>Full name, email address, and phone number</li>
               <li>Business name, address, and registration details</li>
-              <li>Billing and payment information (processed through secure third-party payment gateways)</li>
+              <li>Billing and payment information, if a payment flow is enabled (handled under the applicable provider&apos;s terms)</li>
               <li>Team member details you provide for account management</li>
               <li>Customer data you import or manage within the platform (e.g., customer names, contact details, order histories)</li>
               <li>Profile pictures and branding assets you upload</li>
@@ -91,7 +91,7 @@ export function PrivacyPolicyPage({ onBack }: LegalPageProps) {
               We use cookies, web beacons, pixel tags, and similar tracking technologies to
               collect and store information about your interactions with our platform. For a
               detailed explanation, please refer to our{" "}
-              <span className="text-amber-600 font-medium cursor-pointer hover:underline">Cookie Policy</span>.
+              <a href="/cookies" className="text-amber-600 font-medium hover:underline">Cookie Policy</a>.
             </p>
           </section>
 
@@ -122,8 +122,8 @@ export function PrivacyPolicyPage({ onBack }: LegalPageProps) {
               third parties only in the following circumstances:
             </p>
             <ul className="list-disc pl-6 space-y-1.5 text-slate-600 mt-3">
-              <li><strong className={isDark ? "text-slate-300" : "text-slate-700"}>Service Providers:</strong> We engage trusted third-party service providers who perform services on our behalf, such as cloud hosting (Supabase), payment processing, email delivery, and analytics. These providers are contractually obligated to protect your data and use it only for the purposes we specify.</li>
-              <li><strong className={isDark ? "text-slate-300" : "text-slate-700"}>Integrations:</strong> When you connect {identity.companyName} with third-party services (e.g., WhatsApp Business API, social media platforms, payment gateways), data may be shared with those services in accordance with their own privacy policies.</li>
+              <li><strong className={isDark ? "text-slate-300" : "text-slate-700"}>Service Providers:</strong> Providers used for hosting, media, email delivery, monitoring, analytics, or payments may process data under their applicable terms, privacy notices, and contractual obligations.</li>
+              <li><strong className={isDark ? "text-slate-300" : "text-slate-700"}>Configured Connectors:</strong> If you choose to connect a supported third-party service, relevant data may be shared with that service under its own terms and privacy policy.</li>
               <li><strong className={isDark ? "text-slate-300" : "text-slate-700"}>Business Transfers:</strong> In connection with any merger, acquisition, reorganization, bankruptcy, or sale of assets, your information may be transferred as part of such transaction, subject to continued protection under this policy.</li>
               <li><strong className={isDark ? "text-slate-300" : "text-slate-700"}>Legal Requirements:</strong> We may disclose your information if required by law, court order, governmental regulation, or subpoena, or if we believe such disclosure is necessary to protect our rights, safety, or property, or that of our users or the public.</li>
               <li><strong className={isDark ? "text-slate-300" : "text-slate-700"}>With Your Consent:</strong> We may share your information with third parties when you have given us explicit consent to do so.</li>
@@ -135,22 +135,21 @@ export function PrivacyPolicyPage({ onBack }: LegalPageProps) {
               4. Data Security and Storage
             </h2>
             <p className="text-slate-600 leading-relaxed">
-              We implement industry-standard security measures to protect your personal
-              information, including:
+              The beta applies technical controls that are present in the application and
+              hosting configuration. Current controls include:
             </p>
             <ul className="list-disc pl-6 space-y-1.5 text-slate-600 mt-3">
-              <li>Encryption of data in transit using TLS/SSL protocols</li>
-              <li>Encryption of sensitive data at rest</li>
-              <li>Regular security audits and vulnerability assessments</li>
-              <li>Access controls and authentication mechanisms</li>
-              <li>Secure data backup and disaster recovery procedures</li>
-              <li>Employee training on data protection and privacy best practices</li>
+              <li>HTTPS/TLS connections when supported application endpoints are used</li>
+              <li>Password hashing and authenticated session controls</li>
+              <li>Role-based and organization-scoped application access controls</li>
+              <li>Rate limiting, audit logging, and ongoing security testing</li>
+              <li>Hosting-provider controls described by the applicable providers</li>
             </ul>
             <p className="text-slate-600 leading-relaxed mt-3">
-              Your data is stored on secure servers hosted by Supabase (cloud infrastructure
-              providers). While we strive to use commercially acceptable means to protect your
-              information, no method of transmission over the Internet or electronic storage
-              is 100% secure. We cannot guarantee absolute security.
+              Application data is hosted using Supabase infrastructure. The public beta does not
+              claim an independent security certification, a completed third-party audit, or a
+              production-complete backup and disaster-recovery program. No method of transmission
+              or electronic storage is completely secure.
             </p>
           </section>
 
@@ -166,7 +165,7 @@ export function PrivacyPolicyPage({ onBack }: LegalPageProps) {
             <ul className="list-disc pl-6 space-y-1.5 text-slate-600 mt-3">
               <li><strong className={isDark ? "text-slate-300" : "text-slate-700"}>Right of Access:</strong> You may request a copy of the personal information we hold about you.</li>
               <li><strong className={isDark ? "text-slate-300" : "text-slate-700"}>Right to Correction:</strong> You may request that we correct any inaccurate or incomplete personal information.</li>
-              <li><strong className={isDark ? "text-slate-300" : "text-slate-700"}>Right to Deletion:</strong> You may request that we delete your personal information, subject to certain legal obligations and legitimate business needs. Upon account deletion, we will remove your personal data within 30 days, except where retention is required by law.</li>
+              <li><strong className={isDark ? "text-slate-300" : "text-slate-700"}>Right to Deletion:</strong> You may request that we delete your personal information, subject to legal obligations, security needs, provider constraints, and legitimate retention requirements. We will confirm the applicable scope and timeline when handling the request.</li>
               <li><strong className={isDark ? "text-slate-300" : "text-slate-700"}>Right to Restrict Processing:</strong> You may request that we limit how we use your personal information in certain circumstances.</li>
               <li><strong className={isDark ? "text-slate-300" : "text-slate-700"}>Right to Data Portability:</strong> You may request to receive your data in a structured, commonly used, and machine-readable format.</li>
               <li><strong className={isDark ? "text-slate-300" : "text-slate-700"}>Right to Withdraw Consent:</strong> Where processing is based on consent, you may withdraw your consent at any time without affecting the lawfulness of processing carried out prior to withdrawal.</li>
@@ -174,7 +173,10 @@ export function PrivacyPolicyPage({ onBack }: LegalPageProps) {
             </ul>
             <p className="text-slate-600 leading-relaxed mt-3">
               To exercise any of these rights, please contact us at{" "}
-              <a href={`mailto:${identity.companyEmail}`} className="text-amber-600 hover:underline">{identity.companyEmail}</a>. We will respond to your request within 30 days.
+              <a href={`mailto:${identity.companyEmail}`} className="text-amber-600 hover:underline">{identity.companyEmail}</a>.{" "}
+              We aim to respond as reasonably practicable after any needed identity or authority
+              checks. Timing depends on the request, provider constraints, and any deadline required
+              by applicable law; this policy does not promise a fixed 30-day response time.
             </p>
           </section>
 
@@ -183,21 +185,23 @@ export function PrivacyPolicyPage({ onBack }: LegalPageProps) {
               6. Cookies and Tracking
             </h2>
             <p className="text-slate-600 leading-relaxed">
-              We use cookies and similar technologies to enhance your experience, analyze trends,
-              and gather demographic information. Our platform uses the following categories of
-              cookies:
+              The Portal currently uses first-party authentication cookies and browser local
+              storage. A deployment may also load Google Analytics or Meta Pixel when its
+              corresponding public configuration ID is present.
             </p>
             <ul className="list-disc pl-6 space-y-1.5 text-slate-600 mt-3">
-              <li><strong className={isDark ? "text-slate-300" : "text-slate-700"}>Essential Cookies:</strong> Required for the platform to function properly, including authentication, security, and session management.</li>
-              <li><strong className={isDark ? "text-slate-300" : "text-slate-700"}>Performance Cookies:</strong> Help us understand how visitors interact with our platform by collecting anonymous statistical information.</li>
-              <li><strong className={isDark ? "text-slate-300" : "text-slate-700"}>Functionality Cookies:</strong> Remember your preferences and settings to provide a personalized experience.</li>
-              <li><strong className={isDark ? "text-slate-300" : "text-slate-700"}>Marketing Cookies:</strong> Used to deliver relevant advertisements and track campaign effectiveness (only with your consent).</li>
+              <li><strong className={isDark ? "text-slate-300" : "text-slate-700"}>Authentication Cookies:</strong> The current <code>vt-*</code> cookies carry signed-in user, role, and organization values plus an integrity signature.</li>
+              <li><strong className={isDark ? "text-slate-300" : "text-slate-700"}>Browser Local Storage:</strong> Current <code>valtriox-*</code> keys may store preferences, brand setup values, session UI state, timezone state, and certain browser-local feature content.</li>
+              <li><strong className={isDark ? "text-slate-300" : "text-slate-700"}>Configured Analytics:</strong> Google Analytics loads after the page becomes interactive when its deployment ID is configured and may collect usage and device information under Google&apos;s terms.</li>
+              <li><strong className={isDark ? "text-slate-300" : "text-slate-700"}>Configured Measurement:</strong> Meta Pixel loads and records page-view or lead events when its deployment ID is configured, including a non-JavaScript page-view fallback.</li>
             </ul>
             <p className="text-slate-600 leading-relaxed mt-3">
-              You can manage your cookie preferences through your browser settings. Please note
-              that disabling certain cookies may affect the functionality of our platform.
+              The site does not currently provide an in-product cookie banner or category control,
+              and configured analytics/measurement scripts do not wait for a prior consent choice.
+              You can block or clear these technologies through browser or provider controls;
+              blocking authentication cookies may prevent login.
               For detailed information, see our{" "}
-              <span className="text-amber-600 font-medium cursor-pointer hover:underline">Cookie Policy</span>.
+              <a href="/cookies" className="text-amber-600 font-medium hover:underline">Cookie Policy</a>.
             </p>
           </section>
 
@@ -212,14 +216,15 @@ export function PrivacyPolicyPage({ onBack }: LegalPageProps) {
               enforce our agreements, and protect our legitimate business interests.
             </p>
             <ul className="list-disc pl-6 space-y-1.5 text-slate-600 mt-3">
-              <li><strong className={isDark ? "text-slate-300" : "text-slate-700"}>Active Account Data:</strong> Retained for the duration of your active subscription and for 90 days after cancellation or expiration.</li>
-              <li><strong className={isDark ? "text-slate-300" : "text-slate-700"}>Transactional Records:</strong> Billing and payment records are retained for a period of 7 years as required under Pakistani tax regulations.</li>
-              <li><strong className={isDark ? "text-slate-300" : "text-slate-700"}>Support Communications:</strong> Retained for 3 years from the date of last interaction.</li>
+              <li><strong className={isDark ? "text-slate-300" : "text-slate-700"}>Active Account Data:</strong> Retained while the account is active and afterward only as reasonably needed for security, support, disputes, or legal obligations.</li>
+              <li><strong className={isDark ? "text-slate-300" : "text-slate-700"}>Transactional Records:</strong> Billing and payment records, where applicable, are retained according to legal and provider requirements.</li>
+              <li><strong className={isDark ? "text-slate-300" : "text-slate-700"}>Support Communications:</strong> Retained as reasonably needed to handle the request, maintain records, and resolve disputes.</li>
               <li><strong className={isDark ? "text-slate-300" : "text-slate-700"}>Marketing Data:</strong> Retained until you withdraw consent or request deletion.</li>
             </ul>
             <p className="text-slate-600 leading-relaxed mt-3">
-              Upon account deletion, we will delete or anonymize your personal data within 30
-              days, except where retention is required by applicable law or regulation.
+              Account deletion requests are handled under the retention categories above and
+              applicable provider constraints. We will explain any data that must be retained or
+              cannot immediately be removed.
             </p>
           </section>
 
@@ -245,9 +250,9 @@ export function PrivacyPolicyPage({ onBack }: LegalPageProps) {
             <p className="text-slate-600 leading-relaxed">
               Your information may be transferred to and processed in countries other than
               Pakistan. These countries may have data protection laws that differ from those
-              in Pakistan. By using our platform, you consent to such transfers. We take
-              appropriate safeguards to ensure your data is protected in accordance with this
-              Privacy Policy regardless of where it is processed.
+              in Pakistan. By using our platform, you consent to such transfers. We use
+              available contractual and technical safeguards for the services used, while
+              recognizing that protections and legal requirements vary by processing location.
             </p>
           </section>
 
@@ -262,8 +267,7 @@ export function PrivacyPolicyPage({ onBack }: LegalPageProps) {
             </p>
             <ul className="list-disc pl-6 space-y-1.5 text-slate-600 mt-3">
               <li>Post the updated policy on our platform with a revised &quot;Last Updated&quot; date</li>
-              <li>Send an email notification to registered users for significant changes</li>
-              <li>Display a prominent notice within the platform for material updates</li>
+              <li>Use available email or in-app channels for significant changes where practicable</li>
             </ul>
             <p className="text-slate-600 leading-relaxed mt-3">
               Your continued use of the platform after the effective date of any changes
@@ -292,8 +296,8 @@ export function PrivacyPolicyPage({ onBack }: LegalPageProps) {
                 </p>
                 <p>Website: {identity.companyWebsite || "valtriox.com"}</p>
                 <p className="text-sm text-slate-500 mt-3">
-                  For data protection inquiries, we aim to respond within 30 working days as
-                  required under applicable Pakistani regulations.
+                  Response timing depends on the request, verification needs, provider constraints,
+                  and any deadline required by applicable law.
                 </p>
               </div>
             </div>

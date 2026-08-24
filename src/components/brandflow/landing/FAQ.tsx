@@ -13,32 +13,32 @@ const faqs = [
   {
     question: "What does the Starter plan include?",
     answer:
-      "Our Starter plan is Rs. 7,999/month (plus a one-time Rs. 5,000 setup fee) and includes up to 3 team members, 100 orders/month, 50 products, 100 customers, 5 GB storage, 3 marketing channels, 500 emails/month, 3 social accounts, 5 coupons, 20 tasks, 2 integrations, 5 monthly reports, business hours support, and read-only API access. It's perfect for small businesses just getting started. All plans include a 14-day free trial.",
+      "The published Starter configuration is Rs. 7,999/month plus a one-time Rs. 4,999 setup fee. It includes the limits shown in the pricing table, such as up to 3 team members, 100 orders per month, and 50 products. Beta availability and final terms are confirmed during onboarding; the current published trial period is 14 days.",
   },
   {
     question: "How many team members can I add?",
     answer:
-      "The Starter plan supports up to 3 team members, Growth supports up to 8, Professional supports up to 15, and Enterprise offers unlimited team members, all with role-based access controls and granular permissions.",
+      "The current published limits are up to 3 team members on Starter, 8 on Growth, and 15 on Professional. Enterprise capacity and any custom limits are confirmed in a written proposal. Role-based access is available within the workspace.",
   },
   {
     question: "Can I migrate from another platform?",
     answer:
-      "Absolutely! Valtriox offers easy import tools for data from popular platforms like Shopify, WooCommerce, and others. Our support team is also available to help with migration to ensure a smooth transition.",
+      "Valtriox includes import and export workflows for supported file formats. Direct migration from a specific third-party platform is not assumed; we review the source, format, and beta scope before confirming migration assistance.",
   },
   {
     question: "Is my data secure?",
     answer:
-      "Enterprise-grade security is at the core of Valtriox. We use AES-256 encryption for data at rest, TLS 1.3 for data in transit, and our infrastructure is hosted on secure cloud providers with SOC 2 Type II compliance.",
+      "Security controls are built into Valtriox, including password hashing, authenticated sessions, role-based access, organization-level data isolation, audit logging, rate limiting, and encrypted HTTPS connections. We continue testing and hardening these controls throughout the beta.",
   },
   {
     question: "Do you offer custom branding?",
     answer:
-      "Custom branding is available on our Professional plan (custom logos, colors, branded emails). White-label branding (custom domains, fully branded portal) is available on our Enterprise plan. This makes Valtriox feel like your own platform.",
+      "Branding controls are available in parts of the product. The exact logo, color, email, domain, and white-label options depend on the selected plan and beta configuration, so they are confirmed during onboarding.",
   },
   {
     question: "What integrations are available?",
     answer:
-      "Valtriox integrates with WooCommerce, Shopify, WhatsApp Business API, Google Analytics, Stripe, and more. Enterprise customers also get access to our API for custom integrations.",
+      "The beta contains connector settings and workflows for selected services, but a listed connector is not a promise that a live third-party connection is enabled. We confirm supported connections, credentials, API access, and any custom work for each onboarding.",
   },
 ];
 

@@ -1,7 +1,6 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { Button } from "@/components/ui/button";
 import { ArrowRight } from "lucide-react";
 import { usePlatformIdentity } from "@/lib/platform-identity";
 
@@ -32,7 +31,7 @@ export function CTASection({ onAuthClick }: CTASectionProps) {
               Ready to Transform Your Brand Operations?
             </h2>
             <p className="mt-6 text-lg sm:text-xl text-slate-300 max-w-2xl mx-auto">
-              Join 500+ businesses already using {companyName} to streamline their operations and accelerate growth.
+              Apply for early access and help shape {companyName} while exploring a more connected way to run your operations.
             </p>
             <div className="mt-10">
               {/* SEO: rendered as <a href="/contact"> for crawler discovery */}
@@ -40,12 +39,12 @@ export function CTASection({ onAuthClick }: CTASectionProps) {
                 href="/contact"
                 className="inline-flex items-center justify-center bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-white font-semibold text-lg px-10 h-14 rounded-xl shadow-[0_0_30px_rgba(211,166,56,0.3)] hover:shadow-[0_0_40px_rgba(211,166,56,0.4)] transition-all duration-300"
               >
-                Get Started Today
+                Apply for Early Access
                 <ArrowRight className="w-5 h-5 ml-2" />
               </a>
             </div>
             <p className="mt-4 text-sm text-slate-400">
-              14-day free trial included with all plans · Setup fees apply
+              Current published trial is 14 days; invitation and setup terms are confirmed before activation
             </p>
           </div>
         </motion.div>

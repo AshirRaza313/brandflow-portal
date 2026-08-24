@@ -4,11 +4,10 @@
 import { useState, FormEvent, useEffect, useMemo } from "react";
 import { motion } from "framer-motion";
 import {
-  Send, Phone, Mail, MapPin, Clock, MessageCircle, CheckCircle2,
+  Send, Phone, Mail, Clock, MessageCircle, CheckCircle2,
   Building2, Globe, Users, ArrowRight, ArrowLeft, Sparkles, Shield, Zap,
   ChevronRight, Instagram, Facebook, Twitter, Linkedin, Youtube,
-  Hash, Music, Download, MailCheck, ArrowRightIcon, Home,
-  CalendarDays, PartyPopper, Heart, CalendarCheck,
+  Music, Download, MailCheck, ArrowRightIcon, Home, CalendarDays,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -47,6 +46,8 @@ export function ContactPage() {
     consultationType: "",
   });
   const [submitted, setSubmitted] = useState(false);
+  const [submissionConfirmation, setSubmissionConfirmation] = useState("");
+  const [conversionEligible, setConversionEligible] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [calendlyEnabled, setCalendlyEnabled] = useState(false);
   const [calendlyUrl, setCalendlyUrl] = useState("");
@@ -84,7 +85,7 @@ export function ContactPage() {
         const inviteeUri = e.data?.payload?.invitee?.uri;
         if (uri || inviteeUri) {
           setForm((prev) => ({ ...prev, calendlyBookingLink: inviteeUri || uri || "" }));
-          toast.success("Consultation time slot booked!");
+          toast.success("Calendly reported the consultation time slot as booked.");
         }
       }
     }
@@ -112,10 +113,12 @@ export function ContactPage() {
         body: JSON.stringify({ ...form, source: "contact-page" }),
       });
       const data = await res.json();
-      if (res.ok) {
+      if (res.ok && data.success === true && data.confirmed === true) {
+        setConversionEligible(data.stored === true);
+        setSubmissionConfirmation(data.message || "A stored inquiry was confirmed for beta review. Follow-up timing varies.");
         setSubmitted(true);
       } else {
-        toast.error(data.error || "Failed to send message. Please try again.");
+        toast.error(data.error || "We could not confirm that your inquiry was stored. Please try again.");
       }
     } catch {
       toast.error("Network error. Please check your connection and try again.");
@@ -135,13 +138,12 @@ export function ContactPage() {
   ];
   const interests = [
     "Brand Management", "Order Management", "Inventory & Warehouse",
-    "Marketing & Campaigns", "Team Management", "Custom Integration",
+    "Marketing & Campaigns", "Team Management", "Connector Configuration",
     "Enterprise Solution", "Partnership",
   ];
   const consultationTypes = [
     { value: "video_call", label: "Video Call", icon: "Video" },
     { value: "phone_call", label: "Phone Call", icon: "Phone" },
-    { value: "in_person", label: "In-Person Meeting", icon: "MapPin" },
   ];
 
 
@@ -162,24 +164,23 @@ export function ContactPage() {
     );
   }
 
-  // All social links on Contact page - always visible. Clickable only when URL is configured.
-  const socialLinks = [
-    { icon: Instagram, url: identity.instagramUrl, label: "Instagram" },
-    { icon: Facebook, url: identity.facebookUrl, label: "Facebook" },
-    { icon: Twitter, url: identity.twitterUrl, label: "X / Twitter" },
-    { icon: Linkedin, url: identity.linkedinUrl, label: "LinkedIn" },
-    { icon: Youtube, url: identity.youtubeUrl, label: "YouTube" },
-    { icon: MessageCircle, url: identity.whatsappNumber ? `https://wa.me/${identity.whatsappNumber.replace(/[^0-9]/g, "")}` : null, label: "WhatsApp" },
-    { icon: DiscordIcon, url: identity.discordUrl, label: "Discord" },
-    { icon: RedditIcon, url: identity.redditUrl, label: "Reddit" },
-    { icon: Music, url: identity.tiktokUrl, label: "TikTok" },
-  ];
+  const socialLinks = identity.socialLinksVisible ? [
+    { icon: Instagram, url: identity.instagramUrl, label: "Instagram", visible: identity.showInstagram },
+    { icon: Facebook, url: identity.facebookUrl, label: "Facebook", visible: identity.showFacebook },
+    { icon: Twitter, url: identity.twitterUrl, label: "X / Twitter", visible: identity.showTwitter },
+    { icon: Linkedin, url: identity.linkedinUrl, label: "LinkedIn", visible: identity.showLinkedin },
+    { icon: Youtube, url: identity.youtubeUrl, label: "YouTube", visible: identity.showYoutube },
+    { icon: MessageCircle, url: identity.whatsappNumber ? `https://wa.me/${identity.whatsappNumber.replace(/[^0-9]/g, "")}` : null, label: "WhatsApp", visible: identity.showWhatsApp },
+    { icon: DiscordIcon, url: identity.discordUrl, label: "Discord", visible: identity.showDiscord },
+    { icon: RedditIcon, url: identity.redditUrl, label: "Reddit", visible: identity.showReddit },
+    { icon: Music, url: identity.tiktokUrl, label: "TikTok", visible: identity.showTiktok },
+  ].filter((link) => link.visible && Boolean(link.url)) : [];
 
   // ═══════════════════════════════════════════════════════════════════════════
   //  CONVERSION TRACKING - fires once when Thank You page renders
   // ═══════════════════════════════════════════════════════════════════════════
   useEffect(() => {
-    if (!submitted) return;
+    if (!submitted || !conversionEligible) return;
 
     // Prevent double-fire in strict mode
     let fired = false;
@@ -219,7 +220,7 @@ export function ContactPage() {
       if (typeof window !== 'undefined') {
         try {
           window.dispatchEvent(new CustomEvent('valtriox:lead_conversion', {
-            detail: { email: form.email, name: form.fullName, timestamp: Date.now() },
+            detail: { source: 'contact-page', timestamp: Date.now() },
           }));
           console.log('[Conversion] Custom lead_conversion event dispatched');
         } catch (e) {
@@ -231,7 +232,7 @@ export function ContactPage() {
     // Small delay to ensure page is fully visible before tracking
     const timer = setTimeout(track, 800);
     return () => clearTimeout(timer);
-  }, [submitted]);
+  }, [submitted, conversionEligible]);
 
   // ═══════════════════════════════════════════════════════════════════════════
   //  PAGE 2: THANK YOU (shown after form submission)
@@ -282,7 +283,7 @@ export function ContactPage() {
                   !
                 </h1>
                 <p className="text-lg text-slate-400 leading-relaxed max-w-xl mx-auto">
-                  Your inquiry has been received successfully. Our team will review it and reach out to you within 24 hours.
+                  {submissionConfirmation || "A stored inquiry was confirmed for beta review. Follow-up timing varies."}
                 </p>
               </motion.div>
             </motion.div>
@@ -303,9 +304,9 @@ export function ContactPage() {
                   <MailCheck className="h-6 w-6 text-amber-400" />
                 </div>
                 <div>
-                  <h3 className="text-lg font-bold text-white mb-1">Check Your Email</h3>
+                  <h3 className="text-lg font-bold text-white mb-1">Introduction Guide and Email Delivery</h3>
                   <p className="text-sm text-slate-400 leading-relaxed">
-                    We&apos;ve sent you a detailed email with your inquiry confirmation and a free guide about {companyName} - what it does, how it helps brands like yours, and what to expect from our partnership.
+                    A confirmation email is attempted separately and may not always be delivered. The current {companyName} introduction guide is available from the link below.
                   </p>
                 </div>
               </div>
@@ -327,7 +328,7 @@ export function ContactPage() {
                   </div>
                   <div className="text-left flex-1">
                     <p className="text-sm font-semibold text-white group-hover:text-amber-300 transition-colors">
-                      Download Free Guide
+                      Open Introduction Guide
                     </p>
                     <p className="text-xs text-slate-500">
                       {companyName} Introduction - PDF Document
@@ -353,18 +354,18 @@ export function ContactPage() {
                 {[
                   {
                     step: 1,
-                    title: "Email Sent with Free Guide",
-                    description: `A confirmation email with your free ${companyName} guide has been sent to your inbox.`,
+                    title: "Guide Available",
+                    description: `The current ${companyName} introduction guide is available above; confirmation email delivery is not guaranteed.`,
                   },
                   {
                     step: 2,
                     title: "Our Team Reviews Your Inquiry",
-                    description: "Our team will carefully review your inquiry and prepare a personalized response.",
+                    description: "Stored beta inquiries are reviewed during published business hours; follow-up timing varies.",
                   },
                   {
                     step: 3,
-                    title: "Free Consultation Call Scheduled",
-                    description: `We'll reach out to schedule a free consultation call to discuss how ${companyName} can help your brand grow.`,
+                    title: "Walkthrough May Be Offered",
+                    description: `If the current beta scope fits, we may contact you to arrange a ${companyName} walkthrough subject to availability.`,
                   },
                 ].map((item) => (
                   <motion.div
@@ -429,11 +430,11 @@ export function ContactPage() {
 
                 <div className="flex items-start gap-3 p-4 rounded-2xl bg-white/[0.03] border border-amber-500/15">
                   <div className="flex-shrink-0 w-10 h-10 rounded-xl bg-amber-500/10 border border-amber-500/15 flex items-center justify-center">
-                    <MapPin className="h-4 w-4 text-amber-400" />
+                    <Globe className="h-4 w-4 text-amber-400" />
                   </div>
                   <div>
-                    <p className="text-xs text-slate-500 uppercase tracking-wider mb-0.5">Visit Us</p>
-                    <p className="text-sm font-medium text-white">{identity.companyAddress || "Karachi, Pakistan"}</p>
+                    <p className="text-xs text-slate-500 uppercase tracking-wider mb-0.5">Current Beta Market</p>
+                    <p className="text-sm font-medium text-white">Pakistan</p>
                   </div>
                 </div>
 
@@ -443,13 +444,13 @@ export function ContactPage() {
                   </div>
                   <div>
                     <p className="text-xs text-slate-500 uppercase tracking-wider mb-0.5">Support Hours</p>
-                    <p className="text-sm font-medium text-white">{identity.supportHours || "24/7 Customer Support"}</p>
+                    <p className="text-sm font-medium text-white">{identity.supportHours || "Mon-Fri: 9AM-6PM PKT"}</p>
                   </div>
                 </div>
               </div>
 
               {/* WhatsApp CTA */}
-              {identity.whatsappNumber && (
+              {identity.socialLinksVisible && identity.showWhatsApp && identity.whatsappNumber && (
                 <a
                   href={`https://wa.me/${identity.whatsappNumber.replace(/[^0-9]/g, "")}`}
                   target="_blank"
@@ -461,7 +462,7 @@ export function ContactPage() {
                   </div>
                   <div className="flex-1">
                     <p className="text-sm font-medium text-white">Chat on WhatsApp</p>
-                    <p className="text-xs text-slate-400">Get an instant response from our team</p>
+                    <p className="text-xs text-slate-400">Message our team during business hours</p>
                   </div>
                   <ChevronRight className="h-4 w-4 text-green-400" />
                 </a>
@@ -505,7 +506,7 @@ export function ContactPage() {
               className="text-center"
             >
               <Link
-                href="/"
+                href="/#features"
                 className="inline-flex items-center gap-2 text-sm font-medium text-amber-400 hover:text-amber-300 transition-colors duration-200 group mb-6"
               >
                 <Sparkles className="h-4 w-4" />
@@ -595,8 +596,7 @@ export function ContactPage() {
               </span>
             </h1>
             <p className="text-lg text-slate-400 leading-relaxed max-w-2xl mx-auto">
-              Ready to transform your brand operations? Our team is here to help you get started.
-              Book a free consultation or drop us a message.
+              Tell us which operational workflows you want to test. We review invite-only beta requests and confirm any walkthrough separately.
             </p>
           </motion.div>
         </div>
@@ -629,26 +629,35 @@ export function ContactPage() {
               {[
                 { icon: Mail, label: "Email Us", value: identity.companyEmail || process.env.NEXT_PUBLIC_SUPPORT_EMAIL || "ashir@valtriox.com", href: `mailto:${identity.companyEmail || process.env.NEXT_PUBLIC_SUPPORT_EMAIL || "ashir@valtriox.com"}` },
                 { icon: Phone, label: "Call Us", value: identity.companyPhone || "+92-318 3916019", href: `tel:${identity.companyPhone || "+923183916019"}` },
-                { icon: MapPin, label: "Visit Us", value: identity.companyAddress || "Karachi, Pakistan", href: "https://www.google.com/maps/search/?api=1&query=Karachi%2C+Pakistan" },
-                { icon: Clock, label: "Support Hours", value: identity.supportHours || "Mon-Fri: 9AM-6PM PKT", href: "#" },
-              ].map((item, i) => (
-                <a
-                  key={i}
-                  href={item.href}
-                  className="flex items-start gap-4 p-4 sm:p-5 rounded-2xl bg-white/[0.03] border border-white/[0.06] hover:border-amber-500/20 transition-all duration-300 group"
-                >
-                  <div className="flex-shrink-0 w-11 h-11 rounded-xl bg-amber-500/10 flex items-center justify-center group-hover:bg-amber-500/20 transition-colors">
-                    <item.icon className="h-5 w-5 text-amber-400" />
+                { icon: Globe, label: "Current Beta Market", value: "Pakistan", href: "/about" },
+                { icon: Clock, label: "Support Hours", value: identity.supportHours || "Mon-Fri: 9AM-6PM PKT", href: null },
+              ].map((item, i) => {
+                const content = (
+                  <>
+                    <div className="flex-shrink-0 w-11 h-11 rounded-xl bg-amber-500/10 flex items-center justify-center group-hover:bg-amber-500/20 transition-colors">
+                      <item.icon className="h-5 w-5 text-amber-400" />
+                    </div>
+                    <div>
+                      <p className="text-xs text-slate-500 uppercase tracking-wider mb-0.5">{item.label}</p>
+                      <p className="text-sm font-medium text-white">{item.value}</p>
+                    </div>
+                  </>
+                );
+                const className = "flex items-start gap-4 p-4 sm:p-5 rounded-2xl bg-white/[0.03] border border-white/[0.06] transition-all duration-300 group";
+
+                return item.href ? (
+                  <a key={i} href={item.href} className={`${className} hover:border-amber-500/20`}>
+                    {content}
+                  </a>
+                ) : (
+                  <div key={i} className={className}>
+                    {content}
                   </div>
-                  <div>
-                    <p className="text-xs text-slate-500 uppercase tracking-wider mb-0.5">{item.label}</p>
-                    <p className="text-sm font-medium text-white">{item.value}</p>
-                  </div>
-                </a>
-              ))}
+                );
+              })}
 
               {/* WhatsApp CTA */}
-              {identity.whatsappNumber && (
+              {identity.socialLinksVisible && identity.showWhatsApp && identity.whatsappNumber && (
                 <a
                   href={`https://wa.me/${identity.whatsappNumber.replace(/[^0-9]/g, "")}`}
                   target="_blank"
@@ -660,7 +669,7 @@ export function ContactPage() {
                   </div>
                   <div className="flex-1">
                     <p className="text-sm font-medium text-white">Chat on WhatsApp</p>
-                    <p className="text-xs text-slate-400">Instant response during business hours</p>
+                    <p className="text-xs text-slate-400">Message our team during business hours</p>
                   </div>
                   <ChevronRight className="h-4 w-4 text-green-400" />
                 </a>
@@ -670,9 +679,9 @@ export function ContactPage() {
               <div className="pt-4 space-y-3">
                 <p className="text-xs text-slate-500 uppercase tracking-wider font-medium">Why Choose Us</p>
                 {[
-                  { icon: Shield, text: "Enterprise-grade security & encryption" },
-                  { icon: Zap, text: "Setup in under 5 minutes" },
-                  { icon: Users, text: "100+ brands already growing with us" },
+                  { icon: Shield, text: "Role-based access & encrypted connections" },
+                  { icon: Zap, text: "Guided beta onboarding" },
+                  { icon: Users, text: "Personal onboarding for beta participants" },
                   { icon: Globe, text: "Built in Pakistan, for Pakistani brands" },
                 ].map((item, i) => (
                   <div key={i} className="flex items-center gap-3">
@@ -700,7 +709,7 @@ export function ContactPage() {
                   </div>
                   <div>
                     <h3 className="text-lg font-bold text-white">Request a Consultation</h3>
-                    <p className="text-xs text-slate-500">Free 30-minute strategy session</p>
+                    <p className="text-xs text-slate-500">Beta walkthrough request; scheduling is subject to availability</p>
                   </div>
                 </div>
 
@@ -842,7 +851,7 @@ export function ContactPage() {
                   <label className="text-xs font-medium text-slate-400">
                     Preferred Consultation Method <span className="text-amber-400">(Recommended)</span>
                   </label>
-                  <div className="grid grid-cols-3 gap-3">
+                  <div className="grid grid-cols-2 gap-3">
                     {consultationTypes.map((ct) => (
                       <button
                         key={ct.value}
@@ -857,7 +866,6 @@ export function ContactPage() {
                         <div className={`text-lg mb-1 ${form.consultationType === ct.value ? "text-amber-400" : "text-slate-600"}`}>
                           {ct.icon === "Video" && <svg className="w-5 h-5 mx-auto" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m16 13 5.223 3.482a.5.5 0 0 0 .777-.416V7.87a.5.5 0 0 0-.752-.432L16 10.5"/><rect x="2" y="6" width="14" height="12" rx="2"/></svg>}
                           {ct.icon === "Phone" && <Phone className="w-5 h-5 mx-auto" />}
-                          {ct.icon === "MapPin" && <MapPin className="w-5 h-5 mx-auto" />}
                         </div>
                         <span className="text-xs font-medium">{ct.label}</span>
                       </button>
@@ -886,7 +894,7 @@ export function ContactPage() {
                       <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-emerald-500/10 border border-emerald-500/20">
                         <CheckCircle2 className="h-4 w-4 text-emerald-400 flex-shrink-0" />
                         <p className="text-xs text-emerald-400 font-medium">
-                          Meeting time slot booked successfully!
+                          The scheduling provider reported this time slot as booked.
                         </p>
                       </div>
                     )}
@@ -930,7 +938,7 @@ export function ContactPage() {
                   <Link href="/privacy" className="text-slate-500 underline hover:text-amber-400 transition-colors">
                     Privacy Policy
                   </Link>
-                  . We&apos;ll respond within 24 hours.
+                  . Follow-up timing varies during the beta.
                 </p>
               </form>
             </motion.div>
@@ -979,9 +987,8 @@ export function ContactPage() {
             Built by Muhammad Ashir Raza
           </h2>
           <p className="text-base text-slate-400 leading-relaxed mb-6 max-w-2xl mx-auto">
-            Valtriox was founded and engineered by <span className="text-amber-300 font-medium">Muhammad Ashir Raza</span> with a single
-            mission: to give modern brands one universal portal to command every aspect of their business.
-            From order management to customer insights, every line of code reflects a commitment to power, simplicity, and elegance.
+            Valtriox was founded and engineered by <span className="text-amber-300 font-medium">Muhammad Ashir Raza</span> as a connected
+            workspace for selected brand-operation workflows. The current product remains an invite-only beta shaped by testing and participant feedback.
           </p>
           <div className="flex flex-wrap items-center justify-center gap-3">
             <a

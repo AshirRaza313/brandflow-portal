@@ -60,22 +60,22 @@ export interface LeadMagnetSettings {
   redditUrl?: string | null;
   youtubeUrl?: string | null;
   tiktokUrl?: string | null;
+  socialLinksVisible?: boolean;
+  showInstagram?: boolean;
+  showFacebook?: boolean;
+  showTwitter?: boolean;
+  showLinkedin?: boolean;
+  showDiscord?: boolean;
+  showReddit?: boolean;
+  showYoutube?: boolean;
+  showTiktok?: boolean;
+  showWhatsApp?: boolean;
   supportHours?: string;
   primaryBrandColor?: string;
+  documentDate?: Date;
 }
 
-const DEFAULT_GUIDE_TAGLINE = "A unified workspace for modern brand operations";
-
-function getGuideTagline(value?: string | null): string {
-  const normalized = (value || "").replace(/\s+/g, " ").trim();
-  const unsupportedClaim = /(?:#\s*1|no\.?\s*1|number\s*one|\b(?:best|leading|fastest|largest|top-rated)\b|\b\d+(?:\.\d+)?\s*%|\b\d+\s*[kKmM]\+?)/i;
-
-  if (!normalized || normalized.length > 90 || unsupportedClaim.test(normalized)) {
-    return DEFAULT_GUIDE_TAGLINE;
-  }
-
-  return normalized;
-}
+const DEFAULT_GUIDE_TAGLINE = "Invite-only beta for selected brand-operation workflows";
 
 function formatContactNumber(value?: string | null): string {
   const original = (value || "").trim();
@@ -304,7 +304,7 @@ function addPageFooter(doc: any, settings: LeadMagnetSettings, W: number, H: num
   doc.text(leftParts.join("  |  "), 44, footerY + 8, { width: W - 88 });
 
   doc.font(FONT.italic).fontSize(7).fillColor(C.textLight);
-  doc.text(`${settings.companyName} | Introduction Guide`, 44, footerY + 20, { width: W / 2 - 44 });
+  doc.text(`${settings.companyName} | Invite-Only Beta Guide`, 44, footerY + 20, { width: W / 2 - 44 });
 
   doc.font(FONT.regular).fontSize(7).fillColor(C.textLight);
   doc.text(`Page ${pageNum}`, W - 44, footerY + 20, { width: 40, align: "right" });
@@ -320,11 +320,16 @@ export async function generateLeadMagnetPDF(settings: LeadMagnetSettings): Promi
   return new Promise(async (resolve, reject) => {
     let hasErrored = false;
     const buffers: Buffer[] = [];
+    const documentDate = settings.documentDate || new Date();
     const doc = new PDFDocument({
       size: "A4",
       margins: { top: 0, bottom: 0, left: 0, right: 0 },
       bufferPages: true,
       autoFirstPage: true,
+      info: {
+        CreationDate: documentDate,
+        ModDate: documentDate,
+      },
     });
 
     doc.on("data", (chunk) => buffers.push(chunk));
@@ -337,7 +342,12 @@ export async function generateLeadMagnetPDF(settings: LeadMagnetSettings): Promi
     const CW = W - P * 2;
 
     const companyName = settings.companyName || "Valtriox";
-    const tagline = getGuideTagline(settings.tagline);
+    // Public guide positioning is reviewed in source. A database-managed
+    // tagline is intentionally not injected because it could reintroduce
+    // unsupported marketing claims without code review.
+    const tagline = DEFAULT_GUIDE_TAGLINE;
+    doc.info.Title = `${companyName} Invite-Only Beta Introduction Guide`;
+    doc.info.Subject = "Reviewed overview of selected beta workflows; availability depends on plan, role, and configuration.";
 
     let pageNum = 0;
 
@@ -383,14 +393,14 @@ export async function generateLeadMagnetPDF(settings: LeadMagnetSettings): Promi
 
       // Subtitle
       doc.font(FONT.regular).fontSize(11).fillColor(C.textMuted);
-      doc.text("A clear overview of the platform, its core modules,", P, 380, { width: CW, align: "center" });
-      doc.text("and how it can support day-to-day brand operations.", P, 396, { width: CW, align: "center" });
+      doc.text("A beta overview of selected modules and workflows,", P, 380, { width: CW, align: "center" });
+      doc.text("with availability confirmed by plan, role, and configuration.", P, 396, { width: CW, align: "center" });
 
       // Gold divider
       goldLine(doc, W / 2 - 80, 440, W / 2 + 80, 440, 1);
 
       // Date
-      const currentDate = new Date().toLocaleDateString("en-US", { year: "numeric", month: "long" });
+      const currentDate = documentDate.toLocaleDateString("en-US", { year: "numeric", month: "long", timeZone: "UTC" });
       doc.font(FONT.regular).fontSize(9).fillColor(C.textLight);
       doc.text(currentDate, P, 460, { width: CW, align: "center" });
 
@@ -399,7 +409,7 @@ export async function generateLeadMagnetPDF(settings: LeadMagnetSettings): Promi
       doc.lineWidth(0.5);
       doc.roundedRect(W / 2 - 60, 500, 120, 26, 6).fillAndStroke(C.goldBg3, C.goldBorder);
       doc.font(FONT.bold).fontSize(8).fillColor(C.charcoal);
-      doc.text("PLATFORM OVERVIEW", W / 2 - 60, 508, { width: 120, align: "center" });
+      doc.text("INVITE-ONLY BETA", W / 2 - 60, 508, { width: 120, align: "center" });
       doc.restore();
 
       addPageFooter(doc, settings, W, H, pageNum);
@@ -416,10 +426,10 @@ export async function generateLeadMagnetPDF(settings: LeadMagnetSettings): Promi
       y += 8;
 
       const tocItems = [
-        { num: "01", title: "What is " + companyName + "?", desc: "An overview of the platform and its mission" },
-        { num: "02", title: "Core Features", desc: "The key capabilities that power your brand operations" },
+        { num: "01", title: "What is " + companyName + "?", desc: "An overview of the invite-only beta and its current direction" },
+        { num: "02", title: "Selected Beta Modules", desc: "Examples available by plan, role, and configuration" },
         { num: "03", title: "Benefits for Your Brand", desc: "Practical ways the platform can support your operations" },
-        { num: "04", title: "How It Works", desc: "Getting started in simple steps" },
+        { num: "04", title: "How Beta Access Works", desc: "A conditional onboarding path for approved participants" },
         { num: "05", title: "Overview of Key Modules", desc: "A concise view of the main operational areas" },
         { num: "06", title: "What to Expect", desc: "A flexible onboarding journey shaped by your scope" },
         { num: "07", title: "Contact Information", desc: "Get in touch with our team" },
@@ -458,13 +468,13 @@ export async function generateLeadMagnetPDF(settings: LeadMagnetSettings): Promi
       addPageBg(doc, W, H);
 
       y = P + 10;
-      y = drawSectionHeader(doc, y, `What is ${companyName}?`, "An overview of the platform and its mission", W, P);
+      y = drawSectionHeader(doc, y, `What is ${companyName}?`, "An overview of the invite-only beta and its current direction", W, P);
 
       // Main description card
       drawCardBright(doc, P, y, CW, 120);
       doc.font(FONT.regular).fontSize(10).fillColor(C.textSecondary);
       doc.text(
-        `${companyName} is a unified brand operations platform that brings orders, products, customers, marketing, team coordination, reporting, and day-to-day workflows into one workspace. It is designed for growing businesses that want clearer visibility, more consistent processes, and role-aware access across their teams.`,
+        `${companyName} is an invite-only beta workspace for selected order, product, customer, marketing, team, reporting, and operational workflows. Available modules, limits, connectors, and support depend on the participant's plan, role, and approved beta configuration.`,
         P + 18, y + 16, { width: CW - 36, lineGap: 4 }
       );
       doc.font(FONT.italic).fontSize(9).fillColor(C.goldDim);
@@ -477,9 +487,9 @@ export async function generateLeadMagnetPDF(settings: LeadMagnetSettings): Promi
       // Verified capability pillars (no unsupported usage or performance statistics)
       y = ensureSpace(doc, y, 100, W, H, P);
       const stats = [
-        { label: "Operations", value: "Unified" },
+        { label: "Operations", value: "Selected" },
         { label: "Access", value: "Role-Aware" },
-        { label: "Reporting", value: "Actionable" },
+        { label: "Reporting", value: "Available" },
         { label: "Workflows", value: "Configurable" },
       ];
 
@@ -503,24 +513,24 @@ export async function generateLeadMagnetPDF(settings: LeadMagnetSettings): Promi
       y = ensureSpace(doc, y, 80, W, H, P);
       drawCard(doc, P, y, CW, 74);
       doc.font(FONT.bold).fontSize(10).fillColor(C.textPrimary);
-      doc.text("Designed for Growing Brand Teams", P + 18, y + 12, { width: CW - 36 });
+      doc.text("Current Beta Scope", P + 18, y + 12, { width: CW - 36 });
       doc.font(FONT.regular).fontSize(9).fillColor(C.textSecondary);
       doc.text(
-        `${companyName} brings core operational workflows into one workspace so teams can work with clearer ownership, consistent processes, and shared visibility. Available modules can be configured around the organization’s needs and permissions.`,
+        `${companyName} is testing selected operational workflows in one workspace. Participation does not guarantee every listed module; availability is confirmed for each organization and can change as the beta is validated.`,
         P + 18, y + 30, { width: CW - 36, lineGap: 3 }
       );
 
       addPageFooter(doc, settings, W, H, pageNum);
 
       // ══════════════════════════════════════════════════════════════════════
-      // PAGE 4: CORE FEATURES
+      // PAGE 4: SELECTED BETA MODULES
       // ══════════════════════════════════════════════════════════════════════
       pageNum++;
       doc.addPage();
       addPageBg(doc, W, H);
 
       y = P + 10;
-      y = drawSectionHeader(doc, y, "Core Features", "The key capabilities that power your brand operations", W, P);
+      y = drawSectionHeader(doc, y, "Selected Beta Modules", "Examples only; availability depends on plan, role, and configuration", W, P);
       y += 4;
 
       const features = [
@@ -598,13 +608,13 @@ export async function generateLeadMagnetPDF(settings: LeadMagnetSettings): Promi
       const steps = [
         {
           num: "1",
-          title: "Request a Consultation",
-          desc: `Use the contact form to share your goals, preferred contact method, and an available date and time. Our team will review the request and follow up with the next steps.`,
+          title: "Request Beta Access",
+          desc: `Use the contact form to share the workflows you want to test. The team reviews requests during published business hours; access and follow-up timing are not guaranteed.`,
         },
         {
           num: "2",
-          title: "Platform Walkthrough & Needs Review",
-          desc: `Explore the ${companyName} modules that are most relevant to your team, discuss current workflows, and identify the operational priorities the setup should address.`,
+          title: "Conditional Beta Walkthrough",
+          desc: `If availability and the current beta scope fit, review selected ${companyName} modules and discuss which workflows may be configured for your team.`,
         },
         {
           num: "3",
@@ -613,8 +623,8 @@ export async function generateLeadMagnetPDF(settings: LeadMagnetSettings): Promi
         },
         {
           num: "4",
-          title: "Configure, Review & Launch",
-          desc: `After approval, account settings, permissions, and agreed workflows are configured. Your team can review the setup before launch, with support provided according to the agreed plan.`,
+          title: "Configure, Review & Activate",
+          desc: `After approval, the agreed settings, permissions, and available workflows can be configured for review. Activation and support remain subject to the confirmed beta plan.`,
         },
       ];
 
@@ -709,7 +719,7 @@ export async function generateLeadMagnetPDF(settings: LeadMagnetSettings): Promi
         { phase: "Discovery", title: "Goals & Priorities", desc: "Review your current processes, team structure, and the modules most relevant to your operations." },
         { phase: "Configuration", title: "Workspace Setup", desc: "Configure agreed settings, branding, modules, and workflows around the approved scope." },
         { phase: "Team Setup", title: "Access & Guidance", desc: "Create team access, apply roles and permissions, and introduce the workflows each role will use." },
-        { phase: "Review", title: "Workflow Check & Launch", desc: "Review the configured experience, address agreed adjustments, and confirm launch readiness." },
+        { phase: "Review", title: "Workflow Check & Activation", desc: "Review the configured beta experience and confirm whether the approved scope is ready for activation." },
         { phase: "Ongoing", title: "Support & Improvement", desc: "Continue refining the workspace as business needs, processes, and available features evolve." },
       ];
 
@@ -749,13 +759,13 @@ export async function generateLeadMagnetPDF(settings: LeadMagnetSettings): Promi
       y = ensureSpace(doc, y, 116, W, H, P);
       drawCard(doc, P, y, CW, 100);
       doc.font(FONT.bold).fontSize(11).fillColor(C.textPrimary);
-      doc.text("What You Can Expect", P + 18, y + 14, { width: CW - 36 });
+      doc.text("What Approved Participants Can Expect", P + 18, y + 14, { width: CW - 36 });
 
       const diffs = [
         "A setup plan based on agreed priorities and requirements",
         "Role-aware access configured for the people using the workspace",
-        "A workflow review before the agreed launch point",
-        "Support and future adjustments according to the selected plan",
+        "A workflow review before any agreed activation point",
+        "Support and adjustments only within the confirmed beta plan",
       ];
       let diffY = y + 34;
       for (const diff of diffs) {
@@ -781,9 +791,8 @@ export async function generateLeadMagnetPDF(settings: LeadMagnetSettings): Promi
       const contactItems = [
         { label: "EMAIL", value: settings.companyEmail || "N/A", color: C.gold },
         { label: "PHONE", value: formatContactNumber(settings.companyPhone), color: C.textPrimary },
-        { label: "WHATSAPP", value: formatContactNumber(settings.whatsappNumber), color: C.green },
+        { label: "WHATSAPP", value: settings.socialLinksVisible !== false && settings.showWhatsApp ? formatContactNumber(settings.whatsappNumber) : "", color: C.green },
         { label: "WEBSITE", value: settings.companyWebsite || "", color: C.gold },
-        { label: "ADDRESS", value: settings.companyAddress || "", color: C.textPrimary },
         { label: "SUPPORT HOURS", value: formatSupportHours(settings.supportHours), color: C.textSecondary },
       ].filter((item) => item.value);
 
@@ -807,16 +816,16 @@ export async function generateLeadMagnetPDF(settings: LeadMagnetSettings): Promi
       y += contactCardH + 16;
 
       // Social media section
-      const socialLinks = [
-        { label: "Instagram", url: settings.instagramUrl },
-        { label: "Facebook", url: settings.facebookUrl },
-        { label: "X / Twitter", url: settings.twitterUrl },
-        { label: "LinkedIn", url: settings.linkedinUrl },
-        { label: "Discord", url: settings.discordUrl },
-        { label: "Reddit", url: settings.redditUrl },
-        { label: "YouTube", url: settings.youtubeUrl },
-        { label: "TikTok", url: settings.tiktokUrl },
-      ].filter((s) => s.url);
+      const socialLinks = settings.socialLinksVisible !== false ? [
+        { label: "Instagram", url: settings.instagramUrl, visible: settings.showInstagram },
+        { label: "Facebook", url: settings.facebookUrl, visible: settings.showFacebook },
+        { label: "X / Twitter", url: settings.twitterUrl, visible: settings.showTwitter },
+        { label: "LinkedIn", url: settings.linkedinUrl, visible: settings.showLinkedin },
+        { label: "Discord", url: settings.discordUrl, visible: settings.showDiscord },
+        { label: "Reddit", url: settings.redditUrl, visible: settings.showReddit },
+        { label: "YouTube", url: settings.youtubeUrl, visible: settings.showYoutube },
+        { label: "TikTok", url: settings.tiktokUrl, visible: settings.showTiktok },
+      ].filter((social) => social.visible && social.url) : [];
 
       if (socialLinks.length > 0) {
         const socialRows = Math.ceil(socialLinks.length / 4);
@@ -854,9 +863,9 @@ export async function generateLeadMagnetPDF(settings: LeadMagnetSettings): Promi
       doc.save();
       doc.roundedRect(W / 2 - 140, ctaY, 280, 44, 10).fill(C.gold);
       doc.font(FONT.bold).fontSize(12).fillColor("#ffffff");
-      doc.text("Ready to Organize Your Brand Operations?", W / 2 - 140, ctaY + 10, { width: 280, align: "center" });
+      doc.text("Interested in the Invite-Only Beta?", W / 2 - 140, ctaY + 10, { width: 280, align: "center" });
       doc.font(FONT.regular).fontSize(9).fillColor("#ffffff");
-      doc.text(settings.companyWebsite || "Visit our website to get started", W / 2 - 140, ctaY + 28, { width: 280, align: "center" });
+      doc.text(settings.companyWebsite || "Visit the website to request access", W / 2 - 140, ctaY + 28, { width: 280, align: "center" });
       doc.restore();
 
       addPageFooter(doc, settings, W, H, pageNum);

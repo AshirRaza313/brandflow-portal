@@ -9,19 +9,19 @@ const steps = [
     number: "01",
     icon: MessageCircle,
     title: "Get in Touch",
-    description: "Share your brand details and requirements with our team. We'll recommend the perfect plan for your business.",
+    description: "Share your brand details and requirements. We will review which current beta configuration may fit.",
   },
   {
     number: "02",
     icon: Settings,
     title: "We Set You Up",
-    description: "Our team configures your workspace, dashboard, integrations, and onboards your brand. Fully managed setup with 14-day free trial.",
+    description: "If accepted, onboarding confirms the workspace, enabled modules, connector scope, pricing, and trial terms before activation.",
   },
   {
     number: "03",
     icon: TrendingUp,
     title: "Manage & Grow",
-    description: "Start handling orders, inventory, marketing, and analytics from one powerful platform. Scale as you grow.",
+    description: "Test the enabled order, inventory, marketing, and reporting workflows, then share feedback with the beta team.",
   },
 ];
 
@@ -43,11 +43,11 @@ export function HowItWorks() {
             How It Works
           </span>
           <h2 className="mt-3 text-3xl sm:text-4xl font-bold text-white">
-            Up and Running in{" "}
-            <span className="text-amber-400">3 Simple Steps</span>
+            The Beta Onboarding{" "}
+            <span className="text-amber-400">Process</span>
           </h2>
           <p className="mt-4 text-lg text-slate-400">
-            Getting started with {companyName} is effortless. Here&apos;s how.
+            Access is reviewed and configured individually while {companyName} remains in invite-only beta.
           </p>
         </motion.div>
 

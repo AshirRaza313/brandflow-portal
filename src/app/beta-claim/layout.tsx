@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 
 export const metadata: Metadata = {
   title: "Claim Your Beta Access | Valtriox",
-  description: "Claim your exclusive beta access to Valtriox - Pakistan's premier brand management portal.",
+  description: "Apply for invite-only beta access to Valtriox, a brand operations portal built in Pakistan.",
   robots: { index: false, follow: false },
 };
 

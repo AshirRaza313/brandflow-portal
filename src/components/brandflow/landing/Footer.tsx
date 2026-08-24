@@ -51,41 +51,31 @@ export function Footer({ onLegalClick }: FooterProps) {
   // "Too few internal links (4)". We now spread links across all real
   // indexable routes and section anchors that exist on the site:
   //   /about, /contact, /privacy, /terms, /cookies, /refund,
-  //   /#features, /#pricing, /#about, /#how-it-works, /#testimonials, /#faq
+  //   /#features, /#pricing, /#about, /#how-it-works, /#early-access, /#faq
   // This gives 12+ unique internal URLs for crawlers to discover.
   const linkRouteMap: Record<string, string> = {
     // Product → section anchors + dedicated routes
     "Features": "/#features",
     "Pricing": "/#pricing",
-    "Integrations": "/#how-it-works",
-    "Changelog": "/#faq",
-    "Documentation": "/#how-it-works",
     // Company → /about and /contact
     "About": "/about",
-    "Blog": "/about",
-    "Careers": "/about",
-    "Press": "/about",
-    "Partners": "/contact",
+    "Contact": "/contact",
     // Resources → section anchors + /contact + /about
     "Help Center": "/#faq",
-    "Community": "/contact",
-    "Status": "/contact",
-    "API Docs": "/#how-it-works",
-    "Tutorials": "/#testimonials",
+    "Early Access": "/#early-access",
   };
 
-  // Only 4 social icons: Instagram, LinkedIn, Discord, Reddit
-  const socialLinks = [
-    { icon: Instagram, url: identity.instagramUrl, label: "Instagram" },
-    { icon: Linkedin, url: identity.linkedinUrl, label: "LinkedIn" },
-    { icon: DiscordIcon, url: identity.discordUrl, label: "Discord" },
-    { icon: RedditIcon, url: identity.redditUrl, label: "Reddit" },
-  ];
+  const socialLinks = identity.socialLinksVisible ? [
+    { icon: Instagram, url: identity.instagramUrl, label: "Instagram", visible: identity.showInstagram },
+    { icon: Linkedin, url: identity.linkedinUrl, label: "LinkedIn", visible: identity.showLinkedin },
+    { icon: DiscordIcon, url: identity.discordUrl, label: "Discord", visible: identity.showDiscord },
+    { icon: RedditIcon, url: identity.redditUrl, label: "Reddit", visible: identity.showReddit },
+  ].filter((link) => link.visible && Boolean(link.url)) : [];
 
   const footerLinks = {
-    Product: ["Features", "Pricing", "Integrations", "Changelog", "Documentation"],
-    Company: ["About", "Blog", "Careers", "Press", "Partners"],
-    Resources: ["Help Center", "Community", "Status", "API Docs", "Tutorials"],
+    Product: ["Features", "Pricing"],
+    Company: ["About", "Contact"],
+    Resources: ["Help Center", "Early Access"],
     Legal: ["Privacy Policy", "Terms of Service", "Cookie Policy", "Refund Policy"],
   };
 
@@ -106,29 +96,21 @@ export function Footer({ onLegalClick }: FooterProps) {
               />
             </div>
             <p className="text-sm text-slate-500 leading-relaxed mb-6">
-              COMMAND YOUR BRAND UNIVERSE. All-in-one operations portal for modern brands.
+              COMMAND YOUR BRAND UNIVERSE. Invite-only beta for selected brand-operation workflows.
             </p>
             <div className="flex gap-2.5">
-              {socialLinks.map((link, i) => {
-                const hasUrl = !!link.url;
-                const Wrapper = hasUrl ? 'a' : 'span';
-                return (
-                  <Wrapper
-                    key={i}
-                    {...(hasUrl ? { href: link.url!, target: "_blank", rel: "noopener noreferrer" } : {})}
-                    title={hasUrl ? link.label : `${link.label} (coming soon)`}
-                    className={`w-9 h-9 rounded-lg flex items-center justify-center transition-all duration-200 ${
-                      hasUrl
-                        ? "bg-slate-800 hover:bg-amber-600 group cursor-pointer"
-                        : "bg-slate-800/70 text-slate-500 cursor-default"
-                    }`}
+              {socialLinks.map((link) => (
+                  <a
+                    key={link.label}
+                    href={link.url!}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    title={link.label}
+                    className="w-9 h-9 rounded-lg flex items-center justify-center transition-all duration-200 bg-slate-800 hover:bg-amber-600 group"
                   >
-                    <link.icon className={`w-4 h-4 transition-colors ${
-                      hasUrl ? "text-slate-400 group-hover:text-white" : "text-slate-500"
-                    }`} />
-                  </Wrapper>
-                );
-              })}
+                    <link.icon className="w-4 h-4 text-slate-400 group-hover:text-white transition-colors" />
+                  </a>
+              ))}
             </div>
           </div>
 
@@ -141,7 +123,6 @@ export function Footer({ onLegalClick }: FooterProps) {
                   const slug = legalSlugMap[link];
                   const isLegal = !!slug;
                   const legalRoute = legalRouteMap[link];
-                  const isLegalModal = isLegal && onLegalClick;
 
                   // Determine the href: legal modal button, legal dedicated route, or regular link route
                   const regularHref = linkRouteMap[link] || "/";
