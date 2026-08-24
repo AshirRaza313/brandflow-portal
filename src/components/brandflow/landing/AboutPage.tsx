@@ -3,11 +3,10 @@
 
 import { motion } from "framer-motion";
 import Image from "next/image";
-import Link from "next/link";
 import {
   Target, Eye, Heart, Globe, Zap, Award, Users, TrendingUp, Shield,
   Linkedin, Mail, Code2, Rocket, Layers, Database, Cloud, Lock,
-  Sparkles, Server, Smartphone, GitBranch, Cpu, CheckCircle2, ArrowRight,
+  Sparkles, Server, Smartphone, Cpu, CheckCircle2, ArrowRight,
 } from "lucide-react";
 import { usePlatformIdentity } from "@/lib/platform-identity";
 
@@ -26,7 +25,9 @@ export function AboutPage() {
 
   // Founder bio: admin can override via Platform Settings. Otherwise use
   // the natural, humanized default below.
-  const founderBio = identity.founderBio || "I started Valtriox because I kept seeing the same problem everywhere. Brands in Pakistan were running their entire operation on WhatsApp, Excel sheets, and three or four disconnected apps. Orders got lost, customer details vanished, and inventory numbers never matched reality. It was chaos, and it was costing people real money. I wanted to fix that. Not with another tool that does one thing, but with one platform that handles everything and talks to itself. So I sat down, wrote the first lines of code, and did not stop until Valtriox could run a brand from order to delivery without the founder ever leaving the dashboard. Every feature in here exists because a real business owner told me they needed it. Nothing is here for show. If it does not help someone sell more, ship faster, or sleep better, it does not ship. That is the rule I built this company on, and the rule I will keep building it on.";
+  // Public founder copy is intentionally static and reviewed. Admin-entered bios can
+  // contain unverified claims, so they are not rendered on the public About page.
+  const founderBio = "I started Valtriox after seeing Pakistani brands manage orders, inventory, and customer work across disconnected tools. The beta is my attempt to bring selected workflows into one workspace. It is still early: participating businesses help identify what works, what needs refinement, and what should be built next.";
 
   // ── Core values ──
   const values = [
@@ -34,25 +35,25 @@ export function AboutPage() {
       icon: Target,
       title: "Build for Real People",
       description:
-        "Every feature starts with a real conversation. If a brand owner has not asked for it, we do not build it. No vanity features, no checkbox lists just to look impressive on a pricing page. Only things that actually make work easier.",
+        "Product decisions combine early-adopter conversations, observed workflow needs, technical constraints, and testing evidence.",
     },
     {
       icon: Eye,
       title: "One Platform, Not Ten",
       description:
-        "We believe a brand should not need eight tools and a spreadsheet to run its day. Valtriox replaces the chaos with one calm, organized place where orders, customers, inventory, and marketing all live together and stay in sync automatically.",
+        "We are bringing selected order, customer, inventory, marketing, and reporting workflows into one beta workspace. Availability and data movement vary by module.",
     },
     {
       icon: Heart,
-      title: "Support That Picks Up",
+      title: "Founder-Led Support",
       description:
-        "When something breaks, you talk to a person who knows the product, not a chatbot reading a script. We answer fast, we fix things fast, and we treat every support ticket as a chance to make the platform better for everyone.",
+        "Beta participants can contact the team during published business hours. Response and resolution times vary with the request and are not publicly guaranteed.",
     },
     {
       icon: Globe,
       title: "Built Here, For Here",
       description:
-        "Valtriox was built in Pakistan, for Pakistani businesses first. Multi-currency support, local payment methods, Urdu interface options, and pricing that makes sense in PKR. We are expanding in 2026, but our roots stay local.",
+        "Valtriox was built in Pakistan and the invite-only beta starts with Pakistani businesses. Regional expansion remains a future direction, not a current availability claim.",
     },
     {
       icon: Shield,
@@ -91,12 +92,12 @@ export function AboutPage() {
     {
       category: "Infrastructure",
       icon: Cloud,
-      items: ["Vercel Edge Network", "Supabase Database", "Cloudinary CDN", "Sentry Monitoring", "PWA + Service Workers"],
+      items: ["Vercel Hosting", "Supabase Database", "Cloudinary Media", "Sentry Monitoring", "Service Worker"],
     },
     {
-      category: "Integrations",
+      category: "Optional Services",
       icon: Layers,
-      items: ["WhatsApp Business", "PayPro / Safepay", "Calendly", "Email Marketing", "Google Analytics", "Meta Pixel"],
+      items: ["Calendly Settings", "Email Delivery", "Google Analytics Hooks", "Meta Pixel Hooks", "Payment and Messaging Configuration"],
     },
   ];
 
@@ -121,7 +122,7 @@ export function AboutPage() {
       year: "2026, Early",
       title: "Building Every Single Day",
       event:
-        "Started writing production code. For several months I worked on it daily, often late into the night, building orders, inventory, customers, marketing, analytics, team management, expenses, subscriptions, white-label mode, the PWA, and security hardening. One person, one mission, no shortcuts.",
+        "Started implementing the modules represented in the repository, including orders, inventory, customers, marketing, analytics, team management, expenses, subscriptions, branding controls, and security hardening.",
       icon: Rocket,
     },
     {
@@ -135,7 +136,7 @@ export function AboutPage() {
       year: "2027 & Beyond",
       title: "Next Upgrade In Planning",
       event:
-        "The Valtriox team is actively planning the 2027 upgrade. The goal is simple but ambitious: pull ahead of every competitor in the brand management space by making the platform even easier to use, smarter, and more powerful. AI-powered insights, deeper automation, and expansion across South Asia and the Middle East are all on the roadmap.",
+        "Potential 2027 work remains in planning. Candidate improvements will be prioritized only after beta feedback and technical validation; roadmap items are not promises of delivery or regional availability.",
       icon: Globe,
     },
   ];
@@ -146,13 +147,13 @@ export function AboutPage() {
       icon: Layers,
       title: "40+ Feature Modules",
       description:
-        "Orders, inventory, customers, marketing, analytics, team, expenses, subscriptions, integrations, and more. All in one workspace, all talking to each other, none of them requiring a separate login.",
+        "The repository contains more than 40 modules covering orders, inventory, customers, marketing, analytics, team, expenses, subscriptions, and other workflows. Module availability depends on role, plan, and beta configuration.",
     },
     {
       icon: Smartphone,
-      title: "Installable On Any Phone",
+      title: "Responsive Web Experience",
       description:
-        "Valtriox is a PWA. You can install it on iOS, Android, or desktop and it runs like a native app. Offline support, push notifications, and a responsive layout that works on any screen size.",
+        "The web interface includes responsive layouts, a manifest, a service worker for selected static assets, and optional browser notifications. Device installation and notification support depend on the browser; application pages are not represented as offline-capable.",
     },
     {
       icon: Lock,
@@ -162,9 +163,9 @@ export function AboutPage() {
     },
     {
       icon: Cpu,
-      title: "AI Built Into The Workflow",
+      title: "Analytics Under Active Validation",
       description:
-        "Predictive analytics, churn detection, revenue forecasting, and an AI assistant that surfaces insights before they become problems. The kind of tooling that used to require a data team, now built in.",
+        "The beta includes reporting and experimental insight surfaces. Forecasting, automated recommendations, and external AI availability are not represented as generally available features.",
     },
   ];
 
@@ -187,7 +188,7 @@ export function AboutPage() {
             <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold leading-tight mb-6">
               One Platform For{" "}
               <span className="text-transparent bg-clip-text bg-gradient-to-r from-amber-400 via-yellow-300 to-amber-500">
-                Your Whole Brand
+                Connected Operations
               </span>
             </h1>
             <p className="text-lg sm:text-xl text-slate-400 leading-relaxed max-w-3xl mx-auto">
@@ -248,7 +249,7 @@ export function AboutPage() {
               <Target className="h-10 w-10 text-amber-400 mb-6" />
               <h2 className="text-2xl sm:text-3xl font-bold text-white mb-4">Our Mission</h2>
               <p className="text-slate-400 leading-relaxed">
-                We exist to give every business, no matter how small, the same tools that big companies pay thousands of dollars a month for. Order management, inventory, customer relationships, marketing, analytics, and team collaboration should all live in one place. They should work together without manual syncing. And they should cost less than what most brands spend on a single fragmented tool. That is the bar we hold ourselves to, every release.
+                We are testing a connected workspace for order, inventory, customer, marketing, reporting, and team workflows. The goal is to reduce unnecessary tool switching, while beta evidence determines which connections and workflows are reliable enough to expand.
               </p>
             </motion.div>
             <motion.div
@@ -261,7 +262,7 @@ export function AboutPage() {
               <Eye className="h-10 w-10 text-amber-400 mb-6" />
               <h2 className="text-2xl sm:text-3xl font-bold text-white mb-4">Our Vision</h2>
               <p className="text-slate-400 leading-relaxed">
-                We are building the default operating system for modern brands across South Asia and the Middle East. A platform designed to support a single founder today and increasingly complex teams as they grow. The vision is simple in words and hard in execution: one login, one dashboard, and connected tools that evolve with the needs of each business.
+                We are starting with invite-only beta participants in Pakistan. The longer-term direction is a flexible workspace for founders and teams, but regional availability and future capabilities will be announced only after they are validated.
               </p>
             </motion.div>
           </div>
@@ -317,7 +318,7 @@ export function AboutPage() {
           >
             <h2 className="text-3xl sm:text-4xl font-bold mb-4">What We Actually Built</h2>
             <p className="text-lg text-slate-400">
-              Not a feature, not a tool. An entire operating system for running a brand.
+              A reviewed set of beta modules for selected brand-operation workflows.
             </p>
           </motion.div>
           <div className="grid sm:grid-cols-2 gap-6">
@@ -390,7 +391,7 @@ export function AboutPage() {
                 <div className="mt-4 flex justify-center sm:justify-start gap-2">
                   <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-[11px] font-medium text-emerald-300">
                     <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
-                    Available
+                    Founder-Led Beta
                   </span>
                 </div>
               </div>
@@ -465,7 +466,7 @@ export function AboutPage() {
           >
             <h2 className="text-3xl sm:text-4xl font-bold mb-4">Built on Modern Technology</h2>
             <p className="text-lg text-slate-400">
-              The stack behind {companyName}. Chosen for performance, security, and the ability to scale without rewriting everything in two years.
+              The current stack behind {companyName}. It supports the beta today and will be reviewed as usage and operational evidence grow.
             </p>
           </motion.div>
           <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-6">
@@ -557,18 +558,18 @@ export function AboutPage() {
               Want to See What Valtriox Can Do For Your Brand?
             </h2>
             <p className="text-lg text-slate-400 mb-8 max-w-2xl mx-auto">
-              Book a free 30-minute walkthrough. We will show you the platform, answer your questions, and help you figure out if it fits your business. No pressure, no sales scripts, just a real conversation.
+              Request a beta walkthrough. If a suitable time is available, we can show the current platform and discuss whether the present beta scope fits your workflow.
             </p>
             <div className="flex flex-wrap items-center justify-center gap-4">
               <a
                 href="/contact"
                 className="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-gradient-to-r from-amber-500 to-amber-600 text-white font-medium hover:from-amber-600 hover:to-amber-700 transition-all shadow-lg shadow-amber-600/20"
               >
-                Book a Free Walkthrough
+                Request a Beta Walkthrough
                 <ArrowRight className="h-4 w-4" />
               </a>
               <a
-                href="/"
+                href="/#features"
                 className="inline-flex items-center gap-2 px-6 py-3 rounded-xl border border-white/10 text-slate-300 font-medium hover:bg-white/5 hover:text-white transition-all"
               >
                 Explore Features

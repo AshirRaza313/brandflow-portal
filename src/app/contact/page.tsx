@@ -3,18 +3,17 @@ import { ContactPage } from "@/components/brandflow/landing/ContactPage";
 import { PlatformIdentityProvider } from "@/lib/platform-identity";
 
 export const metadata: Metadata = {
-  title: "Contact Valtriox | Email, Phone, Address & Free Strategy Session",
+  title: "Contact Valtriox | Beta Access, Email & Phone",
   description:
-    "Contact Valtriox: Email ashir@valtriox.com, Call +92-318 3916019, Visit Karachi, Pakistan. Book a free 30-minute strategy session with founder Muhammad Ashir Raza. Mon-Fri 9AM-6PM PKT.",
+    "Contact the Valtriox beta team by email or phone during published business hours, or submit a request for invite-only beta access and an optional walkthrough.",
   keywords: [
     "contact Valtriox",
     "Valtriox email",
     "Valtriox phone",
-    "Valtriox address",
     "ashir@valtriox.com",
     "+92-318 3916019",
-    "Karachi Pakistan",
-    "free strategy session",
+    "Valtriox beta Pakistan",
+    "beta walkthrough",
     "Muhammad Ashir Raza",
     "brand management consultation",
   ],
@@ -22,9 +21,9 @@ export const metadata: Metadata = {
     canonical: "https://valtriox.com/contact",
   },
   openGraph: {
-    title: "Contact Valtriox | Free 30-Minute Strategy Session",
+    title: "Contact Valtriox | Invite-Only Beta",
     description:
-      "Email ashir@valtriox.com  ·  Call +92-318 3916019  ·  Visit Karachi, Pakistan. Book a free 30-minute strategy session with founder Muhammad Ashir Raza.",
+      "Email or call the Valtriox team, or request invite-only beta access. Walkthrough scheduling is subject to availability.",
     url: "https://valtriox.com/contact",
     type: "website",
     images: [
@@ -38,9 +37,9 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: "summary_large_image",
-    title: "Contact Valtriox | Free 30-Minute Strategy Session",
+    title: "Contact Valtriox | Invite-Only Beta",
     description:
-      "Email ashir@valtriox.com  ·  Call +92-318 3916019  ·  Visit Karachi, Pakistan.",
+      "Email or call the Valtriox beta team during published business hours.",
     images: ["/valtriox-icon-512.png"],
   },
   // Extra metadata Google reads for entity disambiguation
@@ -48,16 +47,14 @@ export const metadata: Metadata = {
     "contact:email": "ashir@valtriox.com",
     "contact:phone_number": "+92-318-3916019",
     "contact:country_name": "Pakistan",
-    "contact:locality": "Karachi",
     "business:contact_data:country_name": "Pakistan",
-    "business:contact_data:locality": "Karachi",
     "business:contact_data:email": "ashir@valtriox.com",
     "business:contact_data:phone_number": "+92-318-3916019",
   },
 };
 
 // Page-specific JSON-LD: ContactPage schema tells Google this page is
-// about contacting the business. Combined with the global LocalBusiness
+// about contacting the business. Combined with the global Organization
 // schema in layout.tsx, this gives search engines an unambiguous signal
 // that /contact is the canonical place to surface Valtriox's contact info.
 const contactJsonLd = {
@@ -66,7 +63,7 @@ const contactJsonLd = {
   url: "https://valtriox.com/contact",
   name: "Contact Valtriox",
   description:
-    "Get in touch with Valtriox. Email ashir@valtriox.com, call +92-318 3916019, or visit Karachi, Pakistan. Book a free 30-minute strategy session with founder Muhammad Ashir Raza.",
+    "Get in touch with the Valtriox beta team by email or phone, or submit an invite-only beta request. Walkthroughs are arranged only when availability is confirmed.",
   mainEntity: {
     "@type": "Organization",
     name: "Valtriox",
@@ -77,18 +74,12 @@ const contactJsonLd = {
       "@type": "Person",
       name: "Muhammad Ashir Raza",
     },
-    address: {
-      "@type": "PostalAddress",
-      addressLocality: "Karachi",
-      addressRegion: "Sindh",
-      addressCountry: "PK",
-    },
     contactPoint: {
       "@type": "ContactPoint",
       contactType: "customer support",
       email: "ashir@valtriox.com",
       telephone: "+923183916019",
-      areaServed: ["PK", "Worldwide"],
+      areaServed: "PK",
       availableLanguage: ["English", "Urdu"],
       hoursAvailable: "Mon-Fri, 09:00-18:00 (PKT, UTC+5)",
     },
@@ -105,20 +96,20 @@ export default function Contact() {
       {/*
         SSR-rendered contact details block — this is what Google's crawler
         sees on the FIRST HTML response (before any client-side JS runs).
-        Wraps the 4 key contact facts in semantic <address> markup so search
+        Wraps the verified contact facts in semantic organization markup so search
         engines and AI systems can extract them unambiguously.
         Visually hidden (sr-only) so it doesn't duplicate the cards below.
       */}
-      <address
+      <section
         className="sr-only"
         itemScope
-        itemType="https://schema.org/LocalBusiness"
+        itemType="https://schema.org/Organization"
       >
         <h2>Contact Valtriox</h2>
         <p>
-          Valtriox is a universal brand operating system founded by Muhammad
-          Ashir Raza, headquartered in Karachi, Pakistan. You can reach the
-          Valtriox team using the contact details below.
+          Valtriox is an invite-only brand-operations beta founded by Muhammad
+          Ashir Raza in Pakistan. You can reach the beta team using the contact
+          details below.
         </p>
         <ul>
           <li>
@@ -134,22 +125,13 @@ export default function Contact() {
             </a>
           </li>
           <li>
-            <strong>Address:</strong>{" "}
-            <span itemProp="address" itemScope itemType="https://schema.org/PostalAddress">
-              <span itemProp="addressLocality">Karachi</span>,{" "}
-              <span itemProp="addressRegion">Sindh</span>,{" "}
-              <span itemProp="addressCountry">Pakistan</span>
-            </span>
-          </li>
-          <li>
             <strong>Support Hours:</strong> Monday to Friday, 9:00 AM to 6:00 PM
             (PKT, UTC+5)
           </li>
           <li>
-            <strong>Free 30-Minute Strategy Session:</strong> Book a free
-            30-minute strategy session with founder Muhammad Ashir Raza to
-            discuss how Valtriox can streamline your brand&apos;s operations,
-            orders, inventory, and marketing.
+            <strong>Beta Walkthrough:</strong> You may request a walkthrough
+            with the beta team. Timing and scope are confirmed separately and
+            depend on availability.
           </li>
           <li>
             <strong>Founder:</strong>{" "}
@@ -164,7 +146,7 @@ export default function Contact() {
             </a>
           </li>
         </ul>
-      </address>
+      </section>
       <ContactPage />
     </PlatformIdentityProvider>
   );

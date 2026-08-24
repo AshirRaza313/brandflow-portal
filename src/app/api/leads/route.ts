@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { db, dbErrorResponse, withRetry} from "@/lib/db";
+import { db, withRetry} from "@/lib/db";
 import { sanitizeObject } from "@/lib/sanitize";
 import logger from "@/lib/logger";
 import { sendEmail, SUPPORT_FROM, SUPPORT_REPLY_TO, SUPPORT_EMAIL } from "@/lib/email";
@@ -116,7 +116,7 @@ async function leadsPostHandler(req: NextRequest) {
     }
 
     try {
-      // Check for duplicate email within last 24 hours
+      // Check for duplicate email during the one-day suppression window
       const oneDayAgo = new Date(Date.now() - 24 * 60 * 60 * 1000);
       const recentLead = await withRetry(async () => {
         return await db.lead.findFirst({
@@ -130,7 +130,9 @@ async function leadsPostHandler(req: NextRequest) {
       if (recentLead) {
         return NextResponse.json({
           success: true,
-          message: "We already received your inquiry recently. Our team will respond within 24 hours.",
+          confirmed: true,
+          stored: false,
+          message: "A recent inquiry for this email is already stored; no duplicate was created. Follow-up timing varies.",
           duplicate: true,
         });
       }
@@ -162,42 +164,30 @@ async function leadsPostHandler(req: NextRequest) {
 
       return NextResponse.json({
         success: true,
-        message: "Thank you! Your inquiry has been received. We'll respond within 24 hours.",
+        confirmed: true,
+        stored: true,
+        message: "Your inquiry was stored for beta review. Follow-up timing varies.",
         leadId: lead.id,
-      });
+      }, { status: 201 });
     } catch (dbError: unknown) {
       // Phase 6: Removed auto-repair DDL — schema changes must be done via migrations, not in request handlers
       const errMsg = dbError instanceof Error ? dbError.message : String(dbError);
       logger.error("[Leads] DB error during lead creation", { error: errMsg });
 
-      // Database connection error - still return success for UX
-      if (errMsg.includes("DATABASE_URL") || errMsg.includes("connection") || errMsg.includes("ENOTFOUND") || errMsg.includes("ECONNREFUSED") || errMsg.includes("ETIMEDOUT") || errMsg.includes("too many connections") || errMsg.includes("pool")) {
-        logger.error("[Leads] Database connection failed, logging lead data", { fullName, email });
-        // Fire-and-forget: send confirmation email even on DB failure
-        const connErrEmail = (email as string).trim().toLowerCase();
-        const connErrName = (fullName as string).trim();
-        if (connErrEmail) {
-          sendLeadConfirmationEmail(connErrEmail, connErrName);
-        }
-        return NextResponse.json({
-          success: true,
-          message: "Thank you! Your inquiry has been received. We'll respond within 24 hours.",
-          fallback: true,
-        });
-      }
-
-      throw dbError;
+      return NextResponse.json({
+        success: false,
+        confirmed: false,
+        error: "We could not confirm that your inquiry was stored. Please try again or use a published contact channel.",
+      }, { status: 503 });
     }
   } catch (error: unknown) {
     const errMsg = error instanceof Error ? error.message : "Unknown error";
     logger.error("[Leads] Submit error", { message: errMsg });
-    // Still return success for better UX - log lead data for manual processing
-    logger.warn("[Leads] Returning success despite error (UX fallback)");
     return NextResponse.json({
-      success: true,
-      message: "Thank you! Your inquiry has been received. We'll respond within 24 hours.",
-      fallback: true,
-    });
+      success: false,
+      confirmed: false,
+      error: "We could not confirm your inquiry. Please try again or use a published contact channel.",
+    }, { status: 500 });
   }
 }
 

@@ -12,22 +12,22 @@ export function About() {
     {
       icon: Target,
       title: "Mission-Driven",
-      description: "We exist to democratize brand management, giving every business, from startup to enterprise, the tools to command their brand universe from a single dashboard.",
+      description: "We are testing whether a connected workspace can make everyday brand operations easier for early adopters.",
     },
     {
       icon: Eye,
       title: "Vision-Led",
-      description: "Our vision is a world where no brand is held back by fragmented tools. We build the unified operating system that brands deserve.",
+      description: "Our direction is to connect more operational workflows over time, guided by evidence from beta use.",
     },
     {
       icon: Heart,
-      title: "Customer Obsessed",
-      description: "Every feature, every pixel, every interaction is crafted with our users in mind. Your success is our only metric that matters.",
+      title: "Feedback-Led",
+      description: "Early-adopter feedback helps us decide what to refine, document, or build next.",
     },
     {
       icon: Globe,
       title: "Pakistan and Beyond",
-      description: "Built for Pakistani businesses with multi-currency and multi-language support. We're starting with an invite-only beta and shaping regional expansion with verified customer feedback.",
+      description: "Built in Pakistan with multi-currency and language settings. The invite-only beta starts locally; any regional expansion will follow validated feedback.",
     },
   ];
 
@@ -42,7 +42,7 @@ export function About() {
     { year: "2024", event: "Idea born. The problem was clear and the vision for a unified brand OS took shape.", icon: Zap },
     { year: "2025", event: "Planning and architecture. Database schema, 40+ feature modules, tech stack chosen.", icon: Database },
     { year: "2026", event: "Built daily for months, then launched in beta in the 2nd half of the year.", icon: TrendingUp },
-    { year: "2027", event: "Next upgrade in planning. Goal: pull ahead of every competitor with easier, smarter management.", icon: Globe },
+    { year: "2027", event: "Potential upgrades remain on the roadmap and will be prioritized from beta evidence.", icon: Globe },
   ];
 
   return (
@@ -69,9 +69,8 @@ export function About() {
             </span>
           </h2>
           <p className="mt-5 text-lg text-slate-400 leading-relaxed max-w-2xl mx-auto">
-            We&apos;re on a mission to transform how brands operate. {companyName} is the
-            all-in-one platform that replaces your scattered tools with one powerful,
-            intelligent command center.
+            {companyName} is an invite-only beta that brings selected brand-operation
+            workflows into one workspace. Early-adopter feedback guides what is refined next.
           </p>
         </motion.div>
 
@@ -192,11 +191,9 @@ export function About() {
                   Muhammad Ashir Raza
                 </h3>
                 <p className="text-sm text-slate-400 leading-relaxed mb-5">
-                  The visionary and engineer behind {companyName}. Muhammad Ashir Raza designed and built
-                  the entire platform from the ground up, every feature, every integration, every line of
-                  code reflects a commitment to empowering brands with connected operational tools at an
-                  accessible price point. His mission: give every business the power to command its brand
-                  universe from a single, beautiful dashboard.
+                  Muhammad Ashir Raza founded {companyName} and led its product and engineering work.
+                  The current invite-only beta brings selected operational modules into one workspace,
+                  with scope and pricing presented before onboarding.
                 </p>
                 <div className="flex flex-wrap items-center justify-center sm:justify-start gap-3">
                   <a

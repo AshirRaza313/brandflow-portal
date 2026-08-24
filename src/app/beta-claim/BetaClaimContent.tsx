@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import { useSearchParams } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import {
-  Shield, Mail, Lock, ArrowRight, Check, AlertTriangle,
+  Mail, Lock, ArrowRight, Check, AlertTriangle,
   Loader2, Eye, EyeOff, User, Building2, ArrowLeft, Crown,
   Sparkles, Gift, Zap, Heart, Phone,
 } from "lucide-react";
@@ -29,10 +29,10 @@ const planColors: Record<string, { bg: string; text: string; border: string }> =
 };
 
 const planFeatures: Record<string, string[]> = {
-  enterprise: ["Unlimited Orders & Products", "AI-Powered Analytics", "Priority 24/7 Support", "Custom White-Label Branding", "Unlimited Team Management", "WhatsApp Integration", "Advanced SEO Tools", "Full API Access"],
-  professional: ["Up to 1,000 Orders/Month", "Advanced Analytics", "Priority Email Support", "Custom Branding", "Up to 15 Team Members", "WhatsApp Integration", "SEO Tools", "Email Marketing"],
-  growth: ["Up to 500 Orders/Month", "Standard Analytics", "Email Support", "Basic Branding", "Up to 5 Team Members", "Social Media Tools", "Loyalty Program"],
-  starter: ["Up to 100 Orders/Month", "Basic Dashboard", "Community Support", "Standard Branding", "Up to 3 Team Members", "Product Catalog"],
+  enterprise: ["Custom Resource Limits", "Configured Analytics Workspace", "Priority Support Queue", "Branding Scope by Agreement", "Team Management", "Connector Scope by Agreement", "SEO Tools", "API Access by Agreement"],
+  professional: ["Plan-Configured Orders & Products", "Advanced Analytics", "Priority Support Queue", "Custom Branding", "Up to 15 Team Members", "Connector Settings", "SEO Tools", "Email Marketing Tools"],
+  growth: ["Up to 500 Orders/Month", "Standard Analytics", "Priority Support Queue", "Branding Controls", "Up to 8 Team Members", "Social Media Tools", "Loyalty Program"],
+  starter: ["Up to 100 Orders/Month", "Basic Dashboard", "Business Hours Support", "Branding Controls", "Up to 3 Team Members", "Product Catalog"],
 };
 
 export default function BetaClaimContent() {
@@ -59,7 +59,7 @@ export default function BetaClaimContent() {
     }
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
-  const handleVerify = async () => {
+  async function handleVerify() {
     if (!email.trim() || !code.trim()) {
       toast.error("Please enter your email and invitation code");
       return;
@@ -91,7 +91,7 @@ export default function BetaClaimContent() {
     } finally {
       setLoading(false);
     }
-  };
+  }
 
   const handleClaim = async () => {
     if (!name.trim()) { toast.error("Please enter your name"); return; }
@@ -222,9 +222,9 @@ export default function BetaClaimContent() {
                   {step === "success" ? "Welcome Aboard!" : step === "details" ? "Create Your Account" : "Claim Your Access"}
                 </h1>
                 <p className="text-sm text-slate-500 max-w-xs mx-auto leading-relaxed">
-                  {step === "verify" && "Verify your invitation to unlock premium brand management tools - completely free during beta."}
-                  {step === "details" && "Set up your account and brand to start your premium beta experience."}
-                  {step === "success" && `Your ${inviteDetails?.plan || "Enterprise"} account is now active. Start building your brand empire.`}
+                  {step === "verify" && "Verify the invitation to review the beta plan and trial terms assigned to you."}
+                  {step === "details" && "Set up your account and brand to start the invited beta configuration."}
+                  {step === "success" && `Your ${inviteDetails?.plan || "Enterprise"} beta account is active. You can now review the available workspace tools.`}
                   {step === "error" && errorMessage}
                 </p>
               </motion.div>
@@ -278,7 +278,7 @@ export default function BetaClaimContent() {
                       />
                     </div>
                     <p className="text-[11px] text-slate-600 text-center">
-                      Your 8-character code was sent via email and WhatsApp
+                      Use the 8-character code provided with your invitation
                     </p>
                   </div>
 
@@ -318,7 +318,7 @@ export default function BetaClaimContent() {
                       <p className="text-[11px] text-slate-500">
                         <span className={colors.text}>{inviteDetails.plan.charAt(0).toUpperCase() + inviteDetails.plan.slice(1)}</span> Plan
                         {" "}&middot;{" "}
-                        {inviteDetails.trialDays} Days Free Trial
+                        {inviteDetails.trialDays} Day Trial
                       </p>
                     </div>
                   </div>
@@ -476,27 +476,27 @@ export default function BetaClaimContent() {
                       Your Brand Empire Starts Here
                     </h2>
                     <p className="text-sm text-slate-500 max-w-xs mx-auto leading-relaxed">
-                      Your {inviteDetails?.plan || "Enterprise"} account is now active with a {inviteDetails?.trialDays || 30}-day free trial. Start managing your brand like never before.
+                      Your {inviteDetails?.plan || "Enterprise"} account is active with the {inviteDetails?.trialDays || 14}-day trial assigned to this invitation. Features remain subject to the beta configuration shown above.
                     </p>
                   </div>
 
-                  {/* Quick action cards */}
+                  {/* Informational next-step cards (not interactive controls) */}
                   <div className="grid grid-cols-2 gap-3 pt-2">
                     {[
-                      { icon: Zap, label: "Set Up Dashboard", color: "text-amber-400" },
-                      { icon: Gift, label: "Explore Features", color: "text-purple-400" },
-                      { icon: Heart, label: "Customize Brand", color: "text-rose-400" },
-                      { icon: Phone, label: "Contact Support", color: "text-emerald-400" },
+                      { icon: Zap, label: "Dashboard Access", color: "text-amber-400" },
+                      { icon: Gift, label: "Configured Features", color: "text-purple-400" },
+                      { icon: Heart, label: "Brand Settings", color: "text-rose-400" },
+                      { icon: Phone, label: "Support Details", color: "text-emerald-400" },
                     ].map((item, i) => (
                       <motion.div
                         key={i}
                         initial={{ opacity: 0, y: 10 }}
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ delay: 0.4 + i * 0.1 }}
-                        className="p-3 rounded-xl bg-white/[0.03] border border-white/[0.06] hover:border-white/[0.1] transition-colors cursor-pointer group"
+                        className="p-3 rounded-xl bg-white/[0.03] border border-white/[0.06]"
                       >
-                        <item.icon className={`h-5 w-5 ${item.color} mx-auto mb-1.5 group-hover:scale-110 transition-transform`} />
-                        <p className="text-[11px] text-slate-500 group-hover:text-slate-400 transition-colors">{item.label}</p>
+                        <item.icon className={`h-5 w-5 ${item.color} mx-auto mb-1.5`} />
+                        <p className="text-[11px] text-slate-500">{item.label}</p>
                       </motion.div>
                     ))}
                   </div>

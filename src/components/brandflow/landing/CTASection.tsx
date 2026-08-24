@@ -1,7 +1,6 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { Button } from "@/components/ui/button";
 import { ArrowRight } from "lucide-react";
 import { usePlatformIdentity } from "@/lib/platform-identity";
 
@@ -45,7 +44,7 @@ export function CTASection({ onAuthClick }: CTASectionProps) {
               </a>
             </div>
             <p className="mt-4 text-sm text-slate-400">
-              14-day free trial included with all plans · Setup fees apply
+              Current published trial is 14 days; invitation and setup terms are confirmed before activation
             </p>
           </div>
         </motion.div>

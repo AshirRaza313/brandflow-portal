@@ -2,11 +2,9 @@
 
 import { useState } from "react";
 import { useValtrioxStore } from "@/store/brandflow-store";
-import { fetchWithAuth } from "@/lib/fetch-with-auth";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { Check, Loader2, Crown, Rocket, Building2, Star, Sparkles } from "lucide-react";
+import { Check, Crown, Rocket, Building2, Star, Sparkles } from "lucide-react";
 
 const PLANS = [
   {
@@ -25,7 +23,7 @@ const PLANS = [
       "50 Products",
       "5 GB Storage",
       "Business Hours Support",
-      "99.5% Uptime SLA",
+      "Beta Availability Varies",
     ],
   },
   {
@@ -35,7 +33,6 @@ const PLANS = [
     period: "/month",
     setupFee: "9,999",
     icon: Star,
-    popular: true,
     color: "from-amber-500 to-orange-600",
     features: [
       "Advanced Brand Dashboard",
@@ -58,35 +55,36 @@ const PLANS = [
     icon: Building2,
     color: "from-purple-500 to-indigo-600",
     features: [
-      "Full Suite Dashboard",
+      "Expanded Dashboard",
       "8 Marketing Channels",
       "Up to 15 Team Members",
-      "Unlimited Orders & Products",
+      "Plan-Configured Orders & Products",
       "50 GB Storage",
-      "Full API Access",
+      "API Access Subject to Approval",
       "Custom Branding",
-      "AI-Powered Insights",
-      "Priority 24/7 Support",
-      "99.9% Uptime SLA",
+      "Operational Insights",
+      "Priority Support Queue",
+      "Availability Terms if Contracted",
     ],
   },
   {
     id: "enterprise",
     name: "Enterprise",
-    price: "74,999",
-    period: "/month",
-    setupFee: "29,999",
+    price: "Custom quote",
+    period: "",
+    setupFee: "Confirmed separately",
+    customPricing: true,
     icon: Crown,
     color: "from-yellow-500 to-amber-600",
     features: [
-      "AI-Powered Full Suite",
-      "Unlimited Everything",
-      "Dedicated Account Manager",
-      "Full API + Webhooks",
-      "White-Label Portal",
-      "Custom Development",
-      "99.99% Uptime SLA",
-      "Quarterly Business Reviews",
+      "Configured Analytics Workspace",
+      "Custom Resource Limits",
+      "Named Onboarding Contact",
+      "API or Webhooks by Agreement",
+      "Branding Scope by Agreement",
+      "Connector and Development Scope by Agreement",
+      "Availability Terms if Contracted",
+      "Scheduled Reviews by Agreement",
     ],
   },
 ];
@@ -96,28 +94,16 @@ interface PlanSelectionOverlayProps {
 }
 
 export function PlanSelectionOverlay({ onComplete }: PlanSelectionOverlayProps) {
-  const { user, organization } = useValtrioxStore();
+  const { user } = useValtrioxStore();
   const [selectedPlan, setSelectedPlan] = useState<string | null>(null);
-  const [loading, setLoading] = useState(false);
 
   const isPlatformRole = user?.role === "platform_owner" || user?.role === "platform_admin";
 
-  const handleSelectPlan = async () => {
-    if (!selectedPlan || !organization?.id) return;
-    setLoading(true);
-    try {
-      const res = await fetchWithAuth("/api/subscriptions/current", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ planName: selectedPlan, orgId: organization.id }),
-      });
-      if (!res.ok) throw new Error("Failed to activate plan");
-      onComplete();
-    } catch (err) {
-      console.error("Plan selection error:", err);
-    } finally {
-      setLoading(false);
-    }
+  const handleRequestPlan = () => {
+    if (!selectedPlan) return;
+    // Plan activation is not a self-service API flow during beta. Continue to the
+    // real contact route, where availability and terms can be confirmed.
+    window.location.assign("/contact");
   };
 
   const handleSkip = () => {
@@ -135,7 +121,7 @@ export function PlanSelectionOverlay({ onComplete }: PlanSelectionOverlayProps) 
             Choose Your Plan
           </h2>
           <p className="text-slate-600 dark:text-slate-400 max-w-lg mx-auto">
-            Select the plan that best fits your brand. All plans include a 14-day free trial.
+            Review the current beta configurations below. Trial, limits, support, and activation terms are confirmed before selection.
           </p>
         </div>
 
@@ -153,23 +139,18 @@ export function PlanSelectionOverlay({ onComplete }: PlanSelectionOverlayProps) 
                 }`}
                 onClick={() => setSelectedPlan(plan.id)}
               >
-                {plan.popular && (
-                  <div className="absolute -top-3 left-1/2 -translate-x-1/2">
-                    <Badge className="bg-gradient-to-r from-amber-500 to-orange-500 text-white text-xs px-3">
-                      Most Popular
-                    </Badge>
-                  </div>
-                )}
                 <CardHeader className="pb-2 pt-5">
                   <div className={`w-10 h-10 rounded-lg bg-gradient-to-br ${plan.color} flex items-center justify-center mb-2`}>
                     <Icon className="h-5 w-5 text-white" />
                   </div>
                   <CardTitle className="text-lg">{plan.name}</CardTitle>
                   <div className="mt-1">
-                    <span className="text-2xl font-bold">Rs. {plan.price}</span>
+                    <span className="text-2xl font-bold">{plan.customPricing ? plan.price : `Rs. ${plan.price}`}</span>
                     <span className="text-sm text-slate-500">{plan.period}</span>
                   </div>
-                  <p className="text-xs text-slate-500">Rs. {plan.setupFee} one-time setup</p>
+                  <p className="text-xs text-slate-500">
+                    {plan.customPricing ? `Setup terms: ${plan.setupFee}` : `Rs. ${plan.setupFee} one-time setup`}
+                  </p>
                 </CardHeader>
                 <CardContent className="pt-0">
                   <ul className="space-y-2">
@@ -193,12 +174,11 @@ export function PlanSelectionOverlay({ onComplete }: PlanSelectionOverlayProps) 
             </Button>
           )}
           <Button
-            onClick={handleSelectPlan}
-            disabled={!selectedPlan || loading}
+            onClick={handleRequestPlan}
+            disabled={!selectedPlan}
             className="bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-white px-8"
           >
-            {loading ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
-            {loading ? "Activating..." : `Start 14-Day Free Trial`}
+            Contact Us About Beta Plans
           </Button>
         </div>
       </div>

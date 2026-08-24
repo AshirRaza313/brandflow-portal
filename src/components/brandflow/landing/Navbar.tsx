@@ -61,13 +61,14 @@ export function Navbar({ onAuthClick }: NavbarProps) {
     }, 350);
   }, []);
 
-  // Only 4 social icons: Instagram, LinkedIn, Discord, Reddit
-  const socialLinks = [
-    { icon: Instagram, url: identity.instagramUrl, label: "Instagram" },
-    { icon: Linkedin, url: identity.linkedinUrl, label: "LinkedIn" },
-    { icon: DiscordIcon, url: identity.discordUrl, label: "Discord" },
-    { icon: RedditIcon, url: identity.redditUrl, label: "Reddit" },
-  ];
+  // Public social links require both a configured URL and the matching
+  // visibility flag. Unreviewed admin values never appear by URL alone.
+  const socialLinks = identity.socialLinksVisible ? [
+    { icon: Instagram, url: identity.instagramUrl, label: "Instagram", visible: identity.showInstagram },
+    { icon: Linkedin, url: identity.linkedinUrl, label: "LinkedIn", visible: identity.showLinkedin },
+    { icon: DiscordIcon, url: identity.discordUrl, label: "Discord", visible: identity.showDiscord },
+    { icon: RedditIcon, url: identity.redditUrl, label: "Reddit", visible: identity.showReddit },
+  ].filter((link) => link.visible && Boolean(link.url)) : [];
 
   return (
     <motion.nav
@@ -120,26 +121,20 @@ export function Navbar({ onAuthClick }: NavbarProps) {
 
           {/* Desktop Right Side */}
           <div className="hidden lg:flex items-center gap-3">
-            {/* Social Icons - always visible */}
+            {/* Explicitly enabled social profiles */}
             <div className="flex items-center gap-1.5 mr-2">
-            {socialLinks.map((link, i) => {
-              const hasUrl = !!link.url;
-              const Wrapper = hasUrl ? 'a' : 'span';
-              return (
-                <Wrapper
-                  key={i}
-                  {...(hasUrl ? { href: link.url!, target: "_blank", rel: "noopener noreferrer" } : {})}
-                  title={hasUrl ? link.label : `${link.label} (coming soon)`}
-                  className={`w-8 h-8 rounded-lg flex items-center justify-center transition-all duration-200 ${
-                    hasUrl
-                      ? "text-slate-500 hover:text-amber-400 hover:bg-white/[0.05] cursor-pointer"
-                      : "text-slate-700 opacity-40 cursor-default"
-                  }`}
+            {socialLinks.map((link) => (
+                <a
+                  key={link.label}
+                  href={link.url!}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  title={link.label}
+                  className="w-8 h-8 rounded-lg flex items-center justify-center transition-all duration-200 text-slate-500 hover:text-amber-400 hover:bg-white/[0.05]"
                 >
                   <link.icon className="h-3.5 w-3.5" />
-                </Wrapper>
-              );
-            })}
+                </a>
+            ))}
           </div>
             <Button
               variant="outline"
@@ -197,24 +192,18 @@ export function Navbar({ onAuthClick }: NavbarProps) {
 
               {/* Mobile social links */}
               <div className="flex flex-wrap items-center gap-2 pt-3">
-                {socialLinks.map((link, i) => {
-                  const hasUrl = !!link.url;
-                  const Wrapper = hasUrl ? 'a' : 'span';
-                  return (
-                    <Wrapper
-                      key={i}
-                      {...(hasUrl ? { href: link.url!, target: "_blank", rel: "noopener noreferrer" } : {})}
-                      title={hasUrl ? link.label : `${link.label} (coming soon)`}
-                      className={`w-11 h-11 rounded-xl flex items-center justify-center transition-colors ${
-                        hasUrl
-                          ? "bg-slate-800/80 text-slate-400 hover:text-amber-400 active:text-amber-300 active:bg-slate-700 cursor-pointer"
-                          : "bg-slate-800/40 text-slate-700 opacity-40 cursor-default"
-                      }`}
+                {socialLinks.map((link) => (
+                    <a
+                      key={link.label}
+                      href={link.url!}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      title={link.label}
+                      className="w-11 h-11 rounded-xl flex items-center justify-center transition-colors bg-slate-800/80 text-slate-400 hover:text-amber-400 active:text-amber-300 active:bg-slate-700"
                     >
                       <link.icon className="h-4.5 w-4.5" />
-                    </Wrapper>
-                  );
-                })}
+                    </a>
+                ))}
               </div>
 
               <div className="pt-4 border-t border-white/[0.06] space-y-2">

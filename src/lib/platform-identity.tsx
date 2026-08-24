@@ -19,6 +19,7 @@ interface PlatformIdentity {
   companyPhone: string | null;
   companyWebsite: string | null;
   companyAddress: string | null;
+  supportHours: string;
   loaded: boolean;
   instagramUrl: string | null;
   facebookUrl: string | null;
@@ -64,6 +65,7 @@ const DEFAULT_IDENTITY: PlatformIdentity = {
   companyPhone: "+92-318 3916019",
   companyWebsite: null,
   companyAddress: "Karachi, Pakistan",
+  supportHours: "Mon-Fri: 9AM-6PM PKT",
   loaded: false,
   instagramUrl: null,
   facebookUrl: null,
@@ -97,7 +99,6 @@ const CONTEXT = createContext<PlatformIdentityContextType>({
 
 export function PlatformIdentityProvider({ children }: { children: ReactNode }) {
   const [identity, setIdentity] = useState<PlatformIdentity>(DEFAULT_IDENTITY);
-  const [loaded, setLoaded] = useState(false);
 
   const fetchIdentity = async () => {
     try {
@@ -118,6 +119,7 @@ export function PlatformIdentityProvider({ children }: { children: ReactNode }) 
           companyPhone: data.companyPhone || "+92-318 3916019",
           companyWebsite: data.companyWebsite || null,
           companyAddress: data.companyAddress || "Karachi, Pakistan",
+          supportHours: data.supportHours || "Mon-Fri: 9AM-6PM PKT",
           loaded: true,
           instagramUrl: data.instagramUrl || null,
           facebookUrl: data.facebookUrl || null,
@@ -176,6 +178,7 @@ export function PlatformIdentityProvider({ children }: { children: ReactNode }) 
         companyPhone: s.companyPhone || "+92-318 3916019",
         companyWebsite: s.companyWebsite || null,
         companyAddress: s.companyAddress || "Karachi, Pakistan",
+        supportHours: s.supportHours || "Mon-Fri: 9AM-6PM PKT",
         loaded: true,
         instagramUrl: s.instagramUrl || null,
         facebookUrl: s.facebookUrl || null,
@@ -208,13 +211,14 @@ export function PlatformIdentityProvider({ children }: { children: ReactNode }) 
       }
     } catch {
       // Silently fail - use defaults
-    } finally {
-      setLoaded(true);
     }
   };
 
   useEffect(() => {
-    fetchIdentity();
+    const timeoutId = window.setTimeout(() => {
+      void fetchIdentity();
+    }, 0);
+    return () => window.clearTimeout(timeoutId);
   }, []);
 
   return (

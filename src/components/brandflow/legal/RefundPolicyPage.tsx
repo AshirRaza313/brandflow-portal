@@ -32,7 +32,7 @@ export function RefundPolicyPage({ onBack }: LegalPageProps) {
             Refund Policy
           </h1>
           <p className="text-slate-500 text-sm">
-            Last Updated: July 11, 2025
+            Last Updated: August 24, 2026
           </p>
           <div className="mt-4 p-4 bg-amber-50 border border-amber-200 rounded-lg">
             <p className="text-sm text-amber-800">
@@ -68,24 +68,23 @@ export function RefundPolicyPage({ onBack }: LegalPageProps) {
 
           <section>
             <h2 className={isDark ? "text-xl font-semibold text-white mb-3 pb-2 border-b border-white/10" : "text-xl font-semibold text-slate-900 mb-3 pb-2 border-b border-slate-200"}>
-              2. 14-Day Free Trial
+              2. Beta Trial
             </h2>
             <p className="text-slate-600 leading-relaxed">
-              {identity.companyName} offers a 14-day free trial for new users to explore the platform&apos;s
-              features before committing to a paid subscription. The following terms apply:
+              A signup or invitation may offer a trial. Its duration, enabled features, and
+              post-trial terms are those displayed in that flow. The current published plan
+              configuration uses 14 days, but invitation-specific terms may differ:
             </p>
             <ul className="list-disc pl-6 space-y-1.5 text-slate-600 mt-3">
-              <li>No payment information is required to start the free trial</li>
-              <li>You will have full access to all features of your selected plan during the trial period</li>
-              <li>We will send reminder notifications at 7 days and 1 day before the trial expires</li>
-              <li>You must explicitly subscribe to a paid plan to continue using the Services after the trial ends</li>
-              <li>No charges will be incurred during the trial period</li>
-              <li>There is no automatic conversion to a paid plan without your explicit consent</li>
+              <li>The activation flow states whether payment information is required</li>
+              <li>Only the modules enabled for that invitation or plan are available</li>
+              <li>The account displays the assigned trial duration where supported</li>
+              <li>Any paid continuation requires the confirmation shown in the applicable checkout flow</li>
             </ul>
             <p className="text-slate-600 leading-relaxed mt-3">
-              If you do not wish to continue after the trial, no action is required on your part.
-              Your account will remain accessible in a limited, read-only mode for 30 days to allow
-              you to export your data.
+              Access and data availability after a trial depend on the account and subscription
+              state then in effect. Export important data before the trial ends and contact support
+              if you need the current retention or access details for your account.
             </p>
           </section>
 
@@ -121,7 +120,10 @@ export function RefundPolicyPage({ onBack }: LegalPageProps) {
                 <li>Service interruptions caused by third-party providers or force majeure events</li>
                 <li>Dissatisfaction with the user interface or subjective design preferences</li>
                 <li>Failure to read documentation or use the platform as intended</li>
-                <li>Account suspended or terminated for violation of the Terms of Service</li>
+                <li>
+                  Account suspended or terminated for violation of the{" "}
+                  <a href="/terms" className="text-amber-600 font-medium hover:underline">Terms of Service</a>
+                </li>
                 <li>Purchases made through promotional pricing or special discount offers (unless otherwise stated in the promotion terms)</li>
               </ul>
             </div>
@@ -151,10 +153,10 @@ export function RefundPolicyPage({ onBack }: LegalPageProps) {
                 </ul>
               </li>
               <li>
-                <strong className={isDark ? "text-slate-300" : "text-slate-700"}>Acknowledgment:</strong> We will acknowledge receipt of your refund request within 2 business days.
+                <strong className={isDark ? "text-slate-300" : "text-slate-700"}>Acknowledgment:</strong> We aim to acknowledge a refund request within 2 business days.
               </li>
               <li>
-                <strong className={isDark ? "text-slate-300" : "text-slate-700"}>Review Period:</strong> Our billing team will review your request and respond with a decision within 7 business days.
+                <strong className={isDark ? "text-slate-300" : "text-slate-700"}>Review Period:</strong> We aim to review a complete request and respond within 7 business days; complex or provider-dependent cases may take longer.
               </li>
               <li>
                 <strong className={isDark ? "text-slate-300" : "text-slate-700"}>Communication:</strong> All refund-related communications will be sent to your registered email address.
@@ -216,10 +218,9 @@ export function RefundPolicyPage({ onBack }: LegalPageProps) {
               7.1 How to Cancel
             </h3>
             <p className="text-slate-600 leading-relaxed">
-              You may cancel your subscription at any time through the following methods:
+              You may request cancellation through a currently published support channel:
             </p>
             <ul className="list-disc pl-6 space-y-1.5 text-slate-600 mt-3">
-              <li><strong className={isDark ? "text-slate-300" : "text-slate-700"}>Self-Service:</strong> Navigate to Settings &rarr; Billing &amp; Plans in your {identity.companyName} Portal dashboard and select &quot;Cancel Subscription&quot;</li>
               <li><strong className={isDark ? "text-slate-300" : "text-slate-700"}>Email:</strong> Send a cancellation request to{" "}
                 <a href={`mailto:${identity.companyEmail}`} className="text-amber-600 hover:underline">{identity.companyEmail}</a>
               </li>
@@ -235,9 +236,12 @@ export function RefundPolicyPage({ onBack }: LegalPageProps) {
             <ul className="list-disc pl-6 space-y-1.5 text-slate-600 mt-3">
               <li>Your access to paid features will continue until the end of your current billing period</li>
               <li>No further charges will be made after the current billing period ends</li>
-              <li>Your data will be preserved for 30 days in read-only mode, allowing you to export your information</li>
-              <li>After 30 days, your account data will be permanently deleted in accordance with our data retention policies</li>
-              <li>You can reactivate your subscription at any time within the 30-day retention period by logging in and selecting a new plan</li>
+              <li>Export important information before cancellation because read-only access is not guaranteed</li>
+              <li>
+                Data retention and deletion follow the current{" "}
+                <a href="/privacy" className="text-amber-600 font-medium hover:underline">Privacy Policy</a>, legal obligations, and provider constraints
+              </li>
+              <li>Contact support to confirm whether reactivation is available for your account</li>
             </ul>
 
             <h3 className={isDark ? "text-lg font-medium text-slate-200 mt-6 mb-2" : "text-lg font-medium text-slate-800 mt-6 mb-2"}>
@@ -266,13 +270,13 @@ export function RefundPolicyPage({ onBack }: LegalPageProps) {
                 within 14 days of receiving the denial
               </li>
               <li>Include any additional information or documentation supporting your appeal</li>
-              <li>Our management team will review the appeal and respond within 10 business days</li>
+              <li>Our management team aims to review a complete appeal within 10 business days; complex cases may take longer</li>
               <li>The management team&apos;s decision is final and binding</li>
             </ol>
             <p className="text-slate-600 leading-relaxed mt-3">
               For unresolved disputes, you may refer the matter to arbitration in accordance
               with the Dispute Resolution clause in our{" "}
-              <span className="text-amber-600 font-medium cursor-pointer hover:underline">Terms of Service</span>.
+              <a href="/terms" className="text-amber-600 font-medium hover:underline">Terms of Service</a>.
             </p>
           </section>
 

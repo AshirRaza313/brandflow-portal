@@ -2,7 +2,6 @@
 
 import { motion } from "framer-motion";
 import { Play, Shield, CreditCard, Users } from "lucide-react";
-import { Button } from "@/components/ui/button";
 import Image from "next/image";
 import { usePlatformIdentity } from "@/lib/platform-identity";
 
@@ -41,7 +40,7 @@ export function Hero({ onAuthClick }: HeroProps) {
             </motion.div>
 
             <h1 className="text-2xl sm:text-4xl md:text-5xl lg:text-6xl font-bold leading-tight tracking-tight">
-              Run Your Entire Brand From{" "}
+              Coordinate Selected Brand Workflows From{" "}
               <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#D4A73A] via-[#E8BD58] to-[#D4A73A]">
                 One Dashboard
               </span>
@@ -53,7 +52,7 @@ export function Hero({ onAuthClick }: HeroProps) {
             </p>
 
             <p className="mt-4 sm:mt-6 text-sm sm:text-base md:text-lg text-slate-400 max-w-xl leading-relaxed">
-              {companyName} is the all-in-one operations portal for modern businesses. Manage orders, track inventory, empower your team, and grow - all in one place.
+              {companyName} is an invite-only beta workspace for selected order, inventory, team, marketing, and reporting workflows.
             </p>
 
             {/* CTA Buttons — SEO: rendered as <a href> for crawler discovery */}
@@ -74,7 +73,7 @@ export function Hero({ onAuthClick }: HeroProps) {
                 className="inline-flex items-center justify-center border border-slate-600 text-slate-300 hover:bg-slate-800 hover:text-white text-base px-8 h-12 rounded-xl transition-colors"
               >
                 <Play className="w-4 h-4 mr-2" />
-                Watch Demo
+                Explore Features
               </a>
             </div>
 
@@ -86,11 +85,11 @@ export function Hero({ onAuthClick }: HeroProps) {
               </div>
               <div className="flex items-center gap-1.5 sm:gap-2">
                 <Shield className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-amber-400" />
-                <span>14-Day Free Trial</span>
+                <span>Invite-Only Beta</span>
               </div>
               <div className="flex items-center gap-1.5 sm:gap-2">
                 <CreditCard className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-amber-400" />
-                <span>14-Day Trial Included</span>
+                <span>Terms Confirmed Before Activation</span>
               </div>
             </div>
           </motion.div>

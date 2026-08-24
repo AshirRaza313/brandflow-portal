@@ -17,35 +17,35 @@ const features = [
     icon: ShoppingCart,
     title: "Order Management",
     description:
-      "Track every order from placement to delivery with SLA monitoring and priority scoring.",
+      "Record and track orders, delivery status, service targets, and priority in one workspace.",
     color: "emerald",
   },
   {
     icon: Brain,
-    title: "AI-Powered Insights",
+    title: "Operational Insights",
     description:
-      "Get daily briefings, sales forecasts, and smart recommendations powered by AI.",
+      "Review dashboard summaries and reports based on the operational data in your workspace.",
     color: "amber",
   },
   {
     icon: Users,
     title: "Team Collaboration",
     description:
-      "Role-based access for 8+ team roles with real-time sync and task boards.",
+      "Use role-based workspace access, task boards, and team-management tools during the beta.",
     color: "emerald",
   },
   {
     icon: Package,
     title: "Inventory Control",
     description:
-      "Multi-location stock tracking with low-stock alerts and AI restock predictions.",
+      "Track stock records and low-stock alerts across the inventory workflows available to your plan.",
     color: "amber",
   },
   {
     icon: Megaphone,
     title: "Marketing Hub",
     description:
-      "AI content writer, seasonal campaigns, influencer tracking, and WhatsApp integration.",
+      "Plan seasonal campaigns and manage influencer, email, social, and messaging workflows; external connections require separate configuration.",
     color: "emerald",
   },
   {
@@ -89,11 +89,11 @@ export function Features() {
             Features
           </span>
           <h2 className="mt-3 text-3xl sm:text-4xl font-bold text-white">
-            Everything Your Brand Needs.{" "}
-            <span className="text-amber-400">One Platform.</span>
+            Core Brand Operations.{" "}
+            <span className="text-amber-400">One Beta Workspace.</span>
           </h2>
           <p className="mt-4 text-lg text-slate-400">
-            From order tracking to AI-powered insights, {companyName} gives you every tool to run your brand efficiently.
+            {companyName} brings selected order, inventory, team, marketing, and reporting workflows together while the product is tested with early adopters.
           </p>
         </motion.div>
 

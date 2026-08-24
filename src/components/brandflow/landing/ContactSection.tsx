@@ -3,9 +3,9 @@
 import { useState, FormEvent, useEffect, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
-  Send, Phone, Mail, MapPin, Clock, MessageCircle, CheckCircle2,
+  Send, Phone, Mail, Clock, MessageCircle, CheckCircle2,
   Building2, Globe, Users, ArrowRight, Sparkles, Shield, Zap,
-  ChevronRight, Instagram, Youtube, Linkedin, Twitter, Facebook,
+  ChevronRight,
   CalendarCheck, PartyPopper, Heart, CalendarDays,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -14,7 +14,6 @@ import { Textarea } from "@/components/ui/textarea";
 import { usePlatformIdentity } from "@/lib/platform-identity";
 import { isCalendlyHttpsUrl, isCalendlyMessageOrigin } from "@/lib/calendly";
 import { toast } from "sonner";
-import Link from "next/link";
 
 interface FormData {
   fullName: string;
@@ -49,6 +48,7 @@ export function ContactSection({ onLegalClick }: ContactSectionProps) {
     consultationType: "",
   });
   const [submitted, setSubmitted] = useState(false);
+  const [submissionConfirmation, setSubmissionConfirmation] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [calendlyEnabled, setCalendlyEnabled] = useState(false);
   const [calendlyUrl, setCalendlyUrl] = useState("");
@@ -88,7 +88,7 @@ export function ContactSection({ onLegalClick }: ContactSectionProps) {
         const inviteeUri = e.data?.payload?.invitee?.uri;
         if (uri || inviteeUri) {
           setForm((prev) => ({ ...prev, calendlyBookingLink: inviteeUri || uri || "" }));
-          toast.success("Consultation time slot booked!");
+          toast.success("Calendly reported the consultation time slot as booked.");
         }
       }
     }
@@ -117,10 +117,11 @@ export function ContactSection({ onLegalClick }: ContactSectionProps) {
         body: JSON.stringify(form),
       });
       const data = await res.json();
-      if (res.ok) {
+      if (res.ok && data.success === true && data.confirmed === true) {
+        setSubmissionConfirmation(data.message || "A stored inquiry was confirmed for beta review. Follow-up timing varies.");
         setSubmitted(true);
       } else {
-        toast.error(data.error || "Failed to send message. Please try again.");
+        toast.error(data.error || "We could not confirm that your inquiry was stored. Please try again.");
       }
     } catch {
       toast.error("Network error. Please check your connection and try again.");
@@ -135,6 +136,7 @@ export function ContactSection({ onLegalClick }: ContactSectionProps) {
 
   const resetForm = () => {
     setSubmitted(false);
+    setSubmissionConfirmation("");
     setForm({
       fullName: "", email: "", phone: "", company: "", companySize: "",
       industry: "", interest: "", message: "", consultationType: "",
@@ -154,17 +156,6 @@ export function ContactSection({ onLegalClick }: ContactSectionProps) {
   const consultationTypes = [
     { value: "video_call", label: "Video Call", icon: "Video" },
     { value: "phone_call", label: "Phone Call", icon: "Phone" },
-    { value: "in_person", label: "In-Person Meeting", icon: "MapPin" },
-  ];
-
-  // Social media links for the Thank You page
-  const socialLinks = [
-    { icon: Instagram, label: "Instagram", handle: "@valtriox.app", href: "https://instagram.com/valtriox.app", color: "hover:bg-pink-500/20 hover:text-pink-400" },
-    { icon: Facebook, label: "TikTok", handle: "@valtriox.app", href: "https://tiktok.com/@valtriox.app", color: "hover:bg-slate-500/20 hover:text-slate-300" },
-    { icon: Youtube, label: "YouTube", handle: "Valtriox", href: "https://youtube.com/@valtriox", color: "hover:bg-red-500/20 hover:text-red-400" },
-    { icon: Linkedin, label: "LinkedIn", handle: "/company/valtriox", href: "https://linkedin.com/company/valtriox", color: "hover:bg-blue-500/20 hover:text-blue-400" },
-    { icon: Twitter, label: "Twitter/X", handle: "@valtrioxapp", href: "https://twitter.com/valtrioxapp", color: "hover:bg-sky-500/20 hover:text-sky-400" },
-    { icon: Facebook, label: "Facebook", handle: "/valtriox.app", href: "https://facebook.com/valtriox.app", color: "hover:bg-blue-600/20 hover:text-blue-400" },
   ];
 
   return (
@@ -187,14 +178,13 @@ export function ContactSection({ onLegalClick }: ContactSectionProps) {
             <span className="text-sm text-amber-300 font-medium">Get In Touch</span>
           </div>
           <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-white leading-tight">
-            Let&apos;s Build Something{" "}
+            Discuss Your Beta{" "}
             <span className="text-transparent bg-clip-text bg-gradient-to-r from-amber-400 via-yellow-300 to-amber-500">
-              Extraordinary
+              Workflow
             </span>
           </h2>
           <p className="mt-5 text-lg text-slate-400 leading-relaxed">
-            Ready to transform your brand operations? Our team is here to help you get started.
-            Book a free consultation or drop us a message.
+            Share the workflow you want to test. We review beta requests during published business hours and confirm any walkthrough separately.
           </p>
         </motion.div>
 
@@ -211,26 +201,34 @@ export function ContactSection({ onLegalClick }: ContactSectionProps) {
             {[
               { icon: Mail, label: "Email Us", value: identity.companyEmail || process.env.NEXT_PUBLIC_SUPPORT_EMAIL || "ashir@valtriox.com", href: `mailto:${identity.companyEmail || process.env.NEXT_PUBLIC_SUPPORT_EMAIL || "ashir@valtriox.com"}` },
               { icon: Phone, label: "Call Us", value: identity.companyPhone || "+92-318 3916019", href: `tel:${identity.companyPhone || "+923183916019"}` },
-              { icon: MapPin, label: "Visit Us", value: identity.companyAddress || "Karachi, Pakistan", href: "https://www.google.com/maps/search/?api=1&query=Karachi%2C+Pakistan" },
-              { icon: Clock, label: "Support Hours", value: "Mon-Fri: 9AM-6PM PKT", href: "#" },
-            ].map((item, i) => (
-              <a
-                key={i}
-                href={item.href}
-                className="flex items-start gap-4 p-4 sm:p-5 rounded-2xl bg-white/[0.03] border border-white/[0.06] hover:border-amber-500/20 transition-all duration-300 group"
-              >
-                <div className="flex-shrink-0 w-11 h-11 rounded-xl bg-amber-500/10 flex items-center justify-center group-hover:bg-amber-500/20 transition-colors">
-                  <item.icon className="h-5 w-5 text-amber-400" />
+              { icon: Clock, label: "Support Hours", value: identity.supportHours, href: null },
+            ].map((item, i) => {
+              const content = (
+                <>
+                  <div className="flex-shrink-0 w-11 h-11 rounded-xl bg-amber-500/10 flex items-center justify-center group-hover:bg-amber-500/20 transition-colors">
+                    <item.icon className="h-5 w-5 text-amber-400" />
+                  </div>
+                  <div>
+                    <p className="text-xs text-slate-500 uppercase tracking-wider mb-0.5">{item.label}</p>
+                    <p className="text-sm font-medium text-white">{item.value}</p>
+                  </div>
+                </>
+              );
+              const className = "flex items-start gap-4 p-4 sm:p-5 rounded-2xl bg-white/[0.03] border border-white/[0.06] transition-all duration-300 group";
+
+              return item.href ? (
+                <a key={i} href={item.href} className={`${className} hover:border-amber-500/20`}>
+                  {content}
+                </a>
+              ) : (
+                <div key={i} className={className}>
+                  {content}
                 </div>
-                <div>
-                  <p className="text-xs text-slate-500 uppercase tracking-wider mb-0.5">{item.label}</p>
-                  <p className="text-sm font-medium text-white">{item.value}</p>
-                </div>
-              </a>
-            ))}
+              );
+            })}
 
             {/* WhatsApp CTA */}
-            {identity.whatsappNumber && (
+            {identity.socialLinksVisible && identity.showWhatsApp && identity.whatsappNumber && (
               <a
                 href={`https://wa.me/${identity.whatsappNumber.replace(/[^0-9]/g, "")}`}
                 target="_blank"
@@ -253,9 +251,9 @@ export function ContactSection({ onLegalClick }: ContactSectionProps) {
               <p className="text-xs text-slate-500 uppercase tracking-wider font-medium">Why Choose Us</p>
               {[
                 { icon: Shield, text: "Role-based access & encrypted connections" },
-                { icon: Zap, text: "Quick setup with dedicated support" },
+                { icon: Zap, text: "Guided beta onboarding" },
                 { icon: Users, text: "Invite-only beta access" },
-                { icon: Globe, text: "Starting in Pakistan, built to expand regionally" },
+                { icon: Globe, text: "Pakistan is the current starting market" },
               ].map((item, i) => (
                 <div key={i} className="flex items-center gap-3">
                   <item.icon className="h-4 w-4 text-amber-400 flex-shrink-0" />
@@ -337,8 +335,7 @@ export function ContactSection({ onLegalClick }: ContactSectionProps) {
                       transition={{ delay: 0.7 }}
                       className="text-sm text-slate-400 leading-relaxed max-w-lg mx-auto"
                     >
-                      We&apos;ve received your consultation request. Our team will review your inquiry
-                      and reach out within 24 hours. We&apos;re excited to help you transform your brand operations.
+                      {submissionConfirmation || "A stored inquiry was confirmed for beta review. Follow-up timing varies."}
                     </motion.p>
                   </div>
 
@@ -355,26 +352,13 @@ export function ContactSection({ onLegalClick }: ContactSectionProps) {
                       </div>
                       <div>
                         <h4 className="text-sm font-semibold text-amber-300 mb-1">
-                          Check Your Email for the {companyName} Platform Guide
+                          Introduction Guide and Email Delivery
                         </h4>
                         <p className="text-xs text-slate-400 leading-relaxed">
-                          A comprehensive guide to setting up and maximizing {companyName} has been sent to your email.
-                          It includes quick-start tips, feature highlights, and best practices for brand management.
+                          A confirmation email is attempted separately and may not always be delivered.
+                          You can open the current {companyName} introduction guide using the button below.
                         </p>
                       </div>
-                    </div>
-                  </motion.div>
-
-                  {/* Conversion Tracking Pixel Placeholder */}
-                  <motion.div
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    transition={{ delay: 1.2 }}
-                    className="mb-6 text-center"
-                  >
-                    <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg bg-white/[0.02] border border-white/[0.04]">
-                      <div className="w-1.5 h-1.5 rounded-full bg-green-400 animate-pulse" />
-                      <span className="text-[10px] text-slate-600 font-mono">Conversion tracking active</span>
                     </div>
                   </motion.div>
 
@@ -386,10 +370,11 @@ export function ContactSection({ onLegalClick }: ContactSectionProps) {
                     className="flex flex-col sm:flex-row items-center justify-center gap-3"
                   >
                     <Button
+                      onClick={() => window.open("/api/lead-magnet", "_blank", "noopener,noreferrer")}
                       className="w-full sm:w-auto bg-gradient-to-r from-amber-600 via-yellow-500 to-amber-600 hover:from-amber-700 hover:via-yellow-600 hover:to-amber-700 text-black font-semibold rounded-xl shadow-lg shadow-amber-600/20 text-sm gap-2 px-8 h-12"
                     >
                       <CalendarCheck className="h-4 w-4" />
-                      Book Your Free Consultation
+                      Open Introduction Guide
                     </Button>
                     <Button
                       variant="ghost"
@@ -418,7 +403,7 @@ export function ContactSection({ onLegalClick }: ContactSectionProps) {
                     </div>
                     <div>
                       <h3 className="text-lg font-bold text-white">Request a Consultation</h3>
-                      <p className="text-xs text-slate-500">Free 30-minute strategy session</p>
+                      <p className="text-xs text-slate-500">Beta walkthrough request; scheduling is subject to availability</p>
                     </div>
                   </div>
 
@@ -560,7 +545,7 @@ export function ContactSection({ onLegalClick }: ContactSectionProps) {
                     <label className="text-xs font-medium text-slate-400">
                       Preferred Consultation Method <span className="text-amber-400">(Recommended)</span>
                     </label>
-                    <div className="grid grid-cols-3 gap-3">
+                    <div className="grid grid-cols-2 gap-3">
                       {consultationTypes.map((ct) => (
                         <button
                           key={ct.value}
@@ -575,7 +560,6 @@ export function ContactSection({ onLegalClick }: ContactSectionProps) {
                           <div className={`text-lg mb-1 ${form.consultationType === ct.value ? "text-amber-400" : "text-slate-600"}`}>
                             {ct.icon === "Video" && <svg className="w-5 h-5 mx-auto" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m16 13 5.223 3.482a.5.5 0 0 0 .777-.416V7.87a.5.5 0 0 0-.752-.432L16 10.5"/><rect x="2" y="6" width="14" height="12" rx="2"/></svg>}
                             {ct.icon === "Phone" && <Phone className="w-5 h-5 mx-auto" />}
-                            {ct.icon === "MapPin" && <MapPin className="w-5 h-5 mx-auto" />}
                           </div>
                           <span className="text-xs font-medium">{ct.label}</span>
                         </button>
@@ -610,7 +594,7 @@ export function ContactSection({ onLegalClick }: ContactSectionProps) {
                         <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-emerald-500/10 border border-emerald-500/20">
                           <CheckCircle2 className="h-4 w-4 text-emerald-400 flex-shrink-0" />
                           <p className="text-xs text-emerald-400 font-medium">
-                            Meeting time slot booked successfully!
+                            The scheduling provider reported this time slot as booked.
                           </p>
                         </div>
                       )}
@@ -669,7 +653,7 @@ export function ContactSection({ onLegalClick }: ContactSectionProps) {
                     >
                       Privacy Policy
                     </button>
-                    . We&apos;ll respond within 24 hours.
+                    . Follow-up timing varies during the beta.
                   </p>
                 </motion.form>
               )}

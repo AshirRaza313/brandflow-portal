@@ -37,8 +37,8 @@ const plans = [
     icon: Sparkles,
     baseMonthly: 7999,
     periodLabel: "/month",
-    description: "Launch your brand with powerful essentials. Perfect for startups and small businesses ready to make their mark.",
-    badge: "Best Value",
+    description: "A starter configuration for small teams testing core brand-operation workflows.",
+    badge: "Starter",
     features: [
       "Brand Dashboard",
       "Up to 50 Products",
@@ -47,10 +47,10 @@ const plans = [
       "5 GB Cloud Storage",
       "3 Marketing Channels",
       "500 Emails/Month",
-      "2 Third-Party Integrations",
+      "2 Connector Configurations",
       "Business Hours Support",
       "Read-Only API Access",
-      "14-Day Free Trial",
+      "14-Day Trial",
     ],
     setupFee: 4999,
     cta: "Get Started",
@@ -62,7 +62,7 @@ const plans = [
     icon: TrendingUp,
     baseMonthly: 14999,
     periodLabel: "/month",
-    description: "Scale your brand with expanded channels, campaigns, and automation. Built for growing businesses that need more power.",
+    description: "Expanded beta limits for teams that need more products, orders, channels, and campaign records.",
     badge: "For Growing Teams",
     features: [
       "Advanced Brand Dashboard",
@@ -75,8 +75,8 @@ const plans = [
       "2,000 Emails/Month",
       "Coupon Management (15)",
       "Priority Queue Support",
-      "Unlimited Invoices",
-      "14-Day Free Trial",
+      "Invoice Workflow",
+      "14-Day Trial",
     ],
     setupFee: 9999,
     cta: "Get Started",
@@ -88,22 +88,22 @@ const plans = [
     icon: Crown,
     baseMonthly: 24999,
     periodLabel: "/month",
-    description: "Supercharge your growth with advanced tools, analytics, and unlimited marketing power. Built for scaling brands.",
-    badge: "Powerhouse",
+    description: "Higher beta limits with additional reporting, branding, and marketing workspace access.",
+    badge: "Professional",
     features: [
-      "Unlimited Orders & Products",
+      "Plan-Configured Orders & Products",
       "Up to 15 Team Members",
       "50 GB Cloud Storage",
       "8 Marketing Channels",
       "Campaign Management (10)",
       "5,000 Emails/Month",
-      "Full API Access",
+      "API Access Subject to Approval",
       "Custom Branding",
-      "AI-Powered Insights",
+      "Operational Insights",
       "SEO & Social Media Tools",
       "Email Marketing & Ad Manager",
-      "Priority 24/7 Support",
-      "14-Day Free Trial",
+      "Priority Support Queue",
+      "14-Day Trial",
     ],
     setupFee: 14999,
     cta: "Get Started",
@@ -115,18 +115,18 @@ const plans = [
     icon: Building2,
     baseMonthly: 0,
     periodLabel: "",
-    description: "Full-scale brand domination with unlimited everything, dedicated support, and custom integrations tailored to your empire.",
+    description: "A custom beta configuration whose limits, support, connectors, and delivery scope are agreed in writing.",
     badge: "Custom",
     features: [
-      "Unlimited Everything",
-      "Full Suite AI Dashboard",
-      "Dedicated Account Manager",
-      "White-Label Portal",
-      "Custom Integrations & Development",
-      "Full API + Webhooks",
-      "Contractual Availability Terms",
-      "Warehouse Management",
-      "Audit Log & SLA Engine",
+      "Custom Resource Limits",
+      "Configured Analytics Workspace",
+      "Named Onboarding Contact",
+      "Branding Scope by Agreement",
+      "Connector Scope by Agreement",
+      "API or Webhooks by Agreement",
+      "Availability Terms if Contracted",
+      "Warehouse Workflow Review",
+      "Audit Log Tools",
     ],
     setupFee: 29999,
     cta: "Contact Sales",
@@ -165,11 +165,10 @@ export function Pricing({ onAuthClick }: PricingProps) {
           </h2>
           <div className="mt-2 inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-amber-500/10 border border-amber-500/20">
             <span className="w-1.5 h-1.5 rounded-full bg-amber-400 animate-pulse" />
-            <span className="text-xs text-amber-300 font-medium">Beta Launch | All plans include a 14-day free trial</span>
+            <span className="text-xs text-amber-300 font-medium">Invite-only Beta | Published plans currently show a 14-day trial</span>
           </div>
           <p className="mt-4 text-lg text-slate-400">
-            Transparent pricing with no hidden fees. Every plan includes a 14-day free trial.
-            Scale up anytime as your brand grows.
+            Published prices and setup fees are shown below. Availability, limits, trial terms, and custom work are confirmed before activation.
           </p>
         </motion.div>
 
@@ -303,7 +302,7 @@ export function Pricing({ onAuthClick }: PricingProps) {
                       {!isEnterprise && <ArrowRight className="ml-2 w-3.5 h-3.5 group-hover:translate-x-1 transition-transform" />}
                     </Button>
                     <p className="text-[11px] text-slate-500 text-center mt-2">
-                      14-day free trial included with all plans
+                      Current published trial: 14 days; onboarding terms apply
                     </p>
                   </div>
                 </div>
@@ -324,7 +323,7 @@ export function Pricing({ onAuthClick }: PricingProps) {
             All plans include a one-time setup fee. Quarterly billing saves 10%. Annual billing saves <span className="text-amber-400 font-semibold">20%</span>.
           </p>
           <p className="text-slate-500 text-xs mt-2">
-            Payment methods: Bank Transfer, JazzCash, EasyPaisa, SWIFT, PayPal | Currency: PKR (USD for international clients)
+            Prices are shown in PKR. Available payment methods and any custom currency terms are confirmed before invoicing.
           </p>
         </motion.div>
       </div>
