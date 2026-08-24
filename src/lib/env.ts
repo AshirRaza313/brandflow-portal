@@ -16,6 +16,7 @@ const envSchema = z.object({
 
   // ── Optional (for production PostgreSQL) ──
   DIRECT_DATABASE_URL: z.string().optional(),
+  EXPECTED_DATABASE_PROJECT_REF: z.string().regex(/^[a-z0-9]{20}$/, "EXPECTED_DATABASE_PROJECT_REF must be a Supabase project ref").optional(),
 
   // ── Optional but important ──
   ADMIN_EMAIL: z.string().email("ADMIN_EMAIL must be a valid email address").optional().default(""),
@@ -63,6 +64,7 @@ export function validateEnv(): EnvSchema {
   const result = envSchema.safeParse({
     DATABASE_URL: process.env.DATABASE_URL,
     DIRECT_DATABASE_URL: process.env.DIRECT_DATABASE_URL,
+    EXPECTED_DATABASE_PROJECT_REF: process.env.EXPECTED_DATABASE_PROJECT_REF,
     NEXTAUTH_SECRET: process.env.NEXTAUTH_SECRET,
     NEXTAUTH_URL: process.env.NEXTAUTH_URL,
     ADMIN_EMAIL: process.env.ADMIN_EMAIL,

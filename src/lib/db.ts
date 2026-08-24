@@ -2,6 +2,12 @@ import { PrismaClient } from '@prisma/client'
 import { Pool, PoolConfig } from 'pg'
 import { NextResponse } from 'next/server'
 import logger from '@/lib/logger'
+import {
+  classifyDatabaseError,
+  isDatabaseUnavailableError,
+  retryTransientDatabaseOperation,
+} from '@/lib/database-errors'
+import { buildPrismaUrl } from '@/lib/database-url'
 
 /** Safely extract message and code from an unknown error */
 function getErrorInfo(e: unknown): { message: string; code: string } {
@@ -25,29 +31,7 @@ function getErrorInfo(e: unknown): { message: string; code: string } {
  */
 export function getPrismaUrl(): string {
   const url = process.env.DATABASE_URL || '';
-  if (!url) return url;
-  let finalUrl = url;
-  if (!finalUrl.includes('pgbouncer=')) {
-    const sep = finalUrl.includes('?') ? '&' : '?';
-    finalUrl = `${finalUrl}${sep}pgbouncer=true`;
-  }
-  // Add connection timeout for Vercel serverless cold starts
-  // Without this, PgBouncer pool warmup can cause silent connection failures
-  if (!finalUrl.includes('connect_timeout')) {
-    const sep = finalUrl.includes('?') ? '&' : '?';
-    finalUrl = `${finalUrl}${sep}connect_timeout=15`;
-  }
-  // Add pool_size for serverless - keep small to avoid exhausting PgBouncer
-  if (!finalUrl.includes('pool_size') && !finalUrl.includes('connection_limit')) {
-    const sep = finalUrl.includes('?') ? '&' : '?';
-    finalUrl = `${finalUrl}${sep}connection_limit=3`;
-  }
-  // Add statement timeout to prevent long-running queries from blocking
-  if (!finalUrl.includes('statement_timeout')) {
-    const sep = finalUrl.includes('?') ? '&' : '?';
-    finalUrl = `${finalUrl}${sep}options=-c%20statement_timeout=10000`;
-  }
-  return finalUrl;
+  return buildPrismaUrl(url, process.env.EXPECTED_DATABASE_PROJECT_REF);
 }
 
 const globalForPrisma = globalThis as unknown as {
@@ -70,33 +54,8 @@ if (process.env.NODE_ENV !== 'production') globalForPrisma.prisma = db
 //  RETRY UTILITY - handles transient Supabase/PgBouncer connection errors
 // ═══════════════════════════════════════════════════════════════════════════
 
-// Retry ALL Prisma connection/initialization errors (P1xxx) and network errors.
-// Do NOT retry application-level errors (P2xxx like unique constraint, not found, etc.).
-const RETRYABLE_CODES = [
-  'P1001', 'P1002', 'P1003', 'P1008', 'P1009', 'P1010', 'P1011', 'P1012', 'P1013',
-  'P1014', 'P1015', 'P1016', 'P1017',
-  'ECONNRESET', 'ECONNREFUSED', 'ETIMEDOUT',
-];
-const RETRYABLE_MSGS = [
-  'Connection timeout', 'prepared statement', "Can't reach database server",
-  'PrismaClientInitializationError', 'timed out', 'socket hang up',
-  'Network error', 'fetch failed', 'connect ETIMEDOUT',
-  'too many connections', 'pgbouncer',
-];
-
-function isRetryable(error: unknown): boolean {
-  if (!error) return false;
-  const { message, code } = getErrorInfo(error);
-  // Always retry P1xxx (Prisma engine/connection errors)
-  if (/^P1\d{2}$/.test(code)) return true;
-  // Retry specific network error codes
-  if (RETRYABLE_CODES.includes(code)) return true;
-  // Retry by error message patterns
-  const msg = message.toLowerCase();
-  if (RETRYABLE_MSGS.some(m => msg.includes(m.toLowerCase()))) return true;
-  return false;
-}
-
+// Retry only known transient Prisma/network failures. Permanent authentication,
+// authorization, configuration, schema, and application errors fail immediately.
 /**
  * Retry a database operation with exponential backoff.
  * Use for critical queries that should survive transient PgBouncer hiccups.
@@ -106,39 +65,9 @@ export async function withRetry<TResult>(
   retries = 3,
   baseDelay = 300
 ): Promise<Awaited<TResult>> {
-  let lastError: unknown;
-  for (let i = 0; i <= retries; i++) {
-    try {
-      return await queryFn();
-    } catch (err: unknown) {
-      lastError = err;
-      if (i === retries || !isRetryable(err)) throw err;
-      // On first retry, attempt to reconnect Prisma if stale connection detected
-      if (i === 0 && isStaleConnection(err)) {
-        logger.warn('[DB] Stale connection detected, attempting reconnect');
-        try {
-          await db.$disconnect();
-          await db.$connect();
-        } catch (reconnectErr: unknown) {
-          logger.warn('[DB] Reconnect failed', { message: getErrorInfo(reconnectErr).message.slice(0, 80) });
-        }
-      }
-      const delay = baseDelay * Math.pow(2, i);
-      logger.warn('[DB] Retry attempt', { attempt: i + 1, retries, delay, message: getErrorInfo(err).message.slice(0, 80) });
-      await new Promise(r => setTimeout(r, delay));
-    }
-  }
-  throw lastError;
-}
-
-function isStaleConnection(error: unknown): boolean {
-  const { message, code } = getErrorInfo(error);
-  const msg = message.toLowerCase();
-  return (
-    code === 'P1001' ||  // Connection closed
-    code === 'P1008' ||  // Timeout
-    msg.includes('connection') && (msg.includes('closed') || msg.includes('ended') || msg.includes('reset') || msg.includes('refused'))
-  );
+  return retryTransientDatabaseOperation(queryFn, retries, baseDelay, (event) => {
+    logger.warn('[DB] Retry attempt', event);
+  });
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
@@ -298,12 +227,17 @@ export function toDirectUrl(url: string): string | null {
 export function getDdlConnectionConfigs(): PoolConfig[] {
   const configs: PoolConfig[] = [];
 
-  // Config 1: DIRECT_URL env var (user-provided, most reliable)
+  // Config 1: standardized Prisma direct URL, with legacy DIRECT_URL fallback.
   // BUT skip it if it points to the deprecated db.*.supabase.co direct host
   // (Supabase has deprecated direct external connections — DNS no longer
   // resolves in many regions, causing ENOTFOUND errors from Vercel).
-  if (process.env.DIRECT_URL) {
-    const parsed = parsePgUrl(process.env.DIRECT_URL);
+  const configuredDirectUrls = [process.env.DIRECT_DATABASE_URL, process.env.DIRECT_URL]
+    .filter((candidate): candidate is string => Boolean(candidate));
+  for (const configuredDirectUrl of [...new Set(configuredDirectUrls)]) {
+    // When the deployment target contract is enabled, every alternate
+    // connection path must satisfy it too. Never let DDL bypass the guard.
+    buildPrismaUrl(configuredDirectUrl, process.env.EXPECTED_DATABASE_PROJECT_REF);
+    const parsed = parsePgUrl(configuredDirectUrl);
     if (parsed) {
       const isDeprecatedDirect = parsed.host.startsWith('db.') && parsed.host.endsWith('.supabase.co');
       if (!isDeprecatedDirect) {
@@ -328,6 +262,7 @@ export function getDdlConnectionConfigs(): PoolConfig[] {
 
   // Config 2: Auto-convert DATABASE_URL to direct URL
   const dbUrl = process.env.DATABASE_URL || '';
+  if (dbUrl) buildPrismaUrl(dbUrl, process.env.EXPECTED_DATABASE_PROJECT_REF);
   const directUrl = toDirectUrl(dbUrl);
   if (directUrl) {
     const parsed = parsePgUrl(directUrl);
@@ -371,7 +306,6 @@ export function getDdlConnectionConfigs(): PoolConfig[] {
 let schemaCreated = false;
 let createError: string | null = null;
 let lastCreateDetail: string | null = null;
-let schemaRepaired = false; // Track if auto-repair has been attempted
 
 /**
  * ensureDb() - Non-blocking DB readiness check.
@@ -2138,7 +2072,7 @@ const directPoolCache: { pool: Pool | null; url: string | null } = { pool: null,
  *   3. DATABASE_URL as-is (fallback)
  */
 export function getDirectPool(): Pool {
-  const url = process.env.DATABASE_URL || '';
+  const url = getPrismaUrl();
   if (!url) {
     throw new Error('DATABASE_URL not configured');
   }
@@ -2151,15 +2085,19 @@ export function getDirectPool(): Pool {
   //    external connections from Vercel/lambda — the DNS no longer resolves
   //    in many regions (returns ENOTFOUND). If DIRECT_URL points there, skip
   //    it and fall through to the auto-converted session-mode pooler URL.
-  if (process.env.DIRECT_URL) {
-    const directParsed = parsePgUrl(process.env.DIRECT_URL);
+  const configuredDirectUrls = [process.env.DIRECT_DATABASE_URL, process.env.DIRECT_URL]
+    .filter((candidate): candidate is string => Boolean(candidate));
+  for (const configuredDirectUrl of [...new Set(configuredDirectUrls)]) {
+    buildPrismaUrl(configuredDirectUrl, process.env.EXPECTED_DATABASE_PROJECT_REF);
+    const directParsed = parsePgUrl(configuredDirectUrl);
     if (directParsed && directParsed.host.startsWith('db.') && directParsed.host.endsWith('.supabase.co')) {
       // Deprecated direct host — skip and use session-mode pooler instead
       logger.warn('[DB] getDirectPool: DIRECT_URL points to deprecated db.*.supabase.co host — skipping in favor of session-mode pooler', {
         host: directParsed.host,
       });
     } else {
-      bestUrl = process.env.DIRECT_URL;
+      bestUrl = configuredDirectUrl;
+      break;
     }
   }
 
@@ -2374,237 +2312,6 @@ export function dbErrorResponse(error: unknown) {
  *   ]);
  *   if (r1.error) return r1.errorResponse;
  */
-/**
- * Auto-repair schema mismatches. When Prisma reports a missing column,
- * we add ALL known missing columns via the direct pg pool. This handles
- * the case where CREATE_ALL_TABLES_SQL was never run on production.
- *
- * We use `DO $$ BEGIN ALTER TABLE ... ADD COLUMN IF NOT EXISTS ... EXCEPTION ... END $$`
- * which is safe, idempotent, and works through PgBouncer transaction mode.
- *
- * Returns true if a repair was attempted.
- */
-async function autoRepairSchema(error: unknown): Promise<boolean> {
-  if (schemaRepaired) return false;
-  const { message: errMsg } = getErrorInfo(error);
-  const msg = errMsg.toLowerCase();
-
-  // Only attempt repair for missing column/table errors
-  if (!msg.includes('does not exist')) return false;
-
-  // Extract table name from error like: The column `Proposal.payproOrderId` does not exist
-  const columnMatch = msg.match(/`(\w+)\.(\w+)`\s+does not exist/);
-  const tableMatch = msg.match(/relation "(\w+)"\s+does not exist/);
-
-  if (!columnMatch && !tableMatch) return false;
-
-  const missingTable = tableMatch ? tableMatch[1] : columnMatch ? columnMatch[1] : null;
-  const missingColumn = columnMatch ? columnMatch[2] : null;
-
-  logger.info(`[DB] Auto-repair: detected missing ${missingTable ? 'table' : 'column'}` +
-    (missingColumn ? ` ${missingTable}.${missingColumn}` : missingTable ? ` ${missingTable}` : ''));
-
-  // SQL to add ALL known missing columns that Prisma expects but production DB might lack.
-  // These are columns added after initial table creation. Each uses IF NOT EXISTS for safety.
-  const repairSql = `
--- ── Proposal table (PayPro payment columns) ──
-DO $$ BEGIN ALTER TABLE "Proposal" ADD COLUMN IF NOT EXISTS "payproOrderId" TEXT; EXCEPTION WHEN OTHERS THEN NULL; END $$;
-DO $$ BEGIN ALTER TABLE "Proposal" ADD COLUMN IF NOT EXISTS "paymentStatus" TEXT NOT NULL DEFAULT 'unpaid'; EXCEPTION WHEN OTHERS THEN NULL; END $$;
-DO $$ BEGIN ALTER TABLE "Proposal" ADD COLUMN IF NOT EXISTS "paidAt" TIMESTAMP(3); EXCEPTION WHEN OTHERS THEN NULL; END $$;
-DO $$ BEGIN ALTER TABLE "Proposal" ADD COLUMN IF NOT EXISTS "paymentAmount" DOUBLE PRECISION; EXCEPTION WHEN OTHERS THEN NULL; END $$;
-
--- ── Organization (billing security + usage tracking) ──
-DO $$ BEGIN ALTER TABLE "Organization" ADD COLUMN IF NOT EXISTS "paymentRejectionCount" INTEGER NOT NULL DEFAULT 0; EXCEPTION WHEN OTHERS THEN NULL; END $$;
-DO $$ BEGIN ALTER TABLE "Organization" ADD COLUMN IF NOT EXISTS "isBanned" BOOLEAN NOT NULL DEFAULT false; EXCEPTION WHEN OTHERS THEN NULL; END $$;
-DO $$ BEGIN ALTER TABLE "Organization" ADD COLUMN IF NOT EXISTS "banReason" TEXT; EXCEPTION WHEN OTHERS THEN NULL; END $$;
-DO $$ BEGIN ALTER TABLE "Organization" ADD COLUMN IF NOT EXISTS "bannedAt" TIMESTAMP(3); EXCEPTION WHEN OTHERS THEN NULL; END $$;
-DO $$ BEGIN ALTER TABLE "Organization" ADD COLUMN IF NOT EXISTS "usageOrdersCount" INTEGER NOT NULL DEFAULT 0; EXCEPTION WHEN OTHERS THEN NULL; END $$;
-DO $$ BEGIN ALTER TABLE "Organization" ADD COLUMN IF NOT EXISTS "usageProductsCount" INTEGER NOT NULL DEFAULT 0; EXCEPTION WHEN OTHERS THEN NULL; END $$;
-DO $$ BEGIN ALTER TABLE "Organization" ADD COLUMN IF NOT EXISTS "usageCustomersCount" INTEGER NOT NULL DEFAULT 0; EXCEPTION WHEN OTHERS THEN NULL; END $$;
-DO $$ BEGIN ALTER TABLE "Organization" ADD COLUMN IF NOT EXISTS "usageStorageMb" INTEGER NOT NULL DEFAULT 0; EXCEPTION WHEN OTHERS THEN NULL; END $$;
-DO $$ BEGIN ALTER TABLE "Organization" ADD COLUMN IF NOT EXISTS "usageInvoicesCount" INTEGER NOT NULL DEFAULT 0; EXCEPTION WHEN OTHERS THEN NULL; END $$;
-DO $$ BEGIN ALTER TABLE "Organization" ADD COLUMN IF NOT EXISTS "usageCouponsCount" INTEGER NOT NULL DEFAULT 0; EXCEPTION WHEN OTHERS THEN NULL; END $$;
-DO $$ BEGIN ALTER TABLE "Organization" ADD COLUMN IF NOT EXISTS "usageTasksCount" INTEGER NOT NULL DEFAULT 0; EXCEPTION WHEN OTHERS THEN NULL; END $$;
-DO $$ BEGIN ALTER TABLE "Organization" ADD COLUMN IF NOT EXISTS "usageTeamChatsCount" INTEGER NOT NULL DEFAULT 0; EXCEPTION WHEN OTHERS THEN NULL; END $$;
-DO $$ BEGIN ALTER TABLE "Organization" ADD COLUMN IF NOT EXISTS "usageBroadcastsCount" INTEGER NOT NULL DEFAULT 0; EXCEPTION WHEN OTHERS THEN NULL; END $$;
-DO $$ BEGIN ALTER TABLE "Organization" ADD COLUMN IF NOT EXISTS "usageLastResetAt" TIMESTAMP(3); EXCEPTION WHEN OTHERS THEN NULL; END $$;
-
--- ── Organization (Brand Settings columns — added in Phase 2) ──
--- These columns are referenced by the invoice /pdf and /send routes via
--- include: { organization: { select: { country: true, taxId: true, address: true } } }.
--- If they don't exist in production, the entire findUnique fails with P2022.
-DO $$ BEGIN ALTER TABLE "Organization" ADD COLUMN IF NOT EXISTS "country" TEXT; EXCEPTION WHEN OTHERS THEN NULL; END $$;
-DO $$ BEGIN ALTER TABLE "Organization" ADD COLUMN IF NOT EXISTS "religion" TEXT; EXCEPTION WHEN OTHERS THEN NULL; END $$;
-DO $$ BEGIN ALTER TABLE "Organization" ADD COLUMN IF NOT EXISTS "brandTagline" TEXT; EXCEPTION WHEN OTHERS THEN NULL; END $$;
-DO $$ BEGIN ALTER TABLE "Organization" ADD COLUMN IF NOT EXISTS "brandColor" TEXT; EXCEPTION WHEN OTHERS THEN NULL; END $$;
-DO $$ BEGIN ALTER TABLE "Organization" ADD COLUMN IF NOT EXISTS "secondaryBrandColor" TEXT; EXCEPTION WHEN OTHERS THEN NULL; END $$;
-DO $$ BEGIN ALTER TABLE "Organization" ADD COLUMN IF NOT EXISTS "brandDescription" TEXT; EXCEPTION WHEN OTHERS THEN NULL; END $$;
-DO $$ BEGIN ALTER TABLE "Organization" ADD COLUMN IF NOT EXISTS "industry" TEXT; EXCEPTION WHEN OTHERS THEN NULL; END $$;
-DO $$ BEGIN ALTER TABLE "Organization" ADD COLUMN IF NOT EXISTS "address" TEXT; EXCEPTION WHEN OTHERS THEN NULL; END $$;
-DO $$ BEGIN ALTER TABLE "Organization" ADD COLUMN IF NOT EXISTS "taxId" TEXT; EXCEPTION WHEN OTHERS THEN NULL; END $$;
-DO $$ BEGIN ALTER TABLE "Organization" ADD COLUMN IF NOT EXISTS "favicon" TEXT; EXCEPTION WHEN OTHERS THEN NULL; END $$;
-
--- ── Lead (consultation columns) ──
-DO $$ BEGIN ALTER TABLE "Lead" ADD COLUMN IF NOT EXISTS "consultationType" TEXT; EXCEPTION WHEN OTHERS THEN NULL; END $$;
-DO $$ BEGIN ALTER TABLE "Lead" ADD COLUMN IF NOT EXISTS "preferredDate" TEXT; EXCEPTION WHEN OTHERS THEN NULL; END $$;
-DO $$ BEGIN ALTER TABLE "Lead" ADD COLUMN IF NOT EXISTS "preferredTime" TEXT; EXCEPTION WHEN OTHERS THEN NULL; END $$;
-DO $$ BEGIN ALTER TABLE "Lead" ADD COLUMN IF NOT EXISTS "timezone" TEXT; EXCEPTION WHEN OTHERS THEN NULL; END $$;
-DO $$ BEGIN ALTER TABLE "Lead" ADD COLUMN IF NOT EXISTS "availabilityNote" TEXT; EXCEPTION WHEN OTHERS THEN NULL; END $$;
-DO $$ BEGIN ALTER TABLE "Lead" ADD COLUMN IF NOT EXISTS "calendlyBookingLink" TEXT; EXCEPTION WHEN OTHERS THEN NULL; END $$;
-DO $$ BEGIN ALTER TABLE "Lead" ADD COLUMN IF NOT EXISTS "lastFollowUpAt" TIMESTAMP(3); EXCEPTION WHEN OTHERS THEN NULL; END $$;
-DO $$ BEGIN ALTER TABLE "Lead" ADD COLUMN IF NOT EXISTS "followUpCount" INTEGER NOT NULL DEFAULT 0; EXCEPTION WHEN OTHERS THEN NULL; END $$;
-
--- ── OrganizationMember (attendance/penalty) ──
-DO $$ BEGIN ALTER TABLE "OrganizationMember" ADD COLUMN IF NOT EXISTS "absenceCount" INTEGER NOT NULL DEFAULT 0; EXCEPTION WHEN OTHERS THEN NULL; END $$;
-DO $$ BEGIN ALTER TABLE "OrganizationMember" ADD COLUMN IF NOT EXISTS "penaltyUntil" TIMESTAMP(3); EXCEPTION WHEN OTHERS THEN NULL; END $$;
-DO $$ BEGIN ALTER TABLE "OrganizationMember" ADD COLUMN IF NOT EXISTS "pin" TEXT; EXCEPTION WHEN OTHERS THEN NULL; END $$;
-DO $$ BEGIN ALTER TABLE "OrganizationMember" ADD COLUMN IF NOT EXISTS "pinCreatedAt" TIMESTAMP(3); EXCEPTION WHEN OTHERS THEN NULL; END $$;
-
--- ── SubscriptionPlan ──
-DO $$ BEGIN ALTER TABLE "SubscriptionPlan" ADD COLUMN IF NOT EXISTS "quarterlyPrice" DOUBLE PRECISION NOT NULL DEFAULT 0; EXCEPTION WHEN OTHERS THEN NULL; END $$;
-
--- ── PlatformSettings (lead magnet columns) ──
-DO $$ BEGIN ALTER TABLE "PlatformSettings" ADD COLUMN IF NOT EXISTS "leadMagnetTitle" TEXT; EXCEPTION WHEN OTHERS THEN NULL; END $$;
-DO $$ BEGIN ALTER TABLE "PlatformSettings" ADD COLUMN IF NOT EXISTS "leadMagnetDescription" TEXT; EXCEPTION WHEN OTHERS THEN NULL; END $$;
-DO $$ BEGIN ALTER TABLE "PlatformSettings" ADD COLUMN IF NOT EXISTS "leadMagnetEmailSubject" TEXT; EXCEPTION WHEN OTHERS THEN NULL; END $$;
-DO $$ BEGIN ALTER TABLE "PlatformSettings" ADD COLUMN IF NOT EXISTS "leadMagnetEmailBody" TEXT; EXCEPTION WHEN OTHERS THEN NULL; END $$;
-DO $$ BEGIN ALTER TABLE "PlatformSettings" ADD COLUMN IF NOT EXISTS "leadMagnetPdfUrl" TEXT; EXCEPTION WHEN OTHERS THEN NULL; END $$;
-DO $$ BEGIN ALTER TABLE "PlatformSettings" ADD COLUMN IF NOT EXISTS "leadMagnetSentCount" INTEGER NOT NULL DEFAULT 0; EXCEPTION WHEN OTHERS THEN NULL; END $$;
-DO $$ BEGIN ALTER TABLE "PlatformSettings" ADD COLUMN IF NOT EXISTS "leadMagnetDownloadCount" INTEGER NOT NULL DEFAULT 0; EXCEPTION WHEN OTHERS THEN NULL; END $$;
-
--- ── Invoice (Phase 2: Custom Invoice + Payment Approval Workflow columns) ──
-DO $$ BEGIN ALTER TABLE "Invoice" ADD COLUMN IF NOT EXISTS "lineItems" JSONB; EXCEPTION WHEN OTHERS THEN NULL; END $$;
-DO $$ BEGIN ALTER TABLE "Invoice" ADD COLUMN IF NOT EXISTS "subtotal" DECIMAL(12,2); EXCEPTION WHEN OTHERS THEN NULL; END $$;
-DO $$ BEGIN ALTER TABLE "Invoice" ADD COLUMN IF NOT EXISTS "taxRate" DECIMAL(5,2); EXCEPTION WHEN OTHERS THEN NULL; END $$;
-DO $$ BEGIN ALTER TABLE "Invoice" ADD COLUMN IF NOT EXISTS "taxAmount" DECIMAL(10,2); EXCEPTION WHEN OTHERS THEN NULL; END $$;
-DO $$ BEGIN ALTER TABLE "Invoice" ADD COLUMN IF NOT EXISTS "discountAmount" DECIMAL(10,2); EXCEPTION WHEN OTHERS THEN NULL; END $$;
-DO $$ BEGIN ALTER TABLE "Invoice" ADD COLUMN IF NOT EXISTS "clientEmail" TEXT; EXCEPTION WHEN OTHERS THEN NULL; END $$;
-DO $$ BEGIN ALTER TABLE "Invoice" ADD COLUMN IF NOT EXISTS "clientName" TEXT; EXCEPTION WHEN OTHERS THEN NULL; END $$;
-DO $$ BEGIN ALTER TABLE "Invoice" ADD COLUMN IF NOT EXISTS "clientAddress" TEXT; EXCEPTION WHEN OTHERS THEN NULL; END $$;
-DO $$ BEGIN ALTER TABLE "Invoice" ADD COLUMN IF NOT EXISTS "approvedBy" TEXT; EXCEPTION WHEN OTHERS THEN NULL; END $$;
-DO $$ BEGIN ALTER TABLE "Invoice" ADD COLUMN IF NOT EXISTS "approvedAt" TIMESTAMP(3); EXCEPTION WHEN OTHERS THEN NULL; END $$;
-DO $$ BEGIN ALTER TABLE "Invoice" ADD COLUMN IF NOT EXISTS "sentAt" TIMESTAMP(3); EXCEPTION WHEN OTHERS THEN NULL; END $$;
-DO $$ BEGIN ALTER TABLE "Invoice" ADD COLUMN IF NOT EXISTS "createdBy" TEXT; EXCEPTION WHEN OTHERS THEN NULL; END $$;
-DO $$ BEGIN ALTER TABLE "Invoice" ADD COLUMN IF NOT EXISTS "invoiceTitle" TEXT; EXCEPTION WHEN OTHERS THEN NULL; END $$;
-DO $$ BEGIN ALTER TABLE "Invoice" ADD COLUMN IF NOT EXISTS "paymentStatus" TEXT; EXCEPTION WHEN OTHERS THEN NULL; END $$;
-DO $$ BEGIN CREATE INDEX IF NOT EXISTS "Invoice_type_idx" ON "Invoice" ("type"); EXCEPTION WHEN OTHERS THEN NULL; END $$;
-DO $$ BEGIN CREATE INDEX IF NOT EXISTS "Invoice_paymentStatus_idx" ON "Invoice" ("paymentStatus"); EXCEPTION WHEN OTHERS THEN NULL; END $$;
-
--- ── ReportExport (Phase 2: Audit trail table — create if missing) ──
-CREATE TABLE IF NOT EXISTS "ReportExport" (
-  "id" TEXT NOT NULL,
-  "organizationId" TEXT NOT NULL,
-  "type" TEXT NOT NULL,
-  "title" TEXT NOT NULL,
-  "period" TEXT NOT NULL,
-  "dateFrom" TIMESTAMP(3),
-  "dateTo" TIMESTAMP(3),
-  "pdfUrl" TEXT,
-  "generatedById" TEXT,
-  "recipientEmail" TEXT,
-  "emailedAt" TIMESTAMP(3),
-  "emailStatus" TEXT,
-  "fileSizeKb" INTEGER,
-  "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  CONSTRAINT "ReportExport_pkey" PRIMARY KEY ("id")
-);
-DO $$ BEGIN CREATE INDEX IF NOT EXISTS "ReportExport_organizationId_idx" ON "ReportExport" ("organizationId"); EXCEPTION WHEN OTHERS THEN NULL; END $$;
-DO $$ BEGIN CREATE INDEX IF NOT EXISTS "ReportExport_type_idx" ON "ReportExport" ("type"); EXCEPTION WHEN OTHERS THEN NULL; END $$;
-DO $$ BEGIN CREATE INDEX IF NOT EXISTS "ReportExport_createdAt_idx" ON "ReportExport" ("createdAt"); EXCEPTION WHEN OTHERS THEN NULL; END $$;
-
--- ── ClientMessage (Phase 3: Premium Client Communication Center table — create if missing) ──
-CREATE TABLE IF NOT EXISTS "ClientMessage" (
-  "id" TEXT NOT NULL,
-  "organizationId" TEXT NOT NULL,
-  "threadId" TEXT NOT NULL,
-  "parentMessageId" TEXT,
-  "direction" TEXT NOT NULL,
-  "authorId" TEXT,
-  "authorName" TEXT NOT NULL,
-  "authorEmail" TEXT,
-  "authorRole" TEXT,
-  "category" TEXT NOT NULL,
-  "priority" TEXT NOT NULL DEFAULT 'normal',
-  "subject" TEXT NOT NULL,
-  "body" TEXT NOT NULL,
-  "attachments" JSONB,
-  "deadline" TIMESTAMP(3),
-  "isRead" BOOLEAN NOT NULL DEFAULT false,
-  "readAt" TIMESTAMP(3),
-  "isPinned" BOOLEAN NOT NULL DEFAULT false,
-  "isArchived" BOOLEAN NOT NULL DEFAULT false,
-  "scheduledFor" TIMESTAMP(3),
-  "sentAt" TIMESTAMP(3),
-  "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  "updatedAt" TIMESTAMP(3) NOT NULL,
-  CONSTRAINT "ClientMessage_pkey" PRIMARY KEY ("id")
-);
-DO $$ BEGIN CREATE INDEX IF NOT EXISTS "ClientMessage_organizationId_idx" ON "ClientMessage" ("organizationId"); EXCEPTION WHEN OTHERS THEN NULL; END $$;
-DO $$ BEGIN CREATE INDEX IF NOT EXISTS "ClientMessage_threadId_idx" ON "ClientMessage" ("threadId"); EXCEPTION WHEN OTHERS THEN NULL; END $$;
-DO $$ BEGIN CREATE INDEX IF NOT EXISTS "ClientMessage_category_idx" ON "ClientMessage" ("category"); EXCEPTION WHEN OTHERS THEN NULL; END $$;
-DO $$ BEGIN CREATE INDEX IF NOT EXISTS "ClientMessage_isRead_idx" ON "ClientMessage" ("isRead"); EXCEPTION WHEN OTHERS THEN NULL; END $$;
-DO $$ BEGIN CREATE INDEX IF NOT EXISTS "ClientMessage_isArchived_idx" ON "ClientMessage" ("isArchived"); EXCEPTION WHEN OTHERS THEN NULL; END $$;
-DO $$ BEGIN CREATE INDEX IF NOT EXISTS "ClientMessage_createdAt_idx" ON "ClientMessage" ("createdAt"); EXCEPTION WHEN OTHERS THEN NULL; END $$;
-`;
-
-  // If a TABLE is missing (not just a column), we need to run full table creation
-  if (tableMatch && !columnMatch) {
-    logger.info('[DB] Auto-repair: missing TABLE detected, running createAllTables()');
-    const success = await createAllTables();
-    if (success) {
-      schemaRepaired = true;
-      return true;
-    }
-    logger.error('[DB] Auto-repair: createAllTables failed, trying column repair anyway');
-  }
-
-  // Try direct pool first, fall back to Prisma via PgBouncer
-  try {
-    const pool = getDirectPool();
-    await pool.query(repairSql);
-    logger.info('[DB] Auto-repair: schema columns repair completed successfully (direct pool)');
-    schemaRepaired = true;
-    return true;
-  } catch (directErr: unknown) {
-    logger.warn('[DB] Auto-repair: direct pool failed, trying PgBouncer', { error: getErrorInfo(directErr).message.substring(0, 100) });
-  }
-
-  // Fallback: run via Prisma $executeRawUnsafe through PgBouncer
-  try {
-    // Smarter splitter: handles DO $$ ... END $$; blocks, CREATE TABLE ... ); blocks,
-    // CREATE INDEX ... ; statements, and ALTER TABLE ... ; statements.
-    const statements = repairSql.split('\n').filter((l: string) => l.trim() && !l.startsWith('--'));
-    const combined: string[] = [];
-    let current = '';
-    let inCreateTable = false;
-    for (const line of statements) {
-      current += line + '\n';
-      const trimmed = line.trim();
-      if (trimmed.toUpperCase().startsWith('CREATE TABLE')) inCreateTable = true;
-      // Statement boundary detection
-      const isEnd = trimmed.includes('END $$;')
-        || (inCreateTable && trimmed.endsWith(');'))
-        || (trimmed.toUpperCase().startsWith('CREATE INDEX') && trimmed.endsWith(';'))
-        || (trimmed.toUpperCase().startsWith('ALTER TABLE') && trimmed.endsWith(';'));
-      if (isEnd) {
-        combined.push(current.trim());
-        current = '';
-        inCreateTable = false;
-      }
-    }
-    for (const stmt of combined) {
-      try { await db.$executeRawUnsafe(stmt); } catch { /* ignore individual statement failures */ }
-    }
-    logger.info('[DB] Auto-repair: schema columns repair completed (PgBouncer fallback)');
-    schemaRepaired = true;
-    return true;
-  } catch (poolErr: unknown) {
-    logger.error('[DB] Auto-repair failed', { error: getErrorInfo(poolErr).message.substring(0, 150) });
-    // Don't set schemaRepaired - allow retry on next request
-    return false;
-  }
-}
-
 export async function safeDbQuery<TResult>(
   queryFn: () => TResult,
   retries = 3,
@@ -2628,39 +2335,8 @@ export async function safeDbQuery<TResult>(
     const { message: msg } = getErrorInfo(err);
     const unavailable = isDbUnavailable(err);
     const schemaErr = isSchemaError(err);
+    const status = unavailable ? 503 : 500;
 
-    // ── AUTO-REPAIR: If it's a missing column, try to add it and retry ──
-    if (schemaErr) {
-      const repaired = await autoRepairSchema(err);
-      if (repaired) {
-        logger.info('[safeDbQuery] Schema auto-repaired, retrying query');
-        try {
-          const data = await withRetry(queryFn, 1, 200);
-          return { data, error: null, rawError: null, unavailable: false, schemaError: false, errorResponse: new Response(JSON.stringify({}), { status: 200 }) };
-        } catch (retryErr: unknown) {
-          logger.error('[safeDbQuery] Query still fails after auto-repair', { error: getErrorInfo(retryErr).message.substring(0, 100) });
-          // Fall through to return error response — use the retry error as the raw error
-          // (it's the most recent and most relevant)
-          return {
-            data: null,
-            error: process.env.NODE_ENV === 'production'
-              ? (isDbUnavailable(retryErr) ? 'Service temporarily unavailable' : 'Database query failed')
-              : getErrorInfo(retryErr).message,
-            rawError: retryErr,
-            unavailable: isDbUnavailable(retryErr),
-            schemaError: isSchemaError(retryErr),
-            errorResponse: NextResponse.json(
-              process.env.NODE_ENV === 'production'
-                ? { error: isDbUnavailable(retryErr) ? 'Service temporarily unavailable' : 'Database query failed' }
-                : { error: isDbUnavailable(retryErr) ? 'Service temporarily unavailable' : 'Database query failed', detail: getErrorInfo(retryErr).message.substring(0, 200) },
-              { status: isDbUnavailable(retryErr) ? 503 : 500 }
-            ),
-          };
-        }
-      }
-    }
-
-    const status = unavailable ? 503 : schemaErr ? 500 : 500;
     // FIX 9: Never expose internal error details to clients in production
     // Matches the pattern already applied to dbErrorResponse()
     // NOTE: rawError is still preserved above for admin-only routes to introspect.
@@ -2668,7 +2344,10 @@ export async function safeDbQuery<TResult>(
       ? { error: unavailable ? 'Service temporarily unavailable' : 'Database query failed' }
       : { error: unavailable ? 'Service temporarily unavailable' : 'Database query failed', detail: msg.substring(0, 200) };
 
-    logger.error(`[safeDbQuery] ${unavailable ? 'DB_UNAVAILABLE' : schemaErr ? 'SCHEMA_ERROR' : 'QUERY_ERROR'}`, { message: msg.substring(0, 150) });
+    logger.error(`[safeDbQuery] ${unavailable ? 'DB_UNAVAILABLE' : schemaErr ? 'SCHEMA_ERROR' : 'QUERY_ERROR'}`, {
+      kind: classifyDatabaseError(err),
+      code: getErrorInfo(err).code || 'unknown',
+    });
 
     return {
       data: null,
@@ -2684,24 +2363,7 @@ export async function safeDbQuery<TResult>(
 }
 
 export function isDbUnavailable(error: unknown): boolean {
-  const { message: msg, code } = getErrorInfo(error);
-  return (
-    msg.includes("DATABASE_URL") ||
-    msg.includes("ENOTFOUND") ||
-    msg.includes("ECONNREFUSED") ||
-    msg.includes("ECONNRESET") ||
-    msg.includes("PrismaClientInitializationError") ||
-    msg.includes("Can't reach database server") ||
-    msg.includes("Authentication failed") ||
-    msg.includes("prepared statement") ||
-    code === "P1001" ||
-    code === "P1002" ||
-    code === "P1003" ||
-    code === "P1008" ||
-    // PgBouncer specific errors
-    msg.includes("pgbouncer") ||
-    (msg.includes("pool") && msg.includes("exhausted"))
-  );
+  return isDatabaseUnavailableError(error);
 }
 
 /**
@@ -2710,14 +2372,7 @@ export function isDbUnavailable(error: unknown): boolean {
  * with the actual database. Should be reported as 500 with details.
  */
 export function isSchemaError(error: unknown): boolean {
-  const { message, code } = getErrorInfo(error);
-  const msg = message.toLowerCase();
-  return (
-    code === "P2021" ||
-    code === "P2022" ||
-    (msg.includes("relation") && msg.includes("does not exist")) ||
-    (msg.includes("column") && msg.includes("does not exist"))
-  );
+  return classifyDatabaseError(error) === "schema";
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
