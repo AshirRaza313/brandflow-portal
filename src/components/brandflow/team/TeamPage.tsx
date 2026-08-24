@@ -4,7 +4,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useValtrioxStore } from "@/store/brandflow-store";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -14,12 +14,11 @@ import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
 import {
-  Search, Plus, Users, Mail, UserPlus, Trash2, Pencil, RefreshCw, Loader2, AlertCircle,
-  Shield, Check, Crown, Info, Lock, KeyRound, Send, Eye, EyeOff, Copy, CheckCheck,
-  UsersRound, X,
+  Search, Users, Mail, UserPlus, Trash2, Pencil, RefreshCw, Loader2, AlertCircle,
+  Check, Lock, KeyRound, Send, Eye, EyeOff, Copy, CheckCheck, UsersRound,
 } from "lucide-react";
 import { toast } from "sonner";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion } from "framer-motion";
 import { cn } from "@/lib/utils";
 import { fetchWithAuth } from "@/lib/fetch-with-auth";
 import {
@@ -27,7 +26,6 @@ import {
   getRoleByName,
   getRoleBadgeStyle,
   canManageRoles,
-  type RoleDefinition,
 } from "@/lib/roles";
 
 // ── Types ──────────────────────────────────────────────────────────────────
@@ -69,7 +67,15 @@ interface PendingInvitation {
 // ── Constants ──────────────────────────────────────────────────────────────
 
 // Roles that should NOT appear in the invite role dropdown
-const EXCLUDED_ROLES = ["platform_owner", "platform_admin", "owner", "custom"];
+const EXCLUDED_ROLES = [
+  "platform_owner",
+  "platform_admin",
+  "valtriox_team",
+  "owner",
+  "admin",
+  "ceo",
+  "custom",
+];
 
 // ── Component ──────────────────────────────────────────────────────────────
 
@@ -79,7 +85,12 @@ export function TeamPage() {
   const isDark = appTheme === "dark" || isGold;
 
   const currentUserRole = user?.role || "owner";
-  const canManage = canManageRoles(currentUserRole);
+  const effectiveCurrentUserRole = currentUserRole === "owner" || currentUserRole === "ceo"
+    ? "brand_owner"
+    : currentUserRole === "admin"
+      ? "brand_admin"
+      : currentUserRole;
+  const canManage = canManageRoles(effectiveCurrentUserRole);
 
   // Theme helpers
   const textPrimary = isDark ? "text-slate-100" : "text-slate-800";
@@ -91,7 +102,6 @@ export function TeamPage() {
   const accentBg = isGold ? "bg-amber-500/15" : isDark ? "bg-amber-500/15" : "bg-amber-100";
   const accentBtn = isGold ? "bg-amber-500 hover:bg-amber-600 text-black" : "bg-amber-600 hover:bg-amber-700 text-white";
   const accentOutline = isGold ? "border-amber-500/25 text-amber-400 hover:bg-amber-500/10" : "border-amber-300 text-amber-600 hover:bg-amber-50";
-  const dangerOutline = isDark ? "border-red-500/25 text-red-400 hover:bg-red-500/10" : "border-red-300 text-red-600 hover:bg-red-50";
 
   // State
   const [members, setMembers] = useState<Member[]>([]);
@@ -162,15 +172,17 @@ export function TeamPage() {
       setPendingInvitations(data.pendingInvitations || []);
       setTeamLimit(data.teamLimit || 3);
       setCurrentCount(data.currentCount || 0);
-    } catch (err: any) {
-      console.error("Fetch team error:", err);
+    } catch {
       toast.error("Failed to load team members");
     } finally {
       setLoading(false);
     }
-  }, [organization?.id]);
+  }, [organization]);
 
-  useEffect(() => { fetchMembers(); }, [fetchMembers]);
+  useEffect(() => {
+    const timer = window.setTimeout(() => void fetchMembers(), 0);
+    return () => window.clearTimeout(timer);
+  }, [fetchMembers]);
 
   // ── Available roles for dropdown ──
   const availableRoles = useMemo(() => {
@@ -275,9 +287,7 @@ export function TeamPage() {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          roleId: roleDef?.id || null,
           roleName: newRole,
-          updatedByRole: currentUserRole,
         }),
       });
 

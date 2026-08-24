@@ -1,0 +1,203 @@
+name: PR Validation
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [feat/suppliers-persistence]
+
+permissions:
+  contents: read
+
+# Point 4: split into independent jobs so that lint failures
+# (128 pre-existing errors in non-Supplier files per D03) do not
+# block tests and build from running. Each job reports its own
+# status. PR cannot merge until typecheck + test + build are green;
+# lint is informational only (no-new-errors gate, not a hard block).
+jobs:
+  typecheck:
+    name: TypeScript Check
+    runs-on: ubuntu-latest
+    env:
+      DATABASE_URL: postgresql://ci:ci@localhost:5432/ci
+      DIRECT_DATABASE_URL: postgresql://ci:ci@localhost:5432/ci
+      NEXTAUTH_SECRET: ci-dummy-secret-for-build-only-not-real
+      NEXTAUTH_URL: http://localhost:3000
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+      - name: Clean install
+        run: npm ci
+      - name: Generate Prisma Client
+        run: npx prisma generate
+      - name: TypeScript check
+        run: npx tsc --noEmit
+
+  lint:
+    name: Lint (changed files only)
+    runs-on: ubuntu-latest
+    env:
+      DATABASE_URL: postgresql://ci:ci@localhost:5432/ci
+      DIRECT_DATABASE_URL: postgresql://ci:ci@localhost:5432/ci
+      NEXTAUTH_SECRET: ci-dummy-secret-for-build-only-not-real
+      NEXTAUTH_URL: http://localhost:3000
+    # No continue-on-error: fail if new errors are found in changed files
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # needed for git diff against base
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Clean install
+        run: npm ci
+
+      - name: Generate Prisma Client
+        run: npx prisma generate
+
+      - name: Get changed files
+        id: changed-files
+        uses: tj-actions/changed-files@v44
+        with:
+          files: |
+            **/*.ts
+            **/*.tsx
+          files_ignore: |
+            **/*.test.ts
+            **/*.test.tsx
+            **/__tests__/**
+            **/*.d.ts
+          separator: ' '
+
+      - name: Run ESLint on changed files
+        if: steps.changed-files.outputs.any_changed == 'true'
+        run: |
+          echo "Changed files: ${{ steps.changed-files.outputs.all_changed_files }}"
+          npx eslint ${{ steps.changed-files.outputs.all_changed_files }} --max-warnings=0
+
+      - name: No changed files to lint
+        if: steps.changed-files.outputs.any_changed != 'true'
+        run: echo "No changed TypeScript files to lint."
+
+      - name: Upload lint report (if any)
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: lint-report
+          path: lint-report.txt
+          retention-days: 7
+          if-no-files-found: ignore
+
+  test:
+    name: Tests
+    runs-on: ubuntu-latest
+    env:
+      DATABASE_URL: postgresql://ci:ci@localhost:5432/ci
+      DIRECT_DATABASE_URL: postgresql://ci:ci@localhost:5432/ci
+      NEXTAUTH_SECRET: ci-dummy-secret-for-build-only-not-real
+      NEXTAUTH_URL: http://localhost:3000
+      CI: 'true'
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+      - name: Clean install
+        run: npm ci
+      - name: Generate Prisma Client
+        run: npx prisma generate
+      - name: Run full test suite
+        run: npm test
+      - name: Upload test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-results
+          path: |
+            coverage/
+            test-results.xml
+          retention-days: 7
+          if-no-files-found: ignore
+
+  build:
+    name: Build
+    runs-on: ubuntu-latest
+    needs: supplier-migration
+    if: ${{ always() }}
+    env:
+      DATABASE_URL: postgresql://ci:ci@localhost:5432/ci
+      DIRECT_DATABASE_URL: postgresql://ci:ci@localhost:5432/ci
+      NEXTAUTH_SECRET: ci-dummy-secret-for-build-only-not-real
+      NEXTAUTH_URL: http://localhost:3000
+    steps:
+      - name: Enforce Supplier migration contract dependency
+        if: ${{ needs.supplier-migration.result != 'success' }}
+        run: |
+          echo "Supplier migration synthetic SQL/ACL contract did not pass."
+          exit 1
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+      - name: Clean install
+        run: npm ci
+      - name: Generate Prisma Client
+        run: npx prisma generate
+      - name: Build
+        run: npm run build
+
+  supplier-migration:
+    name: Supplier Migration Synthetic SQL/ACL Contract (PG ${{ matrix.postgres }})
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        postgres: [16, 17]
+    services:
+      postgres:
+        image: postgres:${{ matrix.postgres }}
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: supplier_migration_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres -d supplier_migration_test"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+    env:
+      CI: "true"
+      SUPPLIER_MIGRATION_TEST_DATABASE_URL: postgresql://postgres:postgres@localhost:5432/supplier_migration_test
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "24"
+          cache: "npm"
+
+      - name: Install dependencies without lifecycle scripts
+        run: npm ci --ignore-scripts --omit=dev
+
+      - name: Exercise Supplier SQL/ACL contract on isolated PostgreSQL
+        run: npm run test:migration:supplier

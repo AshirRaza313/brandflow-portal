@@ -1,1 +1,2 @@
 *.pdf binary
+prisma/migrations/**/migration.sql text eol=lf

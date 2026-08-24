@@ -13,6 +13,9 @@ release gate below is independently evidenced and a human approver gives GO.
 - Never execute baseline DDL on an existing populated database.
 - Never point rehearsal scripts at production. Their guard intentionally rejects it.
 - Use a direct or session-pooler connection on port 5432; never transaction-pooler port 6543.
+- Remote rehearsal URLs must be parameter-free. The guarded wrapper internally
+  adds Prisma's strict certificate mode and the reviewed pinned Supabase CA to
+  both `DATABASE_URL` and `DIRECT_DATABASE_URL` before any Prisma child process.
 - Keep Preview/staging and Production on distinct Supabase projects.
 - Do not place database URLs, dumps, or production row data in GitHub artifacts.
 
@@ -22,11 +25,14 @@ This is an automated schema-replay proof only.
 
 1. Start a clean PostgreSQL database.
 2. Set `DATABASE_URL` and `DIRECT_DATABASE_URL` to that database.
-3. Run `npx prisma migrate deploy --schema prisma/schema.prisma`.
-4. Run `npx prisma migrate status --schema prisma/schema.prisma` and require exit 0.
-5. Capture the full catalog and compare it with the committed fixture.
-6. Run all integration tests with zero skips.
-7. Run `migrate deploy` again and require a no-op.
+3. Generate the isolated baseline-only Prisma bundle with
+   `node scripts/baseline/prepare-baseline-only-prisma.cjs`.
+4. Deploy that bundle and require clean status, then capture the catalog and
+   compare it with the committed immutable baseline fixture.
+5. Switch back to `prisma/schema.prisma`, deploy the complete repository
+   migration train, and require clean status.
+6. Run the complete repository deploy again and require a no-op.
+7. Run the integration tests with zero skips.
 
 The `Integration Tests` CI job proves the clean-database portion on PostgreSQL 16.
 It does not prove production parity or backup recovery.
@@ -49,12 +55,26 @@ The wrapper fails unless all of these are true:
 - `_prisma_migrations` is absent;
 - representative data exists;
 - the complete pre-resolve catalog matches the committed fixture;
-- Prisma reports exactly the pinned baseline as pending;
+- repository migration inventory is exactly the pinned baseline followed by
+  `20260815_add_supplier_constraints_and_security`;
+- before adoption, Prisma reports the baseline and forward migration pending;
 - after resolve, schema and per-table data fingerprints are unchanged;
 - exactly one clean baseline history row exists with the expected checksum;
-- `migrate status` is clean and a second `migrate deploy` is a no-op.
+- after adoption, Prisma reports only the exact Supplier forward migration
+  pending;
+- the wrapper applies that forward migration through `prisma migrate deploy`
+  on the same populated target and requires clean status;
+- application-data fingerprints remain unchanged, the only catalog delta is
+  the two reviewed validated Supplier CHECK constraints, and the reviewed
+  RLS/ACL posture is proved;
+- history contains exactly the baseline plus forward rows with exact checksums;
+- a second complete-repository `migrate deploy` is a no-op.
 
-CI calls this a **Synthetic Adoption Proof**. It is not production-recovery proof.
+CI calls this a **Synthetic Adoption Proof**. It proves the two-phase migration
+train on representative data, but it is not a restored-production-clone or
+production-recovery proof. Its localhost fixture creates `anon`, `authenticated`,
+and `service_role` as `NOLOGIN`, grants table and column access before the
+forward deploy, and requires the migration to revoke every seeded privilege.
 
 ## Production evidence gate
 

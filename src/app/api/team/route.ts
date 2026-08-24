@@ -1,13 +1,23 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db, isDbUnavailable, withRetry } from "@/lib/db";
 import bcrypt from "bcryptjs";
-import { sanitizeEmail, sanitizeObject } from "@/lib/sanitize";
+import { sanitizeEmail } from "@/lib/sanitize";
 import logger from "@/lib/logger";
 import { withAuth } from "@/lib/auth-middleware";
-import { validateBody, inviteTeamMemberSchema } from "@/lib/validations";
+import { validateBody } from "@/lib/validations";
 import { z } from "zod";
-import { getAdminEmail } from "@/lib/roles";
+import { getRoleByName } from "@/lib/roles";
 import { withRateLimit } from "@/lib/rate-limit";
+import {
+  evaluateExistingTarget,
+  evaluateRoleAssignment,
+  isOwnerMembershipRole,
+  isProtectedTeamRole,
+  policyResponseBody,
+  requireTeamPermission,
+  resolveBuiltInRoleTarget,
+  resolveTeamAccess,
+} from "@/lib/team-access";
 
 /** Safely extract message and code from an unknown error */
 function getErrorInfo(e: unknown): { message: string; code: string } {
@@ -26,6 +36,86 @@ type OrgWithSubscription = {
   subscription: { plan: { teamLimit: number; name: string } } | null;
 };
 
+async function findPublicTeamMembers(organizationId: string) {
+  const rows = await db.organizationMember.findMany({
+    where: { organizationId },
+    select: {
+      id: true,
+      organizationId: true,
+      userId: true,
+      role: true,
+      roleId: true,
+      joinedAt: true,
+      user: { select: { id: true, name: true, email: true, image: true } },
+      roleDef: {
+        select: {
+          id: true,
+          name: true,
+          label: true,
+          description: true,
+          level: true,
+        },
+      },
+    },
+    orderBy: { joinedAt: "asc" },
+    take: 100,
+  });
+
+  // Keep this explicit projection even though Prisma already applies select.
+  // It prevents an accidental future query expansion from leaking PIN hashes,
+  // penalties, or other private membership fields through the API response.
+  return rows.map((row) => ({
+    id: row.id,
+    organizationId: row.organizationId,
+    userId: row.userId,
+    role: row.role,
+    roleId: row.roleId,
+    joinedAt: row.joinedAt,
+    user: {
+      id: row.user.id,
+      name: row.user.name,
+      email: row.user.email,
+      image: row.user.image,
+    },
+    roleDef: row.roleDef ? {
+      id: row.roleDef.id,
+      name: row.roleDef.name,
+      label: row.roleDef.label,
+      description: row.roleDef.description,
+      level: row.roleDef.level,
+    } : null,
+  }));
+}
+
+async function findPublicPendingInvitations(organizationId: string) {
+  const rows = await db.teamInvitation.findMany({
+    where: { organizationId, status: "pending" },
+    select: {
+      id: true,
+      inviteeEmail: true,
+      inviteeName: true,
+      role: true,
+      status: true,
+      invitedAt: true,
+      expiresAt: true,
+    },
+    orderBy: { invitedAt: "desc" },
+    take: 100,
+  });
+
+  // Never return the bcrypt PIN hash. The plaintext PIN is shown once in the
+  // authorized POST response and cannot be recovered from a pending record.
+  return rows.map((row) => ({
+    id: row.id,
+    inviteeEmail: row.inviteeEmail,
+    inviteeName: row.inviteeName,
+    role: row.role,
+    status: row.status,
+    invitedAt: row.invitedAt,
+    expiresAt: row.expiresAt,
+  }));
+}
+
 /**
  * POST /api/team - Add a team member via PIN-based invitation
  *
@@ -33,75 +123,37 @@ type OrgWithSubscription = {
  * Team member receives PIN → logs in at portal with email + PIN
  */
 
-// Role levels for hierarchy enforcement
-const ROLE_LEVELS: Record<string, number> = {
-  platform_owner: 100,
-  platform_admin: 95,
-  brand_owner: 90,
-  brand_admin: 80,
-  operations_manager: 70,
-  sales_manager: 65,
-  marketing_manager: 65,
-  warehouse_manager: 60,
-  accountant: 55,
-  team_lead: 55,
-  support_agent: 50,
-  content_creator: 45,
-  sales_rep: 40,
-  inventory_clerk: 35,
-  viewer: 20,
-  custom: 0,
-  owner: 90,
-  admin: 80,
-  manager: 70,
-  member: 20,
-  ceo: 90,
-};
-
-const PLATFORM_ONLY_ROLES = ["platform_owner", "platform_admin", "owner"];
-const BRAND_OWNER_MAX_LEVEL = 80;
-const BRAND_ADMIN_MAX_LEVEL = 60;
-
 export const GET = withRateLimit(withAuth(async (req: NextRequest, authCtx) => {
   try {
     logger.info("[Team] GET request", { userId: authCtx.userId });
     const { searchParams } = new URL(req.url);
-    const orgId = searchParams.get("orgId") || authCtx.organizationId!;
-
-    if (orgId !== authCtx.organizationId) {
-      return NextResponse.json({ error: "Access denied" }, { status: 403 });
+    const orgId = searchParams.get("orgId") || authCtx.organizationId || "";
+    const access = await resolveTeamAccess(authCtx, orgId);
+    const permission = requireTeamPermission(access, "team_view");
+    if (!permission.allowed) {
+      return NextResponse.json(policyResponseBody(permission), { status: permission.status });
     }
 
-    let members: Awaited<ReturnType<typeof db.organizationMember.findMany>> = [];
-    let pendingInvitations: Awaited<ReturnType<typeof db.teamInvitation.findMany>> = [];
+    let members: Awaited<ReturnType<typeof findPublicTeamMembers>> = [];
+    let pendingInvitations: Awaited<ReturnType<typeof findPublicPendingInvitations>> = [];
     let teamLimit = 3;
 
     try {
       members = await withRetry(async () => {
-        return db.organizationMember.findMany({
-          where: { organizationId: orgId },
-          include: {
-            user: { select: { id: true, name: true, email: true, image: true, role: true } },
-            roleDef: { select: { id: true, name: true, label: true, description: true, level: true, permissions: true } },
-          },
-          orderBy: { joinedAt: "asc" },
-      take: 100,
-        });
+        return findPublicTeamMembers(orgId);
       }, 2, 500);
     } catch (e: unknown) {
       logger.warn("[Team] Failed to fetch members:", { error: getErrorInfo(e).message });
     }
 
-    try {
-      pendingInvitations = await withRetry(async () => {
-        return db.teamInvitation.findMany({
-          where: { organizationId: orgId, status: "pending" },
-          orderBy: { invitedAt: "desc" },
-      take: 100,
-        });
-      }, 2, 500);
-    } catch (e: unknown) {
-      logger.warn("[Team] Failed to fetch invitations:", { error: getErrorInfo(e).message });
+    if (access.canManage) {
+      try {
+        pendingInvitations = await withRetry(async () => {
+          return findPublicPendingInvitations(orgId);
+        }, 2, 500);
+      } catch (e: unknown) {
+        logger.warn("[Team] Failed to fetch invitations:", { error: getErrorInfo(e).message });
+      }
     }
 
     try {
@@ -124,7 +176,7 @@ export const GET = withRateLimit(withAuth(async (req: NextRequest, authCtx) => {
     // Always return 200 with empty data — never crash the UserManagement page
     return NextResponse.json({ members: [], pendingInvitations: [], teamLimit: 3, currentCount: 0, fallback: true });
   }
-}), { maxRequests: 60, windowSeconds: 60 });
+}, { requireOrg: false }), { maxRequests: 60, windowSeconds: 60 });
 
 export const POST = withRateLimit(withAuth(async (req: NextRequest, authCtx) => {
   try {
@@ -136,11 +188,35 @@ export const POST = withRateLimit(withAuth(async (req: NextRequest, authCtx) => 
       name: z.string().max(100).optional(),
       role: z.string().min(1).max(50),
       pin: z.string().regex(/^\d{6}$/, "PIN must be exactly 6 digits"),
-      invitedBy: z.string().optional(),
     });
     const bodyResult = await validateBody(req, teamInviteSchema);
     if (!bodyResult.success) return bodyResult.response;
-    const { organizationId, email, name, role, pin, invitedBy } = bodyResult.data;
+    const { organizationId, email, name, role, pin } = bodyResult.data;
+
+    const access = await resolveTeamAccess(authCtx, organizationId);
+    const managePermission = requireTeamPermission(access, "team_manage");
+    if (!managePermission.allowed) {
+      return NextResponse.json(policyResponseBody(managePermission), { status: managePermission.status });
+    }
+
+    const normalizedTargetRole = role.toLowerCase().trim();
+    if (isProtectedTeamRole(normalizedTargetRole)) {
+      return NextResponse.json({
+        error: "Platform and legacy privileged roles cannot be assigned through organization endpoints",
+        code: "PLATFORM_ROLE_BLOCKED",
+      }, { status: 403 });
+    }
+    const roleTarget = resolveBuiltInRoleTarget(normalizedTargetRole);
+    if (!roleTarget) {
+      return NextResponse.json(
+        { error: "Invalid or non-assignable role", code: "INVALID_ROLE" },
+        { status: 403 },
+      );
+    }
+    const assignment = evaluateRoleAssignment(access, roleTarget);
+    if (!assignment.allowed) {
+      return NextResponse.json(policyResponseBody(assignment), { status: assignment.status });
+    }
 
     // ── Fetch Platform Identity ──
     let platformName = "Valtriox";
@@ -153,14 +229,6 @@ export const POST = withRateLimit(withAuth(async (req: NextRequest, authCtx) => 
 
     if (!organizationId || !email || !role) {
       return NextResponse.json({ error: "Missing required fields: organizationId, email, role" }, { status: 400 });
-    }
-
-    // Security: verify organizationId matches auth context
-    // Platform admins (platform_owner, platform_admin) can invite to any org
-    const platformAdminRoles = ["platform_owner", "platform_admin", "owner"];
-    const isPlatformAdmin = platformAdminRoles.includes(authCtx.role);
-    if (!isPlatformAdmin && organizationId !== authCtx.organizationId) {
-      return NextResponse.json({ error: "Access denied" }, { status: 403 });
     }
 
     // ── Team Limit Check ──
@@ -197,11 +265,7 @@ export const POST = withRateLimit(withAuth(async (req: NextRequest, authCtx) => 
 
     const totalUsed = currentMemberCount + pendingInviteCount;
 
-    // Platform admin/owner bypasses team limit (isPlatformAdmin already defined above)
-    const adminEmail = getAdminEmail();
-    const isAdminByEmail = adminEmail && authCtx.email?.toLowerCase() === adminEmail;
-
-    if (!isPlatformAdmin && !isAdminByEmail && teamLimit !== -1 && totalUsed >= teamLimit) {
+    if (!access.isPlatform && teamLimit !== -1 && totalUsed >= teamLimit) {
       return NextResponse.json({
         error: `Team member limit reached! Your ${org.subscription?.plan?.name || "Starter"} plan allows ${teamLimit} team members. Upgrade your plan to add more members.`,
         code: "TEAM_LIMIT_REACHED",
@@ -220,103 +284,12 @@ export const POST = withRateLimit(withAuth(async (req: NextRequest, authCtx) => 
       }, { status: 400 });
     }
 
-    // ── Role Hierarchy Enforcement ──
-    const targetRole = role.toLowerCase().trim();
-    const targetLevel = ROLE_LEVELS[targetRole] ?? -1;
+    const targetRole = roleTarget.name;
 
-    if (PLATFORM_ONLY_ROLES.includes(targetRole)) {
-      return NextResponse.json({
-        error: `Access denied. Platform-level roles can only be assigned by the ${platformName} platform owner.`,
-        code: "PLATFORM_ROLE_BLOCKED",
-      }, { status: 403 });
-    }
-
-    if (invitedBy) {
-      const inviterUser = await db.user.findUnique({
-        where: { id: invitedBy },
-        select: { email: true, role: true },
-      });
-
-      if (inviterUser) {
-        const inviterRole = inviterUser.role.toLowerCase();
-        const inviterLevel = ROLE_LEVELS[inviterRole] ?? 0;
-        const adminEmail = getAdminEmail();
-        const isPlatformOwner = adminEmail && inviterUser.email.toLowerCase() === adminEmail;
-
-        if (!isPlatformOwner) {
-          if (targetLevel >= inviterLevel) {
-            return NextResponse.json({
-              error: `Access denied. You cannot assign a role (${targetRole}) equal to or higher than your own (${inviterRole}).`,
-              code: "ROLE_HIERARCHY_VIOLATION",
-            }, { status: 403 });
-          }
-          if (inviterRole === "brand_owner" || inviterRole === "owner" || inviterRole === "ceo") {
-            if (targetLevel >= BRAND_OWNER_MAX_LEVEL) {
-              return NextResponse.json({
-                error: `Access denied. Brand owners can only assign team member roles. Cannot assign ${targetRole}.`,
-                code: "BRAND_OWNER_ROLE_LIMIT",
-              }, { status: 403 });
-            }
-          }
-          if (inviterRole === "brand_admin" || inviterRole === "admin") {
-            if (targetLevel >= BRAND_ADMIN_MAX_LEVEL) {
-              return NextResponse.json({
-                error: `Access denied. Brand admins can only assign roles below their level. Cannot assign ${targetRole}.`,
-                code: "BRAND_ADMIN_ROLE_LIMIT",
-              }, { status: 403 });
-            }
-          }
-        }
-      }
-    }
-
-    // ── Check if already a member ──
-    let existingUser: Awaited<ReturnType<typeof db.user.findUnique>>;
-    try {
-      existingUser = await db.user.findUnique({
-        where: { email: sanitizeEmail(email) },
-      });
-    } catch (e: unknown) {
-      const { message: errMsg } = getErrorInfo(e);
-      logger.error("[Team] Failed to check existing user:", { error: errMsg });
-      return NextResponse.json({ error: "Database error while checking user. Please try again.", _step: "check_user", _details: undefined }, { status: 500 });
-    }
-
-    if (existingUser) {
-      try {
-        const existingMembership = await db.organizationMember.findFirst({
-          where: { organizationId, userId: existingUser.id },
-        });
-        if (existingMembership) {
-          logger.warn("Duplicate membership attempt", { email: sanitizeEmail(email), organizationId });
-          return NextResponse.json({ error: "User is already a member of this organization" }, { status: 400 });
-        }
-      } catch (e: unknown) {
-        const { message: errMsg } = getErrorInfo(e);
-        logger.error("[Team] Failed to check membership:", { error: errMsg });
-        return NextResponse.json({ error: "Database error while checking membership. Please try again.", _step: "check_membership", _details: undefined }, { status: 500 });
-      }
-    }
-
-    // Check if there's already a pending invitation for this email
-    try {
-      const existingInvitation = await db.teamInvitation.findFirst({
-        where: { organizationId, inviteeEmail: sanitizeEmail(email), status: "pending" },
-      });
-      if (existingInvitation) {
-        return NextResponse.json({ error: "An invitation is already pending for this email" }, { status: 400 });
-      }
-    } catch (e: unknown) {
-      const { message: errMsg } = getErrorInfo(e);
-      logger.error("[Team] Failed to check invitation:", { error: errMsg });
-      return NextResponse.json({ error: "Database error while checking invitations. Please try again.", _step: "check_invitation", _details: undefined }, { status: 500 });
-    }
-
-    // ── Create User (if doesn't exist) + OrganizationMember + Invitation ──
     const inviteeName = name || email.split("@")[0];
     let inviter: Awaited<ReturnType<typeof db.user.findUnique>> | null;
     try {
-      inviter = invitedBy ? await db.user.findUnique({ where: { id: invitedBy } }) : null;
+      inviter = await db.user.findUnique({ where: { id: authCtx.userId } });
     } catch (e: unknown) {
       logger.warn("[Team] Failed to fetch inviter (non-critical):", { error: getErrorInfo(e).message });
       inviter = null;
@@ -324,33 +297,75 @@ export const POST = withRateLimit(withAuth(async (req: NextRequest, authCtx) => 
     const expiresAt = new Date();
     expiresAt.setDate(expiresAt.getDate() + 7); // Invitation expires in 7 days
 
-    // Create user without password if not exists
-    let user = existingUser;
-    if (!user) {
-      try {
-        user = await db.user.create({
+    const hashedPin = await bcrypt.hash(userPin, 10);
+
+    const normalizedEmail = sanitizeEmail(email);
+    const transactionResult = await db.$transaction(async (tx) => {
+      const currentAccess = await resolveTeamAccess(authCtx, organizationId, tx);
+      const currentPermission = requireTeamPermission(currentAccess, "team_manage");
+      if (!currentPermission.allowed) {
+        throw Object.assign(new Error(currentPermission.reason), { code: currentPermission.code });
+      }
+      const currentAssignment = evaluateRoleAssignment(currentAccess, roleTarget);
+      if (!currentAssignment.allowed) {
+        throw Object.assign(new Error(currentAssignment.reason), { code: currentAssignment.code });
+      }
+
+      const currentOrg = await tx.organization.findUnique({
+        where: { id: organizationId },
+        include: { subscription: { include: { plan: true } } },
+      });
+      if (!currentOrg || !currentOrg.isActive || currentOrg.isBanned) {
+        throw Object.assign(new Error("Organization is not active"), { code: "ORGANIZATION_UNAVAILABLE" });
+      }
+      const currentTeamLimit = currentOrg.subscription?.plan?.teamLimit ?? 3;
+      const currentMemberCountInTx = await tx.organizationMember.count({ where: { organizationId } });
+      const currentPendingCountInTx = await tx.teamInvitation.count({
+        where: { organizationId, status: "pending" },
+      });
+      if (
+        !currentAccess.isPlatform &&
+        currentTeamLimit !== -1 &&
+        currentMemberCountInTx + currentPendingCountInTx >= currentTeamLimit
+      ) {
+        throw Object.assign(new Error("Team member limit reached"), { code: "TEAM_LIMIT_REACHED" });
+      }
+
+      let user = await tx.user.findUnique({ where: { email: normalizedEmail } });
+      if (user) {
+        const existingMembership = await tx.organizationMember.findFirst({
+          where: { organizationId, userId: user.id },
+          select: { id: true },
+        });
+        if (existingMembership) {
+          throw Object.assign(new Error("User is already a member of this organization"), {
+            code: "TEAM_MEMBER_EXISTS",
+          });
+        }
+      }
+
+      const existingInvitation = await tx.teamInvitation.findFirst({
+        where: { organizationId, inviteeEmail: normalizedEmail, status: "pending" },
+        select: { id: true },
+      });
+      if (existingInvitation) {
+        throw Object.assign(new Error("An invitation is already pending for this email"), {
+          code: "PENDING_INVITATION_EXISTS",
+        });
+      }
+
+      if (!user) {
+        user = await tx.user.create({
           data: {
             name: inviteeName,
-            email: sanitizeEmail(email),
+            email: normalizedEmail,
             password: null,
             role: targetRole,
           },
         });
-        logger.info("New user created for team invitation", { userId: user.id, email: sanitizeEmail(email), role: targetRole });
-      } catch (e: unknown) {
-        const { message: errMsg, code: errCode } = getErrorInfo(e);
-        logger.error("[Team] Failed to create user:", { error: errMsg });
-        return NextResponse.json({ error: "Failed to create user account. Please try again.", _step: "create_user", _details: undefined, _code: undefined }, { status: 500 });
       }
-    }
 
-    // Hash PIN before storing (bcrypt)
-    const hashedPin = await bcrypt.hash(userPin, 10);
-
-    // Create OrganizationMember with hashed PIN
-    let member: Awaited<ReturnType<typeof db.organizationMember.create>>;
-    try {
-      member = await db.organizationMember.create({
+      const createdMember = await tx.organizationMember.create({
         data: {
           organizationId,
           userId: user.id,
@@ -358,25 +373,21 @@ export const POST = withRateLimit(withAuth(async (req: NextRequest, authCtx) => 
           pin: hashedPin,
           pinCreatedAt: new Date(),
         },
-        include: {
-          user: { select: { id: true, name: true, email: true, role: true } },
+        select: {
+          id: true,
+          organizationId: true,
+          userId: true,
+          role: true,
+          roleId: true,
+          joinedAt: true,
+          user: { select: { id: true, name: true, email: true, image: true } },
         },
       });
-    } catch (e: unknown) {
-      const { message: errMsg, code: errCode } = getErrorInfo(e);
-      logger.error("[Team] Failed to create organization member:", { error: errMsg, code: errCode });
-      return NextResponse.json({ error: "Failed to add team member. Please try again.", _step: "create_member", _details: undefined, _code: undefined }, { status: 500 });
-    }
-
-    // Create invitation record — mark as "accepted" immediately since the member
-    // is added to the team right away (avoids "fake" pending invitations in UI)
-    let invitation: Awaited<ReturnType<typeof db.teamInvitation.create>> | { id: string; pin: string };
-    try {
-      invitation = await db.teamInvitation.create({
+      const createdInvitation = await tx.teamInvitation.create({
         data: {
           organizationId,
-          inviterId: invitedBy || user.id,
-          inviteeEmail: sanitizeEmail(email),
+          inviterId: authCtx.userId,
+          inviteeEmail: normalizedEmail,
           inviteeName,
           role: targetRole,
           pin: hashedPin,
@@ -384,17 +395,19 @@ export const POST = withRateLimit(withAuth(async (req: NextRequest, authCtx) => 
           expiresAt,
         },
       });
-    } catch (e: unknown) {
-      const { message: errMsg, code: errCode } = getErrorInfo(e);
-      logger.error("[Team] Failed to create invitation record:", { error: errMsg, code: errCode });
-      // Member was already created — keep it, invitation record is non-critical
-      invitation = { id: "temp", pin: hashedPin };
-    }
+      return {
+        member: createdMember,
+        invitation: createdInvitation,
+        teamLimit: currentTeamLimit,
+        currentCount: currentMemberCountInTx + 1,
+        pendingCount: currentPendingCountInTx,
+      };
+    }, { isolationLevel: "Serializable" });
+    const { member, invitation } = transactionResult;
 
     // Get role label
     let roleLabel = targetRole;
     try {
-      const { getRoleByName } = await import("@/lib/roles");
       const roleDef = getRoleByName(targetRole);
       roleLabel = roleDef?.label || targetRole;
     } catch (e: unknown) {
@@ -414,9 +427,9 @@ export const POST = withRateLimit(withAuth(async (req: NextRequest, authCtx) => 
         pin: userPin,
         expiresAt: expiresAt.toISOString(),
       },
-      teamLimit,
-      currentCount: currentMemberCount + 1,
-      pendingCount: pendingInviteCount + 1,
+      teamLimit: transactionResult.teamLimit,
+      currentCount: transactionResult.currentCount,
+      pendingCount: transactionResult.pendingCount,
       // Email compose data for mailto: link
       emailData: {
         to: email.toLowerCase(),
@@ -427,17 +440,31 @@ export const POST = withRateLimit(withAuth(async (req: NextRequest, authCtx) => 
       message: `Team member ${inviteeName} invited successfully! Share the PIN securely via email.`,
     }, { status: 201 });
   } catch (error: unknown) {
-    const { message: errMsg, code: errCode } = getErrorInfo(error);
+    const errorInfo = getErrorInfo(error);
     logger.error("Team POST error", error, { organizationId: authCtx?.organizationId });
     if (isDbUnavailable(error)) {
       return NextResponse.json({ error: "Database is currently unavailable. Please try again later.", fallback: true }, { status: 503 });
     }
-    if (errCode === 'P2002') {
+    if (errorInfo.code === "PENDING_INVITATION_EXISTS") {
+      return NextResponse.json({ error: errorInfo.message }, { status: 400 });
+    }
+    if (errorInfo.code === "TEAM_MEMBER_EXISTS" || errorInfo.code === "P2002") {
       return NextResponse.json({ error: "User is already a member of this organization" }, { status: 400 });
+    }
+    if ([
+      "TEAM_PERMISSION_DENIED",
+      "PENALTY_ACTIVE",
+      "ORGANIZATION_UNAVAILABLE",
+      "ROLE_HIERARCHY_VIOLATION",
+      "BRAND_OWNER_ROLE_LIMIT",
+      "BRAND_ADMIN_ROLE_LIMIT",
+      "TEAM_LIMIT_REACHED",
+    ].includes(errorInfo.code)) {
+      return NextResponse.json({ error: errorInfo.message, code: errorInfo.code }, { status: 403 });
     }
     return NextResponse.json({ error: "Failed to add member" }, { status: 500 });
   }
-}), { maxRequests: 10, windowSeconds: 60 });
+}, { requireOrg: false }), { maxRequests: 10, windowSeconds: 60 });
 
 // DELETE - Remove a team member OR revoke a pending invitation
 export const DELETE = withRateLimit(withAuth(async (req: NextRequest, authCtx) => {
@@ -447,59 +474,165 @@ export const DELETE = withRateLimit(withAuth(async (req: NextRequest, authCtx) =
     const memberId = searchParams.get("memberId");
     const invitationId = searchParams.get("invitationId");
 
+    if ((!memberId && !invitationId) || (memberId && invitationId)) {
+      return NextResponse.json(
+        { error: "Provide exactly one of memberId or invitationId", code: "INVALID_DELETE_TARGET" },
+        { status: 400 },
+      );
+    }
+
     // ── Revoke pending invitation ──
-    if (invitationId && !memberId) {
-      const invitation = await db.teamInvitation.findUnique({ where: { id: invitationId } });
+    if (invitationId) {
+      const invitation = await db.teamInvitation.findUnique({
+        where: { id: invitationId },
+        select: { id: true, organizationId: true, status: true },
+      });
       if (!invitation) {
         return NextResponse.json({ error: "Invitation not found" }, { status: 404 });
       }
-      if (invitation.organizationId !== authCtx.organizationId) {
-        return NextResponse.json({ error: "Access denied" }, { status: 403 });
+      const access = await resolveTeamAccess(authCtx, invitation.organizationId);
+      const permission = requireTeamPermission(access, "team_manage");
+      if (!permission.allowed) {
+        return NextResponse.json(policyResponseBody(permission), { status: permission.status });
       }
       if (invitation.status !== "pending") {
         return NextResponse.json({ error: "Invitation is no longer pending" }, { status: 400 });
       }
-      await db.teamInvitation.update({
-        where: { id: invitationId },
-        data: { status: "revoked" },
-      });
+      await db.$transaction(async (tx) => {
+        const current = await tx.teamInvitation.findUnique({
+          where: { id: invitationId },
+          select: { id: true, organizationId: true, status: true },
+        });
+        if (!current || current.organizationId !== invitation.organizationId || current.status !== "pending") {
+          throw Object.assign(new Error("Invitation is no longer pending"), { code: "INVITATION_CHANGED" });
+        }
+        const currentAccess = await resolveTeamAccess(authCtx, current.organizationId, tx);
+        const currentPermission = requireTeamPermission(currentAccess, "team_manage");
+        if (!currentPermission.allowed) {
+          throw Object.assign(new Error(currentPermission.reason), { code: currentPermission.code });
+        }
+        const update = await tx.teamInvitation.updateMany({
+          where: { id: invitationId, status: "pending" },
+          data: { status: "revoked" },
+        });
+        if (update.count !== 1) {
+          throw Object.assign(new Error("Invitation is no longer pending"), { code: "INVITATION_CHANGED" });
+        }
+      }, { isolationLevel: "Serializable" });
       return NextResponse.json({ success: true, message: "Invitation revoked successfully" });
     }
 
-    if (!memberId) return NextResponse.json({ error: "memberId required" }, { status: 400 });
+    if (!memberId) {
+      return NextResponse.json(
+        { error: "Member id is required", code: "INVALID_DELETE_TARGET" },
+        { status: 400 },
+      );
+    }
 
-    // Also revoke any pending invitations for this member
     const member = await db.organizationMember.findUnique({
       where: { id: memberId },
-      include: { user: { select: { email: true } } },
+      select: {
+        id: true,
+        organizationId: true,
+        userId: true,
+        role: true,
+        roleDef: { select: { name: true, level: true } },
+        user: { select: { email: true } },
+      },
     });
 
-    if (member) {
-      // Security: verify member belongs to user's org
-      if (member.organizationId !== authCtx.organizationId) {
-        return NextResponse.json({ error: "Access denied" }, { status: 403 });
+    if (!member) {
+      return NextResponse.json({ error: "Team member not found" }, { status: 404 });
+    }
+    const access = await resolveTeamAccess(authCtx, member.organizationId);
+    const permission = requireTeamPermission(access, "team_manage");
+    if (!permission.allowed) {
+      return NextResponse.json(policyResponseBody(permission), { status: permission.status });
+    }
+    if (member.userId === authCtx.userId) {
+      return NextResponse.json(
+        { error: "You cannot remove your own membership", code: "SELF_MUTATION_BLOCKED" },
+        { status: 403 },
+      );
+    }
+    const targetPolicy = evaluateExistingTarget(access, member);
+    if (!targetPolicy.allowed) {
+      return NextResponse.json(policyResponseBody(targetPolicy), { status: targetPolicy.status });
+    }
+
+    await db.$transaction(async (tx) => {
+      const current = await tx.organizationMember.findUnique({
+        where: { id: memberId },
+        select: {
+          id: true,
+          organizationId: true,
+          userId: true,
+          role: true,
+          roleDef: { select: { name: true, level: true } },
+          user: { select: { email: true } },
+        },
+      });
+      if (!current || current.organizationId !== member.organizationId) {
+        throw Object.assign(new Error("Team member changed during removal"), { code: "TEAM_MEMBER_CHANGED" });
       }
-      // Revoke invitations for this user in this org
-      await db.teamInvitation.updateMany({
+      if (current.userId === authCtx.userId) {
+        throw Object.assign(new Error("You cannot remove your own membership"), { code: "SELF_MUTATION_BLOCKED" });
+      }
+      const currentAccess = await resolveTeamAccess(authCtx, current.organizationId, tx);
+      const currentPermission = requireTeamPermission(currentAccess, "team_manage");
+      if (!currentPermission.allowed) {
+        throw Object.assign(new Error(currentPermission.reason), { code: currentPermission.code });
+      }
+      const currentTargetPolicy = evaluateExistingTarget(currentAccess, current);
+      if (!currentTargetPolicy.allowed) {
+        throw Object.assign(new Error(currentTargetPolicy.reason), { code: currentTargetPolicy.code });
+      }
+      if (isOwnerMembershipRole(current.role)) {
+        const ownerCount = await tx.organizationMember.count({
+          where: {
+            organizationId: current.organizationId,
+            role: { in: ["brand_owner", "owner", "ceo"], mode: "insensitive" },
+          },
+        });
+        if (ownerCount <= 1) {
+          throw Object.assign(new Error("An organization must keep at least one brand owner"), {
+            code: "LAST_OWNER_REQUIRED",
+          });
+        }
+      }
+
+      await tx.teamInvitation.updateMany({
         where: {
-          organizationId: member.organizationId,
-          inviteeEmail: member.user.email.toLowerCase(),
+          organizationId: current.organizationId,
+          inviteeEmail: current.user.email.toLowerCase(),
           status: "pending",
         },
         data: { status: "revoked" },
       });
-    }
-
-    await db.organizationMember.delete({
-      where: { id: memberId },
-    });
+      await tx.organizationMember.delete({ where: { id: memberId } });
+    }, { isolationLevel: "Serializable" });
 
     return NextResponse.json({ success: true, message: "Member removed successfully" });
   } catch (error: unknown) {
+    const errorInfo = getErrorInfo(error);
     logger.error("Team DELETE error", error);
     if (isDbUnavailable(error)) {
       return NextResponse.json({ error: "Database is currently unavailable. Please try again later.", fallback: true }, { status: 503 });
     }
+    if ([
+      "TEAM_PERMISSION_DENIED",
+      "PENALTY_ACTIVE",
+      "ORGANIZATION_UNAVAILABLE",
+      "SELF_MUTATION_BLOCKED",
+      "LAST_OWNER_REQUIRED",
+      "PLATFORM_ROLE_BLOCKED",
+      "TARGET_ROLE_HIERARCHY",
+    ].includes(errorInfo.code)) {
+      return NextResponse.json({ error: errorInfo.message, code: errorInfo.code }, { status: 403 });
+    }
+    if (["TEAM_MEMBER_CHANGED", "INVITATION_CHANGED"].includes(errorInfo.code)) {
+      return NextResponse.json({ error: errorInfo.message, code: errorInfo.code }, { status: 409 });
+    }
     return NextResponse.json({ error: "Failed to remove member" }, { status: 500 });
   }
-}), { maxRequests: 30, windowSeconds: 60 });
+}, { requireOrg: false }), { maxRequests: 30, windowSeconds: 60 });

@@ -15,6 +15,7 @@
     "db:seed": "tsx prisma/seed.ts",
     "db:reset": "prisma migrate reset",
     "test": "vitest run",
+    "test:migration:supplier": "node scripts/test-supplier-forward-migration.cjs",
     "test:watch": "vitest"
   },
   "dependencies": {
@@ -95,8 +96,10 @@
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4",
+    "@testing-library/dom": "^10.4.1",
     "@testing-library/jest-dom": "^6.9.1",
     "@testing-library/react": "^16.3.2",
+    "@testing-library/user-event": "^14.6.4",
     "@types/bcryptjs": "^2.4.6",
     "@types/pdfkit": "^0.17.5",
     "@types/pg": "^8.20.0",

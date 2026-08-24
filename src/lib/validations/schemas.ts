@@ -11,7 +11,6 @@ import { isCalendlyHttpsUrl } from "@/lib/calendly";
 
 // ── Reusable primitives ──────────────────────────────────────────────────────
 
-const nonEmptyString = z.string().min(1).max(1000);
 const cuid = z.string().min(1).max(50);
 const optionalString = z.string().max(2000).optional().or(z.literal(""));
 const email = z.string().email().max(254);
@@ -20,7 +19,6 @@ const url = z.string().url().max(2048).optional().or(z.literal(""));
 const price = z.number().min(0).max(99999999.99);
 const positiveInt = z.number().int().min(0).max(2147483647);
 const quantity = z.number().int().min(1).max(999999);
-const slug = z.string().min(1).max(100).regex(/^[a-z0-9-]+$/, "Invalid slug format");
 const hexColor = z.string().regex(/^#[0-9A-Fa-f]{6}$/, "Invalid hex color").optional();
 const paginationPage = z.coerce.number().int().min(1).default(1);
 const paginationLimit = z.coerce.number().int().min(1).max(100).default(10);
@@ -454,7 +452,9 @@ export const updateOrderDetailSchema = z.object({
 export const updateMemberRoleApiSchema = z.object({
   roleId: z.string().min(1).max(50).optional(),
   roleName: z.string().min(1).max(100).optional(),
-}).refine(data => data.roleId || data.roleName, { message: "roleId or roleName is required" });
+}).refine(data => Boolean(data.roleId) !== Boolean(data.roleName), {
+  message: "Exactly one of roleId or roleName is required",
+});
 
 /** Settings update schema covering all fields handled by the settings route */
 export const updateSettingsApiSchema = updateOrganizationSchema.extend({

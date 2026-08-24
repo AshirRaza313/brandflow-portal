@@ -63,12 +63,9 @@ interface TeamMember {
 
 interface PendingInvitation {
   id: string;
-  organizationId: string;
-  inviterId: string;
   inviteeEmail: string;
   inviteeName: string;
   role: string;
-  pin: string;
   status: string;
   expiresAt: string;
   invitedAt: string;
@@ -80,6 +77,16 @@ const subTabs = [
   { id: "roles", label: "Roles" },
   { id: "permissions", label: "Permissions" },
 ];
+
+const ORGANIZATION_ASSIGNABLE_ROLES = ROLES.filter((role) => ![
+  "platform_owner",
+  "platform_admin",
+  "valtriox_team",
+  "owner",
+  "admin",
+  "ceo",
+  "custom",
+].includes(role.name));
 
 // ── Component ──────────────────────────────────────────────────────────────
 
@@ -115,7 +122,7 @@ export function UserManagementPage() {
   // Edit role dialog
   const [editRoleOpen, setEditRoleOpen] = useState(false);
   const [editingMember, setEditingMember] = useState<TeamMember | null>(null);
-  const [newRoleId, setNewRoleId] = useState("");
+  const [newRoleName, setNewRoleName] = useState("");
   const [roleLoading, setRoleLoading] = useState(false);
 
   // Role detail dialog
@@ -124,7 +131,12 @@ export function UserManagementPage() {
 
   // Can current user manage roles?
   const currentUserRole = user?.role || "owner";
-  const canChangeRoles = canManageRoles(currentUserRole);
+  const effectiveCurrentUserRole = currentUserRole === "owner" || currentUserRole === "ceo"
+    ? "brand_owner"
+    : currentUserRole === "admin"
+      ? "brand_admin"
+      : currentUserRole;
+  const canChangeRoles = canManageRoles(effectiveCurrentUserRole);
 
   // ── Fetch Members ─────────────────────────────────────────────────────
 
@@ -135,7 +147,6 @@ export function UserManagementPage() {
       const res = await fetchWithAuth(`/api/team?orgId=${organization.id}`);
       if (!res.ok) {
         // Silently fail — the page still shows invite UI and other tabs
-        console.warn("[UserManagement] fetchMembers failed:", res.status);
         setMembers([]);
         setPendingInvitations([]);
         return;
@@ -143,16 +154,18 @@ export function UserManagementPage() {
       const data = await res.json();
       setMembers(data.members || []);
       setPendingInvitations(data.pendingInvitations || []);
-    } catch (err: any) {
-      console.warn("[UserManagement] fetchMembers error:", err?.message);
+    } catch {
       setMembers([]);
       setPendingInvitations([]);
     } finally {
       setLoading(false);
     }
-  }, [organization?.id]);
+  }, [organization]);
 
-  useEffect(() => { fetchMembers(); }, [fetchMembers]);
+  useEffect(() => {
+    const timer = window.setTimeout(() => void fetchMembers(), 0);
+    return () => window.clearTimeout(timer);
+  }, [fetchMembers]);
 
   // ── Filtered Members ──────────────────────────────────────────────────
 
@@ -289,20 +302,19 @@ export function UserManagementPage() {
 
   const openEditRole = (member: TeamMember) => {
     setEditingMember(member);
-    setNewRoleId(member.roleDef?.id || "");
+    setNewRoleName(getMemberRoleName(member));
     setEditRoleOpen(true);
   };
 
   const handleRoleUpdate = async () => {
-    if (!editingMember || !newRoleId) return;
+    if (!editingMember || !newRoleName) return;
     setRoleLoading(true);
     try {
       const res = await fetchWithAuth(`/api/organization/members/${editingMember.id}/role`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          roleId: newRoleId,
-          updatedByRole: currentUserRole,
+          roleName: newRoleName,
         }),
       });
 
@@ -311,12 +323,11 @@ export function UserManagementPage() {
         throw new Error(data.error || "Failed to update role");
       }
 
-      const data = await res.json();
       toast.success("Role updated successfully");
       setEditRoleOpen(false);
       fetchMembers();
-    } catch (err: any) {
-      toast.error(err.message || "Failed to update role");
+    } catch (err: unknown) {
+      toast.error(err instanceof Error ? err.message : "Failed to update role");
     } finally {
       setRoleLoading(false);
     }
@@ -658,7 +669,7 @@ export function UserManagementPage() {
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  {ROLES.filter((r) => r.name !== "custom").map((r) => (
+                  {ORGANIZATION_ASSIGNABLE_ROLES.map((r) => (
                     <SelectItem key={r.name} value={r.name}>
                       <span className="flex items-center gap-2">
                         {r.label}
@@ -718,12 +729,12 @@ export function UserManagementPage() {
               {/* New Role Selection */}
               <div className="space-y-2">
                 <Label className={cn(isDark && "text-slate-300")}>Assign New Role</Label>
-                <Select value={newRoleId} onValueChange={setNewRoleId}>
+                <Select value={newRoleName} onValueChange={setNewRoleName}>
                   <SelectTrigger className={cn(isDark && "border-white/10 bg-white/[0.03]")}>
                     <SelectValue placeholder="Select a role..." />
                   </SelectTrigger>
                   <SelectContent className="max-h-[300px]">
-                    {ROLES.map((r) => (
+                    {ORGANIZATION_ASSIGNABLE_ROLES.map((r) => (
                       <SelectItem key={r.name} value={r.name} className="py-2">
                         <div className="flex items-center justify-between gap-4 w-full">
                           <div className="min-w-0">
@@ -740,14 +751,14 @@ export function UserManagementPage() {
                 </Select>
 
                 {/* Selected role description */}
-                {newRoleId && (
+                {newRoleName && (
                   <motion.div
                     initial={{ opacity: 0, height: 0 }}
                     animate={{ opacity: 1, height: "auto" }}
                     className={cn("rounded-lg p-3 mt-2", isDark ? "bg-white/[0.03]" : "bg-slate-50")}
                   >
                     {(() => {
-                      const role = getRoleByName(newRoleId);
+                      const role = getRoleByName(newRoleName);
                       if (!role) return null;
                       return (
                         <>
@@ -785,7 +796,7 @@ export function UserManagementPage() {
                 <Button
                   className={isGold ? "bg-gradient-to-r from-amber-600 via-yellow-500 to-amber-600 text-black" : "bg-amber-600 hover:bg-amber-700"}
                   onClick={handleRoleUpdate}
-                  disabled={roleLoading || !newRoleId}
+                  disabled={roleLoading || !newRoleName}
                 >
                   {roleLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                   Update Role
@@ -1029,16 +1040,6 @@ export function UserManagementPage() {
                       >
                         {isExpired ? "Expired" : "Pending"}
                       </Badge>
-                      <button
-                        onClick={() => copyToClipboard(inv.pin, "PIN")}
-                        className={cn(
-                          "h-8 w-8 rounded-lg flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity",
-                          isDark ? "hover:bg-white/10 text-slate-400 hover:text-white" : "hover:bg-slate-100 text-slate-400"
-                        )}
-                        title="Copy PIN"
-                      >
-                        <Copy className="h-3.5 w-3.5" />
-                      </button>
                       <button
                         onClick={() => handleRevokeInvitation(inv.id)}
                         className={cn(

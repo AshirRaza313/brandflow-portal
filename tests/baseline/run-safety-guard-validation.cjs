@@ -68,6 +68,12 @@ test("exact allowlisted staging accepted", true, run(
   `postgresql://audit_user:test@${stagingHost}:5432/postgres`,
   stagingEnv
 ));
+test("staging URL fragment rejected", false, run(
+  "validateRehearsalUrl",
+  "TEST_URL",
+  `postgresql://audit_user:test@${stagingHost}:5432/postgres#fragment`,
+  stagingEnv
+));
 const poolerHost = "aws-0-ap-southeast-1.pooler.supabase.com";
 const poolerUser = `postgres.${stagingRef}`;
 const poolerEnv = {
@@ -105,6 +111,12 @@ test("exact production evidence target accepted", true, run(
   "validateProductionUrl",
   "TEST_URL",
   `postgresql://audit_user:test@${productionHost}:5432/postgres`,
+  productionEnv
+));
+test("production URL fragment rejected", false, run(
+  "validateProductionUrl",
+  "TEST_URL",
+  `postgresql://audit_user:test@${productionHost}:5432/postgres#fragment`,
   productionEnv
 ));
 test("production user mismatch rejected", false, run(
