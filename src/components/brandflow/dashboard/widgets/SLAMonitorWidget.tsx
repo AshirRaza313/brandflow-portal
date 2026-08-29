@@ -10,7 +10,11 @@ export function SLAMonitorWidget() {
   const isGold = appTheme === "premium-dark";
   const isDark = appTheme === "dark" || isGold;
 
-  const cardClass = isGold ? "bg-white/[0.03] border-white/[0.06]" : isDark ? "bg-white/[0.03] border-white/[0.06]" : "bg-white border-slate-200";
+  const cardClass = isGold
+    ? "bg-slate-800/50 border-slate-700/50"
+    : isDark
+      ? "bg-slate-800/50 border-slate-700/50"
+      : "bg-white border-slate-200";
   const textPrimary = isDark ? "text-white" : "text-slate-900";
   const textMuted = isDark ? "text-slate-400" : "text-muted-foreground";
   const accentColor = isGold ? "text-amber-400" : "text-amber-500";
@@ -37,7 +41,7 @@ export function SLAMonitorWidget() {
         </div>
         <div className="space-y-1.5">
           {slaRules.map((rule) => (
-            <div key={rule.name} className={cn("flex items-center justify-between p-2 rounded-lg", isDark ? "bg-white/[0.03]" : "bg-slate-50")}>
+            <div key={rule.name} className={cn("flex items-center justify-between p-2 rounded-lg", isDark ? "bg-white/[0.02] border border-white/[0.04]" : "bg-slate-50")}>
               <div className="flex items-center gap-2">
                 {rule.met ? (
                   <CheckCircle2 className="h-3 w-3 text-emerald-400" />
