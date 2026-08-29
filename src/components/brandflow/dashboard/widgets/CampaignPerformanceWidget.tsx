@@ -39,7 +39,6 @@ export function CampaignPerformanceWidget() {
     }
     setLoading(true);
     try {
-      const res = await fetchWithAuth(`/api/coupons?orgId=${encodeURIComponent(orgId)}&limit=0`);
       // Campaign data from broadcasts API
       const brRes = await fetchWithAuth(`/api/broadcasts?orgId=${encodeURIComponent(orgId)}&limit=5`);
       if (brRes.ok) {

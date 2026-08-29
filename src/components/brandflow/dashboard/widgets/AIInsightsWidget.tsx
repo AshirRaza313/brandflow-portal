@@ -60,38 +60,22 @@ export function AIInsightsWidget() {
     }
     setLoading(true);
     try {
-      // Try the AI insights API endpoint
-      const res = await fetchWithAuth(`/api/dashboard/stats?orgId=${encodeURIComponent(orgId)}`);
-      if (res.ok) {
-        const data = await res.json();
-        // If we have real stats, we can generate contextual insights
-        // But for now, try to call AI endpoint
-        try {
-          const aiRes = await fetchWithAuth(`/api/ai/insights?orgId=${encodeURIComponent(orgId)}`);
-          if (aiRes.ok) {
-            const aiData = await aiRes.json();
-            if (Array.isArray(aiData.insights) && aiData.insights.length > 0) {
-              setInsights(aiData.insights);
-              setIsAIGenerated(true);
-              setLoading(false);
-              return;
-            }
-          }
-        } catch {
-          // AI endpoint not available - graceful fallback
+      // Try the AI insights API endpoint only
+      const aiRes = await fetchWithAuth(`/api/ai/insights?orgId=${encodeURIComponent(orgId)}`);
+      if (aiRes.ok) {
+        const aiData = await aiRes.json();
+        if (Array.isArray(aiData.insights) && aiData.insights.length > 0) {
+          setInsights(aiData.insights);
+          setIsAIGenerated(true);
+          setLoading(false);
+          return;
         }
-
-        // Generate context-aware insights from dashboard stats
-        const contextual = generateContextualInsights(data);
-        setInsights(contextual.length > 0 ? contextual : FALLBACK_INSIGHTS);
-      } else {
-        setInsights(FALLBACK_INSIGHTS);
       }
     } catch {
-      setInsights(FALLBACK_INSIGHTS);
-    } finally {
-      setLoading(false);
+      // AI endpoint not available - graceful fallback
     }
+    setInsights(FALLBACK_INSIGHTS);
+    setLoading(false);
   }, [organization?.id]);
 
   useEffect(() => {
