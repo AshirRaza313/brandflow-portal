@@ -112,7 +112,6 @@ export const GET = withRateLimit(withAuth(async (req, authCtx) => {
             createdAt: { gte: sevenDaysAgo },
           },
           select: { total: true, createdAt: true },
-          take: 1000,
         })
       ),
       safeDbQuery(() =>
@@ -172,7 +171,7 @@ export const GET = withRateLimit(withAuth(async (req, authCtx) => {
     const orderChange = prevOrderCount > 0 ? ((orderCount - prevOrderCount) / prevOrderCount) * 100 : 0;
     const customerChange = prevCustomerCount > 0 ? ((newCustomers - prevCustomerCount) / prevCustomerCount) * 100 : 0;
 
-    // Conversion rate: ratio of 30-day orders to total customers (capped at 100%)
+    // Conversion rate: % of customers who have at least one order
     const conversionRate = customerCount > 0
       ? Math.round((Math.min(orderCount, customerCount) / customerCount) * 1000) / 10
       : 0;
@@ -247,4 +246,4 @@ export const GET = withRateLimit(withAuth(async (req, authCtx) => {
     }
     return NextResponse.json({ error: "Failed to fetch stats" }, { status: 500 });
   }
-}), { maxRequests: 60, windowSeconds: 60 });
+}), { maxRequests: 30, windowSeconds: 60 });
