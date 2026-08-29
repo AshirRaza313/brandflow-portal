@@ -104,8 +104,13 @@ export function StorageUsageWidget() {
 
   if (!storage) return null;
 
-  const isUnlimited = storage.limitGb === -1 || storage.limitMb === -1;
-  const percent = isUnlimited ? -1 : storage.percent;
+  // Safe defaults for NaN/null values
+  const safeUsedMb = storage.usedMb ?? 0;
+  const safeLimitMb = storage.limitMb ?? 0;
+  const safeLimitGb = storage.limitGb ?? 0;
+  const safePercent = Number.isFinite(storage.percent) ? storage.percent : 0;
+  const isUnlimited = safeLimitGb === -1 || safeLimitMb === -1;
+  const percent = isUnlimited ? -1 : safePercent;
 
   return (
     <Card className={cn("transition-all duration-300", cardClass)}>
@@ -119,7 +124,7 @@ export function StorageUsageWidget() {
             <div>
               <p className={cn("text-xs font-semibold", textPrimary)}>Storage</p>
               <p className={cn("text-[10px]", textMuted)}>
-                {isUnlimited ? "Unlimited" : `${formatMb(storage.usedMb)} / ${storage.limitGb} GB`}
+                {isUnlimited ? "Unlimited" : `${formatMb(safeUsedMb)} / ${safeLimitGb} GB`}
               </p>
             </div>
           </div>
@@ -146,9 +151,9 @@ export function StorageUsageWidget() {
               />
             </div>
             <div className="flex items-center justify-between">
-              <span className={cn("text-[10px]", textMuted)}>{percent}% used</span>
+            <span className={cn("text-[10px]", textMuted)}>{percent}% used</span>
               <span className={cn("text-[10px]", textMuted)}>
-                {formatMb(storage.limitMb - storage.usedMb)} free
+                {formatMb(Math.max(0, safeLimitMb - safeUsedMb))} free
               </span>
             </div>
           </div>

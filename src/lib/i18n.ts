@@ -503,6 +503,18 @@ const translations: Record<Language, Record<string, string>> = {
     inProgress: "In Progress",
     toDo: "To Do",
     done: "Done",
+
+    // ── Dashboard Widget Strings ──
+    aiGenerating: "Generating insights...",
+    aiInsights: "AI Insights",
+    auditLogWidget: "Audit Log",
+    auditLogWidgetDesc: "Recent portal activity",
+    noCampaigns: "No active campaigns yet",
+    noCoupons: "No coupons created yet",
+    noEmailStats: "No email stats available",
+    noForecast: "No forecast data yet",
+    noMarketingEvents: "No upcoming marketing events",
+    noSocialDataDesc: "Connect social media accounts to see analytics",
   },
   ur: {
     // ── Navigation / Sidebar ──
@@ -998,6 +1010,18 @@ const translations: Record<Language, Record<string, string>> = {
     inProgress: "Jari Hai",
     toDo: "Karna Hai",
     done: "Done!",
+
+    // ── Dashboard Widget Strings ──
+    aiGenerating: "Insights generate ho rahe hain...",
+    aiInsights: "AI Insights",
+    auditLogWidget: "Audit Log",
+    auditLogWidgetDesc: "Portal ki recent activity",
+    noCampaigns: "Abhi koi active campaign nahi",
+    noCoupons: "Abhi koi coupon nahi bana",
+    noEmailStats: "Email stats available nahi hain",
+    noForecast: "Forecast data abhi nahi hai",
+    noMarketingEvents: "Koi aane wala marketing event nahi",
+    noSocialDataDesc: "Social media accounts connect karein analytics dekhne ke liye",
   },
 };
 
