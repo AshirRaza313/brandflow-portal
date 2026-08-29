@@ -141,11 +141,6 @@ export const useNotificationStore = create<NotificationStore>((set, get) => ({
         })
       );
 
-      // Build a set of locally-read notification IDs (optimistic updates)
-      const locallyReadIds = new Set(
-        currentNotifications.filter((n) => n.read && !n.read).map((n) => n.id)
-      );
-
       // Merge: respect locally-marked-as-read status to avoid phantom unread badges
       const notifications = fetched.map((n) => {
         const local = currentNotifications.find((cn) => cn.id === n.id);
@@ -158,7 +153,7 @@ export const useNotificationStore = create<NotificationStore>((set, get) => ({
 
       set({
         notifications,
-        unreadCount: data.unreadCount ?? notifications.filter((n: NotificationItem) => !n.read).length,
+        unreadCount: notifications.filter((n: NotificationItem) => !n.read).length,
         lastFetched: Date.now(),
       });
     } catch (err) {

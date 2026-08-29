@@ -234,33 +234,14 @@ export function NotificationCenter() {
     if (!organization?.id) return;
     setLoading(true);
     try {
-      // Fetch generated notifications and real db notifications in parallel
-      const [generatedRes, dbRes] = await Promise.allSettled([
-        fetch(`/api/notifications?orgId=${organization.id}`),
-        fetch(`/api/db-notifications?orgId=${organization.id}`),
-      ]);
+      // Fetch real db notifications only
+      const dbRes = await fetch(`/api/db-notifications?orgId=${organization.id}`);
 
       const allNotifications: Notification[] = [];
 
-      // Merge generated notifications
-      if (generatedRes.status === "fulfilled" && generatedRes.value.ok) {
-        const data = await generatedRes.value.json();
-        const generated = (data.notifications || []).map((n: any) => ({
-          id: n.id,
-          type: (n.type || "new_order") as NotificationType,
-          title: n.title,
-          description: n.description || n.message || "",
-          timestamp: n.timestamp || n.createdAt || new Date().toISOString(),
-          read: n.read || false,
-          referenceId: n.referenceId,
-          referenceType: n.referenceType,
-        }));
-        allNotifications.push(...generated);
-      }
-
       // Merge real db notifications
-      if (dbRes.status === "fulfilled" && dbRes.value.ok) {
-        const data = await dbRes.value.json();
+      if (dbRes.ok) {
+        const data = await dbRes.json();
         const dbNotifs = (data.notifications || []).map((n: any) => {
           // Normalize type to a known value — DB can have arbitrary types like "invoice_status"
           const rawType = n.type || "info";
@@ -337,14 +318,28 @@ export function NotificationCenter() {
     setNotifications((prev) =>
       prev.map((n) => (n.id === id ? { ...n, read: true } : n))
     );
+    // Persist to DB — strip db_ prefix for API call
+    const dbId = id.startsWith("db_") ? id.slice(3) : id;
+    fetch(`/api/db-notifications/${dbId}`, { method: "PUT" }).catch(() => {});
   }, []);
 
   const markAllRead = useCallback(() => {
+    const unreadIds = notifications
+      .filter((n) => !n.read && n.id.startsWith("db_"))
+      .map((n) => n.id.slice(3)); // strip db_ prefix
     setNotifications((prev) => prev.map((n) => ({ ...n, read: true })));
+    // Persist all unread to DB
+    if (unreadIds.length > 0) {
+      Promise.allSettled(
+        unreadIds.map((id) =>
+          fetch(`/api/db-notifications/${id}`, { method: "PUT" })
+        )
+      ).catch(() => {});
+    }
     toast.success("All notifications marked as read");
-  }, []);
+  }, [notifications]);
 
-  const unreadCount = notifications.filter((n) => !n.read).length;
+  const unreadCount = notifications.filter((n) => !n.read && n.id.startsWith("db_")).length;
 
   // Panel styling
   const panelBg = isGold

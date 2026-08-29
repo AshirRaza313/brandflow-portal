@@ -16,30 +16,7 @@ interface AIInsight {
   impact: "high" | "medium" | "low";
 }
 
-// Graceful fallback insights when AI API is unavailable
-const FALLBACK_INSIGHTS: AIInsight[] = [
-  {
-    id: "1",
-    icon: "mail",
-    title: "Boost Email Revenue",
-    description: "Customers who receive weekly emails spend 3x more. Start an email campaign to re-engage dormant customers.",
-    impact: "high",
-  },
-  {
-    id: "2",
-    icon: "trending",
-    title: "Optimize Pricing",
-    description: "Your top 5 products have room for a 5-10% price increase based on order velocity patterns.",
-    impact: "medium",
-  },
-  {
-    id: "3",
-    icon: "users",
-    title: "Loyalty Opportunity",
-    description: "15 customers are close to VIP tier. A targeted offer could increase their lifetime value by 40%.",
-    impact: "high",
-  },
-];
+// No hardcoded fallbacks — only real AI insights or empty state
 
 export function AIInsightsWidget() {
   const { organization, appTheme } = useValtrioxStore();
@@ -54,44 +31,28 @@ export function AIInsightsWidget() {
   const fetchInsights = useCallback(async () => {
     const orgId = organization?.id;
     if (!orgId) {
-      setInsights(FALLBACK_INSIGHTS);
+      setInsights([]);
       setLoading(false);
       return;
     }
     setLoading(true);
     try {
-      // Try the AI insights API endpoint
-      const res = await fetchWithAuth(`/api/dashboard/stats?orgId=${encodeURIComponent(orgId)}`);
-      if (res.ok) {
-        const data = await res.json();
-        // If we have real stats, we can generate contextual insights
-        // But for now, try to call AI endpoint
-        try {
-          const aiRes = await fetchWithAuth(`/api/ai/insights?orgId=${encodeURIComponent(orgId)}`);
-          if (aiRes.ok) {
-            const aiData = await aiRes.json();
-            if (Array.isArray(aiData.insights) && aiData.insights.length > 0) {
-              setInsights(aiData.insights);
-              setIsAIGenerated(true);
-              setLoading(false);
-              return;
-            }
-          }
-        } catch {
-          // AI endpoint not available - graceful fallback
+      // Only source of truth is the AI endpoint
+      const aiRes = await fetchWithAuth(`/api/ai/insights?orgId=${encodeURIComponent(orgId)}`);
+      if (aiRes.ok) {
+        const aiData = await aiRes.json();
+        if (Array.isArray(aiData.insights) && aiData.insights.length > 0) {
+          setInsights(aiData.insights);
+          setIsAIGenerated(true);
+          setLoading(false);
+          return;
         }
-
-        // Generate context-aware insights from dashboard stats
-        const contextual = generateContextualInsights(data);
-        setInsights(contextual.length > 0 ? contextual : FALLBACK_INSIGHTS);
-      } else {
-        setInsights(FALLBACK_INSIGHTS);
       }
     } catch {
-      setInsights(FALLBACK_INSIGHTS);
-    } finally {
-      setLoading(false);
+      // AI endpoint not available
     }
+    setInsights([]);
+    setLoading(false);
   }, [organization?.id]);
 
   useEffect(() => {
@@ -99,9 +60,9 @@ export function AIInsightsWidget() {
   }, [fetchInsights]);
 
   const cardClass = isGold
-    ? "bg-white/[0.03] border-white/[0.06]"
+    ? "bg-slate-800/50 border-slate-700/50"
     : isDark
-    ? "bg-white/[0.03] border-white/[0.06]"
+    ? "bg-slate-800/50 border-slate-700/50"
     : "bg-white border-slate-200";
 
   const textPrimary = isDark ? "text-white" : "text-slate-900";
@@ -176,7 +137,14 @@ export function AIInsightsWidget() {
 
         {/* Insights list */}
         <div className="space-y-2 max-h-48 overflow-y-auto">
-          {insights.map((insight) => {
+          {insights.length === 0 ? (
+            <div className="flex flex-col items-center justify-center py-6 px-3">
+              <Sparkles className={cn("h-5 w-5 mb-2", textMuted)} />
+              <p className={cn("text-[11px] text-center", textMuted)}>
+                AI insights will appear here once your store has enough data.
+              </p>
+            </div>
+          ) : insights.map((insight) => {
             const Icon = getIconForType(insight.icon);
             return (
               <div

@@ -92,10 +92,10 @@ export function DailySummaryWidget() {
   }, [fetchSummary]);
 
   const cardClass = isGold
-    ? "bg-white/[0.03] border-white/[0.06]"
+    ? "bg-slate-800/50 border-slate-700/50"
     : isDark
-    ? "bg-white/[0.03] border-white/[0.06]"
-    : "bg-white border-slate-200";
+      ? "bg-slate-800/50 border-slate-700/50"
+      : "bg-white border-slate-200";
 
   const textPrimary = isDark ? "text-white" : "text-slate-900";
   const textSecondary = isDark ? "text-slate-400" : "text-slate-500";
@@ -105,7 +105,7 @@ export function DailySummaryWidget() {
   const accentBg = isGold ? "bg-amber-500/10" : "bg-amber-500/10";
 
   const ChangeIndicator = ({ value }: { value: number }) => {
-    if (value === 0) return null;
+    if (!value || !Number.isFinite(value) || value === 0) return null;
     const isPositive = value > 0;
     return (
       <span className={cn(

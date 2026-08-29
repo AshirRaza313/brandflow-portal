@@ -10,7 +10,11 @@ export function WarehouseStatsWidget() {
   const isGold = appTheme === "premium-dark";
   const isDark = appTheme === "dark" || isGold;
 
-  const cardClass = isGold ? "bg-white/[0.03] border-white/[0.06]" : isDark ? "bg-white/[0.03] border-white/[0.06]" : "bg-white border-slate-200";
+  const cardClass = isGold
+    ? "bg-slate-800/50 border-slate-700/50"
+    : isDark
+      ? "bg-slate-800/50 border-slate-700/50"
+      : "bg-white border-slate-200";
   const textPrimary = isDark ? "text-white" : "text-slate-900";
   const textMuted = isDark ? "text-slate-400" : "text-muted-foreground";
   const accentColor = isGold ? "text-amber-400" : "text-amber-500";
@@ -37,7 +41,7 @@ export function WarehouseStatsWidget() {
         </div>
         <div className="grid grid-cols-2 gap-2">
           {metrics.map((m) => (
-            <div key={m.label} className={cn("p-2 rounded-lg", isDark ? "bg-white/[0.03]" : "bg-slate-50")}>
+            <div key={m.label} className={cn("p-2 rounded-lg", isDark ? "bg-white/[0.02] border border-white/[0.04]" : "bg-slate-50")}>
               <m.icon className={cn("h-3 w-3 mb-1", m.color)} />
               <p className={cn("text-sm font-bold", textPrimary)}>{m.value}</p>
               <p className={cn("text-[10px]", textMuted)}>{m.label}</p>

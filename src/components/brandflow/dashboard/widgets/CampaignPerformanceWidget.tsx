@@ -39,7 +39,6 @@ export function CampaignPerformanceWidget() {
     }
     setLoading(true);
     try {
-      const res = await fetchWithAuth(`/api/coupons?orgId=${encodeURIComponent(orgId)}&limit=0`);
       // Campaign data from broadcasts API
       const brRes = await fetchWithAuth(`/api/broadcasts?orgId=${encodeURIComponent(orgId)}&limit=5`);
       if (brRes.ok) {
@@ -84,9 +83,9 @@ export function CampaignPerformanceWidget() {
   }, [fetchCampaigns]);
 
   const cardClass = isGold
-    ? "bg-white/[0.03] border-white/[0.06]"
+    ? "bg-slate-800/50 border-slate-700/50"
     : isDark
-    ? "bg-white/[0.03] border-white/[0.06]"
+    ? "bg-slate-800/50 border-slate-700/50"
     : "bg-white border-slate-200";
 
   const textPrimary = isDark ? "text-white" : "text-slate-900";
