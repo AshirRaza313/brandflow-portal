@@ -241,7 +241,7 @@ export function NotificationCenter() {
 
       // Merge real db notifications
       if (dbRes.ok) {
-        const data = await dbRes.value.json();
+        const data = await dbRes.json();
         const dbNotifs = (data.notifications || []).map((n: any) => {
           // Normalize type to a known value — DB can have arbitrary types like "invoice_status"
           const rawType = n.type || "info";
@@ -318,12 +318,26 @@ export function NotificationCenter() {
     setNotifications((prev) =>
       prev.map((n) => (n.id === id ? { ...n, read: true } : n))
     );
+    // Persist to DB — strip db_ prefix for API call
+    const dbId = id.startsWith("db_") ? id.slice(3) : id;
+    fetch(`/api/db-notifications/${dbId}`, { method: "PUT" }).catch(() => {});
   }, []);
 
   const markAllRead = useCallback(() => {
+    const unreadIds = notifications
+      .filter((n) => !n.read && n.id.startsWith("db_"))
+      .map((n) => n.id.slice(3)); // strip db_ prefix
     setNotifications((prev) => prev.map((n) => ({ ...n, read: true })));
+    // Persist all unread to DB
+    if (unreadIds.length > 0) {
+      Promise.allSettled(
+        unreadIds.map((id) =>
+          fetch(`/api/db-notifications/${id}`, { method: "PUT" })
+        )
+      ).catch(() => {});
+    }
     toast.success("All notifications marked as read");
-  }, []);
+  }, [notifications]);
 
   const unreadCount = notifications.filter((n) => !n.read && n.id.startsWith("db_")).length;
 
