@@ -234,32 +234,13 @@ export function NotificationCenter() {
     if (!organization?.id) return;
     setLoading(true);
     try {
-      // Fetch generated notifications and real db notifications in parallel
-      const [generatedRes, dbRes] = await Promise.allSettled([
-        fetch(`/api/notifications?orgId=${organization.id}`),
-        fetch(`/api/db-notifications?orgId=${organization.id}`),
-      ]);
+      // Fetch real db notifications only
+      const dbRes = await fetch(`/api/db-notifications?orgId=${organization.id}`);
 
       const allNotifications: Notification[] = [];
 
-      // Merge generated notifications
-      if (generatedRes.status === "fulfilled" && generatedRes.value.ok) {
-        const data = await generatedRes.value.json();
-        const generated = (data.notifications || []).map((n: any) => ({
-          id: n.id,
-          type: (n.type || "new_order") as NotificationType,
-          title: n.title,
-          description: n.description || n.message || "",
-          timestamp: n.timestamp || n.createdAt || new Date().toISOString(),
-          read: n.read || false,
-          referenceId: n.referenceId,
-          referenceType: n.referenceType,
-        }));
-        allNotifications.push(...generated);
-      }
-
       // Merge real db notifications
-      if (dbRes.status === "fulfilled" && dbRes.value.ok) {
+      if (dbRes.ok) {
         const data = await dbRes.value.json();
         const dbNotifs = (data.notifications || []).map((n: any) => {
           // Normalize type to a known value — DB can have arbitrary types like "invoice_status"
