@@ -16,30 +16,7 @@ interface AIInsight {
   impact: "high" | "medium" | "low";
 }
 
-// Graceful fallback insights when AI API is unavailable
-const FALLBACK_INSIGHTS: AIInsight[] = [
-  {
-    id: "1",
-    icon: "mail",
-    title: "Boost Email Revenue",
-    description: "Customers who receive weekly emails spend 3x more. Start an email campaign to re-engage dormant customers.",
-    impact: "high",
-  },
-  {
-    id: "2",
-    icon: "trending",
-    title: "Optimize Pricing",
-    description: "Your top 5 products have room for a 5-10% price increase based on order velocity patterns.",
-    impact: "medium",
-  },
-  {
-    id: "3",
-    icon: "users",
-    title: "Loyalty Opportunity",
-    description: "15 customers are close to VIP tier. A targeted offer could increase their lifetime value by 40%.",
-    impact: "high",
-  },
-];
+// No hardcoded fallbacks — only real AI insights or empty state
 
 export function AIInsightsWidget() {
   const { organization, appTheme } = useValtrioxStore();
@@ -54,13 +31,13 @@ export function AIInsightsWidget() {
   const fetchInsights = useCallback(async () => {
     const orgId = organization?.id;
     if (!orgId) {
-      setInsights(FALLBACK_INSIGHTS);
+      setInsights([]);
       setLoading(false);
       return;
     }
     setLoading(true);
     try {
-      // Try the AI insights API endpoint only
+      // Only source of truth is the AI endpoint
       const aiRes = await fetchWithAuth(`/api/ai/insights?orgId=${encodeURIComponent(orgId)}`);
       if (aiRes.ok) {
         const aiData = await aiRes.json();
@@ -72,9 +49,9 @@ export function AIInsightsWidget() {
         }
       }
     } catch {
-      // AI endpoint not available - graceful fallback
+      // AI endpoint not available
     }
-    setInsights(FALLBACK_INSIGHTS);
+    setInsights([]);
     setLoading(false);
   }, [organization?.id]);
 
@@ -160,7 +137,14 @@ export function AIInsightsWidget() {
 
         {/* Insights list */}
         <div className="space-y-2 max-h-48 overflow-y-auto">
-          {insights.map((insight) => {
+          {insights.length === 0 ? (
+            <div className="flex flex-col items-center justify-center py-6 px-3">
+              <Sparkles className={cn("h-5 w-5 mb-2", textMuted)} />
+              <p className={cn("text-[11px] text-center", textMuted)}>
+                AI insights will appear here once your store has enough data.
+              </p>
+            </div>
+          ) : insights.map((insight) => {
             const Icon = getIconForType(insight.icon);
             return (
               <div
