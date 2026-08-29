@@ -344,7 +344,7 @@ export function NotificationCenter() {
     toast.success("All notifications marked as read");
   }, []);
 
-  const unreadCount = notifications.filter((n) => !n.read).length;
+  const unreadCount = notifications.filter((n) => !n.read && n.id.startsWith("db_")).length;
 
   // Panel styling
   const panelBg = isGold
