@@ -27,6 +27,7 @@ export function SLAMonitorWidget() {
 
   const [rules, setRules] = useState<SLARule[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(false);
 
   const fetchRules = useCallback(async () => {
     const orgId = organization?.id;
@@ -36,6 +37,7 @@ export function SLAMonitorWidget() {
       return;
     }
     setLoading(true);
+    setError(false);
     try {
       const res = await fetchWithAuth(`/api/sla/rules?orgId=${encodeURIComponent(orgId)}`);
       if (res.ok) {
@@ -46,8 +48,9 @@ export function SLAMonitorWidget() {
           return;
         }
       }
+      setError(true);
     } catch {
-      // API not available
+      setError(true);
     }
     setRules([]);
     setLoading(false);
@@ -67,6 +70,34 @@ export function SLAMonitorWidget() {
   const accentColor = isGold ? "text-amber-400" : "text-amber-500";
   const accentBg = isGold ? "bg-amber-500/10" : "bg-amber-100";
   const activeCount = rules.filter((r) => r.enabled).length;
+
+  if (error) {
+    return (
+      <Card className={cn("transition-all duration-300", cardClass)}>
+        <CardContent className="p-4 space-y-3">
+          <div className="flex items-center gap-2">
+            <div className={cn("h-8 w-8 rounded-lg flex items-center justify-center", accentBg)}>
+              <ShieldCheck className={cn("h-4 w-4", accentColor)} />
+            </div>
+            <div>
+              <p className={cn("text-xs font-semibold", textPrimary)}>{t("slaRules")}</p>
+              <p className={cn("text-[10px]", textMuted)}>{t("slaRulesDesc")}</p>
+            </div>
+          </div>
+          <div className="flex flex-col items-center justify-center py-4 space-y-2">
+            <Clock className={cn("h-6 w-6", textMuted)} />
+            <p className={cn("text-xs text-center", textMuted)}>{t("slaError")}</p>
+            <button
+              className={cn("text-[10px] font-medium px-3 py-1 rounded-md transition-colors", isDark ? "text-amber-400 hover:bg-amber-500/10" : "text-amber-600 hover:bg-amber-50")}
+              onClick={fetchRules}
+            >
+              {t("slaRetry")}
+            </button>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
 
   if (loading) {
     return (
@@ -90,8 +121,8 @@ export function SLAMonitorWidget() {
               <ShieldCheck className={cn("h-4 w-4", accentColor)} />
             </div>
             <div>
-              <p className={cn("text-xs font-semibold", textPrimary)}>{t("slaMonitor")}</p>
-              <p className={cn("text-[10px]", textMuted)}>{t("slaMonitorDesc")}</p>
+              <p className={cn("text-xs font-semibold", textPrimary)}>{t("slaRules")}</p>
+              <p className={cn("text-[10px]", textMuted)}>{t("slaRulesDesc")}</p>
             </div>
           </div>
           {rules.length > 0 && (
