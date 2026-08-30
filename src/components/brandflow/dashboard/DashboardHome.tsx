@@ -289,7 +289,7 @@ export function DashboardHome() {
     { title: t("customerCount"), value: stats?.customerCount || 0, change: stats?.customerChange || 0, icon: Users, format: (v: number) => v.toLocaleString() },
     { title: t("conversionRate"), value: stats?.conversionRate || 0, suffix: "%", change: 0, icon: TrendingUp, format: (v: number) => `${v}%` },
     { title: t("avgOrderValue"), value: stats?.avgOrderValue || 0, prefix: `${orgCurrencySymbol} `, change: 0, icon: BarChart3, format: (v: number) => `${orgCurrencySymbol} ${v.toFixed(2)}` },
-    { title: t("lowStockItems"), value: stats?.lowStockProducts || 0, icon: AlertTriangle, format: (v: number) => v.toString() },
+    { title: t("lowStockItems"), value: stats?.lowStockProducts || 0, change: 0, icon: AlertTriangle, format: (v: number) => v.toString() },
   ];
 
   // Pie data: use real API data if available, empty array if none
