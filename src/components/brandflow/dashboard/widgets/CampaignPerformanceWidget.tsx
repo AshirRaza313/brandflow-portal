@@ -177,7 +177,7 @@ export function CampaignPerformanceWidget() {
           <div className="text-center py-2">
             <p className={cn("text-xs", textMuted)}>{t("noCampaigns")}</p>
             <button
-              className={cn("text-[10px] font-medium mt-1", isDark ? "text-amber-400" : "text-amber-600")}
+              className={cn("text-[10px] font-medium mt-1 rounded-md px-2 py-1 transition-colors", isDark ? "text-amber-400 hover:text-amber-300 hover:bg-amber-500/10" : "text-amber-600 hover:text-amber-700 hover:bg-amber-50")}
               onClick={() => setActiveSection("broadcasts")}
             >
               Create your first campaign →

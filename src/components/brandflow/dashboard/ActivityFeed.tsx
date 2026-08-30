@@ -155,7 +155,7 @@ export function ActivityFeed() {
           size="sm"
           className={cn(
             "text-xs",
-            isGold ? "text-amber-400 hover:text-amber-300 hover:bg-amber-500/10" : "text-amber-600 hover:text-amber-700"
+            isGold ? "text-amber-400 hover:text-amber-300 hover:bg-amber-500/10" : isDark ? "text-amber-400 hover:text-amber-300 hover:bg-white/[0.04]" : "text-amber-600 hover:text-amber-700"
           )}
           onClick={() => setActiveSection("audit-log")}
         >
