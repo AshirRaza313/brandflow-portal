@@ -507,6 +507,7 @@ const translations: Record<Language, Record<string, string>> = {
     // ── Dashboard Widget Strings ──
     aiGenerating: "Generating insights...",
     aiInsights: "AI Insights",
+    aiInsightsNoData: "AI insights are not available yet.",
     auditLogWidget: "Audit Log",
     auditLogWidgetDesc: "Recent portal activity",
     noCampaigns: "No active campaigns yet",
@@ -1014,6 +1015,7 @@ const translations: Record<Language, Record<string, string>> = {
     // ── Dashboard Widget Strings ──
     aiGenerating: "Insights generate ho rahe hain...",
     aiInsights: "AI Insights",
+    aiInsightsNoData: "AI insights abhi available nahi hain.",
     auditLogWidget: "Audit Log",
     auditLogWidgetDesc: "Portal ki recent activity",
     noCampaigns: "Abhi koi active campaign nahi",

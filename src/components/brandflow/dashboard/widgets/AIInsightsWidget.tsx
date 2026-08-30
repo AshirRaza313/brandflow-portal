@@ -141,7 +141,7 @@ export function AIInsightsWidget() {
             <div className="flex flex-col items-center justify-center py-6 px-3">
               <Sparkles className={cn("h-5 w-5 mb-2", textMuted)} />
               <p className={cn("text-[11px] text-center", textMuted)}>
-                AI insights will appear here once your store has enough data.
+                {t("aiInsightsNoData")}
               </p>
             </div>
           ) : insights.map((insight) => {
@@ -175,50 +175,4 @@ export function AIInsightsWidget() {
   );
 }
 
-// ── Contextual insight generation from dashboard stats ──────────────────────
 
-function generateContextualInsights(stats: any): AIInsight[] {
-  const insights: AIInsight[] = [];
-
-  if (stats?.customerCount > 0 && stats?.conversionRate < 3) {
-    insights.push({
-      id: "conv-low",
-      icon: "trending",
-      title: "Low Conversion Rate",
-      description: `Your ${stats.conversionRate}% conversion rate is below average. Consider optimizing your checkout flow and product pages.`,
-      impact: "high",
-    });
-  }
-
-  if (stats?.lowStockProducts > 3) {
-    insights.push({
-      id: "low-stock",
-      icon: "revenue",
-      title: `${stats.lowStockProducts} Products Low on Stock`,
-      description: "Restock soon to avoid missed sales. Low stock items are often best-sellers.",
-      impact: "high",
-    });
-  }
-
-  if (stats?.newCustomers > 0 && stats?.newCustomers < 5) {
-    insights.push({
-      id: "growth",
-      icon: "users",
-      title: "Grow Your Customer Base",
-      description: "Email campaigns and referral programs are proven ways to acquire new customers cost-effectively.",
-      impact: "medium",
-    });
-  }
-
-  if (stats?.totalRevenue > 0) {
-    insights.push({
-      id: "revenue-up",
-      icon: "mail",
-      title: "Email Revenue Opportunity",
-      description: "Brands using email marketing see 15-30% higher revenue. Start a weekly newsletter to stay top-of-mind.",
-      impact: "medium",
-    });
-  }
-
-  return insights;
-}
