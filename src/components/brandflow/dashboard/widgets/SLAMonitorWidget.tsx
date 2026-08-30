@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useRef } from "react";
 import { useValtrioxStore } from "@/store/brandflow-store";
 import { Card, CardContent } from "@/components/ui/card";
 import { ShieldCheck, Clock, ArrowRight, Loader2 } from "lucide-react";
@@ -27,7 +27,12 @@ export function SLAMonitorWidget() {
 
   const [rules, setRules] = useState<SLARule[]>([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(false);
+ const [error, setError] = useState(false);
+  const orgIdRef = useRef(organization?.id);
+
+  useEffect(() => {
+    orgIdRef.current = organization?.id;
+  }, [organization?.id]);
 
   const fetchRules = useCallback(async () => {
     const orgId = organization?.id;
@@ -40,16 +45,24 @@ export function SLAMonitorWidget() {
     setError(false);
     try {
       const res = await fetchWithAuth(`/api/sla/rules?orgId=${encodeURIComponent(orgId)}`);
+      if (orgIdRef.current !== orgId) return;
       if (res.ok) {
         const data = await res.json();
         if (Array.isArray(data.rules)) {
-          setRules(data.rules);
+          const validRules = data.rules.filter(
+            (r: Record<string, unknown>) =>
+              r && typeof r.id === "string" && typeof r.name === "string"
+          );
+          if (orgIdRef.current !== orgId) return;
+          setRules(validRules);
           setLoading(false);
           return;
         }
       }
+      if (orgIdRef.current !== orgId) return;
       setError(true);
     } catch {
+      if (orgIdRef.current !== orgId) return;
       setError(true);
     }
     setRules([]);
