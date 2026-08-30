@@ -191,6 +191,15 @@ export async function GET(req: Request) {
       results.downgraded++;
     }
 
+    // ── SKIP UNLIMITED ROLE ORGS (founder/team/admin) ──
+    const UNLIMITED_ROLES = ["platform_owner", "platform_admin", "valtriox_team"];
+    const unlimitedOrgIds = new Set(
+      (await db.organizationMember.findMany({
+        where: { role: { in: UNLIMITED_ROLES } },
+        select: { organizationId: true },
+      })).map((m) => m.organizationId)
+    );
+
     // ── STEP 3: EXPIRE OLD TRIALS ──
     const expiredTrials = await withRetry(async () => {
       return await db.subscription.findMany({
@@ -208,6 +217,7 @@ export async function GET(req: Request) {
 
     for (const sub of expiredTrials) {
       if (sub.organization.isBanned) continue;
+      if (unlimitedOrgIds.has(sub.organization.id)) continue;
 
       // Set subscription status to expired (keep record for history)
       await withRetry(async () => {
@@ -259,6 +269,7 @@ export async function GET(req: Request) {
 
     for (const sub of activeTrials) {
       if (sub.organization.isBanned) continue;
+      if (unlimitedOrgIds.has(sub.organization.id)) continue;
 
       const trialEnd = new Date(sub.trialEndsAt);
       const daysUntilExpiry = Math.ceil((trialEnd.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
