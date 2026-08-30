@@ -11,6 +11,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { withAuth } from "@/lib/auth-middleware";
 import { db, isDbUnavailable, dbErrorResponse, withRetry } from "@/lib/db";
 import { checkStorageLimit } from "@/lib/storage-tracker";
+import { isUnlimitedRole } from "@/lib/plan-limits";
 import { withRateLimit } from "@/lib/rate-limit";
 import logger from "@/lib/logger";
 
@@ -42,6 +43,21 @@ export const GET = withRateLimit(withAuth(async (req: NextRequest, authCtx) => {
     }
 
     const plan = org.plan || "starter";
+
+    // Platform owners/admins get unlimited storage regardless of plan
+    const userRole = authCtx.role || "member";
+    if (isUnlimitedRole(userRole)) {
+      const { estimateStorageUsage } = await import("@/lib/storage-tracker");
+      const usedMb = await estimateStorageUsage(orgId);
+      return NextResponse.json({
+        usedMb,
+        limitMb: -1,
+        limitGb: -1,
+        percent: 0,
+        status: "ok",
+      });
+    }
+
     const result = await withRetry(async () => {
       return checkStorageLimit(orgId, plan);
     }, 2, 500);
