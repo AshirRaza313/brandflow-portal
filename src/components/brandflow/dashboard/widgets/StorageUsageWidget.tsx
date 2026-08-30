@@ -122,7 +122,7 @@ export function StorageUsageWidget() {
               <HardDrive className={cn("h-4 w-4", accentColor)} />
             </div>
             <div>
-              <p className={cn("text-xs font-semibold", textPrimary)}>Storage</p>
+              <p className={cn("text-xs font-semibold", textPrimary)}>Storage <span className={cn("text-[9px] font-normal", textMuted)}>(est.)</span></p>
               <p className={cn("text-[10px]", textMuted)}>
                 {isUnlimited ? "Unlimited" : `${formatMb(safeUsedMb)} / ${safeLimitGb} GB`}
               </p>
