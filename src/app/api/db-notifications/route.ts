@@ -9,22 +9,23 @@ export const GET = withRateLimit(withAuth(async (req: NextRequest, authCtx) => {
   try {
     logger.info("[DB Notifications] GET request", { userId: authCtx.userId });
     const { searchParams } = new URL(req.url);
-    const orgId = searchParams.get("orgId") || authCtx.organizationId;
-    const userId = searchParams.get("userId");
     const unreadOnly = searchParams.get("unread") === "true";
 
-    // Security: ensure orgId matches auth context
-    if (orgId && orgId !== authCtx.organizationId) {
-      return NextResponse.json({ error: "Access denied" }, { status: 403 });
-    }
-    // Security: ensure userId matches auth context
-    if (userId && userId !== authCtx.userId) {
-      return NextResponse.json({ error: "Access denied" }, { status: 403 });
+    const orgId = authCtx.organizationId;
+    const userId = authCtx.userId;
+
+    if (!orgId) {
+      return NextResponse.json({ error: "Organization context required" }, { status: 400 });
     }
 
-    const where: any = {};
-    if (orgId) where.orgId = orgId;
-    if (userId) where.userId = userId;
+    // Audience filter: org-wide (userId=null) + user-specific
+    const where: any = {
+      orgId,
+      OR: [
+        { userId: null },
+        ...(userId ? [{ userId }] : []),
+      ],
+    };
     if (unreadOnly) where.read = false;
 
     const limit = parseInt(searchParams.get("limit") || "50");
@@ -42,8 +43,11 @@ export const GET = withRateLimit(withAuth(async (req: NextRequest, authCtx) => {
     const unreadCount = await withRetry(async () => {
       return await db.notification.count({
       where: {
-        ...(orgId ? { orgId } : {}),
-        ...(userId ? { userId } : {}),
+        orgId,
+        OR: [
+          { userId: null },
+          ...(userId ? [{ userId }] : []),
+        ],
         read: false,
       },
     })
