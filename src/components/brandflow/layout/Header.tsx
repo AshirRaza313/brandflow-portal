@@ -726,7 +726,7 @@ export function Header() {
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <button className="flex items-center gap-1.5 rounded-lg px-1 py-1 transition-colors group cursor-pointer">
-                {/* Online status + Avatar */}
+                {/* Avatar */}
                 <div className="relative flex-shrink-0">
                   <Avatar
                     className="h-8 w-8 ring-2 shadow-sm"
@@ -751,8 +751,6 @@ export function Header() {
                       {initials}
                     </AvatarFallback>
                   </Avatar>
-                  {/* Online status indicator */}
-                  <span className="absolute -bottom-0.5 -right-0.5 h-2.5 w-2.5 rounded-full bg-amber-500 ring-[1.5px] ring-white" />
                 </div>
 
                 {/* Name + Role - visible on 2xl+ only to avoid pushing icons off-screen */}
@@ -824,7 +822,6 @@ export function Header() {
                         {initials}
                       </AvatarFallback>
                     </Avatar>
-                    <span className="absolute -bottom-0.5 -right-0.5 h-3 w-3 rounded-full bg-amber-500 ring-2 ring-white" />
                   </div>
                   <div className="min-w-0">
                     <p className={cn("text-sm font-semibold truncate", textPrimary)}>
