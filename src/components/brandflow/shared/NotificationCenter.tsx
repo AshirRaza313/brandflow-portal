@@ -314,29 +314,60 @@ export function NotificationCenter() {
     }
   }, [open]);
 
-  const markRead = useCallback((id: string) => {
+  const markRead = useCallback(async (id: string) => {
+    // Optimistic UI update
     setNotifications((prev) =>
       prev.map((n) => (n.id === id ? { ...n, read: true } : n))
     );
     // Persist to DB — strip db_ prefix for API call
     const dbId = id.startsWith("db_") ? id.slice(3) : id;
-    fetch(`/api/db-notifications/${dbId}`, { method: "PUT" }).catch(() => {});
+    try {
+      const res = await fetch(`/api/db-notifications/${dbId}`, { method: "PUT" });
+      if (!res.ok) {
+        // Rollback on failure
+        setNotifications((prev) =>
+          prev.map((n) => (n.id === id ? { ...n, read: false } : n))
+        );
+      }
+    } catch {
+      // Rollback on network error
+      setNotifications((prev) =>
+        prev.map((n) => (n.id === id ? { ...n, read: false } : n))
+      );
+    }
   }, []);
 
-  const markAllRead = useCallback(() => {
+  const markAllRead = useCallback(async () => {
     const unreadIds = notifications
       .filter((n) => !n.read && n.id.startsWith("db_"))
-      .map((n) => n.id.slice(3)); // strip db_ prefix
+      .map((n) => n.id.slice(3));
+    if (unreadIds.length === 0) return;
+
+    // Optimistic UI update
     setNotifications((prev) => prev.map((n) => ({ ...n, read: true })));
-    // Persist all unread to DB
-    if (unreadIds.length > 0) {
-      Promise.allSettled(
-        unreadIds.map((id) =>
-          fetch(`/api/db-notifications/${id}`, { method: "PUT" })
-        )
-      ).catch(() => {});
+
+    // Sequential PUTs to avoid rate limit burst (30 req/min)
+    const failedIds: string[] = [];
+    for (const dbId of unreadIds) {
+      try {
+        const res = await fetch(`/api/db-notifications/${dbId}`, { method: "PUT" });
+        if (!res.ok) failedIds.push(dbId);
+      } catch {
+        failedIds.push(dbId);
+      }
     }
-    toast.success("All notifications marked as read");
+
+    // Rollback failed items + toast only on full success
+    if (failedIds.length > 0) {
+      setNotifications((prev) =>
+        prev.map((n) => {
+          const dbId = n.id.startsWith("db_") ? n.id.slice(3) : n.id;
+          return failedIds.includes(dbId) ? { ...n, read: false } : n;
+        })
+      );
+    } else {
+      toast.success("All notifications marked as read");
+    }
   }, [notifications]);
 
   const unreadCount = notifications.filter((n) => !n.read && n.id.startsWith("db_")).length;
