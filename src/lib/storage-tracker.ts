@@ -140,7 +140,7 @@ export async function checkStorageLimit(
 }> {
   const usedMb = await estimateStorageUsage(orgId);
   const limits = getPlanLimits(plan);
-  const limitMb = limits.storageMb;
+  const limitMb = limits.storageGb === -1 ? -1 : limits.storageGb * 1024;
 
   // Unlimited storage
   if (limitMb === -1) {
