@@ -33,8 +33,8 @@ export const PUT = withRateLimit(withAuth(async (
         });
         return NextResponse.json({ error: "Access denied" }, { status: 403 });
       }
-      // Also allow if the notification is user-scoped (userId match) and has no orgId
-      if (!notification.orgId && notification.userId !== authCtx.userId) {
+      // Also ensure user-specific notifications can only be marked by the target user
+      if (notification.userId && notification.userId !== authCtx.userId) {
         logger.warn("[DB Notifications] Cross-user access denied", {
           userId: authCtx.userId,
           notificationUserId: notification.userId,
