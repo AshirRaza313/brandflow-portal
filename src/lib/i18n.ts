@@ -520,7 +520,7 @@ const translations: Record<Language, Record<string, string>> = {
     slaNoRules: "No SLA rules configured",
     slaNoRulesDesc: "Set up SLA rules from the operations panel",
     slaNoOrg: "No organization selected",
-    slaNoOrgDesc: "Select an organization to view SLA rules"
+    slaNoOrgDesc: "Select an organization to view SLA rules",
     slaConfigure: "Configure SLA",
     slaActive: "active",
     slaEnabled: "Active",
