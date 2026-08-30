@@ -17,8 +17,7 @@ import logger from "@/lib/logger";
 
 export const POST = withRateLimit(withAuth(async (req: NextRequest, authCtx) => {
   try {
-    const { searchParams } = new URL(req.url);
-    const orgId = searchParams.get("organizationId") || authCtx.organizationId;
+    const orgId = authCtx.organizationId;
 
     if (!orgId) {
       return NextResponse.json(
