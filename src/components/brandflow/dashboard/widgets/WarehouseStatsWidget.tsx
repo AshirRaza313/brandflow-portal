@@ -2,11 +2,13 @@
 
 import { useValtrioxStore } from "@/store/brandflow-store";
 import { Card, CardContent } from "@/components/ui/card";
-import { Warehouse, Package, ArrowDown, ArrowUp, Clock } from "lucide-react";
+import { Warehouse } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useTranslation } from "@/lib/i18n";
 
 export function WarehouseStatsWidget() {
   const { appTheme, setActiveSection } = useValtrioxStore();
+  const t = useTranslation();
   const isGold = appTheme === "premium-dark";
   const isDark = appTheme === "dark" || isGold;
 
@@ -20,13 +22,6 @@ export function WarehouseStatsWidget() {
   const accentColor = isGold ? "text-amber-400" : "text-amber-500";
   const accentBg = isGold ? "bg-amber-500/10" : "bg-amber-100";
 
-  const metrics = [
-    { icon: Package, label: "In Stock", value: "2,340", color: accentColor },
-    { icon: ArrowDown, label: "Inbound", value: "156", color: isGold ? "text-cyan-400" : "text-cyan-600" },
-    { icon: ArrowUp, label: "Outbound", value: "89", color: isGold ? "text-emerald-400" : "text-emerald-600" },
-    { icon: Clock, label: "Pending", value: "23", color: isGold ? "text-amber-400" : "text-amber-500" },
-  ];
-
   return (
     <Card className={cn("transition-all duration-300", cardClass)}>
       <CardContent className="p-4 space-y-3">
@@ -35,21 +30,18 @@ export function WarehouseStatsWidget() {
             <Warehouse className={cn("h-4 w-4", accentColor)} />
           </div>
           <div>
-            <p className={cn("text-xs font-semibold", textPrimary)}>Warehouse</p>
-            <p className={cn("text-[10px]", textMuted)}>Inventory status</p>
+            <p className={cn("text-xs font-semibold", textPrimary)}>{t("warehouseWidget")}</p>
+            <p className={cn("text-[10px]", textMuted)}>{t("warehouseWidgetDesc")}</p>
           </div>
         </div>
-        <div className="grid grid-cols-2 gap-2">
-          {metrics.map((m) => (
-            <div key={m.label} className={cn("p-2 rounded-lg", isDark ? "bg-white/[0.02] border border-white/[0.04]" : "bg-slate-50")}>
-              <m.icon className={cn("h-3 w-3 mb-1", m.color)} />
-              <p className={cn("text-sm font-bold", textPrimary)}>{m.value}</p>
-              <p className={cn("text-[10px]", textMuted)}>{m.label}</p>
-            </div>
-          ))}
+        <div className="flex flex-col items-center justify-center py-6 px-3">
+          <Warehouse className={cn("h-5 w-5 mb-2", textMuted)} />
+          <p className={cn("text-[11px] text-center", textMuted)}>
+            {t("warehouseNoData")}
+          </p>
         </div>
         <button className={cn("w-full text-[10px] font-medium text-center py-1 rounded-md transition-colors", isDark ? "text-amber-400 hover:bg-amber-500/10" : "text-amber-600 hover:bg-amber-50")} onClick={() => setActiveSection("warehouse")}>
-          Manage Warehouse →
+          {t("manageWarehouse")} →
         </button>
       </CardContent>
     </Card>
