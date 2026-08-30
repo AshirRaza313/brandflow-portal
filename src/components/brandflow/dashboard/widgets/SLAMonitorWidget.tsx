@@ -131,7 +131,13 @@ export function SLAMonitorWidget() {
             </span>
           )}
         </div>
-        {rules.length === 0 ? (
+       {!organization?.id ? (
+          <div className="flex flex-col items-center justify-center py-4 space-y-2">
+            <Clock className={cn("h-6 w-6", textMuted)} />
+            <p className={cn("text-xs text-center", textMuted)}>{t("slaNoOrg")}</p>
+            <p className={cn("text-[10px] text-center", textMuted)}>{t("slaNoOrgDesc")}</p>
+          </div>
+        ) : rules.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-4 space-y-2">
             <Clock className={cn("h-6 w-6", textMuted)} />
             <p className={cn("text-xs text-center", textMuted)}>{t("slaNoRules")}</p>
