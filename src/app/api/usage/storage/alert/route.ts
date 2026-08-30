@@ -47,7 +47,7 @@ export const POST = withRateLimit(withAuth(async (req: NextRequest, authCtx) => 
     // Check if we should send an alert (crossed a new 25% threshold)
     const shouldAlert = await shouldSendStorageAlert(orgId);
 
-    if (!shouldAlert) {
+    if (!shouldAlert.shouldSend) {
       return NextResponse.json({
         alerted: false,
         message: "No new storage threshold crossed since last alert.",
