@@ -29,11 +29,15 @@ export function SLAMonitorWidget() {
   const [loading, setLoading] = useState(true);
  const [error, setError] = useState(false);
   const orgIdRef = useRef(organization?.id);
+  const mountedRef = useRef(true);
 
   useEffect(() => {
     orgIdRef.current = organization?.id;
   }, [organization?.id]);
 
+  useEffect(() => {
+    return () => { mountedRef.current = false; };
+  }, []);
   const fetchRules = useCallback(async () => {
     const orgId = organization?.id;
     if (!orgId) {
@@ -46,7 +50,7 @@ export function SLAMonitorWidget() {
     setError(false);
     try {
       const res = await fetchWithAuth(`/api/sla/rules?orgId=${encodeURIComponent(orgId)}`);
-      if (orgIdRef.current !== orgId) return;
+      if (orgIdRef.current !== orgId || !mountedRef.current) return;
       if (res.ok) {
         const data = await res.json();
         if (Array.isArray(data.rules)) {
@@ -66,16 +70,16 @@ export function SLAMonitorWidget() {
               "[SLAMonitorWidget] Filtered " + (data.rules.length - validRules.length) + " malformed rule(s) out of " + data.rules.length
             );
           }
-          if (orgIdRef.current !== orgId) return;
+          if (orgIdRef.current !== orgId || !mountedRef.current) return;
           setRules(validRules);
           setLoading(false);
           return;
         }
       }
-      if (orgIdRef.current !== orgId) return;
+      if (orgIdRef.current !== orgId || !mountedRef.current) return;
       setError(true);
     } catch {
-      if (orgIdRef.current !== orgId) return;
+        if (orgIdRef.current !== orgId || !mountedRef.current) return;
       setError(true);
     }
     setRules([]);
