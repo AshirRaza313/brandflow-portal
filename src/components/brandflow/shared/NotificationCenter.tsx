@@ -246,7 +246,7 @@ export function NotificationCenter() {
         const dbNotifs = (data.notifications || []).map((n: any) => {
           // Normalize type to a known value — DB can have arbitrary types like "invoice_status"
           const rawType = n.type || "info";
-          const knownTypes = ["new_order", "status_change", "low_stock", "task_due", "payment_received", "info", "success", "warning", "error", "invoice_status"];
+          const knownTypes = ["new_order", "status_change", "low_stock", "task_due", "payment_received", "info", "success", "warning", "error", "invoice_status", "subscription_renewal", "subscription_expired", "trial_expired", "trial_expiring"];
           const safeType = knownTypes.includes(rawType) ? rawType : "info";
           return {
             id: `db_${n.id}`,

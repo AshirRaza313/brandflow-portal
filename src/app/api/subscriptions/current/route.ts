@@ -142,7 +142,7 @@ export const GET = withRateLimit(withAuth(async (req: NextRequest, authCtx) => {
           // Notify organization about expiry
           await db.notification.create({
             data: {
-              type: "warning",
+              type: "subscription_expired",
               title: "Subscription Expired",
               message: "Your subscription has expired and you have been moved to the Starter plan. To continue using premium features, please renew your subscription.",
               orgId: orgId,
@@ -171,7 +171,7 @@ export const GET = withRateLimit(withAuth(async (req: NextRequest, authCtx) => {
         if (!isUnlimitedRole(authCtx.role)) {
         await db.notification.create({
           data: {
-            type: "warning",
+              type: "trial_expired",
             title: "Trial Expired",
             message: "Your free trial has expired. Upgrade to continue using premium features.",
             orgId: orgId,

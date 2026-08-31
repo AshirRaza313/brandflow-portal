@@ -30,7 +30,7 @@ export const GET = withRateLimit(withAuth(async (req: NextRequest, authCtx) => {
 
     // Hide storage alerts from unlimited-role users (irrelevant - they have unlimited storage)
     if (isUnlimitedRole(authCtx.role)) {
-      where.NOT = { type: { in: ["storage_warning", "storage_critical"] } };
+      where.NOT = { type: { in: ["storage_warning", "storage_critical", "subscription_renewal", "subscription_expired", "trial_expired", "trial_expiring"] } };
     }
     if (unreadOnly) where.read = false;
 
