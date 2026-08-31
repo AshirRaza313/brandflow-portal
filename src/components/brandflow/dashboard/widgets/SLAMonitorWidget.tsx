@@ -51,8 +51,20 @@ export function SLAMonitorWidget() {
         if (Array.isArray(data.rules)) {
           const validRules = data.rules.filter(
             (r: Record<string, unknown>) =>
-              r && typeof r.id === "string" && typeof r.name === "string"
+              r &&
+              typeof r.id === "string" &&
+              typeof r.name === "string" &&
+              typeof r.fromStatus === "string" &&
+              typeof r.toStatus === "string" &&
+              typeof r.timeLimitHours === "number" &&
+              r.timeLimitHours > 0 &&
+              typeof r.enabled === "boolean"
           );
+          if (validRules.length < data.rules.length) {
+            console.warn(
+              "[SLAMonitorWidget] Filtered " + (data.rules.length - validRules.length) + " malformed rule(s) out of " + data.rules.length
+            );
+          }
           if (orgIdRef.current !== orgId) return;
           setRules(validRules);
           setLoading(false);
