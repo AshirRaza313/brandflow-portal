@@ -3,6 +3,7 @@ import { db, dbErrorResponse, isDbUnavailable, withRetry} from "@/lib/db";
 import { withAuth } from "@/lib/auth-middleware";
 import logger from "@/lib/logger";
 import { withRateLimit } from "@/lib/rate-limit";
+import { isUnlimitedRole } from "@/lib/plan-limits";
 
 // GET /api/db-notifications - Return notifications for the current user/organization
 export const GET = withRateLimit(withAuth(async (req: NextRequest, authCtx) => {
@@ -26,6 +27,11 @@ export const GET = withRateLimit(withAuth(async (req: NextRequest, authCtx) => {
         ...(userId ? [{ userId }] : []),
       ],
     };
+
+    // Hide storage alerts from unlimited-role users (irrelevant - they have unlimited storage)
+    if (isUnlimitedRole(authCtx.role)) {
+      where.NOT = { type: { in: ["storage_warning", "storage_critical"] } };
+    }
     if (unreadOnly) where.read = false;
 
     const limit = parseInt(searchParams.get("limit") || "50");
@@ -43,11 +49,7 @@ export const GET = withRateLimit(withAuth(async (req: NextRequest, authCtx) => {
     const unreadCount = await withRetry(async () => {
       return await db.notification.count({
       where: {
-        orgId,
-        OR: [
-          { userId: null },
-          ...(userId ? [{ userId }] : []),
-        ],
+        ...where,
         read: false,
       },
     })
