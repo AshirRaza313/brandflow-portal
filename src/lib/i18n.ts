@@ -525,6 +525,16 @@ const translations: Record<Language, Record<string, string>> = {
     slaActive: "active",
     slaEnabled: "Active",
     slaDisabled: "Off",
+
+    // Storage Usage Widget
+    storageTitle: "Storage",
+    storageEstimated: "(est.)",
+    storageUnlimited: "Unlimited",
+    storageUsed: "used",
+    storageCritical: "Critical",
+    storageWarning: "Warning",
+    storageHealthy: "Healthy",
+
     auditLogWidget: "Audit Log",
     auditLogWidgetDesc: "Recent portal activity",
     noCampaigns: "No active campaigns yet",
@@ -1050,6 +1060,16 @@ const translations: Record<Language, Record<string, string>> = {
     slaActive: "active",
     slaEnabled: "Active",
     slaDisabled: "Off",
+
+    // Storage Usage Widget
+    storageTitle: "Storage",
+    storageEstimated: "(andaza.)",
+    storageUnlimited: "Unlimited",
+    storageUsed: "istemal",
+    storageCritical: "Critical",
+    storageWarning: "Warning",
+    storageHealthy: "Theek",
+
     auditLogWidget: "Audit Log",
     auditLogWidgetDesc: "Portal ki recent activity",
     noCampaigns: "Abhi koi active campaign nahi",

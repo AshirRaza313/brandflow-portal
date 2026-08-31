@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { HardDrive, ArrowUpRight, Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { fetchWithAuth } from "@/lib/fetch-with-auth";
+import { useTranslation } from "@/lib/i18n";
 import { motion } from "framer-motion";
 
 interface StorageData {
@@ -21,6 +22,7 @@ export function StorageUsageWidget() {
   const { organization, appTheme, setActiveSection } = useValtrioxStore();
   const isGold = appTheme === "premium-dark";
   const isDark = appTheme === "dark" || isGold;
+  const t = useTranslation();
 
   const [storage, setStorage] = useState<StorageData | null>(null);
   const [loading, setLoading] = useState(true);
@@ -81,9 +83,9 @@ export function StorageUsageWidget() {
   };
 
   const getStatusLabel = (status: string) => {
-    if (status === "critical") return "Critical";
-    if (status === "warning") return "Warning";
-    return "Healthy";
+    if (status === "critical") return t("storageCritical", "Critical");
+    if (status === "warning") return t("storageWarning", "Warning");
+    return t("storageHealthy", "Healthy");
   };
 
   const formatMb = (mb: number) => {
@@ -122,9 +124,9 @@ export function StorageUsageWidget() {
               <HardDrive className={cn("h-4 w-4", accentColor)} />
             </div>
             <div>
-              <p className={cn("text-xs font-semibold", textPrimary)}>Storage <span className={cn("text-[9px] font-normal", textMuted)}>(est.)</span></p>
+              <p className={cn("text-xs font-semibold", textPrimary)}>{t("storageTitle", "Storage")} <span className={cn("text-[9px] font-normal", textMuted)}>{t("storageEstimated", "(est.)")}</span></p>
               <p className={cn("text-[10px]", textMuted)}>
-                {isUnlimited ? "Unlimited" : `${formatMb(safeUsedMb)} / ${safeLimitGb} GB`}
+                {isUnlimited ? t("storageUnlimited", "Unlimited") : `${formatMb(safeUsedMb)} / ${safeLimitGb} GB`}
               </p>
             </div>
           </div>
@@ -151,7 +153,7 @@ export function StorageUsageWidget() {
               />
             </div>
             <div className="flex items-center justify-between">
-            <span className={cn("text-[10px]", textMuted)}>{percent}% used</span>
+            <span className={cn("text-[10px]", textMuted)}>{percent}% {t("storageUsed", "used")}</span>
               <span className={cn("text-[10px]", textMuted)}>
                 {formatMb(Math.max(0, safeLimitMb - safeUsedMb))} free
               </span>
