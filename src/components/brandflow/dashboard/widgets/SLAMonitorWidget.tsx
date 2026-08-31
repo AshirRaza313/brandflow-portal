@@ -39,6 +39,7 @@ export function SLAMonitorWidget() {
     if (!orgId) {
       setRules([]);
       setLoading(false);
+      setError(false);
       return;
     }
     setLoading(true);
