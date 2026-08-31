@@ -1,7 +1,7 @@
 // ============================================================================
 // Storage Alert API
 // ============================================================================
-// POST /api/usage/storage/alert?organizationId=...
+// POST /api/usage/storage/alert
 //
 // Checks if storage usage has crossed a new threshold since the last alert.
 // If so, creates a Notification record (type "storage_warning" or "storage_critical").

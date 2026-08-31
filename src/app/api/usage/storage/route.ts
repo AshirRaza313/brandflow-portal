@@ -1,7 +1,7 @@
 // ============================================================================
 // Storage Usage API
 // ============================================================================
-// GET /api/usage/storage?organizationId=...
+// GET /api/usage/storage
 //
 // Returns the organization's current storage usage compared to plan limit.
 // Protected via withAuth middleware.
@@ -17,8 +17,7 @@ import logger from "@/lib/logger";
 
 export const GET = withRateLimit(withAuth(async (req: NextRequest, authCtx) => {
   try {
-    const { searchParams } = new URL(req.url);
-    const orgId = searchParams.get("organizationId") || authCtx.organizationId;
+    const orgId = authCtx.organizationId;
 
     if (!orgId) {
       return NextResponse.json(
