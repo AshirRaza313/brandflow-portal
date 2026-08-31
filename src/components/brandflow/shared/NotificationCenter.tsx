@@ -227,6 +227,7 @@ export function NotificationCenter() {
   const [open, setOpen] = useState(false);
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [loading, setLoading] = useState(false);
+  const [apiUnreadCount, setApiUnreadCount] = useState(0);
   const panelRef = useRef<HTMLDivElement>(null);
 
   // Fetch notifications when panel opens (both generated and real db notifications)
@@ -257,6 +258,7 @@ export function NotificationCenter() {
           };
         });
         allNotifications.push(...dbNotifs);
+        setApiUnreadCount(data.unreadCount || 0);
       }
 
       // Sort by timestamp descending, deduplicate by title+timestamp
@@ -319,6 +321,7 @@ export function NotificationCenter() {
     setNotifications((prev) =>
       prev.map((n) => (n.id === id ? { ...n, read: true } : n))
     );
+    setApiUnreadCount((prev) => Math.max(0, prev - 1));
     // Persist to DB — strip db_ prefix for API call
     const dbId = id.startsWith("db_") ? id.slice(3) : id;
     try {
@@ -328,12 +331,14 @@ export function NotificationCenter() {
         setNotifications((prev) =>
           prev.map((n) => (n.id === id ? { ...n, read: false } : n))
         );
+    setApiUnreadCount((prev) => prev + 1);
       }
     } catch {
       // Rollback on network error
       setNotifications((prev) =>
         prev.map((n) => (n.id === id ? { ...n, read: false } : n))
       );
+    setApiUnreadCount((prev) => prev + 1);
     }
   }, []);
 
@@ -345,6 +350,7 @@ export function NotificationCenter() {
 
     // Optimistic UI update
     setNotifications((prev) => prev.map((n) => ({ ...n, read: true })));
+    setApiUnreadCount(0);
 
     // Sequential PUTs to avoid rate limit burst (30 req/min)
     const failedIds: string[] = [];
@@ -365,12 +371,13 @@ export function NotificationCenter() {
           return failedIds.includes(dbId) ? { ...n, read: false } : n;
         })
       );
+      setApiUnreadCount(failedIds.length);
     } else {
       toast.success("All notifications marked as read");
     }
   }, [notifications]);
 
-  const unreadCount = notifications.filter((n) => !n.read && n.id.startsWith("db_")).length;
+  const unreadCount = apiUnreadCount;
 
   // Panel styling
   const panelBg = isGold
