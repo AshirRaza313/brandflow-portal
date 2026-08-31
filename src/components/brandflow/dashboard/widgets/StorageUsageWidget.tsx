@@ -33,7 +33,7 @@ export function StorageUsageWidget() {
     }
     setLoading(true);
     try {
-      const res = await fetchWithAuth(`/api/usage/storage?organizationId=${encodeURIComponent(orgId)}`);
+      const res = await fetchWithAuth("/api/usage/storage");
       if (res.ok) {
         const data = await res.json();
         setStorage(data);
