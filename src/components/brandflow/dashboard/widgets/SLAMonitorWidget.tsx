@@ -59,7 +59,9 @@ export function SLAMonitorWidget() {
               typeof r.toStatus === "string" &&
               typeof r.timeLimitHours === "number" &&
               r.timeLimitHours > 0 &&
-              typeof r.enabled === "boolean"
+              typeof r.enabled === "boolean" &&
+              typeof r.responsibleRole === "string" &&
+              typeof r.escalationAction === "string"
           );
           if (validRules.length < data.rules.length) {
             console.warn(
@@ -67,6 +69,14 @@ export function SLAMonitorWidget() {
             );
           }
           if (orgIdRef.current !== orgId || signal.aborted) return;
+          // All rules malformed = error, not "no rules"
+          if (validRules.length === 0 && data.rules.length > 0) {
+            console.error("[SLAMonitorWidget] All " + data.rules.length + " rule(s) failed validation");
+            setError(true);
+            setRules([]);
+            setLoading(false);
+            return;
+          }
           setRules(validRules);
           setLoading(false);
           return;
