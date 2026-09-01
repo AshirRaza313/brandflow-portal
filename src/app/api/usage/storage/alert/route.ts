@@ -11,7 +11,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { withAuth } from "@/lib/auth-middleware";
 import { shouldSendStorageAlert, checkStorageLimit } from "@/lib/storage-tracker";
-import { isUnlimitedRole } from "@/lib/plan-limits";
 import { db, withRetry} from "@/lib/db";
 import { withRateLimit } from "@/lib/rate-limit";
 import logger from "@/lib/logger";
@@ -27,13 +26,6 @@ export const POST = withRateLimit(withAuth(async (req: NextRequest, authCtx) => 
       );
     }
 
-    // Unlimited roles never receive storage alerts
-    if (isUnlimitedRole(authCtx.role)) {
-      return NextResponse.json({
-        alerted: false,
-        message: "Unlimited storage — no alerts needed.",
-      });
-    }
 
     // Verify org exists
     const org = await withRetry(async () => {

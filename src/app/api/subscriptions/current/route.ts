@@ -3,7 +3,6 @@ import { db, dbErrorResponse, isDbUnavailable, withRetry } from "@/lib/db";
 import { withAuth } from "@/lib/auth-middleware";
 import logger from "@/lib/logger";
 import { withRateLimit } from "@/lib/rate-limit";
-import { isUnlimitedRole } from "@/lib/plan-limits";
 
 // GET /api/subscriptions/current - Return current org's subscription + plan details
 export const GET = withRateLimit(withAuth(async (req: NextRequest, authCtx) => {
@@ -168,17 +167,15 @@ export const GET = withRateLimit(withAuth(async (req: NextRequest, authCtx) => {
           },
         });
 
-        if (!isUnlimitedRole(authCtx.role)) {
         await db.notification.create({
           data: {
-              type: "trial_expired",
+            type: "trial_expired",
             title: "Trial Expired",
             message: "Your free trial has expired. Upgrade to continue using premium features.",
             orgId: orgId,
             actionUrl: "/billing",
           },
         });
-        }
 
         return { subscription: formatSubscription(updatedSubscription), platformSettings: await getPlatformSettings() };
       }
