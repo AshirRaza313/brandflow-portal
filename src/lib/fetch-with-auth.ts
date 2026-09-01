@@ -34,6 +34,18 @@ export async function fetchWithAuth(
   const controller = new AbortController();
   const timeoutId = setTimeout(() => controller.abort(), 30_000);
 
+  // Support caller-provided AbortSignal (e.g. component unmount cleanup).
+  // When caller signal fires, abort internal controller too.
+  let externalAbort = false;
+  if (init?.signal) {
+    if (init.signal.aborted) {
+      clearTimeout(timeoutId);
+      throw new DOMException("The operation was aborted.", "AbortError");
+    }
+    const onExternalAbort = () => { externalAbort = true; controller.abort(); };
+    init.signal.addEventListener("abort", onExternalAbort, { once: true });
+  }
+
   try {
     return await fetch(input, {
       ...init,
@@ -41,6 +53,7 @@ export async function fetchWithAuth(
     });
   } catch (error: any) {
     if (error?.name === "AbortError") {
+      if (externalAbort) throw error;
       throw new Error("Request timed out. Please try again.");
     }
     throw error;

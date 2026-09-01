@@ -29,16 +29,12 @@ export function SLAMonitorWidget() {
   const [loading, setLoading] = useState(true);
  const [error, setError] = useState(false);
   const orgIdRef = useRef(organization?.id);
-  const mountedRef = useRef(true);
 
   useEffect(() => {
     orgIdRef.current = organization?.id;
   }, [organization?.id]);
 
-  useEffect(() => {
-    return () => { mountedRef.current = false; };
-  }, []);
-  const fetchRules = useCallback(async () => {
+  const fetchRules = useCallback(async (signal: AbortSignal) => {
     const orgId = organization?.id;
     if (!orgId) {
       setRules([]);
@@ -49,8 +45,8 @@ export function SLAMonitorWidget() {
     setLoading(true);
     setError(false);
     try {
-      const res = await fetchWithAuth(`/api/sla/rules?orgId=${encodeURIComponent(orgId)}`);
-      if (orgIdRef.current !== orgId || !mountedRef.current) return;
+      const res = await fetchWithAuth(`/api/sla/rules?orgId=${encodeURIComponent(orgId)}`, { signal });
+      if (orgIdRef.current !== orgId || signal.aborted) return;
       if (res.ok) {
         const data = await res.json();
         if (Array.isArray(data.rules)) {
@@ -70,16 +66,17 @@ export function SLAMonitorWidget() {
               "[SLAMonitorWidget] Filtered " + (data.rules.length - validRules.length) + " malformed rule(s) out of " + data.rules.length
             );
           }
-          if (orgIdRef.current !== orgId || !mountedRef.current) return;
+          if (orgIdRef.current !== orgId || signal.aborted) return;
           setRules(validRules);
           setLoading(false);
           return;
         }
       }
-      if (orgIdRef.current !== orgId || !mountedRef.current) return;
+      if (orgIdRef.current !== orgId || signal.aborted) return;
       setError(true);
-    } catch {
-        if (orgIdRef.current !== orgId || !mountedRef.current) return;
+    } catch (err: any) {
+        if (err?.name === "AbortError") return;
+        if (orgIdRef.current !== orgId || signal.aborted) return;
       setError(true);
     }
     setRules([]);
@@ -87,7 +84,9 @@ export function SLAMonitorWidget() {
   }, [organization?.id]);
 
   useEffect(() => {
-    fetchRules();
+    const controller = new AbortController();
+    fetchRules(controller.signal);
+    return () => { controller.abort(); };
   }, [fetchRules]);
 
   const cardClass = isGold
