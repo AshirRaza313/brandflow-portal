@@ -155,7 +155,7 @@ export function StorageUsageWidget() {
             <div className="flex items-center justify-between">
             <span className={cn("text-[10px]", textMuted)}>{percent}% {t("storageUsed", "used")}</span>
               <span className={cn("text-[10px]", textMuted)}>
-                {formatMb(Math.max(0, safeLimitMb - safeUsedMb))} free
+                {formatMb(Math.max(0, safeLimitMb - safeUsedMb))} {t("storageFree", "free")}
               </span>
             </div>
           </div>
@@ -169,7 +169,7 @@ export function StorageUsageWidget() {
             className={cn("w-full h-8 text-xs rounded-lg gap-1.5", isDark ? "text-amber-400 hover:text-amber-300 hover:bg-amber-500/10" : "text-amber-600 hover:text-amber-700 hover:bg-amber-50")}
             onClick={() => setActiveSection("subscriptions")}
           >
-            Upgrade Plan
+            {t("storageUpgradePlan", "Upgrade Plan")}
             <ArrowUpRight className="h-3 w-3" />
           </Button>
         )}

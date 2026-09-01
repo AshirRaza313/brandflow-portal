@@ -534,6 +534,8 @@ const translations: Record<Language, Record<string, string>> = {
     storageCritical: "Critical",
     storageWarning: "Warning",
     storageHealthy: "Healthy",
+    storageFree: "free",
+    storageUpgradePlan: "Upgrade Plan",
 
     auditLogWidget: "Audit Log",
     auditLogWidgetDesc: "Recent portal activity",
@@ -1069,6 +1071,8 @@ const translations: Record<Language, Record<string, string>> = {
     storageCritical: "Critical",
     storageWarning: "Warning",
     storageHealthy: "Theek",
+    storageFree: "free",
+    storageUpgradePlan: "Plan Upgrade Karein",
 
     auditLogWidget: "Audit Log",
     auditLogWidgetDesc: "Portal ki recent activity",
