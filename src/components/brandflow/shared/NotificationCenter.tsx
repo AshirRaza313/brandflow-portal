@@ -343,39 +343,42 @@ export function NotificationCenter() {
   }, []);
 
   const markAllRead = useCallback(async () => {
-    const unreadIds = notifications
-      .filter((n) => !n.read && n.id.startsWith("db_"))
-      .map((n) => n.id.slice(3));
-    if (unreadIds.length === 0) return;
+    if (!organization?.id) return;
 
-    // Optimistic UI update
+    // Optimistic UI update — mark all visible as read, reset badge
     setNotifications((prev) => prev.map((n) => ({ ...n, read: true })));
     setApiUnreadCount(0);
 
-    // Sequential PUTs to avoid rate limit burst (30 req/min)
-    const failedIds: string[] = [];
-    for (const dbId of unreadIds) {
-      try {
-        const res = await fetch(`/api/db-notifications/${dbId}`, { method: "PUT" });
-        if (!res.ok) failedIds.push(dbId);
-      } catch {
-        failedIds.push(dbId);
-      }
-    }
-
-    // Rollback failed items + toast only on full success
-    if (failedIds.length > 0) {
-      setNotifications((prev) =>
-        prev.map((n) => {
-          const dbId = n.id.startsWith("db_") ? n.id.slice(3) : n.id;
-          return failedIds.includes(dbId) ? { ...n, read: false } : n;
-        })
+    try {
+      const res = await fetch(
+        "/api/db-notifications/mark-all-read?orgId=" + encodeURIComponent(organization.id),
+        { method: "POST" }
       );
-      setApiUnreadCount(failedIds.length);
-    } else {
-      toast.success("All notifications marked as read");
+      if (res.ok) {
+        toast.success("All notifications marked as read");
+      } else {
+        // Server error: refetch authoritative state
+        try {
+          const dbRes = await fetch("/api/db-notifications?orgId=" + encodeURIComponent(organization.id));
+          if (dbRes.ok) {
+            const data = await dbRes.json();
+            setNotifications(data.notifications || []);
+            setApiUnreadCount(data.unreadCount || 0);
+          }
+        } catch { /* refetch failed, keep optimistic */ }
+      }
+    } catch {
+      // Network error: refetch authoritative state
+      try {
+        const dbRes = await fetch("/api/db-notifications?orgId=" + encodeURIComponent(organization.id));
+        if (dbRes.ok) {
+          const data = await dbRes.json();
+          setNotifications(data.notifications || []);
+          setApiUnreadCount(data.unreadCount || 0);
+        }
+      } catch { /* refetch failed, keep optimistic */ }
     }
-  }, [notifications]);
+  }, [organization?.id]);
 
   const unreadCount = apiUnreadCount;
 
