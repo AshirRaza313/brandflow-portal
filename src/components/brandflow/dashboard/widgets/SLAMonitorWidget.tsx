@@ -118,7 +118,7 @@ export function SLAMonitorWidget() {
             <p className={cn("text-xs text-center", textMuted)}>{t("slaError")}</p>
             <button
               className={cn("text-[10px] font-medium px-3 py-1 rounded-md transition-colors", isDark ? "text-amber-400 hover:bg-amber-500/10" : "text-amber-600 hover:bg-amber-50")}
-              onClick={fetchRules}
+              onClick={() => { const c = new AbortController(); fetchRules(c.signal); }}
             >
               {t("slaRetry")}
             </button>
