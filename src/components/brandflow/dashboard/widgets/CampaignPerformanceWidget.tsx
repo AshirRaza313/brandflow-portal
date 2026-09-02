@@ -119,7 +119,7 @@ export function CampaignPerformanceWidget() {
             <div className={cn("h-8 w-8 rounded-lg flex items-center justify-center", accentBg)}>
               <Megaphone className={cn("h-4 w-4", accentColor)} />
             </div>
-            <p className={cn("text-xs font-semibold", textPrimary)}>Campaigns</p>
+            <p className={cn("text-xs font-semibold", textPrimary)}>{t("campaignPerformanceTitle")}</p>
           </div>
           <button
             className={cn("text-[10px] font-medium flex items-center gap-0.5", isDark ? "text-amber-400 hover:text-amber-300" : "text-amber-600 hover:text-amber-700")}
@@ -132,20 +132,20 @@ export function CampaignPerformanceWidget() {
         {/* Metrics */}
         <div className="grid grid-cols-3 gap-2">
           <div className={cn("p-2 rounded-lg", isDark ? "bg-white/[0.03]" : "bg-slate-50")}>
-            <p className={cn("text-[10px]", textMuted)}>Active</p>
+            <p className={cn("text-[10px]", textMuted)}>{t("campaignPerformanceActive")}</p>
             <p className={cn("text-base font-bold", textPrimary)}>{data?.activeCampaigns || 0}</p>
           </div>
           <div className={cn("p-2 rounded-lg", isDark ? "bg-white/[0.03]" : "bg-slate-50")}>
             <div className="flex items-center gap-1">
               <Eye className={cn("h-2.5 w-2.5", textMuted)} />
-              <p className={cn("text-[10px]", textMuted)}>Reach</p>
+              <p className={cn("text-[10px]", textMuted)}>{t("campaignPerformanceReach")}</p>
             </div>
             <p className={cn("text-base font-bold", textPrimary)}>{formatNumber(data?.totalReach || 0)}</p>
           </div>
           <div className={cn("p-2 rounded-lg", isDark ? "bg-white/[0.03]" : "bg-slate-50")}>
             <div className="flex items-center gap-1">
               <MousePointerClick className={cn("h-2.5 w-2.5", textMuted)} />
-              <p className={cn("text-[10px]", textMuted)}>Conv.</p>
+              <p className={cn("text-[10px]", textMuted)}>{t("campaignPerformanceConv")}</p>
             </div>
             <p className={cn("text-base font-bold", textPrimary)}>{data?.conversionRate || 0}%</p>
           </div>
@@ -188,3 +188,4 @@ export function CampaignPerformanceWidget() {
     </Card>
   );
 }
+

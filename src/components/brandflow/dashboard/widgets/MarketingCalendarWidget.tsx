@@ -26,8 +26,8 @@ export function MarketingCalendarWidget() {
             <CalendarDays className={cn("h-4 w-4", accentColor)} />
           </div>
           <div>
-            <p className={cn("text-xs font-semibold", textPrimary)}>Marketing Calendar</p>
-            <p className={cn("text-[10px]", textMuted)}>Upcoming events</p>
+            <p className={cn("text-xs font-semibold", textPrimary)}>{t("marketingCalendarTitle")}</p>
+            <p className={cn("text-[10px]", textMuted)}>{t("marketingCalendarUpcoming")}</p>
           </div>
         </div>
         {/* Empty state */}
@@ -46,3 +46,4 @@ export function MarketingCalendarWidget() {
     </Card>
   );
 }
+

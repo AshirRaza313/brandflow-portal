@@ -27,8 +27,8 @@ export function RevenueForecastWidget() {
               <TrendingUp className={cn("h-4 w-4", accentColor)} />
             </div>
             <div>
-              <p className={cn("text-xs font-semibold", textPrimary)}>Revenue Forecast</p>
-              <p className={cn("text-[10px]", textMuted)}>6-month projection</p>
+              <p className={cn("text-xs font-semibold", textPrimary)}>{t("revenueForecastTitle")}</p>
+              <p className={cn("text-[10px]", textMuted)}>{t("revenueForecastDesc")}</p>
             </div>
           </div>
         </div>
@@ -45,3 +45,4 @@ export function RevenueForecastWidget() {
     </Card>
   );
 }
+

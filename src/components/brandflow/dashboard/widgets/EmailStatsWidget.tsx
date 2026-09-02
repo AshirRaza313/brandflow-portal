@@ -26,8 +26,8 @@ export function EmailStatsWidget() {
             <Mail className={cn("h-4 w-4", accentColor)} />
           </div>
           <div>
-            <p className={cn("text-xs font-semibold", textPrimary)}>Email Stats</p>
-            <p className={cn("text-[10px]", textMuted)}>This month</p>
+            <p className={cn("text-xs font-semibold", textPrimary)}>{t("emailStatsTitle")}</p>
+            <p className={cn("text-[10px]", textMuted)}>{t("emailStatsThisMonth")}</p>
           </div>
         </div>
         {/* Empty state */}
@@ -45,3 +45,4 @@ export function EmailStatsWidget() {
     </Card>
   );
 }
+

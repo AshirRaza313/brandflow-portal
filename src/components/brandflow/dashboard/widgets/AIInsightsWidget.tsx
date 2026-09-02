@@ -123,7 +123,7 @@ export function AIInsightsWidget() {
             <div>
               <p className={cn("text-xs font-semibold", textPrimary)}>{t("aiInsights")}</p>
               {isAIGenerated && (
-                <p className={cn("text-[10px]", textMuted)}>AI Powered</p>
+                <p className={cn("text-[10px]", textMuted)}>{t("aiPowered")}</p>
               )}
             </div>
           </div>
@@ -174,5 +174,7 @@ export function AIInsightsWidget() {
     </Card>
   );
 }
+
+
 
 

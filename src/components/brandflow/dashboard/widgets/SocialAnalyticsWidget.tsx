@@ -31,8 +31,8 @@ export function SocialAnalyticsWidget() {
               <Share2 className={cn("h-4 w-4", accentColor)} />
             </div>
             <div>
-              <p className={cn("text-xs font-semibold", textPrimary)}>Social Media</p>
-              <p className={cn("text-[10px]", textMuted)}>Engagement overview</p>
+              <p className={cn("text-xs font-semibold", textPrimary)}>{t("socialAnalyticsTitle")}</p>
+              <p className={cn("text-[10px]", textMuted)}>{t("socialAnalyticsEngagement")}</p>
             </div>
           </div>
         </div>
@@ -51,3 +51,4 @@ export function SocialAnalyticsWidget() {
     </Card>
   );
 }
+
