@@ -4,6 +4,7 @@ import { withAuth } from "@/lib/auth-middleware";
 import logger from "@/lib/logger";
 import { withRateLimit } from "@/lib/rate-limit";
 import { getNotificationAudienceWhere } from "@/lib/notification-audience";
+import { isUnlimitedRole } from "@/lib/plan-limits";
 
 // GET /api/db-notifications - Return notifications for the current user/organization
 export const GET = withRateLimit(withAuth(async (req: NextRequest, authCtx) => {
@@ -62,7 +63,35 @@ export const GET = withRateLimit(withAuth(async (req: NextRequest, authCtx) => {
     }));
 
     const filtered = unreadOnly ? mapped.filter(n => !n.read) : mapped;
-    const unreadCount = unreadOnly ? filtered.length : mapped.filter(n => !n.read).length;
+
+    // Accurate total unread count across entire audience (not just current page)
+    const hiddenTypes = isUnlimitedRole(authCtx.role)
+      ? ["storage_warning", "storage_critical", "subscription_renewal", "subscription_expired", "trial_expired", "trial_expiring"]
+      : [];
+
+    const targetUnreadCount = await withRetry(async () => {
+      return await db.notification.count({
+        where: {
+          orgId,
+          userId: authCtx.userId,
+          read: false,
+          ...(hiddenTypes.length > 0 ? { NOT: { type: { in: hiddenTypes } } } : {}),
+        },
+      });
+    }, 2, 500);
+
+    const orgWideUnreadCount = await withRetry(async () => {
+      return await db.notification.count({
+        where: {
+          orgId,
+          userId: null,
+          readReceipts: { none: { userId: authCtx.userId } },
+          ...(hiddenTypes.length > 0 ? { NOT: { type: { in: hiddenTypes } } } : {}),
+        },
+      });
+    }, 2, 500);
+
+    const unreadCount = targetUnreadCount + orgWideUnreadCount;
 
     return NextResponse.json({
       notifications: filtered,
