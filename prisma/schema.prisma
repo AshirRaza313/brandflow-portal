@@ -63,6 +63,7 @@ model User {
   attendance          Attendance[]
   sentInvitations     TeamInvitation[]     @relation("Inviter")
   notifications       Notification[]
+  notificationReadReceipts NotificationReadReceipt[]
   assignedTasks       TeamTask[]
   valtrioxTeamMembers ValtrioxTeamMember[]
   otpCode             String?
@@ -579,6 +580,7 @@ model Notification {
 
   organization Organization? @relation(fields: [orgId], references: [id], onDelete: Cascade)
   user         User?         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  readReceipts      NotificationReadReceipt[]
 
   @@index([userId])
   @@index([orgId])
@@ -587,6 +589,18 @@ model Notification {
   @@index([createdAt])
   @@index([userId, read])
   @@index([orgId, read])
+}
+// ── Per-User Read Receipts (for org-wide notifications) ──
+model NotificationReadReceipt {
+  id             String   @id @default(cuid())
+  notificationId String
+  userId         String
+  readAt         DateTime @default(now())
+  notification   Notification @relation(fields: [notificationId], references: [id], onDelete: Cascade)
+  user           User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([notificationId, userId])
+  @@index([userId, notificationId])
 }
 
 // ── Lead Capture (Contact Form Submissions) ──

@@ -1,9 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
-import { db, dbErrorResponse, isDbUnavailable, withRetry} from "@/lib/db";
+import { db, dbErrorResponse, isDbUnavailable, withRetry } from "@/lib/db";
 import { withAuth } from "@/lib/auth-middleware";
 import logger from "@/lib/logger";
 import { withRateLimit } from "@/lib/rate-limit";
-import { isUnlimitedRole } from "@/lib/plan-limits";
+import { getNotificationAudienceWhere } from "@/lib/notification-audience";
 
 // GET /api/db-notifications - Return notifications for the current user/organization
 export const GET = withRateLimit(withAuth(async (req: NextRequest, authCtx) => {
@@ -12,62 +12,60 @@ export const GET = withRateLimit(withAuth(async (req: NextRequest, authCtx) => {
     const { searchParams } = new URL(req.url);
     const unreadOnly = searchParams.get("unread") === "true";
 
-    const orgId = authCtx.organizationId;
-    const userId = authCtx.userId;
-
-    if (!orgId) {
+    if (!authCtx.organizationId) {
       return NextResponse.json({ error: "Organization context required" }, { status: 400 });
     }
 
-    // Audience filter: org-wide (userId=null) + user-specific
-    const where: any = {
-      orgId,
-      OR: [
-        { userId: null },
-        ...(userId ? [{ userId }] : []),
-      ],
-    };
+    const orgId = authCtx.organizationId;     const baseWhere = getNotificationAudienceWhere({ userId: authCtx.userId, organizationId: orgId, role: authCtx.role });
 
-    // Hide storage alerts from unlimited-role users (irrelevant - they have unlimited storage)
-    if (isUnlimitedRole(authCtx.role)) {
-      where.NOT = { type: { in: ["storage_warning", "storage_critical", "subscription_renewal", "subscription_expired", "trial_expired", "trial_expiring"] } };
-    }
-    if (unreadOnly) where.read = false;
-
+    // Fetch all audience notifications without read filter (we'll compute read status)
     const limit = parseInt(searchParams.get("limit") || "50");
     const offset = parseInt(searchParams.get("offset") || "0");
 
     const notifications = await withRetry(async () => {
       return await db.notification.findMany({
-      where,
-      orderBy: { createdAt: "desc" },
-      take: limit,
-      skip: offset,
-    })
+        where: baseWhere,
+        orderBy: { createdAt: "desc" },
+        take: limit,
+        skip: offset,
+      });
     }, 2, 500);
 
-    const unreadCount = await withRetry(async () => {
-      return await db.notification.count({
-      where: {
-        ...where,
-        read: false,
-      },
-    })
-    }, 2, 500);
+    // Fetch read receipts for org-wide notifications (userId = null) for this user
+    const orgWideIds = notifications.filter(n => n.userId === null).map(n => n.id);
+    let readReceiptNotificationIds: string[] = [];
+    if (orgWideIds.length > 0) {
+      const receipts = await withRetry(async () => {
+        return await db.notificationReadReceipt.findMany({
+          where: {
+            userId: authCtx.userId,
+            notificationId: { in: orgWideIds },
+          },
+          select: { notificationId: true },
+        });
+      }, 2, 500);
+      readReceiptNotificationIds = receipts.map(r => r.notificationId);
+    }
+
+    // Map notifications with computed read status
+    const mapped = notifications.map(n => ({
+      id: n.id,
+      orgId: n.orgId,
+      userId: n.userId,
+      type: n.type,
+      title: n.title,
+      message: n.message,
+      actionUrl: n.actionUrl,
+      icon: n.icon,
+      read: n.userId === authCtx.userId ? n.read : readReceiptNotificationIds.includes(n.id),
+      createdAt: n.createdAt,
+    }));
+
+    const filtered = unreadOnly ? mapped.filter(n => !n.read) : mapped;
+    const unreadCount = unreadOnly ? filtered.length : mapped.filter(n => !n.read).length;
 
     return NextResponse.json({
-      notifications: notifications.map((n) => ({
-        id: n.id,
-        orgId: n.orgId,
-        userId: n.userId,
-        type: n.type,
-        title: n.title,
-        message: n.message,
-        actionUrl: n.actionUrl,
-        icon: n.icon,
-        read: n.read,
-        createdAt: n.createdAt,
-      })),
+      notifications: filtered,
       unreadCount,
     });
   } catch (error: unknown) {

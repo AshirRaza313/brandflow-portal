@@ -109,6 +109,24 @@ function getRelativeTime(dateStr: string): string {
   return date.toLocaleDateString("en-US", { month: "short", day: "numeric" });
 }
 
+function normalizeDbNotification(n: any): Notification {
+  const rawType = n.type || "info";
+  const knownTypes = [
+    "new_order", "status_change", "low_stock", "task_due", "payment_received",
+    "info", "success", "warning", "error", "invoice_status",
+    "subscription_renewal", "subscription_expired", "trial_expired", "trial_expiring",
+  ];
+  const safeType = knownTypes.includes(rawType) ? rawType : "info";
+  return {
+    id: `db_${n.id}`,
+    type: safeType as NotificationType,
+    title: n.title,
+    description: n.message || "",
+    timestamp: n.createdAt || new Date().toISOString(),
+    read: n.read || false,
+  };
+}
+
 // ── Notification Item ────────────────────────────────────────────────────────
 
 function NotificationItem({
@@ -243,20 +261,7 @@ export function NotificationCenter() {
       // Merge real db notifications
       if (dbRes.ok) {
         const data = await dbRes.json();
-        const dbNotifs = (data.notifications || []).map((n: any) => {
-          // Normalize type to a known value — DB can have arbitrary types like "invoice_status"
-          const rawType = n.type || "info";
-          const knownTypes = ["new_order", "status_change", "low_stock", "task_due", "payment_received", "info", "success", "warning", "error", "invoice_status", "subscription_renewal", "subscription_expired", "trial_expired", "trial_expiring"];
-          const safeType = knownTypes.includes(rawType) ? rawType : "info";
-          return {
-            id: `db_${n.id}`,
-            type: safeType as NotificationType,
-            title: n.title,
-            description: n.message || "",
-            timestamp: n.createdAt || new Date().toISOString(),
-            read: n.read || n.isRead || false,
-          };
-        });
+        const dbNotifs = (data.notifications || []).map(normalizeDbNotification);
         allNotifications.push(...dbNotifs);
         setApiUnreadCount(data.unreadCount || 0);
       }
@@ -354,31 +359,16 @@ export function NotificationCenter() {
         "/api/db-notifications/mark-all-read?orgId=" + encodeURIComponent(organization.id),
         { method: "POST" }
       );
+      // On success, refetch authoritative state (server returns count but we refresh UI)
+      await fetchNotifications();
       if (res.ok) {
         toast.success("All notifications marked as read");
-      } else {
-        // Server error: refetch authoritative state
-        try {
-          const dbRes = await fetch("/api/db-notifications?orgId=" + encodeURIComponent(organization.id));
-          if (dbRes.ok) {
-            const data = await dbRes.json();
-            setNotifications(data.notifications || []);
-            setApiUnreadCount(data.unreadCount || 0);
-          }
-        } catch { /* refetch failed, keep optimistic */ }
       }
     } catch {
       // Network error: refetch authoritative state
-      try {
-        const dbRes = await fetch("/api/db-notifications?orgId=" + encodeURIComponent(organization.id));
-        if (dbRes.ok) {
-          const data = await dbRes.json();
-          setNotifications(data.notifications || []);
-          setApiUnreadCount(data.unreadCount || 0);
-        }
-      } catch { /* refetch failed, keep optimistic */ }
+      await fetchNotifications();
     }
-  }, [organization?.id]);
+  }, [organization?.id, fetchNotifications]);
 
   const unreadCount = apiUnreadCount;
 
@@ -631,3 +621,4 @@ export function NotificationCenter() {
     </>
   );
 }
+
