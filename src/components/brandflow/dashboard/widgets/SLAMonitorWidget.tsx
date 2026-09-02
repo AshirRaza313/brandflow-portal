@@ -28,13 +28,12 @@ export function SLAMonitorWidget() {
   const [rules, setRules] = useState<SLARule[]>([]);
   const [loading, setLoading] = useState(true);
  const [error, setError] = useState(false);
-  const orgIdRef = useRef(organization?.id);
 
-  useEffect(() => {
-    orgIdRef.current = organization?.id;
-  }, [organization?.id]);
 
-  const fetchRules = useCallback(async (signal: AbortSignal) => {
+  const abortControllerRef = useRef<AbortController | null>(null);
+  const requestIdRef = useRef(0);
+
+  const fetchRules = useCallback(async () => {
     const orgId = organization?.id;
     if (!orgId) {
       setRules([]);
@@ -42,11 +41,16 @@ export function SLAMonitorWidget() {
       setError(false);
       return;
     }
+    abortControllerRef.current?.abort();
+    const controller = new AbortController();
+    abortControllerRef.current = controller;
+    const requestId = ++requestIdRef.current;
+
     setLoading(true);
     setError(false);
     try {
-      const res = await fetchWithAuth(`/api/sla/rules?orgId=${encodeURIComponent(orgId)}`, { signal });
-      if (orgIdRef.current !== orgId || signal.aborted) return;
+      const res = await fetchWithAuth(`/api/sla/rules?orgId=${encodeURIComponent(orgId)}`, { signal: controller.signal });
+      if (requestId !== requestIdRef.current || controller.signal.aborted) return;
       if (res.ok) {
         const data = await res.json();
         if (Array.isArray(data.rules)) {
@@ -68,8 +72,7 @@ export function SLAMonitorWidget() {
               "[SLAMonitorWidget] Filtered " + (data.rules.length - validRules.length) + " malformed rule(s) out of " + data.rules.length
             );
           }
-          if (orgIdRef.current !== orgId || signal.aborted) return;
-          // All rules malformed = error, not "no rules"
+          if (requestId !== requestIdRef.current || controller.signal.aborted) return;
           if (validRules.length === 0 && data.rules.length > 0) {
             console.error("[SLAMonitorWidget] All " + data.rules.length + " rule(s) failed validation");
             setError(true);
@@ -82,11 +85,11 @@ export function SLAMonitorWidget() {
           return;
         }
       }
-      if (orgIdRef.current !== orgId || signal.aborted) return;
+      if (requestId !== requestIdRef.current || controller.signal.aborted) return;
       setError(true);
     } catch (err: any) {
         if (err?.name === "AbortError") return;
-        if (orgIdRef.current !== orgId || signal.aborted) return;
+        if (requestId !== requestIdRef.current || controller.signal.aborted) return;
       setError(true);
     }
     setRules([]);
@@ -94,9 +97,10 @@ export function SLAMonitorWidget() {
   }, [organization?.id]);
 
   useEffect(() => {
-    const controller = new AbortController();
-    fetchRules(controller.signal);
-    return () => { controller.abort(); };
+    fetchRules();
+    return () => {
+      abortControllerRef.current?.abort();
+    };
   }, [fetchRules]);
 
   const cardClass = isGold
@@ -128,7 +132,7 @@ export function SLAMonitorWidget() {
             <p className={cn("text-xs text-center", textMuted)}>{t("slaError")}</p>
             <button
               className={cn("text-[10px] font-medium px-3 py-1 rounded-md transition-colors", isDark ? "text-amber-400 hover:bg-amber-500/10" : "text-amber-600 hover:bg-amber-50")}
-              onClick={() => { const c = new AbortController(); fetchRules(c.signal); }}
+              onClick={() => fetchRules()}
             >
               {t("slaRetry")}
             </button>
@@ -232,3 +236,4 @@ export function SLAMonitorWidget() {
     </Card>
   );
 }
+

@@ -37,12 +37,17 @@ export async function fetchWithAuth(
   // Support caller-provided AbortSignal (e.g. component unmount cleanup).
   // When caller signal fires, abort internal controller too.
   let externalAbort = false;
+  let onExternalAbort: (() => void) | null = null;
+
   if (init?.signal) {
     if (init.signal.aborted) {
       clearTimeout(timeoutId);
       throw new DOMException("The operation was aborted.", "AbortError");
     }
-    const onExternalAbort = () => { externalAbort = true; controller.abort(); };
+    onExternalAbort = () => {
+      externalAbort = true;
+      controller.abort();
+    };
     init.signal.addEventListener("abort", onExternalAbort, { once: true });
   }
 
@@ -59,6 +64,10 @@ export async function fetchWithAuth(
     throw error;
   } finally {
     clearTimeout(timeoutId);
+    // Clean up external listener to prevent memory leaks
+    if (init?.signal && onExternalAbort) {
+      init.signal.removeEventListener("abort", onExternalAbort);
+    }
   }
 }
 
