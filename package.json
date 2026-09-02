@@ -14,6 +14,7 @@
     "db:migrate:deploy": "prisma migrate deploy",
     "db:seed": "tsx prisma/seed.ts",
     "db:reset": "prisma migrate reset",
+    "db:inventory": "tsx scripts/historical-rows-inventory.ts",
     "test": "vitest run",
     "test:watch": "vitest"
   },
@@ -114,3 +115,5 @@
     "vitest": "^4.1.5"
   }
 }
+
+
