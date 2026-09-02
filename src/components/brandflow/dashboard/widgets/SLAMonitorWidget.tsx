@@ -18,6 +18,46 @@ interface SLARule {
   escalationAction: string;
   enabled: boolean;
 }
+const ALLOWED_STATUSES = ["pending", "confirmed", "packed", "dispatched", "delivered"] as const;
+const ALLOWED_ROLES = ["sales_manager", "warehouse_manager", "support_agent"] as const;
+const MAX_TIME_LIMIT_HOURS = 8760; // 1 year
+
+type SLARuleValidationResult =
+  | { valid: true; rule: SLARule }
+  | { valid: false; reason: string };
+
+function validateSLARule(raw: Record<string, unknown>): SLARuleValidationResult {
+  const id = raw.id;
+  if (typeof id !== "string" || id.trim().length === 0) return { valid: false, reason: "missing id" };
+  const name = raw.name;
+  if (typeof name !== "string" || name.trim().length === 0) return { valid: false, reason: "missing name" };
+  const fromStatus = raw.fromStatus;
+  if (typeof fromStatus !== "string" || !ALLOWED_STATUSES.includes(fromStatus as any)) return { valid: false, reason: "invalid fromStatus" };
+  const toStatus = raw.toStatus;
+  if (typeof toStatus !== "string" || !ALLOWED_STATUSES.includes(toStatus as any)) return { valid: false, reason: "invalid toStatus" };
+  const timeLimitHours = raw.timeLimitHours;
+  if (typeof timeLimitHours !== "number" || !Number.isFinite(timeLimitHours) || timeLimitHours <= 0 || timeLimitHours > MAX_TIME_LIMIT_HOURS) return { valid: false, reason: "invalid timeLimitHours" };
+  const responsibleRole = raw.responsibleRole;
+  if (typeof responsibleRole !== "string" || !ALLOWED_ROLES.includes(responsibleRole as any)) return { valid: false, reason: "invalid responsibleRole" };
+  const escalationAction = raw.escalationAction;
+  if (typeof escalationAction !== "string" || escalationAction.trim().length === 0) return { valid: false, reason: "missing escalationAction" };
+  const enabled = raw.enabled;
+  if (typeof enabled !== "boolean") return { valid: false, reason: "invalid enabled" };
+
+  return {
+    valid: true,
+    rule: {
+      id,
+      name,
+      fromStatus,
+      toStatus,
+      timeLimitHours,
+      responsibleRole,
+      escalationAction,
+      enabled,
+    },
+  };
+}
 
 export function SLAMonitorWidget() {
   const { organization, appTheme, setActiveSection } = useValtrioxStore();
@@ -54,33 +94,37 @@ export function SLAMonitorWidget() {
       if (res.ok) {
         const data = await res.json();
         if (Array.isArray(data.rules)) {
-          const validRules = data.rules.filter(
-            (r: Record<string, unknown>) =>
-              r &&
-              typeof r.id === "string" &&
-              typeof r.name === "string" &&
-              typeof r.fromStatus === "string" &&
-              typeof r.toStatus === "string" &&
-              typeof r.timeLimitHours === "number" &&
-              r.timeLimitHours > 0 &&
-              typeof r.enabled === "boolean" &&
-              typeof r.responsibleRole === "string" &&
-              typeof r.escalationAction === "string"
-          );
-          if (validRules.length < data.rules.length) {
-            console.warn(
-              "[SLAMonitorWidget] Filtered " + (data.rules.length - validRules.length) + " malformed rule(s) out of " + data.rules.length
-            );
+          const rawRules = data.rules as Record<string, unknown>[];
+          const validated: SLARule[] = [];
+          const invalidReasons: string[] = [];
+
+          for (const raw of rawRules) {
+            const result = validateSLARule(raw);
+            if (result.valid) {
+              validated.push(result.rule);
+            } else {
+              invalidReasons.push(result.reason);
+            }
           }
+
           if (requestId !== requestIdRef.current || controller.signal.aborted) return;
-          if (validRules.length === 0 && data.rules.length > 0) {
-            console.error("[SLAMonitorWidget] All " + data.rules.length + " rule(s) failed validation");
+
+          if (invalidReasons.length > 0) {
+            console.error(
+              "[SLAMonitorWidget] Validation failed for " +
+                invalidReasons.length +
+                " rule(s) out of " +
+                rawRules.length +
+                ". Reasons: " +
+                invalidReasons.join(", ")
+            );
             setError(true);
             setRules([]);
             setLoading(false);
             return;
           }
-          setRules(validRules);
+
+          setRules(validated);
           setLoading(false);
           return;
         }
