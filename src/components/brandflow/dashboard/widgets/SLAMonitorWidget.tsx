@@ -7,6 +7,7 @@ import { ShieldCheck, Clock, ArrowRight, Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { fetchWithAuth } from "@/lib/fetch-with-auth";
 import { useTranslation } from "@/lib/i18n";
+import { ALLOWED_SLA_STATUSES, ALLOWED_SLA_ROLES, MAX_TIME_LIMIT_HOURS, validateSLARule } from "@/lib/sla-contract";
 
 interface SLARule {
   id: string;
@@ -18,47 +19,6 @@ interface SLARule {
   escalationAction: string;
   enabled: boolean;
 }
-const ALLOWED_STATUSES = ["pending", "confirmed", "packed", "dispatched", "delivered"] as const;
-const ALLOWED_ROLES = ["sales_manager", "warehouse_manager", "support_agent"] as const;
-const MAX_TIME_LIMIT_HOURS = 8760; // 1 year
-
-type SLARuleValidationResult =
-  | { valid: true; rule: SLARule }
-  | { valid: false; reason: string };
-
-function validateSLARule(raw: Record<string, unknown>): SLARuleValidationResult {
-  const id = raw.id;
-  if (typeof id !== "string" || id.trim().length === 0) return { valid: false, reason: "missing id" };
-  const name = raw.name;
-  if (typeof name !== "string" || name.trim().length === 0) return { valid: false, reason: "missing name" };
-  const fromStatus = raw.fromStatus;
-  if (typeof fromStatus !== "string" || !ALLOWED_STATUSES.includes(fromStatus as any)) return { valid: false, reason: "invalid fromStatus" };
-  const toStatus = raw.toStatus;
-  if (typeof toStatus !== "string" || !ALLOWED_STATUSES.includes(toStatus as any)) return { valid: false, reason: "invalid toStatus" };
-  const timeLimitHours = raw.timeLimitHours;
-  if (typeof timeLimitHours !== "number" || !Number.isFinite(timeLimitHours) || timeLimitHours <= 0 || timeLimitHours > MAX_TIME_LIMIT_HOURS) return { valid: false, reason: "invalid timeLimitHours" };
-  const responsibleRole = raw.responsibleRole;
-  if (typeof responsibleRole !== "string" || !ALLOWED_ROLES.includes(responsibleRole as any)) return { valid: false, reason: "invalid responsibleRole" };
-  const escalationAction = raw.escalationAction;
-  if (typeof escalationAction !== "string" || escalationAction.trim().length === 0) return { valid: false, reason: "missing escalationAction" };
-  const enabled = raw.enabled;
-  if (typeof enabled !== "boolean") return { valid: false, reason: "invalid enabled" };
-
-  return {
-    valid: true,
-    rule: {
-      id,
-      name,
-      fromStatus,
-      toStatus,
-      timeLimitHours,
-      responsibleRole,
-      escalationAction,
-      enabled,
-    },
-  };
-}
-
 export function SLAMonitorWidget() {
   const { organization, appTheme, setActiveSection } = useValtrioxStore();
   const t = useTranslation();
@@ -280,4 +240,5 @@ export function SLAMonitorWidget() {
     </Card>
   );
 }
+
 

@@ -4,6 +4,7 @@ import { withAuth } from "@/lib/auth-middleware";
 import { sanitizeObject } from "@/lib/sanitize";
 import logger from "@/lib/logger";
 import { withRateLimit } from "@/lib/rate-limit";
+import { ALLOWED_SLA_STATUSES, ALLOWED_SLA_ROLES, MAX_TIME_LIMIT_HOURS, validateSLARule } from "@/lib/sla-contract";
 
 // ── Types ──
 
@@ -228,3 +229,4 @@ export const PUT = withRateLimit(withAuth(async (req, authCtx) => {
     return NextResponse.json({ error: "Failed to update SLA rules" }, { status: 500 });
   }
 }), { maxRequests: 30, windowSeconds: 60 });
+
