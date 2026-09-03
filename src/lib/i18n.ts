@@ -1093,12 +1093,12 @@ const translations: Record<Language, Record<string, string>> = {
     // Storage Usage Widget
     storageTitle: "Storage",
     storageEstimated: "(andaza.)",
-    storageUnlimited: "Unlimited",
+  storageUnlimited: "Lamehdood",
     storageUsed: "istemal",
-    storageCritical: "Critical",
-    storageWarning: "Warning",
+  storageCritical: "Nazuk",
+  storageWarning: "Tanbeeh",
     storageHealthy: "Theek",
-    storageFree: "free",
+  storageFree: "Muft",
     storageUpgradePlan: "Plan Upgrade Karein",
 
     auditLogWidget: "Audit Log",
