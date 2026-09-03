@@ -21,6 +21,7 @@ import {
 } from "lucide-react";
 import { motion } from "framer-motion";
 import { cn } from "@/lib/utils";
+import { useTranslation } from "@/lib/i18n";
 import { fetchWithAuth } from "@/lib/fetch-with-auth";
 
 // ── Types ──
@@ -101,6 +102,8 @@ function getActorInitials(actor: string | undefined): string {
 // ── Component ──
 
 export function ActivityFeed() {
+  
+const t = useTranslation();
   const { organization, appTheme, setActiveSection } = useValtrioxStore();
   const isGold = appTheme === "premium-dark";
   const isDark = appTheme === "dark" || isGold;
@@ -192,9 +195,9 @@ export function ActivityFeed() {
                 <Rocket className={cn("h-3 w-3", isGold ? "text-amber-400" : "text-amber-600")} />
               </div>
             </div>
-            <h3 className={cn("text-sm font-semibold mb-1.5", textPrimary)}>No recent activity</h3>
+            <h3 className={cn("text-sm font-semibold mb-1.5", textPrimary)}>{t("noRecentActivity")}</h3>
             <p className={cn("text-xs max-w-[220px] leading-relaxed", textMuted)}>
-              Activity will appear here as you manage orders, products, and your team.
+              {t("activityWillAppear")}
             </p>
             <div className="flex items-center gap-2 mt-4">
               <Button

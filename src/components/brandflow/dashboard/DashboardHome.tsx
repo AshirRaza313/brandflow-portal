@@ -232,7 +232,7 @@ export function DashboardHome() {
             <Card className="border-amber-200 bg-amber-50 dark:border-amber-500/20 dark:bg-amber-500/5">
               <CardContent className="flex flex-col items-center text-center p-6">
                 <Database className="h-10 w-10 text-amber-500 mb-3" />
-                <h3 className="text-base font-semibold text-amber-800 dark:text-amber-300 mb-2">Database Not Configured</h3>
+                <h3 className="text-base font-semibold text-amber-800 dark:text-amber-300 mb-2">{t("databaseNotConfigured")}</h3>
                 <p className="text-sm text-amber-700 dark:text-amber-400 mb-1">
                   The DATABASE_URL environment variable is missing.
                 </p>
@@ -682,3 +682,4 @@ export function DashboardHome() {
     </div>
   );
 }
+
