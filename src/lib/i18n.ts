@@ -207,7 +207,6 @@ const translations: Record<Language, Record<string, string>> = {
 
     // ── Common Labels ──
     name: "Name",
-    email: "Email",
     phone: "Phone",
     date: "Date",
     time: "Time",
@@ -222,7 +221,6 @@ const translations: Record<Language, Record<string, string>> = {
     discount: "Discount",
     tax: "Tax",
     description: "Description",
-    notes: "Notes",
     actions: "Actions",
     details: "Details",
     options: "Options",
@@ -291,7 +289,6 @@ const translations: Record<Language, Record<string, string>> = {
     addProduct: "Add Product",
     addCustomer: "Add Customer",
     viewReports: "View Reports",
-    broadcast: "Broadcast",
     aiAssistant: "AI Assistant",
     recentOrders: "Recent Orders",
     noOrdersYet: "No orders yet",
@@ -392,7 +389,6 @@ const translations: Record<Language, Record<string, string>> = {
     searchPlaceholder: "Search anything...",
     expandSidebar: "Expand Sidebar",
     collapseSidebar: "Collapse Sidebar",
-    signOut: "Sign Out",
 
     // ── Settings ──
     generalSettings: "General Settings",
@@ -436,7 +432,6 @@ const translations: Record<Language, Record<string, string>> = {
     searchActivity: "Search by action or user...",
     timelineView: "Timeline",
     tableView: "Table",
-    exportCSV: "Export CSV",
     allModules: "All Modules",
     moduleOrders: "Orders",
     moduleProducts: "Products",
@@ -452,7 +447,6 @@ const translations: Record<Language, Record<string, string>> = {
     teamInvited: "invited team member",
     settingsUpdated: "updated settings",
     noActivityFound: "No activity found",
-    noActivityDesc: "There are no activities recorded for the selected filters.",
     activityNotFound: "Activity not found",
     columnTimestamp: "Timestamp",
     columnUser: "User",
@@ -546,7 +540,6 @@ const translations: Record<Language, Record<string, string>> = {
     noMarketingEvents: "No upcoming marketing events",
     noSocialDataDesc: "Connect social media accounts to see analytics",
   aiInsightsTitle: "AI Insights",
-  aiPowered: "AI Powered",
   aiPowered: "AI Powered",
   aiInsightsEmpty: "No insights available yet",
   aiInsightsLoading: "Loading insights...",
@@ -779,7 +772,6 @@ const translations: Record<Language, Record<string, string>> = {
 
     // ── Common Labels ──
     name: "Naam",
-    email: "Email",
     phone: "Phone",
     date: "Date",
     time: "Time",
@@ -794,7 +786,6 @@ const translations: Record<Language, Record<string, string>> = {
     discount: "Discount",
     tax: "Tax",
     description: "Description",
-    notes: "Notes",
     actions: "Actions",
     details: "Details",
     options: "Options",
@@ -863,7 +854,6 @@ const translations: Record<Language, Record<string, string>> = {
     addProduct: "Product Add Karein",
     addCustomer: "Customer Add Karein",
     viewReports: "Reports Dekhein",
-    broadcast: "Broadcast",
     aiAssistant: "AI Assistant",
     recentOrders: "Recent Orders",
     noOrdersYet: "Abhi koi order nahi",
@@ -964,7 +954,6 @@ const translations: Record<Language, Record<string, string>> = {
     searchPlaceholder: "Kuch bhi search karein...",
     expandSidebar: "Sidebar Expand Karein",
     collapseSidebar: "Sidebar Collapse Karein",
-    signOut: "Sign Out Karein",
 
     // ── Settings ──
     generalSettings: "General Settings",
@@ -1008,7 +997,6 @@ const translations: Record<Language, Record<string, string>> = {
     searchActivity: "Action ya user se search karein...",
     timelineView: "Timeline",
     tableView: "Table",
-    exportCSV: "CSV Export Karein",
     allModules: "Tamam Modules",
     moduleOrders: "Orders",
     moduleProducts: "Products",
@@ -1024,7 +1012,6 @@ const translations: Record<Language, Record<string, string>> = {
     teamInvited: "team member invite kiya",
     settingsUpdated: "settings update ki",
     noActivityFound: "Koi activity nahi mili",
-    noActivityDesc: "Selected filters ke liye koi activity record nahi hai.",
     activityNotFound: "Activity nahi mili",
     columnTimestamp: "Time",
     columnUser: "User",
@@ -1118,7 +1105,6 @@ const translations: Record<Language, Record<string, string>> = {
     noMarketingEvents: "Koi aane wala marketing event nahi",
     noSocialDataDesc: "Social media accounts connect karein analytics dekhne ke liye",
   aiInsightsTitle: "AI Jaiza",
-  aiPowered: "AI Powered",
   aiPowered: "AI Powered",
   aiInsightsEmpty: "Abhi koi insights nahi hain",
   aiInsightsLoading: "Insights load ho rahe hain...",
