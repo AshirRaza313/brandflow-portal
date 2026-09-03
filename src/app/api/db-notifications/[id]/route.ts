@@ -3,8 +3,9 @@ import { db, dbErrorResponse, isDbUnavailable, withRetry} from "@/lib/db";
 import { withAuth, isPlatformRole, AuthContext } from "@/lib/auth-middleware";
 import logger from "@/lib/logger";
 import { withRateLimit } from "@/lib/rate-limit";
+import { isUnlimitedRole } from "@/lib/plan-limits";
 
-// PUT /api/db-notifications/[id] - Mark notification as read
+// PUT /api/db-notifications/[id] - Mark notification as read for current user
 export const PUT = withRateLimit(withAuth(async (
   req: NextRequest,
   authCtx: AuthContext
@@ -22,8 +23,7 @@ export const PUT = withRateLimit(withAuth(async (
       return NextResponse.json({ error: "Notification not found" }, { status: 404 });
     }
 
-    // ── Org ownership check: ensure the notification belongs to the caller's org ──
-    // Platform admins can access any notification; all others must match orgId.
+    // ── Org ownership check ──
     if (!isPlatformRole(authCtx.role)) {
       if (notification.orgId && notification.orgId !== authCtx.organizationId) {
         logger.warn("[DB Notifications] Cross-org access denied", {
@@ -33,7 +33,7 @@ export const PUT = withRateLimit(withAuth(async (
         });
         return NextResponse.json({ error: "Access denied" }, { status: 403 });
       }
-      // Also ensure user-specific notifications can only be marked by the target user
+      // user-specific notifications can only be marked by the target user
       if (notification.userId && notification.userId !== authCtx.userId) {
         logger.warn("[DB Notifications] Cross-user access denied", {
           userId: authCtx.userId,
@@ -43,12 +43,41 @@ export const PUT = withRateLimit(withAuth(async (
       }
     }
 
-    await withRetry(async () => {
-      return await db.notification.update({
-      where: { id },
-      data: { read: true },
-    })
-    }, 2, 500);
+    // Hidden types for unlimited roles (same as GET)
+    const hiddenTypes = isUnlimitedRole(authCtx.role)
+      ? ["storage_warning", "storage_critical", "subscription_renewal", "subscription_expired", "trial_expired", "trial_expiring"]
+      : [];
+    if (hiddenTypes.includes(notification.type)) {
+      return NextResponse.json({ error: "Access denied" }, { status: 403 });
+    }
+
+    // ── Read semantics ──
+    if (notification.userId === null) {
+      // Org-wide: create per-user read receipt
+      await withRetry(async () => {
+        return await db.notificationReadReceipt.upsert({
+          where: {
+            notificationId_userId: {
+              notificationId: notification.id,
+              userId: authCtx.userId,
+            },
+          },
+          create: {
+            notificationId: notification.id,
+            userId: authCtx.userId,
+          },
+          update: {},
+        });
+      }, 2, 500);
+    } else {
+      // Targeted: update read flag
+      await withRetry(async () => {
+        return await db.notification.update({
+          where: { id },
+          data: { read: true },
+        });
+      }, 2, 500);
+    }
 
     return NextResponse.json({ success: true, message: "Notification marked as read" });
   } catch (error: unknown) {
