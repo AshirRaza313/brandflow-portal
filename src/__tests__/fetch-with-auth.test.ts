@@ -47,4 +47,26 @@ describe("fetchWithAuth external AbortSignal", () => {
     controller.abort();
     await expect(promise).rejects.toThrow("Aborted");
   });
-});
+  it("aborts pending body when external signal fires after headers", async () => {
+    const controller = new AbortController();
+    let rejectBody: (err: any) => void;
+    const pendingBody = new Promise((_, reject) => { rejectBody = reject; });
+    const mockResponse = {
+      status: 200,
+      headers: new Headers({ "Content-Type": "text/plain" }),
+      text: () => pendingBody,
+      json: () => pendingBody,
+      ok: true,
+    } as unknown as Response;
+    const fetchMock = vi.fn().mockResolvedValue(mockResponse);
+    globalThis.fetch = fetchMock as any;
+
+    const result = await fetchWithAuth("/api/test", { signal: controller.signal });
+    const bodyRead = result.text();
+
+    controller.abort();
+    rejectBody(new DOMException("Aborted", "AbortError"));
+    await expect(bodyRead).rejects.toThrow("Aborted");
+  });
+})
+
