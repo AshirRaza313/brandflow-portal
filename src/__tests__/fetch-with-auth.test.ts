@@ -47,6 +47,23 @@ describe("fetchWithAuth external AbortSignal", () => {
     controller.abort();
     await expect(promise).rejects.toThrow("Aborted");
   });
+
+  it("triggers internal timeout and rejects with timeout error", async () => {
+    vi.useFakeTimers();
+    const fetchMock = vi.fn((input: any, init: any) => {
+      return new Promise((resolve, reject) => {
+        init.signal.addEventListener("abort", () => {
+          reject(new DOMException("Aborted", "AbortError"));
+        });
+      });
+    });
+    globalThis.fetch = fetchMock as any;
+
+    const promise = fetchWithAuth("/api/test");
+    vi.advanceTimersByTime(30_000);
+    await expect(promise).rejects.toThrow("Request timed out. Please try again.");
+    vi.useRealTimers();
+  });
   it("aborts pending body when external signal fires after headers", async () => {
     const controller = new AbortController();
     let rejectBody: (err: any) => void;
@@ -69,4 +86,6 @@ describe("fetchWithAuth external AbortSignal", () => {
     await expect(bodyRead).rejects.toThrow("Aborted");
   });
 })
+
+
 
