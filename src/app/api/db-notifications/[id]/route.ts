@@ -3,7 +3,7 @@ import { db, dbErrorResponse, isDbUnavailable, withRetry} from "@/lib/db";
 import { withAuth, isPlatformRole, AuthContext } from "@/lib/auth-middleware";
 import logger from "@/lib/logger";
 import { withRateLimit } from "@/lib/rate-limit";
-import { isUnlimitedRole } from "@/lib/plan-limits";
+import { getNotificationAudienceWhere } from "@/lib/notification-audience";
 
 // PUT /api/db-notifications/[id] - Mark notification as read for current user
 export const PUT = withRateLimit(withAuth(async (
@@ -12,44 +12,37 @@ export const PUT = withRateLimit(withAuth(async (
 ) => {
   try {
     logger.info("[DB Notifications] PUT request", { userId: authCtx.userId });
-    // Extract ID from URL path
     const urlParts = req.url.split("/");
     const id = urlParts[urlParts.length - 1] || urlParts[urlParts.length - 2];
 
+    // Build canonical audience where for non-platform roles
+    const audienceWhere = getNotificationAudienceWhere({
+      userId: authCtx.userId,
+      organizationId: authCtx.organizationId || "",
+      role: authCtx.role,
+    });
+
+    // Fetch notification with audience constraints
     const notification = await withRetry(async () => {
-      return await db.notification.findUnique({ where: { id } })
+      return await db.notification.findFirst({
+        where: {
+          id,
+          ...(isPlatformRole(authCtx.role) ? {} : audienceWhere),
+        },
+      });
     }, 2, 500);
+
     if (!notification) {
       return NextResponse.json({ error: "Notification not found" }, { status: 404 });
     }
 
-    // ── Org ownership check ──
-    if (!isPlatformRole(authCtx.role)) {
-      if (notification.orgId && notification.orgId !== authCtx.organizationId) {
-        logger.warn("[DB Notifications] Cross-org access denied", {
-          userId: authCtx.userId,
-          notificationOrgId: notification.orgId,
-          callerOrgId: authCtx.organizationId,
-        });
-        return NextResponse.json({ error: "Access denied" }, { status: 403 });
-      }
-      // user-specific notifications can only be marked by the target user
-      if (notification.userId && notification.userId !== authCtx.userId) {
-        logger.warn("[DB Notifications] Cross-user access denied", {
-          userId: authCtx.userId,
-          notificationUserId: notification.userId,
-        });
-        return NextResponse.json({ error: "Access denied" }, { status: 403 });
-      }
-    }
-
-    // Hidden types for unlimited roles (same as GET)
-    const hiddenTypes = isUnlimitedRole(authCtx.role)
-      ? ["storage_warning", "storage_critical", "subscription_renewal", "subscription_expired", "trial_expired", "trial_expiring"]
-      : [];
-    if (hiddenTypes.includes(notification.type)) {
+    // For non-platform, ensure user-specific ownership if userId is set
+    if (!isPlatformRole(authCtx.role) && notification.userId && notification.userId !== authCtx.userId) {
       return NextResponse.json({ error: "Access denied" }, { status: 403 });
     }
+
+    // Hidden types for unlimited roles are already excluded by audienceWhere for non-platform.
+    // For platform roles, allow all types.
 
     // ── Read semantics ──
     if (notification.userId === null) {

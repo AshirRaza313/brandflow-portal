@@ -66,35 +66,23 @@ export const GET = withRateLimit(withAuth(async (req: NextRequest, authCtx) => {
     // Fetch notifications with unread filter applied at DB level where possible
     let notifications;
     if (unreadOnly) {
-      const targetUnreadRows = await withRetry(async () => {
+      const whereUnread: any = {
+        orgId,
+        OR: [
+          { userId: authCtx.userId, read: false },
+          { userId: null, read: false, readReceipts: { none: { userId: authCtx.userId } } },
+        ],
+        ...(hiddenTypes.length > 0 ? { NOT: { type: { in: hiddenTypes } } } : {}),
+      };
+      notifications = await withRetry(async () => {
         return await db.notification.findMany({
-          where: {
-            orgId,
-            userId: authCtx.userId,
-            read: false,
-            ...(hiddenTypes.length > 0 ? { NOT: { type: { in: hiddenTypes } } } : {}),
-          },
+          where: whereUnread,
           orderBy: { createdAt: "desc" },
+          take: limit,
+          skip: offset,
         });
       }, 2, 500);
-
-      const orgWideUnreadRows = await withRetry(async () => {
-        return await db.notification.findMany({
-          where: {
-            orgId,
-            userId: null,
-            read: false,
-            readReceipts: { none: { userId: authCtx.userId } },
-            ...(hiddenTypes.length > 0 ? { NOT: { type: { in: hiddenTypes } } } : {}),
-          },
-          orderBy: { createdAt: "desc" },
-        });
-      }, 2, 500);
-
-      const combined = [...targetUnreadRows, ...orgWideUnreadRows].sort(
-        (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
-      );
-      notifications = combined.slice(offset, offset + limit);
+      notifications = notifications.map((n: any) => ({ ...n, read: false }));
     } else {
       notifications = await withRetry(async () => {
         return await db.notification.findMany({
@@ -139,4 +127,5 @@ export const GET = withRateLimit(withAuth(async (req: NextRequest, authCtx) => {
     return NextResponse.json({ error: "Failed to fetch notifications" }, { status: 500 });
   }
 }), { maxRequests: 60, windowSeconds: 60 });
+
 
