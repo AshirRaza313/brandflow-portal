@@ -650,7 +650,7 @@ const translations: Record<Language, Record<string, string>> = {
     brandSettings: "Settings",
     userManagement: "User Management",
     adminDashboard: "Admin Dashboard",
-    auditLog: "Audit Rیکارڈ",
+    auditLog: "Ehtisab ka record",
 
     // ── Sub-tab labels ──
     all: "Sab",
