@@ -1,8 +1,14 @@
 import { PrismaClient } from "@prisma/client";
 
-// Read-only role credential: use DATABASE_URL_READONLY if set, otherwise fallback to default
-const databaseUrl = process.env.DATABASE_URL_READONLY || process.env.DATABASE_URL;
-const prisma = new PrismaClient({ datasources: { db: { url: databaseUrl } } });
+const readonlyUrl = process.env.DATABASE_URL_READONLY;
+if (!readonlyUrl) {
+  console.error("ERROR: DATABASE_URL_READONLY is required. Refusing to run with default DATABASE_URL.");
+  process.exit(1);
+}
+
+const prisma = new PrismaClient({
+  datasources: { db: { url: readonlyUrl } },
+});
 
 function sanitizeOrgId(orgId: string | null): string {
   if (!orgId) return "null";
@@ -14,10 +20,9 @@ async function main() {
   console.log("===================================================");
   console.log(`Timestamp: ${new Date().toISOString()}`);
   console.log(`Environment: ${process.env.NODE_ENV || "development"}`);
-  console.log(`Database identity: ${databaseUrl ? "configured" : "missing"}`);
-  console.log(`Read-only role proof: ${process.env.DATABASE_URL_READONLY ? "DATABASE_URL_READONLY present" : "using default DATABASE_URL"}`);
+  console.log(`Database identity: configured read-only connection string`);
+  console.log(`Read-only role proof: DATABASE_URL_READONLY present`);
 
-  // Total counts
   const total = await prisma.notification.count();
   const readCount = await prisma.notification.count({ where: { read: true } });
   const unreadCount = await prisma.notification.count({ where: { read: false } });
@@ -26,7 +31,6 @@ async function main() {
   console.log(`Read: ${readCount}`);
   console.log(`Unread: ${unreadCount}`);
 
-  // Count by type
   const byType = await prisma.notification.groupBy({
     by: ["type"],
     _count: { _all: true },
@@ -37,7 +41,6 @@ async function main() {
     console.log(`  ${row.type}: ${row._count._all}`);
   }
 
-  // Count by org (top 10) with sanitized IDs
   const byOrg = await prisma.notification.groupBy({
     by: ["orgId"],
     _count: { _all: true },
@@ -49,23 +52,20 @@ async function main() {
     console.log(`  org ${sanitizeOrgId(row.orgId)}: ${row._count._all}`);
   }
 
-  // Count org-wide vs targeted
   const orgWide = await prisma.notification.count({ where: { userId: null } });
   const targeted = await prisma.notification.count({ where: { userId: { not: null } } });
   console.log(`\nOrg-wide (userId=null): ${orgWide}`);
   console.log(`Targeted (userId set): ${targeted}`);
 
-  // NotificationReadReceipt state count
   try {
     const receiptCount = await prisma.notificationReadReceipt.count();
     const distinctUsers = await prisma.notificationReadReceipt.findMany({ distinct: ["userId"], select: { userId: true } });
     console.log(`\nNotificationReadReceipt rows: ${receiptCount}`);
     console.log(`Distinct users with receipts: ${distinctUsers.length}`);
   } catch (e) {
-    console.log("\nNotificationReadReceipt table not available yet (migration pending).");
+    console.log("\nNotificationReadReceipt table query failed:", e);
   }
 
-  // Historical generic rows fingerprint/date window classification
   const genericTypes = ["info", "success", "warning", "error"];
   const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
   const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
