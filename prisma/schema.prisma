@@ -600,7 +600,6 @@ model NotificationReadReceipt {
   user           User         @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([notificationId, userId])
-  @@index([userId, notificationId])
 }
 
 // ── Lead Capture (Contact Form Submissions) ──

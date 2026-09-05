@@ -8,7 +8,6 @@ CREATE TABLE "NotificationReadReceipt" (
 );
 
 -- CreateIndex
-CREATE INDEX "NotificationReadReceipt_userId_notificationId_idx" ON "NotificationReadReceipt"("userId", "notificationId");
 
 -- CreateIndex
 CREATE UNIQUE INDEX "NotificationReadReceipt_notificationId_userId_key" ON "NotificationReadReceipt"("notificationId", "userId");
