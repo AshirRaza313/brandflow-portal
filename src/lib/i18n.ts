@@ -581,6 +581,15 @@ const translations: Record<Language, Record<string, string>> = {
   },
   markAllAsRead: "Mark all as read",
   refresh: "Refresh",
+  dashboardWidgets: "Dashboard Widgets",
+  widgetsActiveTotal: "{active} widgets active · {total} total",
+  unlockMoreWidgets: "Unlock {count} more widgets",
+  unlockWithPlan: "Unlock with {plan}",
+  upgrade: "Upgrade",
+  upgradeToPlan: "Upgrade to {plan}",
+  upgradePlan: "Upgrade Plan",
+  moreWidgetsAvailable: "+{count} more widgets available with upgrade",
+  requiresPlan: "Requires {plan} plan",
   ur: {
     // ── Navigation / Sidebar ──
     dashboard: "Dashboard",
@@ -1153,6 +1162,15 @@ const translations: Record<Language, Record<string, string>> = {
   },
   markAllAsRead: "Sab ko parha hua mark karein",
   refresh: "Taza karein",
+  dashboardWidgets: "Dashboard ke Widgets",
+  widgetsActiveTotal: "{active} widgets fa-aal · {total} kul",
+  unlockMoreWidgets: "{count} mazeed widgets unlock karein",
+  unlockWithPlan: "{plan} ke saath unlock karein",
+  upgrade: "Upgrade karein",
+  upgradeToPlan: "{plan} par upgrade karein",
+  upgradePlan: "Plan Upgrade karein",
+  moreWidgetsAvailable: "+{count} mazeed widgets upgrade ke saath available",
+  requiresPlan: "{plan} plan ki zaroorat hai",
 };
 
 // ============================================================================
