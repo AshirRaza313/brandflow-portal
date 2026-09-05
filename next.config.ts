@@ -250,3 +250,5 @@ export default withSentryConfig(nextConfig, {
   // is a runtime option, not a build option. Configure it in sentry.client.config.ts instead.
 });
 
+
+

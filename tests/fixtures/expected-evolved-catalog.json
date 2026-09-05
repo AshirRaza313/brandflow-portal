@@ -13606,17 +13606,17 @@
       },
       {
         "name": "NotificationReadReceipt_notificationId_userId_key",
-        "definition": "CREATE UNIQUE INDEX \"NotificationReadReceipt_notificationId_userId_key\" ON public.\"NotificationReadReceipt\" USING btree (notificationId, userId)"
+        "definition": "CREATE UNIQUE INDEX \"NotificationReadReceipt_notificationId_userId_key\" ON public.\"NotificationReadReceipt\" USING btree (\"notificationId\", \"userId\")"
       }
     ]
   },
   "_provenance": {
     "source_kind": "versioned_baseline_fixture",
-    "generated_at_utc": "2026-09-05T22:35:38.387Z",
-    "source_fixture_commit_sha": "9694fbbda939fc28ee4201f2eddaa1c04f4240d9",
+    "generated_at_utc": "2026-09-05T22:42:40.127Z",
+    "source_fixture_commit_sha": "d26bf5a6f7b21c51967cea793bd650295553f074",
     "source_fixture_blob_sha1": "0ba8754c14ab6c4cd9c682d04941772d784a8876",
     "baseline_migration_sha256": "c324b379884884f2e1750e701e9871a5579a4814d90bb3d562a5719a74e36bcb",
     "generator_sha256": "7a04449d8800d10c4315fd61644775cc0763029710dd1b807577ee5f14e7d098",
-    "catalog_sha256": "a6e146d5a3c67d5a4ef33cc2d8ee35548a0ea83b705fc8e9c72d0235eb820ace"
+    "catalog_sha256": "297f228ee82b6e3e3e2c0bdb4715b2f74c1efe23090f42f0c89b8c82f03cf28d"
   }
 }

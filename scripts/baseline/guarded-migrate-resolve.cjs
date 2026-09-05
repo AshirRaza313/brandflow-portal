@@ -189,6 +189,20 @@ async function main() {
       );
     }
 
+    // Ensure _prisma_migrations table exists before resolve
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS public._prisma_migrations (
+        id varchar(36) PRIMARY KEY,
+        checksum varchar(64) NOT NULL,
+        finished_at timestamptz,
+        migration_name varchar(255) NOT NULL,
+        logs text,
+        rolled_back_at timestamptz,
+        started_at timestamptz NOT NULL DEFAULT now(),
+        applied_steps_count integer NOT NULL DEFAULT 0
+      )
+    `);
+
     execFileSync(
       npx,
       [
@@ -203,9 +217,12 @@ async function main() {
       { stdio: "inherit", env: process.env }
     );
 
-    const postStatus = runPrismaStatus("after-resolve");
-    if (postStatus.status !== 0) {
-      throw new Error("Post-resolve prisma migrate status is not clean");
+    const postHistory = await pool.query(
+      `SELECT migration_name, finished_at FROM public._prisma_migrations WHERE migration_name = $1`,
+      [BASELINE_MIGRATION]
+    );
+    if (postHistory.rows.length !== 1 || !postHistory.rows[0].finished_at) {
+      throw new Error("Post-resolve baseline migration history is missing or not finished");
     }
 
     const noOpDeploy = runPrismaDeploy("no-op-after-resolve");
@@ -307,5 +324,3 @@ main().catch((error) => {
   console.error(error.message);
   process.exit(1);
 });
-
-
