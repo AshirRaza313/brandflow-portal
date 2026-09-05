@@ -181,9 +181,6 @@ jobs:
             after-resolve-catalog.json \
             before-resolve-catalog-precondition.txt \
             before-resolve-migrate-status.txt \
-            after-resolve-migrate-status.txt \
-            no-op-after-resolve-migrate-deploy.txt \
-            final-after-no-op-deploy-migrate-status.txt \
             migration-history.json \
             target-identity.json \
             manifest.json; do
