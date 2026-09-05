@@ -478,7 +478,6 @@ const translations: Record<Language, Record<string, string>> = {
     plan: "Plan",
     subscription: "Subscription",
     billing: "Billing",
-    upgrade: "Upgrade",
     downgraded: "Downgrade",
     current: "Current",
     popular: "Popular",
@@ -578,9 +577,6 @@ const translations: Record<Language, Record<string, string>> = {
   taskProgressTotal: "Total",
   taskProgressActive: "Active",
   taskProgressDone: "Done",
-  },
-  markAllAsRead: "Mark all as read",
-  refresh: "Refresh",
   dashboardWidgets: "Dashboard Widgets",
   widgetsActiveTotal: "{active} widgets active · {total} total",
   unlockMoreWidgets: "Unlock {count} more widgets",
@@ -590,6 +586,9 @@ const translations: Record<Language, Record<string, string>> = {
   upgradePlan: "Upgrade Plan",
   moreWidgetsAvailable: "+{count} more widgets available with upgrade",
   requiresPlan: "Requires {plan} plan",
+  },
+  markAllAsRead: "Mark all as read",
+  refresh: "Refresh",
   ur: {
     // ── Navigation / Sidebar ──
     dashboard: "Dashboard",
@@ -1059,7 +1058,6 @@ const translations: Record<Language, Record<string, string>> = {
     plan: "Plan",
     subscription: "Subscription",
     billing: "Billing",
-    upgrade: "Upgrade Karein",
     downgraded: "Downgrade",
     current: "Current",
     popular: "Popular",
@@ -1190,8 +1188,15 @@ export function useTranslation(): (key: string, fallback?: string) => string {
   // eslint-disable-next-line @typescript-eslint/no-require-imports
   const { useValtrioxStore } = require("@/store/brandflow-store");
   const lang = useValtrioxStore((s: any) => s.language) || "en";
-  return (key: string, fallback?: string) => {
-    return translations[lang]?.[key] || translations.en[key] || fallback || key;
+  return (key: string, fallbackOrOptions?: string | Record<string, any>) => {
+    const template =
+      translations[lang]?.[key] ||
+      translations.en[key] ||
+      (typeof fallbackOrOptions === "string" ? fallbackOrOptions : key);
+    if (typeof fallbackOrOptions === "object" && fallbackOrOptions !== null) {
+      return template.replace(/{(w+)}/g, (_, token) => fallbackOrOptions[token] ?? "");
+    }
+    return template;
   };
 }
 
