@@ -1110,7 +1110,7 @@ const translations: Record<Language, Record<string, string>> = {
   storageFree: "Baaqi",
     storageUpgradePlan: "Plan Upgrade Karein",
 
-    auditLogWidget: "Audit Rیکارڈ",
+    auditLogWidget: "Ehtisab ka record",
     auditLogWidgetDesc: "Portal ki recent activity",
     noCampaigns: "Abhi koi active campaign nahi",
     noCoupons: "Abhi koi coupon nahi bana",
