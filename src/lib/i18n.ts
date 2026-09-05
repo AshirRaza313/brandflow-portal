@@ -579,6 +579,8 @@ const translations: Record<Language, Record<string, string>> = {
   taskProgressActive: "Active",
   taskProgressDone: "Done",
   },
+  markAllAsRead: "Mark all as read",
+  refresh: "Refresh",
   ur: {
     // ── Navigation / Sidebar ──
     dashboard: "Dashboard",
@@ -1128,7 +1130,7 @@ const translations: Record<Language, Record<string, string>> = {
   couponAnalyticsRedeemed: "Redeemed",
   couponAnalyticsAvgDisc: "Avg. Disc.",
   couponAnalyticsTopCoupon: "Top Coupon",
-  manage: "Manage Karein",
+  manage: "Intezaam Karein",
   createFirstCoupon: "Apna pehla coupon banayein",
   emailStatsTitle: "Email Aankre",
   emailStatsThisMonth: "Is maah",
@@ -1149,6 +1151,8 @@ const translations: Record<Language, Record<string, string>> = {
   taskProgressActive: "Fa-aal",
   taskProgressDone: "Mukammal",
   },
+  markAllAsRead: "Sab ko parha hua mark karein",
+  refresh: "Taza karein",
 };
 
 // ============================================================================
