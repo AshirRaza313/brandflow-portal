@@ -13612,8 +13612,8 @@
   },
   "_provenance": {
     "source_kind": "versioned_baseline_fixture",
-    "generated_at_utc": "2026-09-05T22:29:21.242Z",
-    "source_fixture_commit_sha": "c168f18c9a2af953a3afd448de842f4888167ad2",
+    "generated_at_utc": "2026-09-05T22:35:38.387Z",
+    "source_fixture_commit_sha": "9694fbbda939fc28ee4201f2eddaa1c04f4240d9",
     "source_fixture_blob_sha1": "0ba8754c14ab6c4cd9c682d04941772d784a8876",
     "baseline_migration_sha256": "c324b379884884f2e1750e701e9871a5579a4814d90bb3d562a5719a74e36bcb",
     "generator_sha256": "7a04449d8800d10c4315fd61644775cc0763029710dd1b807577ee5f14e7d098",
