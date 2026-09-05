@@ -65,7 +65,7 @@ function parseStoredRules(raw: string): SLARule[] {
         validRules.push(result.rule);
       }
     }
-    return validRules.length > 0 ? validRules : cloneDefaults();
+    return validRules;
   } catch {
     return cloneDefaults();
   }
@@ -191,4 +191,5 @@ export const PUT = withRateLimit(withAuth(async (req, authCtx) => {
     return NextResponse.json({ error: "Failed to update SLA rules" }, { status: 500 });
   }
 }), { maxRequests: 30, windowSeconds: 60 });
+
 

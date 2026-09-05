@@ -25,7 +25,7 @@ function parseStoredRules(raw: string): SLARule[] {
       const result = validateSLARule(rawRule as any);
       if (result.valid) validRules.push(result.rule);
     }
-    return validRules.length > 0 ? validRules : cloneDefaults();
+    return validRules;
   } catch {
     return cloneDefaults();
   }
@@ -193,3 +193,4 @@ export const GET = withRateLimit(withAuth(async (req, authCtx) => {
     return NextResponse.json({ error: "Failed to check SLA compliance" }, { status: 500 });
   }
 }), { maxRequests: 60, windowSeconds: 60 });
+
