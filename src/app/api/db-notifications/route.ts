@@ -12,8 +12,8 @@ export const GET = withRateLimit(withAuth(async (req: NextRequest, authCtx) => {
     logger.info("[DB Notifications] GET request", { userId: authCtx.userId });
     const { searchParams } = new URL(req.url);
     const unreadOnly = searchParams.get("unread") === "true";
-    const limit = parseInt(searchParams.get("limit") || "50");
-    const offset = parseInt(searchParams.get("offset") || "0");
+    const limit = Math.min(Math.max(parseInt(searchParams.get("limit") || "50") || 50, 1), 100);
+    const offset = Math.max(parseInt(searchParams.get("offset") || "0") || 0, 0);
 
     const orgId = authCtx.organizationId;
     if (!orgId) {
@@ -77,7 +77,7 @@ export const GET = withRateLimit(withAuth(async (req: NextRequest, authCtx) => {
       notifications = await withRetry(async () => {
         return await db.notification.findMany({
           where: whereUnread,
-          orderBy: { createdAt: "desc" },
+          orderBy: [{ createdAt: "desc" }, { id: "desc" }],
           take: limit,
           skip: offset,
         });
@@ -87,7 +87,7 @@ export const GET = withRateLimit(withAuth(async (req: NextRequest, authCtx) => {
       notifications = await withRetry(async () => {
         return await db.notification.findMany({
           where: baseWhere,
-          orderBy: { createdAt: "desc" },
+          orderBy: [{ createdAt: "desc" }, { id: "desc" }],
           take: limit,
           skip: offset,
         });
@@ -127,5 +127,6 @@ export const GET = withRateLimit(withAuth(async (req: NextRequest, authCtx) => {
     return NextResponse.json({ error: "Failed to fetch notifications" }, { status: 500 });
   }
 }), { maxRequests: 60, windowSeconds: 60 });
+
 
 

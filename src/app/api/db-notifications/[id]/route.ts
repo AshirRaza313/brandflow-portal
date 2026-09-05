@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db, dbErrorResponse, isDbUnavailable, withRetry} from "@/lib/db";
-import { withAuth, isPlatformRole, AuthContext } from "@/lib/auth-middleware";
+import { withAuth, AuthContext } from "@/lib/auth-middleware";
 import logger from "@/lib/logger";
 import { withRateLimit } from "@/lib/rate-limit";
 import { getNotificationAudienceWhere } from "@/lib/notification-audience";
@@ -15,19 +15,22 @@ export const PUT = withRateLimit(withAuth(async (
     const urlParts = req.url.split("/");
     const id = urlParts[urlParts.length - 1] || urlParts[urlParts.length - 2];
 
-    // Build canonical audience where for non-platform roles
+    if (!authCtx.organizationId) {
+      return NextResponse.json({ error: "Organization context required" }, { status: 400 });
+    }
+
+    // Canonical audience policy applies to ALL roles, including platform.
     const audienceWhere = getNotificationAudienceWhere({
       userId: authCtx.userId,
-      organizationId: authCtx.organizationId || "",
+      organizationId: authCtx.organizationId,
       role: authCtx.role,
     });
 
-    // Fetch notification with audience constraints
     const notification = await withRetry(async () => {
       return await db.notification.findFirst({
         where: {
           id,
-          ...(isPlatformRole(authCtx.role) ? {} : audienceWhere),
+          ...audienceWhere,
         },
       });
     }, 2, 500);
@@ -36,17 +39,13 @@ export const PUT = withRateLimit(withAuth(async (
       return NextResponse.json({ error: "Notification not found" }, { status: 404 });
     }
 
-    // For non-platform, ensure user-specific ownership if userId is set
-    if (!isPlatformRole(authCtx.role) && notification.userId && notification.userId !== authCtx.userId) {
+    // user-specific ownership enforcement for non-org-wide rows
+    if (notification.userId && notification.userId !== authCtx.userId) {
       return NextResponse.json({ error: "Access denied" }, { status: 403 });
     }
 
-    // Hidden types for unlimited roles are already excluded by audienceWhere for non-platform.
-    // For platform roles, allow all types.
-
     // ── Read semantics ──
     if (notification.userId === null) {
-      // Org-wide: create per-user read receipt
       await withRetry(async () => {
         return await db.notificationReadReceipt.upsert({
           where: {
@@ -63,7 +62,6 @@ export const PUT = withRateLimit(withAuth(async (
         });
       }, 2, 500);
     } else {
-      // Targeted: update read flag
       await withRetry(async () => {
         return await db.notification.update({
           where: { id },
