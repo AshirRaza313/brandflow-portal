@@ -261,7 +261,35 @@ describe("Notification routes authorization & read receipts", () => {
     const res = await PUT(request("PUT", undefined, "/api/db-notifications/n-target-unread"));
     expect(res.status).toBe(404); // not found because audience mismatch returns 404
   });
+
+  it("denies platform role from mutating other-user targeted notification", async () => {
+    testState.role = "platform_owner";
+    testState.organizationId = "org-a";
+    const res = await PUT(request("PUT", undefined, "/api/db-notifications/n-other-user"));
+    expect(res.status).toBe(404);
+  });
+
+  it("excludes hidden storage types for unlimited platform role", async () => {
+    testState.role = "platform_owner";
+    testState.organizationId = "org-a";
+    testState.notifications.set("n-hidden-storage", { id: "n-hidden-storage", orgId: "org-a", userId: null, title: "Hidden", message: "msg", type: "storage_warning", read: false, createdAt: new Date("2026-01-01T05:00:00Z") });
+    const res = await GET(request("GET", undefined, "/api/db-notifications?unread=true&limit=10&offset=0"));
+    const data = await json(res);
+    expect(data.notifications.map((n: any) => n.id)).not.toContain("n-hidden-storage");
+  });
+
+  it("bulk mark-all-read is idempotent for repeated calls", async () => {
+    const first = await POST(request("POST", undefined, "/api/db-notifications/mark-all-read?orgId=org-a"));
+    expect(first.status).toBe(200);
+    const firstCount = (await json(first)).updatedCount;
+    const second = await POST(request("POST", undefined, "/api/db-notifications/mark-all-read?orgId=org-a"));
+    expect(second.status).toBe(200);
+    const secondCount = (await json(second)).updatedCount;
+    expect(secondCount).toBe(0);
+    expect(firstCount).toBeGreaterThan(0);
+  });
 });
+
 
 
 
