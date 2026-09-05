@@ -101,7 +101,7 @@ jobs:
         run: node scripts/baseline/capture-full-catalog.cjs
       - name: Compare CI catalog against expected baseline fixture
         env:
-          PROD_CATALOG: tests/fixtures/expected-baseline-catalog.json
+          PROD_CATALOG: tests/fixtures/expected-evolved-catalog.json
           REH_CATALOG: backups/ci-captured-catalog.json
           CATALOG_REPORT: backups/catalog-comparison.txt
           PROD_EXPECTED_SOURCE_KIND: versioned_baseline_fixture
@@ -109,7 +109,7 @@ jobs:
           REH_EXPECTED_PROJECT_REF: ci-localhost
           REH_EXPECTED_HEAD_SHA: ${{ github.event.pull_request.head.sha }}
           REH_EXPECTED_CAPTURE_PROFILE: generic
-        run: node scripts/baseline/compare-catalogs.cjs
+        run: node scripts/baseline/compare-evolved-catalogs.cjs
       - name: Baseline catalog validation tests
         run: node tests/baseline/run-catalog-validation.cjs
       - name: Database target safety guard tests
@@ -262,3 +262,4 @@ jobs:
               exit 1
             fi
           done
+
