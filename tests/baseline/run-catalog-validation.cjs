@@ -156,3 +156,4 @@ test("expected source head is enforced", () => {
 
 console.log(`\nCatalog validation results: ${passed} passed, ${failed} failed`);
 if (failed > 0) process.exit(1);
+
