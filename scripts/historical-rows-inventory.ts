@@ -23,6 +23,19 @@ async function main() {
   console.log(`Database identity: configured read-only connection string`);
   console.log(`Read-only role proof: DATABASE_URL_READONLY present`);
 
+  // Database role & read-only proof
+  try {
+    const roleRows = await prisma.$queryRawUnsafe(
+      "SELECT current_user, session_user, current_setting('transaction_read_only') AS read_only, current_setting('transaction_isolation') AS isolation"
+    ) as any[];
+    if (roleRows.length > 0) {
+      console.log(`Database role: current_user=${roleRows[0].current_user}, session_user=${roleRows[0].session_user}`);
+      console.log(`Read-only mode: ${roleRows[0].read_only}, isolation: ${roleRows[0].isolation}`);
+    }
+  } catch (e) {
+    console.log("Database role query failed:", e);
+  }
+
   const total = await prisma.notification.count();
   const readCount = await prisma.notification.count({ where: { read: true } });
   const unreadCount = await prisma.notification.count({ where: { read: false } });
@@ -89,3 +102,4 @@ main()
   .finally(async () => {
     await prisma.$disconnect();
   });
+
