@@ -140,4 +140,14 @@ describe("SLA rules API enforcement", () => {
     expect(data.rules).toHaveLength(2);
     expect(dbMocks.systemSetting.upsert).toHaveBeenCalledTimes(1);
   });
+
+  it("round-trips POST -> GET persisted validated rules", async () => {
+    const postRes = await POST(request("POST", validRule({ name: "Round Trip" })));
+    expect(postRes.status).toBe(201);
+
+    const getRes = await GET(request("GET"));
+    expect(getRes.status).toBe(200);
+    const getData = await json(getRes);
+    expect(getData.rules.some((r: any) => r.name === "Round Trip")).toBe(true);
+  });
 });
