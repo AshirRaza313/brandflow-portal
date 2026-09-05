@@ -2,14 +2,15 @@
 
 const fs = require("fs");
 const path = require("path");
+process.env.CATALOG_CONTRACT_PATH = path.resolve(__dirname, "../../scripts/baseline/evolved-catalog-contract.cjs");
 const {
   structuralSha256,
-} = require("../../scripts/baseline/catalog-contract.cjs");
+} = require("../../scripts/baseline/evolved-catalog-contract.cjs");
 const {
   compareCatalogs,
-} = require("../../scripts/baseline/compare-catalogs.cjs");
+} = require("../../scripts/baseline/compare-evolved-catalogs.cjs");
 
-const fixturePath = path.resolve("tests/fixtures/expected-baseline-catalog.json");
+const fixturePath = path.resolve("tests/fixtures/expected-evolved-catalog.json");
 const fixture = JSON.parse(fs.readFileSync(fixturePath, "utf8"));
 let passed = 0;
 let failed = 0;
@@ -156,3 +157,7 @@ test("expected source head is enforced", () => {
 
 console.log(`\nCatalog validation results: ${passed} passed, ${failed} failed`);
 if (failed > 0) process.exit(1);
+
+
+
+

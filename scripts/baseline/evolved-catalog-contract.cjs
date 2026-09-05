@@ -18,6 +18,7 @@ const APPROVED_TABLES = Object.freeze([
   "Lead",
   "LegalPage",
   "Notification",
+  "NotificationReadReceipt",
   "Order",
   "OrderItem",
   "Organization",
@@ -419,3 +420,4 @@ module.exports = {
   tableKeys,
   validateCatalog,
 };
+
