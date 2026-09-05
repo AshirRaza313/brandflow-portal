@@ -23,17 +23,33 @@ async function main() {
   console.log(`Database identity: configured read-only connection string`);
   console.log(`Read-only role proof: DATABASE_URL_READONLY present`);
 
-  // Database role & read-only proof
+  // Database role & read-only proof (fail-closed)
+  let readOnlyVerified = false;
   try {
     const roleRows = await prisma.$queryRawUnsafe(
       "SELECT current_user, session_user, current_setting('transaction_read_only') AS read_only, current_setting('transaction_isolation') AS isolation"
     ) as any[];
     if (roleRows.length > 0) {
-      console.log(`Database role: current_user=${roleRows[0].current_user}, session_user=${roleRows[0].session_user}`);
-      console.log(`Read-only mode: ${roleRows[0].read_only}, isolation: ${roleRows[0].isolation}`);
+      const row = roleRows[0];
+      console.log(`Database role: current_user=${row.current_user}, session_user=${row.session_user}`);
+      console.log(`Read-only mode: ${row.read_only}, isolation: ${row.isolation}`);
+      if (String(row.read_only).toLowerCase() !== "on") {
+        console.error("ERROR: transaction_read_only is off; aborting to protect data.");
+        process.exit(1);
+      }
+      readOnlyVerified = true;
+    } else {
+      console.error("ERROR: database role query returned no rows; aborting.");
+      process.exit(1);
     }
   } catch (e) {
-    console.log("Database role query failed:", e);
+    console.error("ERROR: database role query failed; aborting:", e);
+    process.exit(1);
+  }
+
+  if (!readOnlyVerified) {
+    console.error("ERROR: read-only role verification failed; aborting.");
+    process.exit(1);
   }
 
   const total = await prisma.notification.count();
@@ -102,4 +118,5 @@ main()
   .finally(async () => {
     await prisma.$disconnect();
   });
+
 
