@@ -180,7 +180,7 @@ jobs:
             before-resolve-catalog.json \
             after-resolve-catalog.json \
             before-resolve-catalog-precondition.txt \
-            before-resolve-migrate-status.txt after-forward-migrate-data-state.json after-forward-migrate-catalog.json forward-migrate-migrate-deploy.txt \
+            before-resolve-migrate-status.txt \
             migration-history.json \
             target-identity.json \
             manifest.json; do
@@ -259,5 +259,6 @@ jobs:
               exit 1
             fi
           done
+
 
 
