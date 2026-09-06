@@ -6,9 +6,7 @@ if (!readonlyUrl) {
   process.exit(1);
 }
 
-const prisma = new PrismaClient({
-  datasources: { db: { url: readonlyUrl } },
-});
+const prisma = new PrismaClient({ datasources: { db: { url: readonlyUrl } } });
 
 function sanitizeOrgId(orgId: string | null): string {
   if (!orgId) return "null";
@@ -18,39 +16,46 @@ function sanitizeOrgId(orgId: string | null): string {
 async function main() {
   console.log("Historical Notification Inventory (Read-Only Audit)");
   console.log("===================================================");
-  console.log(`Timestamp: ${new Date().toISOString()}`);
-  console.log(`Environment: ${process.env.NODE_ENV || "development"}`);
-  console.log(`Database identity: configured read-only connection string`);
-  console.log(`Read-only role proof: DATABASE_URL_READONLY present`);
+  const nowIso = new Date().toISOString();
+  const env = process.env.NODE_ENV || "development";
+  const headSha = process.env.PR_HEAD_SHA || (() => {
+    try { return require("child_process").execSync("git rev-parse HEAD").toString().trim(); } catch { return "unknown"; }
+  })();
+  console.log(`Timestamp: ${nowIso}`);
+  console.log(`Environment: ${env}`);
+  console.log(`HEAD SHA: ${headSha}`);
 
-  // Database role & read-only proof (fail-closed)
-  let readOnlyVerified = false;
-  try {
-    const roleRows = await prisma.$queryRawUnsafe(
-      "SELECT current_user, session_user, current_setting('transaction_read_only') AS read_only, current_setting('transaction_isolation') AS isolation"
-    ) as any[];
-    if (roleRows.length > 0) {
-      const row = roleRows[0];
-      console.log(`Database role: current_user=${row.current_user}, session_user=${row.session_user}`);
-      console.log(`Read-only mode: ${row.read_only}, isolation: ${row.isolation}`);
-      if (String(row.read_only).toLowerCase() !== "on") {
-        console.error("ERROR: transaction_read_only is off; aborting to protect data.");
-        process.exit(1);
-      }
-      readOnlyVerified = true;
-    } else {
-      console.error("ERROR: database role query returned no rows; aborting.");
-      process.exit(1);
-    }
-  } catch (e) {
-    console.error("ERROR: database role query failed; aborting:", e);
+  // Verify SELECT-only grants (no INSERT/UPDATE/DELETE/TRUNCATE/REFERENCES/TRIGGER)
+  const writeGrants = await prisma.$queryRawUnsafe(`
+    SELECT table_name, privilege_type
+    FROM information_schema.role_table_grants
+    WHERE grantee = current_user
+      AND table_schema = 'public'
+      AND privilege_type IN ('INSERT','UPDATE','DELETE','TRUNCATE','REFERENCES','TRIGGER')
+  `) as any[];
+
+  if (writeGrants.length > 0) {
+    console.error("ERROR: current user has write privileges on public tables; SELECT-only role required.");
+    console.error(JSON.stringify(writeGrants, null, 2));
     process.exit(1);
   }
 
-  if (!readOnlyVerified) {
-    console.error("ERROR: read-only role verification failed; aborting.");
+  const roleRows = await prisma.$queryRawUnsafe(`
+    SELECT current_user, session_user, current_setting('transaction_read_only') AS read_only, current_setting('transaction_isolation') AS isolation
+  `) as any[];
+  if (!roleRows.length) {
+    console.error("ERROR: database role query returned no rows; aborting.");
     process.exit(1);
   }
+  const row = roleRows[0];
+  console.log(`Database role: current_user=${row.current_user}, session_user=${row.session_user}`);
+  console.log(`Read-only mode: ${row.read_only}, isolation: ${row.isolation}`);
+  if (String(row.read_only).toLowerCase() !== "on") {
+    console.error("ERROR: transaction_read_only is off; aborting to protect data.");
+    process.exit(1);
+  }
+
+  console.log("SELECT-only grants verified.");
 
   const total = await prisma.notification.count();
   const readCount = await prisma.notification.count({ where: { read: true } });
@@ -66,8 +71,8 @@ async function main() {
     orderBy: { type: "asc" },
   });
   console.log("\nCounts by type:");
-  for (const row of byType) {
-    console.log(`  ${row.type}: ${row._count._all}`);
+  for (const r of byType) {
+    console.log(`  ${r.type}: ${r._count._all}`);
   }
 
   const byOrg = await prisma.notification.groupBy({
@@ -77,8 +82,8 @@ async function main() {
     take: 10,
   });
   console.log("\nTop 10 organizations by notification count (sanitized IDs):");
-  for (const row of byOrg) {
-    console.log(`  org ${sanitizeOrgId(row.orgId)}: ${row._count._all}`);
+  for (const r of byOrg) {
+    console.log(`  org ${sanitizeOrgId(r.orgId)}: ${r._count._all}`);
   }
 
   const orgWide = await prisma.notification.count({ where: { userId: null } });
@@ -118,5 +123,3 @@ main()
   .finally(async () => {
     await prisma.$disconnect();
   });
-
-
