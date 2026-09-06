@@ -8,7 +8,7 @@ const nextConfig: NextConfig = {
     // Phase 8: ignoreBuildErrors removed — all TS errors must be fixed or explicitly
     // suppressed with @ts-expect-error per-line. This ensures type safety is enforced
     // at build time and prevents type regressions from reaching production.
-    ignoreBuildErrors: true,
+    ignoreBuildErrors: false,
   },
   reactStrictMode: true, // Enable strict mode for better React practices
   allowedDevOrigins: ["http://localhost:3000"],
@@ -249,6 +249,7 @@ export default withSentryConfig(nextConfig, {
   // Phase 6: Removed invalid Sentry build option — disableAutomaticSessionTracking
   // is a runtime option, not a build option. Configure it in sentry.client.config.ts instead.
 });
+
 
 
 
