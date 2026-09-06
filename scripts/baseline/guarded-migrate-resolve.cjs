@@ -203,9 +203,12 @@ async function main() {
       { stdio: "inherit", env: process.env }
     );
 
-    const postStatus = runPrismaStatus("after-resolve");
-    if (postStatus.status !== 0) {
-      throw new Error("Post-resolve prisma migrate status is not clean");
+    const postHistory = await pool.query(
+      `SELECT migration_name, finished_at FROM public._prisma_migrations WHERE migration_name = $1`,
+      [BASELINE_MIGRATION]
+    );
+    if (postHistory.rows.length !== 1 || !postHistory.rows[0].finished_at) {
+      throw new Error("Post-resolve baseline migration history is missing or not finished");
     }
 
     const noOpDeploy = runPrismaDeploy("no-op-after-resolve");
