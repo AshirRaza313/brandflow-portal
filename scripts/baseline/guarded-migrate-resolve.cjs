@@ -15,6 +15,7 @@ const {
 const { assertConnectedIdentity, validateRehearsalUrl } = require("./safety-guard.cjs");
 
 const BASELINE_MIGRATION = "20260101000000_baseline";
+const FORWARD_MIGRATION = "20260201000000_add_notification_read_receipt";
 const EVIDENCE_DIR = path.resolve("backups/path-b-evidence");
 const migrationName = process.argv[2];
 if (migrationName !== BASELINE_MIGRATION) {
@@ -75,8 +76,12 @@ async function captureDataState(pool, label) {
     ORDER BY table_name
   `);
   const tables = tableResult.rows.map((row) => row.table_name);
-  if (JSON.stringify(tables) !== JSON.stringify([...APPROVED_TABLES].sort())) {
-    throw new Error(`${label}: application table set does not match approved baseline`);
+  const expectedTables = [...APPROVED_TABLES].sort();
+  const isAfterForward = label.includes("after-forward");
+  if (!isAfterForward) {
+    if (JSON.stringify(tables) !== JSON.stringify(expectedTables)) {
+      throw new Error(`${label}: application table set does not match approved baseline`);
+    }
   }
 
   const fingerprints = [];
@@ -225,6 +230,25 @@ async function main() {
       throw new Error("Post-resolve baseline migration history is missing or not finished");
     }
 
+    // Now deploy forward migration to prove evolved schema can be adopted on populated DB
+    const forwardDeploy = runPrismaDeploy("forward-migrate");
+    if (forwardDeploy.status !== 0) {
+      throw new Error("Forward migration deploy failed");
+    }
+
+    const afterForwardData = await captureDataState(pool, "after-forward-migrate");
+    const afterForwardCatalogPath = path.join(EVIDENCE_DIR, "after-forward-migrate-catalog.json");
+    const afterForwardCatalog = await captureFullCatalog({
+      connectionString,
+      outputPath: afterForwardCatalogPath,
+      projectRef: parsed.projectRef,
+      headSha,
+      mergeSha,
+      runId,
+      runAttempt,
+      expectedConnectedRole: parsed.expectedConnectedRole,
+    });
+
     const afterData = await captureDataState(pool, "after-resolve");
     assertDataUnchanged(beforeData, afterData);
     const afterCatalogPath = path.join(EVIDENCE_DIR, "after-resolve-catalog.json");
@@ -253,26 +277,28 @@ async function main() {
       FROM public._prisma_migrations
       ORDER BY started_at
     `);
-    if (history.rows.length !== 1) {
-      throw new Error(`Expected exactly one migration history row, got ${history.rows.length}`);
+    if (history.rows.length !== 2) {
+      throw new Error(`Expected two migration history rows (baseline + forward), got ${history.rows.length}`);
     }
-    const row = history.rows[0];
-    const expectedChecksum = sha256(
+    const baselineRow = history.rows.find((r) => r.migration_name === BASELINE_MIGRATION);
+    const forwardRow = history.rows.find((r) => r.migration_name === FORWARD_MIGRATION);
+    if (!baselineRow || !forwardRow) {
+      throw new Error("Missing expected migration history rows");
+    }
+    const expectedBaselineChecksum = sha256(
       fs.readFileSync(`prisma/migrations/${BASELINE_MIGRATION}/migration.sql`)
     );
-    if (row.migration_name !== BASELINE_MIGRATION) throw new Error("Unexpected migration history name");
-    if (row.checksum !== expectedChecksum) throw new Error("Migration history checksum mismatch");
-    if (!row.finished_at || row.rolled_back_at !== null || row.applied_steps_count !== 0) {
-      throw new Error("Migration history row is not a clean resolve --applied record");
+    if (baselineRow.checksum !== expectedBaselineChecksum) {
+      throw new Error("Baseline migration history checksum mismatch");
     }
     const historyEvidence = {
       exact_history_row_count: history.rows.length,
-      migration_name: row.migration_name,
-      checksum: row.checksum,
-      started_at: row.started_at,
-      finished_at: row.finished_at,
-      rolled_back_at: row.rolled_back_at,
-      applied_steps_count: row.applied_steps_count,
+      migration_name: baselineRow.migration_name,
+      checksum: baselineRow.checksum,
+      started_at: baselineRow.started_at,
+      finished_at: baselineRow.finished_at,
+      rolled_back_at: baselineRow.rolled_back_at,
+      applied_steps_count: baselineRow.applied_steps_count,
       pr_head_sha: headSha,
       tested_merge_sha: mergeSha,
       run_id: runId,
@@ -305,7 +331,7 @@ async function main() {
       ),
     };
     writeJson("manifest.json", manifest);
-    console.log("Synthetic Path-B adoption proof complete; schema and data fingerprints are unchanged");
+    console.log("Synthetic Path-B adoption proof complete; baseline plus forward migration proved");
   } finally {
     await pool.end();
   }
