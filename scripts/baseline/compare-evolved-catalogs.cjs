@@ -7,7 +7,7 @@ const {
   COLUMN_FIELDS,
   repositoryFileSha256,
   validateCatalog,
-} = require("./catalog-contract.cjs");
+} = require("./evolved-catalog-contract.cjs");
 const { SUPABASE_ROOT_CA_SHA256 } = require("./supabase-tls.cjs");
 
 const BASELINE_MIGRATION_PATH = path.resolve(
@@ -274,4 +274,5 @@ module.exports = {
   validateRepositoryHashes,
   writeReport,
 };
+
 

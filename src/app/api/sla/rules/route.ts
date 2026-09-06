@@ -4,20 +4,9 @@ import { withAuth } from "@/lib/auth-middleware";
 import { sanitizeObject } from "@/lib/sanitize";
 import logger from "@/lib/logger";
 import { withRateLimit } from "@/lib/rate-limit";
+import { validateSLARule, SLARule } from "@/lib/sla-contract";
 
-// ── Types ──
-
-interface SLARule {
-  id: string;
-  name: string;
-  fromStatus: string;
-  toStatus: string;
-  timeLimitHours: number;
-  responsibleRole: string;
-  escalationAction: string;
-  enabled: boolean;
-}
-
+// ── Default Rules (immutable, always copied before use) ──
 const DEFAULT_RULES: SLARule[] = [
   {
     id: "default-1",
@@ -61,49 +50,54 @@ const DEFAULT_RULES: SLARule[] = [
   },
 ];
 
-// ── GET: Fetch SLA rules for the organization ──
+function cloneDefaults(): SLARule[] {
+  return DEFAULT_RULES.map(r => ({ ...r }));
+}
 
+function parseStoredRules(raw: string): SLARule[] {
+  try {
+    const parsed = JSON.parse(raw);
+    if (!Array.isArray(parsed)) return cloneDefaults();
+    const validRules: SLARule[] = [];
+    for (const rawRule of parsed) {
+      const result = validateSLARule(rawRule as any);
+      if (result.valid) {
+        validRules.push(result.rule);
+      }
+    }
+    return validRules;
+  } catch {
+    return cloneDefaults();
+  }
+}
+
+// ── GET: Fetch SLA rules for the organization ──
 export const GET = withRateLimit(withAuth(async (req, authCtx) => {
   try {
     const { searchParams } = new URL(req.url);
     const orgId = searchParams.get("orgId") || authCtx.organizationId;
 
     if (!orgId) return NextResponse.json({ error: "orgId required" }, { status: 400 });
-
-    // Security: Ensure user can only access their own org's data
     if (orgId !== authCtx.organizationId) {
       return NextResponse.json({ error: "Access denied" }, { status: 403 });
     }
 
     const setting = await withRetry(async () => {
       return await db.systemSetting.findUnique({
-      where: { key: `sla-rules-${orgId}` },
-    })
+        where: { key: `sla-rules-${orgId}` },
+      });
     }, 2, 500);
 
-    let rules: SLARule[];
-    if (setting) {
-      try {
-        rules = JSON.parse(setting.value);
-      } catch {
-        rules = DEFAULT_RULES;
-      }
-    } else {
-      rules = DEFAULT_RULES;
-    }
-
+    const rules = setting ? parseStoredRules(setting.value) : cloneDefaults();
     return NextResponse.json({ rules, total: rules.length, active: rules.filter((r) => r.enabled).length });
   } catch (error: unknown) {
     logger.error("SLA rules GET error", error, { orgId: authCtx?.organizationId });
-    if (isDbUnavailable(error)) {
-      return dbErrorResponse(error);
-    }
+    if (isDbUnavailable(error)) return dbErrorResponse(error);
     return NextResponse.json({ error: "Failed to fetch SLA rules" }, { status: 500 });
   }
 }), { maxRequests: 60, windowSeconds: 60 });
 
 // ── POST: Create a new SLA rule ──
-
 export const POST = withRateLimit(withAuth(async (req, authCtx) => {
   try {
     const body = await req.json();
@@ -114,69 +108,51 @@ export const POST = withRateLimit(withAuth(async (req, authCtx) => {
     if (!orgId || !name || !fromStatus || !toStatus || !timeLimitHours) {
       return NextResponse.json({ error: "Missing required fields: name, fromStatus, toStatus, timeLimitHours" }, { status: 400 });
     }
-
-    // Security: Ensure user can only create rules in their own org
     if (orgId !== authCtx.organizationId) {
       return NextResponse.json({ error: "Access denied" }, { status: 403 });
     }
 
-    // Fetch existing rules
-    const setting = await withRetry(async () => {
-      return await db.systemSetting.findUnique({
-      where: { key: `sla-rules-${orgId}` },
-    })
-    }, 2, 500);
-
-    let rules: SLARule[] = DEFAULT_RULES;
-    if (setting) {
-      try {
-        rules = JSON.parse(setting.value);
-      } catch {
-        rules = DEFAULT_RULES;
-      }
-    }
-
-    // Add new rule
-    const newRule: SLARule = {
+    const rawRule = {
       id: `rule-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
       name,
       fromStatus,
       toStatus,
       timeLimitHours: Number(timeLimitHours),
-      responsibleRole: responsibleRole || "support_agent",
-      escalationAction: escalationAction || "No escalation configured",
+      responsibleRole,
+      escalationAction,
       enabled: true,
     };
+    const validation = validateSLARule(rawRule);
+    if (!validation.valid) {
+      return NextResponse.json({ error: `Invalid rule: ${validation.reason}` }, { status: 400 });
+    }
 
-    rules.push(newRule);
-
-    // Upsert
-    await withRetry(async () => {
-      return await db.systemSetting.upsert({
-      where: { key: `sla-rules-${orgId}` },
-      create: {
-        key: `sla-rules-${orgId}`,
-        value: JSON.stringify(rules),
-        category: "sla",
-      },
-      update: {
-        value: JSON.stringify(rules),
-      },
-    })
+    const setting = await withRetry(async () => {
+      return await db.systemSetting.findUnique({
+        where: { key: `sla-rules-${orgId}` },
+      });
     }, 2, 500);
 
-    return NextResponse.json({ rule: newRule, rules }, { status: 201 });
+    const rules = setting ? parseStoredRules(setting.value) : cloneDefaults();
+    rules.push(validation.rule);
+
+    await withRetry(async () => {
+      return await db.systemSetting.upsert({
+        where: { key: `sla-rules-${orgId}` },
+        create: { key: `sla-rules-${orgId}`, value: JSON.stringify(rules), category: "sla" },
+        update: { value: JSON.stringify(rules) },
+      });
+    }, 2, 500);
+
+    return NextResponse.json({ rule: validation.rule, rules }, { status: 201 });
   } catch (error: unknown) {
     logger.error("SLA rules POST error", error, { orgId: authCtx?.organizationId });
-    if (isDbUnavailable(error)) {
-      return dbErrorResponse(error);
-    }
+    if (isDbUnavailable(error)) return dbErrorResponse(error);
     return NextResponse.json({ error: "Failed to create SLA rule" }, { status: 500 });
   }
 }), { maxRequests: 30, windowSeconds: 60 });
 
 // ── PUT: Update existing SLA rules (batch update) ──
-
 export const PUT = withRateLimit(withAuth(async (req, authCtx) => {
   try {
     const body = await req.json();
@@ -187,44 +163,33 @@ export const PUT = withRateLimit(withAuth(async (req, authCtx) => {
     if (!orgId || !updatedRules || !Array.isArray(updatedRules)) {
       return NextResponse.json({ error: "Missing required fields: rules (array)" }, { status: 400 });
     }
-
-    // Security: Ensure user can only update rules in their own org
     if (orgId !== authCtx.organizationId) {
       return NextResponse.json({ error: "Access denied" }, { status: 403 });
     }
 
-    // Validate rules structure
-    const sanitizedRules = updatedRules.map((rule: any) => ({
-      id: rule.id || `rule-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
-      name: rule.name || "Unnamed Rule",
-      fromStatus: rule.fromStatus || "pending",
-      toStatus: rule.toStatus || "confirmed",
-      timeLimitHours: Number(rule.timeLimitHours) || 24,
-      responsibleRole: rule.responsibleRole || "support_agent",
-      escalationAction: rule.escalationAction || "No escalation configured",
-      enabled: rule.enabled !== false,
-    }));
+    const sanitizedRules: SLARule[] = [];
+    for (const raw of updatedRules) {
+      const validation = validateSLARule(raw as any);
+      if (!validation.valid) {
+        return NextResponse.json({ error: `Invalid rule: ${validation.reason}` }, { status: 400 });
+      }
+      sanitizedRules.push(validation.rule);
+    }
 
     await withRetry(async () => {
       return await db.systemSetting.upsert({
-      where: { key: `sla-rules-${orgId}` },
-      create: {
-        key: `sla-rules-${orgId}`,
-        value: JSON.stringify(sanitizedRules),
-        category: "sla",
-      },
-      update: {
-        value: JSON.stringify(sanitizedRules),
-      },
-    })
+        where: { key: `sla-rules-${orgId}` },
+        create: { key: `sla-rules-${orgId}`, value: JSON.stringify(sanitizedRules), category: "sla" },
+        update: { value: JSON.stringify(sanitizedRules) },
+      });
     }, 2, 500);
 
     return NextResponse.json({ rules: sanitizedRules, total: sanitizedRules.length });
   } catch (error: unknown) {
     logger.error("SLA rules PUT error", error, { orgId: authCtx?.organizationId });
-    if (isDbUnavailable(error)) {
-      return dbErrorResponse(error);
-    }
+    if (isDbUnavailable(error)) return dbErrorResponse(error);
     return NextResponse.json({ error: "Failed to update SLA rules" }, { status: 500 });
   }
 }), { maxRequests: 30, windowSeconds: 60 });
+
+

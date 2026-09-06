@@ -4,11 +4,13 @@ import { useValtrioxStore } from "@/store/brandflow-store";
 import { Card, CardContent } from "@/components/ui/card";
 import { ListTodo, Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useTranslation } from "@/lib/i18n";
 import { fetchWithAuth } from "@/lib/fetch-with-auth";
 import { useEffect, useState, useCallback } from "react";
 
 export function TaskProgressWidget() {
   const { organization, appTheme, setActiveSection } = useValtrioxStore();
+  const t = useTranslation();
   const isGold = appTheme === "premium-dark";
   const isDark = appTheme === "dark" || isGold;
 
@@ -35,7 +37,7 @@ export function TaskProgressWidget() {
 
   useEffect(() => { fetchTasks(); }, [fetchTasks]);
 
-  const cardClass = isGold ? "bg-white/[0.03] border-white/[0.06]" : isDark ? "bg-white/[0.03] border-white/[0.06]" : "bg-white border-slate-200";
+  const cardClass = isGold ? "bg-slate-800/50 border-slate-700/50" : isDark ? "bg-slate-800/50 border-slate-700/50" : "bg-white border-slate-200";
   const textPrimary = isDark ? "text-white" : "text-slate-900";
   const textMuted = isDark ? "text-slate-400" : "text-muted-foreground";
   const accentColor = isGold ? "text-amber-400" : "text-amber-500";
@@ -51,7 +53,7 @@ export function TaskProgressWidget() {
             <ListTodo className={cn("h-4 w-4", accentColor)} />
           </div>
           <div>
-            <p className={cn("text-xs font-semibold", textPrimary)}>Tasks</p>
+            <p className={cn("text-xs font-semibold", textPrimary)}>{t("taskProgressTitle")}</p>
             <p className={cn("text-[10px]", textMuted)}>{stats ? `${stats.completed}/${stats.total} done` : "Loading..."}</p>
           </div>
         </div>
@@ -63,15 +65,15 @@ export function TaskProgressWidget() {
             <div className="grid grid-cols-3 gap-2 text-center">
               <div>
                 <p className={cn("text-sm font-bold", textPrimary)}>{stats.total}</p>
-                <p className={cn("text-[10px]", textMuted)}>Total</p>
+                <p className={cn("text-[10px]", textMuted)}>{t("taskProgressTotal")}</p>
               </div>
               <div>
                 <p className={cn("text-sm font-bold", "text-amber-400")}>{stats.inProgress}</p>
-                <p className={cn("text-[10px]", textMuted)}>Active</p>
+                <p className={cn("text-[10px]", textMuted)}>{t("taskProgressActive")}</p>
               </div>
               <div>
                 <p className={cn("text-sm font-bold", "text-emerald-400")}>{stats.completed}</p>
-                <p className={cn("text-[10px]", textMuted)}>Done</p>
+                <p className={cn("text-[10px]", textMuted)}>{t("taskProgressDone")}</p>
               </div>
             </div>
           </>
@@ -83,3 +85,4 @@ export function TaskProgressWidget() {
     </Card>
   );
 }
+

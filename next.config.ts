@@ -249,3 +249,7 @@ export default withSentryConfig(nextConfig, {
   // Phase 6: Removed invalid Sentry build option — disableAutomaticSessionTracking
   // is a runtime option, not a build option. Configure it in sentry.client.config.ts instead.
 });
+
+
+
+

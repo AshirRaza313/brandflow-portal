@@ -24,6 +24,7 @@ import {
 import { Textarea } from "@/components/ui/textarea";
 import { cn } from "@/lib/utils";
 import { fetchWithAuth } from "@/lib/fetch-with-auth";
+import { MAX_TIME_LIMIT_HOURS, validateSLARule } from "@/lib/sla-contract";
 import { toast } from "sonner";
 import { motion, AnimatePresence } from "framer-motion";
 import {
@@ -223,6 +224,15 @@ export function SLAEnginePage() {
   // ── Rule CRUD ──
   const handleSaveRule = async () => {
     if (!newRule.name.trim()) { toast.error("Rule name is required"); return; }
+    if (newRule.timeLimitHours <= 0 || newRule.timeLimitHours > MAX_TIME_LIMIT_HOURS) {
+      toast.error(`Time limit must be between 1 and ${MAX_TIME_LIMIT_HOURS} hours`);
+      return;
+    }
+    const validation = validateSLARule({ ...newRule, id: editingRule?.id || "temp", enabled: true });
+    if (!validation.valid) {
+      toast.error(`Invalid rule: ${validation.reason}`);
+      return;
+    }
     if (!organization?.id) return;
 
     setRulesSaving(true);
@@ -1032,3 +1042,4 @@ export function SLAEnginePage() {
     </div>
   );
 }
+

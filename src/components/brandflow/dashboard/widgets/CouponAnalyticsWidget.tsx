@@ -67,9 +67,9 @@ export function CouponAnalyticsWidget() {
   }, [fetchCoupons]);
 
   const cardClass = isGold
-    ? "bg-white/[0.03] border-white/[0.06]"
+    ? "bg-slate-800/50 border-slate-700/50"
     : isDark
-    ? "bg-white/[0.03] border-white/[0.06]"
+    ? "bg-slate-800/50 border-slate-700/50"
     : "bg-white border-slate-200";
 
   const textPrimary = isDark ? "text-white" : "text-slate-900";
@@ -97,7 +97,7 @@ export function CouponAnalyticsWidget() {
             <div className={cn("h-8 w-8 rounded-lg flex items-center justify-center", accentBg)}>
               <Ticket className={cn("h-4 w-4", accentColor)} />
             </div>
-            <p className={cn("text-xs font-semibold", textPrimary)}>Coupons</p>
+            <p className={cn("text-xs font-semibold", textPrimary)}>{t("couponAnalyticsTitle")}</p>
           </div>
           <button
             className={cn("text-[10px] font-medium flex items-center gap-0.5", isDark ? "text-amber-400 hover:text-amber-300" : "text-amber-600 hover:text-amber-700")}
@@ -112,17 +112,17 @@ export function CouponAnalyticsWidget() {
           <div className={cn("p-2 rounded-lg text-center", isDark ? "bg-white/[0.03]" : "bg-slate-50")}>
             <Ticket className={cn("h-3.5 w-3.5 mx-auto mb-1", accentColor)} />
             <p className={cn("text-base font-bold", textPrimary)}>{data?.activeCoupons || 0}</p>
-            <p className={cn("text-[10px]", textMuted)}>Active</p>
+            <p className={cn("text-[10px]", textMuted)}>{t("couponAnalyticsActive")}</p>
           </div>
           <div className={cn("p-2 rounded-lg text-center", isDark ? "bg-white/[0.03]" : "bg-slate-50")}>
             <Users className={cn("h-3.5 w-3.5 mx-auto mb-1", accentColor)} />
             <p className={cn("text-base font-bold", textPrimary)}>{data?.totalRedeemed || 0}</p>
-            <p className={cn("text-[10px]", textMuted)}>Redeemed</p>
+            <p className={cn("text-[10px]", textMuted)}>{t("couponAnalyticsRedeemed")}</p>
           </div>
           <div className={cn("p-2 rounded-lg text-center", isDark ? "bg-white/[0.03]" : "bg-slate-50")}>
             <Percent className={cn("h-3.5 w-3.5 mx-auto mb-1", accentColor)} />
             <p className={cn("text-base font-bold", textPrimary)}>{data?.averageDiscount || 0}%</p>
-            <p className={cn("text-[10px]", textMuted)}>Avg. Disc.</p>
+            <p className={cn("text-[10px]", textMuted)}>{t("couponAnalyticsAvgDisc")}</p>
           </div>
         </div>
 
@@ -130,7 +130,7 @@ export function CouponAnalyticsWidget() {
         {data?.topCoupon && (
           <div className={cn("p-2 rounded-lg flex items-center justify-between", isDark ? "bg-white/[0.02] border border-white/[0.04]" : "bg-slate-50")}>
             <div className="min-w-0 flex-1">
-              <p className={cn("text-[10px] font-semibold uppercase tracking-wider", textMuted)}>Top Coupon</p>
+              <p className={cn("text-[10px] font-semibold uppercase tracking-wider", textMuted)}>{t("couponAnalyticsTopCoupon")}</p>
               <p className={cn("text-xs font-medium truncate", textPrimary)}>{data.topCoupon.name}</p>
             </div>
             <span className={cn(
@@ -146,10 +146,10 @@ export function CouponAnalyticsWidget() {
           <div className="text-center py-2">
             <p className={cn("text-xs", textMuted)}>{t("noCoupons")}</p>
             <button
-              className={cn("text-[10px] font-medium mt-1", isDark ? "text-amber-400" : "text-amber-600")}
+              className={cn("text-[10px] font-medium mt-1 rounded-md px-2 py-1 transition-colors", isDark ? "text-amber-400 hover:text-amber-300 hover:bg-amber-500/10" : "text-amber-600 hover:text-amber-700 hover:bg-amber-50")}
               onClick={() => setActiveSection("coupons")}
             >
-              Create your first coupon →
+              {t("createFirstCoupon")} →
             </button>
           </div>
         )}
@@ -157,3 +157,4 @@ export function CouponAnalyticsWidget() {
     </Card>
   );
 }
+

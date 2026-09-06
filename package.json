@@ -5,7 +5,7 @@
   "scripts": {
     "dev": "next dev -p 3000",
     "build": "prisma generate && next build",
-    "start": "node .next/standalone/server.js",
+    "start": "next start",
     "lint": "eslint .",
     "postinstall": "prisma generate",
     "db:push": "prisma db push",
@@ -14,6 +14,7 @@
     "db:migrate:deploy": "prisma migrate deploy",
     "db:seed": "tsx prisma/seed.ts",
     "db:reset": "prisma migrate reset",
+    "db:inventory": "tsx scripts/historical-rows-inventory.ts",
     "test": "vitest run",
     "test:watch": "vitest"
   },
@@ -94,7 +95,9 @@
     "zustand": "^5.0.6"
   },
   "devDependencies": {
+    "@playwright/test": "^1.63.0",
     "@tailwindcss/postcss": "^4",
+    "@testing-library/dom": "^10.4.1",
     "@testing-library/jest-dom": "^6.9.1",
     "@testing-library/react": "^16.3.2",
     "@types/bcryptjs": "^2.4.6",
@@ -109,6 +112,7 @@
     "jsdom": "^29.0.2",
     "prisma": "^6.19.3",
     "tailwindcss": "^4",
+    "tsx": "^4.23.13",
     "tw-animate-css": "^1.3.5",
     "typescript": "^6.0.3",
     "vitest": "^4.1.5"

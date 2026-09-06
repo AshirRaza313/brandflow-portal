@@ -5,6 +5,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Lock, Crown, ArrowRight } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useTranslation } from "@/lib/i18n";
 import { TIER_COLORS, getNextPlanTier } from "@/lib/dashboard-tiers";
 
 interface WidgetLockedCardProps {
@@ -15,13 +16,14 @@ interface WidgetLockedCardProps {
 
 export function WidgetLockedCard({ widgetLabel, requiredPlan, currentPlan }: WidgetLockedCardProps) {
   const { setActiveSection, appTheme } = useValtrioxStore();
+  const t = useTranslation();
   const isGold = appTheme === "premium-dark";
   const isDark = appTheme === "dark" || isGold;
 
   const cardClass = isGold
-    ? "bg-white/[0.03] border-white/[0.06]"
+    ? "bg-slate-800/50 border-slate-700/50"
     : isDark
-    ? "bg-white/[0.03] border-white/[0.06]"
+    ? "bg-slate-800/50 border-slate-700/50"
     : "bg-white border-slate-200";
 
   const textPrimary = isDark ? "text-white" : "text-slate-900";
@@ -40,7 +42,7 @@ export function WidgetLockedCard({ widgetLabel, requiredPlan, currentPlan }: Wid
         </div>
         <p className={cn("text-xs font-semibold", textPrimary)}>{widgetLabel}</p>
         <p className={cn("text-[10px] text-center", textMuted)}>
-          Requires <span className={cn("font-semibold", tierColors.text)}>{planDisplayName}</span> plan
+          {t("requiresPlan", { plan: planDisplayName })}
         </p>
         <Button
           variant="ghost"
@@ -54,7 +56,7 @@ export function WidgetLockedCard({ widgetLabel, requiredPlan, currentPlan }: Wid
           onClick={() => setActiveSection("subscriptions")}
         >
           <Crown className="h-3 w-3" />
-          {nextPlan ? `Upgrade to ${nextPlan.charAt(0).toUpperCase() + nextPlan.slice(1)}` : "Upgrade Plan"}
+          {nextPlan ? t("upgradeToPlan", { plan: nextPlan.charAt(0).toUpperCase() + nextPlan.slice(1) }) : t("upgradePlan")}
           <ArrowRight className="h-2.5 w-2.5" />
         </Button>
       </div>
@@ -70,3 +72,7 @@ export function WidgetLockedCard({ widgetLabel, requiredPlan, currentPlan }: Wid
     </Card>
   );
 }
+
+
+
+

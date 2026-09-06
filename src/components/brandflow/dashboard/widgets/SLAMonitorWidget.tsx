@@ -1,61 +1,244 @@
 "use client";
 
+import { useEffect, useState, useCallback, useRef } from "react";
 import { useValtrioxStore } from "@/store/brandflow-store";
 import { Card, CardContent } from "@/components/ui/card";
-import { ShieldCheck, AlertTriangle, CheckCircle2, Clock } from "lucide-react";
+import { ShieldCheck, Clock, ArrowRight, Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { fetchWithAuth } from "@/lib/fetch-with-auth";
+import { useTranslation } from "@/lib/i18n";
+import { ALLOWED_SLA_STATUSES, ALLOWED_SLA_ROLES, MAX_TIME_LIMIT_HOURS, validateSLARule } from "@/lib/sla-contract";
 
+interface SLARule {
+  id: string;
+  name: string;
+  fromStatus: string;
+  toStatus: string;
+  timeLimitHours: number;
+  responsibleRole: string;
+  escalationAction: string;
+  enabled: boolean;
+}
 export function SLAMonitorWidget() {
-  const { appTheme, setActiveSection } = useValtrioxStore();
+  const { organization, appTheme, setActiveSection } = useValtrioxStore();
+  const t = useTranslation();
   const isGold = appTheme === "premium-dark";
   const isDark = appTheme === "dark" || isGold;
 
-  const cardClass = isGold ? "bg-white/[0.03] border-white/[0.06]" : isDark ? "bg-white/[0.03] border-white/[0.06]" : "bg-white border-slate-200";
+  const [rules, setRules] = useState<SLARule[]>([]);
+  const [loading, setLoading] = useState(true);
+ const [error, setError] = useState(false);
+
+
+  const abortControllerRef = useRef<AbortController | null>(null);
+  const requestIdRef = useRef(0);
+
+  const fetchRules = useCallback(async () => {
+    const orgId = organization?.id;
+    if (!orgId) {
+      setRules([]);
+      setLoading(false);
+      setError(false);
+      return;
+    }
+    abortControllerRef.current?.abort();
+    const controller = new AbortController();
+    abortControllerRef.current = controller;
+    const requestId = ++requestIdRef.current;
+
+    setLoading(true);
+    setError(false);
+    try {
+      const res = await fetchWithAuth(`/api/sla/rules?orgId=${encodeURIComponent(orgId)}`, { signal: controller.signal });
+      if (requestId !== requestIdRef.current || controller.signal.aborted) return;
+      if (res.ok) {
+        const data = await res.json();
+        if (Array.isArray(data.rules)) {
+          const rawRules = data.rules as Record<string, unknown>[];
+          const validated: SLARule[] = [];
+          const invalidReasons: string[] = [];
+
+          for (const raw of rawRules) {
+            const result = validateSLARule(raw);
+            if (result.valid) {
+              validated.push(result.rule);
+            } else {
+              invalidReasons.push(result.reason);
+            }
+          }
+
+          if (requestId !== requestIdRef.current || controller.signal.aborted) return;
+
+          if (invalidReasons.length > 0) {
+            console.error(
+              "[SLAMonitorWidget] Validation failed for " +
+                invalidReasons.length +
+                " rule(s) out of " +
+                rawRules.length +
+                ". Reasons: " +
+                invalidReasons.join(", ")
+            );
+            setError(true);
+            setRules([]);
+            setLoading(false);
+            return;
+          }
+
+          setRules(validated);
+          setLoading(false);
+          return;
+        }
+      }
+      if (requestId !== requestIdRef.current || controller.signal.aborted) return;
+      setError(true);
+    } catch (err: any) {
+        if (err?.name === "AbortError") return;
+        if (requestId !== requestIdRef.current || controller.signal.aborted) return;
+      setError(true);
+    }
+    setRules([]);
+    setLoading(false);
+  }, [organization?.id]);
+
+  useEffect(() => {
+    fetchRules();
+    return () => {
+      abortControllerRef.current?.abort();
+    };
+  }, [fetchRules]);
+
+  const cardClass = isGold
+    ? "bg-slate-800/50 border-slate-700/50"
+    : isDark
+      ? "bg-slate-800/50 border-slate-700/50"
+      : "bg-white border-slate-200";
   const textPrimary = isDark ? "text-white" : "text-slate-900";
   const textMuted = isDark ? "text-slate-400" : "text-muted-foreground";
   const accentColor = isGold ? "text-amber-400" : "text-amber-500";
   const accentBg = isGold ? "bg-amber-500/10" : "bg-amber-100";
+  const activeCount = rules.filter((r) => r.enabled).length;
 
-  const slaRules = [
-    { name: "Order Dispatch", sla: "99.9%", met: true },
-    { name: "Delivery SLA", sla: "99.5%", met: true },
-    { name: "Support Response", sla: "95%", met: false },
-    { name: "Return Processing", sla: "98%", met: true },
-  ];
+  if (error) {
+    return (
+      <Card className={cn("transition-all duration-300", cardClass)}>
+        <CardContent className="p-4 space-y-3">
+          <div className="flex items-center gap-2">
+            <div className={cn("h-8 w-8 rounded-lg flex items-center justify-center", accentBg)}>
+              <ShieldCheck className={cn("h-4 w-4", accentColor)} />
+            </div>
+            <div>
+              <p className={cn("text-xs font-semibold", textPrimary)}>{t("slaRules")}</p>
+              <p className={cn("text-[10px]", textMuted)}>{t("slaRulesDesc")}</p>
+            </div>
+          </div>
+          <div className="flex flex-col items-center justify-center py-4 space-y-2">
+            <Clock className={cn("h-6 w-6", textMuted)} />
+            <p className={cn("text-xs text-center", textMuted)}>{t("slaError")}</p>
+            <button
+              className={cn("text-[10px] font-medium px-3 py-1 rounded-md transition-colors", isDark ? "text-amber-400 hover:bg-amber-500/10" : "text-amber-600 hover:bg-amber-50")}
+              onClick={() => fetchRules()}
+            >
+              {t("slaRetry")}
+            </button>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  if (loading) {
+    return (
+      <Card className={cn("transition-all duration-300", cardClass)}>
+        <CardContent className="flex items-center justify-center p-6">
+          <div className="flex items-center gap-2">
+            <Loader2 className={cn("h-4 w-4 animate-spin", textMuted)} />
+            <span className={cn("text-xs", textMuted)}>{t("slaLoading")}</span>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
 
   return (
     <Card className={cn("transition-all duration-300", cardClass)}>
       <CardContent className="p-4 space-y-3">
-        <div className="flex items-center gap-2">
-          <div className={cn("h-8 w-8 rounded-lg flex items-center justify-center", accentBg)}>
-            <ShieldCheck className={cn("h-4 w-4", accentColor)} />
-          </div>
-          <div>
-            <p className={cn("text-xs font-semibold", textPrimary)}>SLA Monitor</p>
-            <p className={cn("text-[10px]", textMuted)}>{slaRules.filter(r => r.met).length}/{slaRules.length} compliant</p>
-          </div>
-        </div>
-        <div className="space-y-1.5">
-          {slaRules.map((rule) => (
-            <div key={rule.name} className={cn("flex items-center justify-between p-2 rounded-lg", isDark ? "bg-white/[0.03]" : "bg-slate-50")}>
-              <div className="flex items-center gap-2">
-                {rule.met ? (
-                  <CheckCircle2 className="h-3 w-3 text-emerald-400" />
-                ) : (
-                  <AlertTriangle className="h-3 w-3 text-red-400" />
-                )}
-                <span className={cn("text-xs", textPrimary)}>{rule.name}</span>
-              </div>
-              <span className={cn("text-[10px] font-mono font-medium", rule.met ? (isGold ? "text-emerald-400" : "text-emerald-600") : (isGold ? "text-red-400" : "text-red-600"))}>
-                {rule.sla}
-              </span>
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <div className={cn("h-8 w-8 rounded-lg flex items-center justify-center", accentBg)}>
+              <ShieldCheck className={cn("h-4 w-4", accentColor)} />
             </div>
-          ))}
+            <div>
+              <p className={cn("text-xs font-semibold", textPrimary)}>{t("slaRules")}</p>
+              <p className={cn("text-[10px]", textMuted)}>{t("slaRulesDesc")}</p>
+            </div>
+          </div>
+          {rules.length > 0 && (
+            <span className={cn("text-[10px] font-medium", isDark ? "text-emerald-400" : "text-emerald-600")}>
+              {activeCount}/{rules.length} {t("slaActive")}
+            </span>
+          )}
         </div>
-        <button className={cn("w-full text-[10px] font-medium text-center py-1 rounded-md transition-colors", isDark ? "text-amber-400 hover:bg-amber-500/10" : "text-amber-600 hover:bg-amber-50")} onClick={() => setActiveSection("sla-engine")}>
-          SLA Details →
+       {!organization?.id ? (
+          <div className="flex flex-col items-center justify-center py-4 space-y-2">
+            <Clock className={cn("h-6 w-6", textMuted)} />
+            <p className={cn("text-xs text-center", textMuted)}>{t("slaNoOrg")}</p>
+            <p className={cn("text-[10px] text-center", textMuted)}>{t("slaNoOrgDesc")}</p>
+          </div>
+        ) : rules.length === 0 ? (
+          <div className="flex flex-col items-center justify-center py-4 space-y-2">
+            <Clock className={cn("h-6 w-6", textMuted)} />
+            <p className={cn("text-xs text-center", textMuted)}>{t("slaNoRules")}</p>
+            <p className={cn("text-[10px] text-center", textMuted)}>{t("slaNoRulesDesc")}</p>
+          </div>
+        ) : (
+          <div className="space-y-1.5 max-h-36 overflow-y-auto">
+            {rules.slice(0, 4).map((rule) => (
+              <div
+                key={rule.id}
+                className={cn(
+                  "p-2 rounded-lg flex items-center justify-between gap-2",
+                  isDark ? "bg-white/[0.02] border border-white/[0.04]" : "bg-slate-50"
+                )}
+              >
+                <div className="min-w-0 flex-1">
+                  <p className={cn("text-[11px] font-medium truncate", textPrimary)}>{rule.name}</p>
+                  <div className={cn("flex items-center gap-1 mt-0.5 text-[10px]", textMuted)}>
+                    <span>{rule.fromStatus}</span>
+                    <ArrowRight className="h-2.5 w-2.5" />
+                    <span>{rule.toStatus}</span>
+                    <span className="ml-1">· {rule.timeLimitHours}h</span>
+                  </div>
+                </div>
+                <span
+                  className={cn(
+                    "text-[8px] px-1.5 py-px rounded-full border font-medium",
+                    rule.enabled
+                      ? isDark
+                        ? "bg-emerald-500/15 text-emerald-400 border-emerald-500/20"
+                        : "bg-emerald-50 text-emerald-600 border-emerald-200"
+                      : isDark
+                        ? "bg-slate-500/15 text-slate-400 border-slate-500/20"
+                        : "bg-slate-50 text-slate-500 border-slate-200"
+                  )}
+                >
+                  {rule.enabled ? t("slaEnabled") : t("slaDisabled")}
+                </span>
+              </div>
+            ))}
+          </div>
+        )}
+        <button
+          className={cn(
+            "w-full text-[10px] font-medium text-center py-1 rounded-md transition-colors",
+            isDark ? "text-amber-400 hover:bg-amber-500/10" : "text-amber-600 hover:bg-amber-50"
+          )}
+          onClick={() => setActiveSection("sla-engine")}
+        >
+          {t("slaConfigure")} →
         </button>
       </CardContent>
     </Card>
   );
 }
+
+

@@ -18,6 +18,7 @@ import {
 } from "lucide-react";
 import { motion } from "framer-motion";
 import { cn } from "@/lib/utils";
+import { useTranslation } from "@/lib/i18n";
 import { fetchWithAuth } from "@/lib/fetch-with-auth";
 
 // ── Types ──
@@ -59,6 +60,8 @@ interface DailySummary {
 // ── Component ──
 
 export function DailySummaryWidget() {
+  
+const t = useTranslation();
   const { organization, appTheme } = useValtrioxStore();
   const isGold = appTheme === "premium-dark";
   const isDark = appTheme === "dark" || isGold;
@@ -92,10 +95,10 @@ export function DailySummaryWidget() {
   }, [fetchSummary]);
 
   const cardClass = isGold
-    ? "bg-white/[0.03] border-white/[0.06]"
+    ? "bg-slate-800/50 border-slate-700/50"
     : isDark
-    ? "bg-white/[0.03] border-white/[0.06]"
-    : "bg-white border-slate-200";
+      ? "bg-slate-800/50 border-slate-700/50"
+      : "bg-white border-slate-200";
 
   const textPrimary = isDark ? "text-white" : "text-slate-900";
   const textSecondary = isDark ? "text-slate-400" : "text-slate-500";
@@ -105,7 +108,7 @@ export function DailySummaryWidget() {
   const accentBg = isGold ? "bg-amber-500/10" : "bg-amber-500/10";
 
   const ChangeIndicator = ({ value }: { value: number }) => {
-    if (value === 0) return null;
+    if (!value || !Number.isFinite(value) || value === 0) return null;
     const isPositive = value > 0;
     return (
       <span className={cn(
@@ -190,7 +193,7 @@ export function DailySummaryWidget() {
             <div className={cn("p-3 rounded-xl", isDark ? "bg-white/[0.02] border border-white/[0.04]" : "bg-slate-50")}>
               <div className="flex items-center gap-1.5 mb-2">
                 <TrendingUp className={cn("h-3 w-3", accentColor)} />
-                <span className={cn("text-[10px] font-semibold uppercase tracking-wider", textMuted)}>Top Products</span>
+                <span className={cn("text-[10px] font-semibold uppercase tracking-wider", textMuted)}>{t("topProducts")}</span>
               </div>
               <div className="space-y-1.5">
                 {summary.topProducts.slice(0, 3).map((product, i) => (
@@ -213,7 +216,7 @@ export function DailySummaryWidget() {
             <div className={cn("p-3 rounded-xl", isDark ? "bg-white/[0.02] border border-white/[0.04]" : "bg-slate-50")}>
               <div className="flex items-center gap-1.5 mb-2">
                 <AlertTriangle className="h-3 w-3 text-red-400" />
-                <span className={cn("text-[10px] font-semibold uppercase tracking-wider", textMuted)}>Low Stock Alerts</span>
+                <span className={cn("text-[10px] font-semibold uppercase tracking-wider", textMuted)}>{t("lowStockAlerts")}</span>
               </div>
               <div className="space-y-1.5">
                 {summary.lowStockProducts.slice(0, 3).map((product) => (

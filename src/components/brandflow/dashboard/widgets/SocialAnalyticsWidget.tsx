@@ -12,7 +12,11 @@ export function SocialAnalyticsWidget() {
   const isGold = appTheme === "premium-dark";
   const isDark = appTheme === "dark" || isGold;
 
-  const cardClass = isGold ? "bg-white/[0.03] border-white/[0.06]" : isDark ? "bg-white/[0.03] border-white/[0.06]" : "bg-white border-slate-200";
+  const cardClass = isGold
+    ? "bg-slate-800/50 border-slate-700/50"
+    : isDark
+      ? "bg-slate-800/50 border-slate-700/50"
+      : "bg-white border-slate-200";
   const textPrimary = isDark ? "text-white" : "text-slate-900";
   const textMuted = isDark ? "text-slate-400" : "text-muted-foreground";
   const accentColor = isGold ? "text-amber-400" : "text-amber-500";
@@ -27,8 +31,8 @@ export function SocialAnalyticsWidget() {
               <Share2 className={cn("h-4 w-4", accentColor)} />
             </div>
             <div>
-              <p className={cn("text-xs font-semibold", textPrimary)}>Social Media</p>
-              <p className={cn("text-[10px]", textMuted)}>Engagement overview</p>
+              <p className={cn("text-xs font-semibold", textPrimary)}>{t("socialAnalyticsTitle")}</p>
+              <p className={cn("text-[10px]", textMuted)}>{t("socialAnalyticsEngagement")}</p>
             </div>
           </div>
         </div>
@@ -47,3 +51,4 @@ export function SocialAnalyticsWidget() {
     </Card>
   );
 }
+

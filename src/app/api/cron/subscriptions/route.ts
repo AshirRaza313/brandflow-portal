@@ -87,7 +87,7 @@ export async function GET(req: Request) {
         await withRetry(async () => {
           return await db.notification.create({
           data: {
-            type: urgency === "URGENT" ? "error" : "warning",
+            type: "subscription_renewal",
             title: `${emoji} ${urgency}: Subscription Renewal - ${daysUntilExpiry} day${daysUntilExpiry !== 1 ? "s" : ""} remaining`,
             message: `Your ${sub.plan.name} plan (${cycleLabel} billing at ${priceLabel}) will expire in ${daysUntilExpiry} day${daysUntilExpiry !== 1 ? "s" : ""} on ${periodEnd.toLocaleDateString("en-PK", { year: "numeric", month: "long", day: "numeric" })}. Please submit your payment proof before the expiry date to avoid losing access to premium features. Your plan will automatically switch to Starter if payment is not received.`,
             orgId: sub.organization.id,
@@ -178,7 +178,7 @@ export async function GET(req: Request) {
       await withRetry(async () => {
         return await db.notification.create({
         data: {
-          type: "error",
+          type: "subscription_expired",
           title: "Subscription Expired",
           message: `Your ${sub.plan.name} plan has expired and you have been automatically switched to the Starter plan. To reactivate your premium plan, please submit a new payment proof from the Billing page.`,
           orgId: sub.organization.id,
@@ -229,7 +229,7 @@ export async function GET(req: Request) {
       await withRetry(async () => {
         return await db.notification.create({
         data: {
-          type: "warning",
+          type: "trial_expired",
           title: "Free Trial Expired",
           message: `Your 14-day free trial has expired and your account has been switched to the Starter plan. Upgrade now to keep using premium features like campaigns, SEO, marketing tools, and more.`,
           orgId: sub.organization.id,
@@ -278,7 +278,7 @@ export async function GET(req: Request) {
         await withRetry(async () => {
           return await db.notification.create({
           data: {
-            type: urgency === "URGENT" ? "error" : "warning",
+            type: "trial_expiring",
             title: `${emoji} ${urgency}: Trial Expiring - ${daysUntilExpiry} day${daysUntilExpiry !== 1 ? "s" : ""} remaining`,
             message: `Your free trial expires in ${daysUntilExpiry} day${daysUntilExpiry !== 1 ? "s" : ""} on ${trialEnd.toLocaleDateString("en-PK", { year: "numeric", month: "long", day: "numeric" })}. Upgrade to a paid plan to keep all premium features. Your account will automatically switch to the Starter plan after the trial ends.`,
             orgId: sub.organization.id,

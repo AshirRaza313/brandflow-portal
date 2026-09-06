@@ -31,7 +31,7 @@ describe.skipIf(!connectionString)(
       const result = await pool.query(
         `SELECT COUNT(*)::int AS count FROM information_schema.tables WHERE ${SCHEMA_TABLE_FILTER}`
       );
-      expect(result.rows[0].count).toBe(40);
+      expect(result.rows[0].count).toBe(41);
     });
 
     it("suppliers table exists", async () => {
@@ -62,7 +62,7 @@ describe.skipIf(!connectionString)(
         GROUP BY table_name
         ORDER BY table_name
       `);
-      expect(columns.rows.length).toBe(40);
+      expect(columns.rows.length).toBe(41);
       for (const row of columns.rows) {
         expect(row.col_count).toBeGreaterThanOrEqual(1);
       }
@@ -92,7 +92,7 @@ describe.skipIf(!connectionString)(
           AND tc.table_name != '_prisma_migrations'
         ORDER BY tc.table_name
       `);
-      expect(pks.rows.length).toBe(39);
+      expect(pks.rows.length).toBe(40);
       const tableNames = pks.rows.map((r) => r.table_name);
       expect(tableNames).toContain("Account");
       expect(tableNames).toContain("Organization");
@@ -122,7 +122,7 @@ describe.skipIf(!connectionString)(
           AND tablename != '_prisma_migrations'
         ORDER BY tablename, indexname
       `);
-      expect(indexes.rows.length).toBeGreaterThanOrEqual(40);
+      expect(indexes.rows.length).toBeGreaterThanOrEqual(41);
     });
 
     it("baseline catalog column-level snapshot is captureable", async () => {
@@ -149,3 +149,4 @@ describe.skipIf(!connectionString)(
     });
   }
 );
+

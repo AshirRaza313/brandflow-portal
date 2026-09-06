@@ -4,6 +4,7 @@ import { useMemo } from "react";
 import { useValtrioxStore } from "@/store/brandflow-store";
 import { useSubscriptionSync } from "@/hooks/useSubscriptionSync";
 import { cn } from "@/lib/utils";
+import { useTranslation } from "@/lib/i18n";
 import {
   getAvailableWidgets,
   getLockedWidgets,
@@ -66,6 +67,7 @@ const WIDGET_RENDERERS: WidgetRendererMap = {
 
 export function DashboardGrid() {
   const { appTheme, setActiveSection } = useValtrioxStore();
+  const t = useTranslation();
   const user = useValtrioxStore(s => s.user);
   const { subscriptionPlan } = useSubscriptionSync();
   const isPlatformRole = isPlatformBypassRole(user?.role || "");
@@ -117,7 +119,7 @@ export function DashboardGrid() {
               Dashboard Widgets
             </h2>
             <p className={cn("text-[10px]", textMuted)}>
-              {availableWidgets.length} widgets active · {ALL_WIDGETS.length} total
+              {t("widgetsActiveTotal", { active: availableWidgets.length, total: ALL_WIDGETS.length })}
             </p>
           </div>
           <Badge
@@ -147,7 +149,7 @@ export function DashboardGrid() {
             onClick={() => setActiveSection("subscriptions")}
           >
             <Crown className="h-3 w-3" />
-            Unlock {newWidgetCount} more widgets
+            {t("unlockMoreWidgets", { count: newWidgetCount })}
             <ArrowUpRight className="h-3 w-3" />
           </Button>
         )}
@@ -184,7 +186,7 @@ export function DashboardGrid() {
                 <Crown className={cn("h-3 w-3", TIER_COLORS[nextPlan].text)} />
               </div>
               <p className={cn("text-xs font-semibold", textPrimary)}>
-                Unlock with {nextPlan.charAt(0).toUpperCase() + nextPlan.slice(1)}
+                {t("unlockWithPlan", { plan: nextPlan.charAt(0).toUpperCase() + nextPlan.slice(1) })}
               </p>
               <Badge
                 variant="outline"
@@ -237,7 +239,7 @@ export function DashboardGrid() {
                 )}
                 onClick={() => setActiveSection("subscriptions")}
               >
-                +{lockedWidgets.length - 4} more widgets available with upgrade
+                {t("moreWidgetsAvailable", { count: lockedWidgets.length - 4 })}
                 <ArrowUpRight className="h-2.5 w-2.5" />
               </button>
             </div>
@@ -247,3 +249,8 @@ export function DashboardGrid() {
     </div>
   );
 }
+
+
+
+
+

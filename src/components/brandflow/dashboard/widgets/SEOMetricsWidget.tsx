@@ -4,16 +4,18 @@ import { useValtrioxStore } from "@/store/brandflow-store";
 import { Card, CardContent } from "@/components/ui/card";
 import { Search, ArrowUpRight, Globe } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useTranslation } from "@/lib/i18n";
 
 export function SEOMetricsWidget() {
   const { appTheme, setActiveSection } = useValtrioxStore();
+  const t = useTranslation();
   const isGold = appTheme === "premium-dark";
   const isDark = appTheme === "dark" || isGold;
 
   const cardClass = isGold
-    ? "bg-white/[0.03] border-white/[0.06]"
+    ? "bg-slate-800/50 border-slate-700/50"
     : isDark
-    ? "bg-white/[0.03] border-white/[0.06]"
+    ? "bg-slate-800/50 border-slate-700/50"
     : "bg-white border-slate-200";
 
   const textPrimary = isDark ? "text-white" : "text-slate-900";
@@ -31,8 +33,8 @@ export function SEOMetricsWidget() {
               <Search className={cn("h-4 w-4", accentColor)} />
             </div>
             <div>
-              <p className={cn("text-xs font-semibold", textPrimary)}>SEO Metrics</p>
-              <p className={cn("text-[10px]", textMuted)}>Last 30 days</p>
+              <p className={cn("text-xs font-semibold", textPrimary)}>{t("seoMetricsTitle")}</p>
+              <p className={cn("text-[10px]", textMuted)}>{t("seoMetricsLast30")}</p>
             </div>
           </div>
           <button
@@ -46,7 +48,7 @@ export function SEOMetricsWidget() {
         {/* Empty state */}
         <div className="flex flex-col items-center justify-center py-8 text-center">
           <Globe className={cn("h-8 w-8 mb-2", textMuted)} style={{ opacity: 0.3 }} />
-          <p className={cn("text-xs", textMuted)}>Connect Google Search Console to see SEO metrics</p>
+          <p className={cn("text-xs", textMuted)}>{t("seoMetricsConnect")}</p>
           <button
             className={cn("mt-2 text-[10px] font-medium px-3 py-1.5 rounded-md transition-colors", isDark ? "text-amber-400 hover:bg-amber-500/10" : "text-amber-600 hover:bg-amber-50")}
             onClick={() => setActiveSection("seo-manager")}
@@ -58,3 +60,4 @@ export function SEOMetricsWidget() {
     </Card>
   );
 }
+

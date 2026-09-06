@@ -1,7 +1,7 @@
 // ============================================================================
 // Storage Alert API
 // ============================================================================
-// POST /api/usage/storage/alert?organizationId=...
+// POST /api/usage/storage/alert
 //
 // Checks if storage usage has crossed a new threshold since the last alert.
 // If so, creates a Notification record (type "storage_warning" or "storage_critical").
@@ -17,8 +17,7 @@ import logger from "@/lib/logger";
 
 export const POST = withRateLimit(withAuth(async (req: NextRequest, authCtx) => {
   try {
-    const { searchParams } = new URL(req.url);
-    const orgId = searchParams.get("organizationId") || authCtx.organizationId;
+    const orgId = authCtx.organizationId;
 
     if (!orgId) {
       return NextResponse.json(
@@ -26,6 +25,7 @@ export const POST = withRateLimit(withAuth(async (req: NextRequest, authCtx) => 
         { status: 400 }
       );
     }
+
 
     // Verify org exists
     const org = await withRetry(async () => {
@@ -47,7 +47,7 @@ export const POST = withRateLimit(withAuth(async (req: NextRequest, authCtx) => 
     // Check if we should send an alert (crossed a new 25% threshold)
     const shouldAlert = await shouldSendStorageAlert(orgId);
 
-    if (!shouldAlert) {
+    if (!shouldAlert.shouldSend) {
       return NextResponse.json({
         alerted: false,
         message: "No new storage threshold crossed since last alert.",

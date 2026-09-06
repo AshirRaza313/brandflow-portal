@@ -1,31 +1,38 @@
 import { NextRequest, NextResponse } from "next/server";
-import { db, dbErrorResponse, isDbUnavailable, withRetry} from "@/lib/db";
+import { db, dbErrorResponse, isDbUnavailable, withRetry } from "@/lib/db";
 import { withAuth } from "@/lib/auth-middleware";
 import logger from "@/lib/logger";
 import { withRateLimit } from "@/lib/rate-limit";
-
-// ── Types ──
-
-interface SLARule {
-  id: string;
-  fromStatus: string;
-  toStatus: string;
-  timeLimitHours: number;
-  responsibleRole: string;
-  enabled: boolean;
-}
+import { SLARule, validateSLARule } from "@/lib/sla-contract";
 
 const DEFAULT_RULES: SLARule[] = [
-  { id: "default-1", fromStatus: "pending", toStatus: "confirmed", timeLimitHours: 24, responsibleRole: "sales_manager", enabled: true },
-  { id: "default-2", fromStatus: "confirmed", toStatus: "packed", timeLimitHours: 48, responsibleRole: "warehouse_manager", enabled: true },
-  { id: "default-3", fromStatus: "packed", toStatus: "dispatched", timeLimitHours: 24, responsibleRole: "warehouse_manager", enabled: true },
-  { id: "default-4", fromStatus: "dispatched", toStatus: "delivered", timeLimitHours: 120, responsibleRole: "support_agent", enabled: true },
+  { id: "default-1", name: "Order Confirmation", fromStatus: "pending", toStatus: "confirmed", timeLimitHours: 24, responsibleRole: "sales_manager", escalationAction: "Auto-notify team lead after 18 hours", enabled: true },
+  { id: "default-2", name: "Packaging", fromStatus: "confirmed", toStatus: "packed", timeLimitHours: 48, responsibleRole: "warehouse_manager", escalationAction: "Escalate to operations lead after 36 hours", enabled: true },
+  { id: "default-3", name: "Dispatch Preparation", fromStatus: "packed", toStatus: "dispatched", timeLimitHours: 24, responsibleRole: "warehouse_manager", escalationAction: "Escalate to logistics coordinator after 18 hours", enabled: true },
+  { id: "default-4", name: "Delivery Completion", fromStatus: "dispatched", toStatus: "delivered", timeLimitHours: 120, responsibleRole: "support_agent", escalationAction: "Customer follow-up after 72 hours if not delivered", enabled: true },
 ];
 
-// ── Helpers ──
+function cloneDefaults(): SLARule[] {
+  return DEFAULT_RULES.map((rule) => ({ ...rule }));
+}
 
-function getRules(rules: SLARule[], fromStatus: string, toStatus: string): SLARule | undefined {
-  return rules.find((r) => r.enabled && r.fromStatus === fromStatus && r.toStatus === toStatus);
+function parseStoredRules(raw: string): SLARule[] {
+  try {
+    const parsed = JSON.parse(raw);
+    if (!Array.isArray(parsed)) return cloneDefaults();
+    const validRules: SLARule[] = [];
+    for (const rawRule of parsed) {
+      const result = validateSLARule(rawRule as any);
+      if (result.valid) validRules.push(result.rule);
+    }
+    return validRules;
+  } catch {
+    return cloneDefaults();
+  }
+}
+
+function getRule(rules: SLARule[], fromStatus: string, toStatus: string): SLARule | undefined {
+  return rules.find((rule) => rule.enabled && rule.fromStatus === fromStatus && rule.toStatus === toStatus);
 }
 
 function formatDuration(ms: number): string {
@@ -36,63 +43,38 @@ function formatDuration(ms: number): string {
   return `${hours}h`;
 }
 
-// ── GET: Scan all active orders for SLA compliance ──
-
 export const GET = withRateLimit(withAuth(async (req, authCtx) => {
   try {
     const { searchParams } = new URL(req.url);
     const orgId = searchParams.get("orgId") || authCtx.organizationId;
 
     if (!orgId) return NextResponse.json({ error: "orgId required" }, { status: 400 });
+    if (orgId !== authCtx.organizationId) return NextResponse.json({ error: "Access denied" }, { status: 403 });
 
-    // Security: Ensure user can only access their own org's data
-    if (orgId !== authCtx.organizationId) {
-      return NextResponse.json({ error: "Access denied" }, { status: 403 });
-    }
-
-    // Fetch SLA rules
     const setting = await withRetry(async () => {
-      return await db.systemSetting.findUnique({
-      where: { key: `sla-rules-${orgId}` },
-    })
+      return await db.systemSetting.findUnique({ where: { key: `sla-rules-${orgId}` } });
     }, 2, 500);
 
-    let rules: SLARule[];
-    if (setting) {
-      try {
-        rules = JSON.parse(setting.value);
-      } catch {
-        rules = DEFAULT_RULES;
-      }
-    } else {
-      rules = DEFAULT_RULES;
-    }
+    const rules = setting ? parseStoredRules(setting.value) : cloneDefaults();
 
-    // Fetch all non-delivered, non-cancelled orders
     const now = new Date();
     const orders = await withRetry(async () => {
       return await db.order.findMany({
-      where: {
-        organizationId: orgId,
-        status: { notIn: ["delivered", "cancelled"] },
-      },
-      include: {
-        customer: { select: { name: true } },
-      },
-      orderBy: { createdAt: "asc" },
-    })
+        where: { organizationId: orgId, status: { notIn: ["delivered", "cancelled"] } },
+        include: { customer: { select: { name: true } } },
+        orderBy: { createdAt: "asc" },
+      });
     }, 2, 500);
 
-    // Also fetch recently delivered orders (last 24h) for compliance tracking
     const recentDelivered = await withRetry(async () => {
       return await db.order.findMany({
-      where: {
-        organizationId: orgId,
-        status: "delivered",
-        updatedAt: { gte: new Date(now.getTime() - 24 * 60 * 60 * 1000) },
-      },
-      orderBy: { updatedAt: "desc" },
-    })
+        where: {
+          organizationId: orgId,
+          status: "delivered",
+          updatedAt: { gte: new Date(now.getTime() - 24 * 60 * 60 * 1000) },
+        },
+        orderBy: { updatedAt: "desc" },
+      });
     }, 2, 500);
 
     const twoHoursMs = 2 * 60 * 60 * 1000;
@@ -104,19 +86,11 @@ export const GET = withRateLimit(withAuth(async (req, authCtx) => {
 
     for (const order of orders) {
       const orderAge = now.getTime() - order.createdAt.getTime();
-      const rule = getRules(rules, "pending", order.status === "confirmed" ? "confirmed" : order.status === "packed" ? "confirmed" : order.status === "dispatched" ? "packed" : "pending");
-
-      // Determine the relevant SLA rule based on current status
       let relevantRule: SLARule | undefined;
-      if (order.status === "pending") {
-        relevantRule = getRules(rules, "pending", "confirmed");
-      } else if (order.status === "confirmed") {
-        relevantRule = getRules(rules, "confirmed", "packed");
-      } else if (order.status === "packed") {
-        relevantRule = getRules(rules, "packed", "dispatched");
-      } else if (order.status === "dispatched") {
-        relevantRule = getRules(rules, "dispatched", "delivered");
-      }
+      if (order.status === "pending") relevantRule = getRule(rules, "pending", "confirmed");
+      else if (order.status === "confirmed") relevantRule = getRule(rules, "confirmed", "packed");
+      else if (order.status === "packed") relevantRule = getRule(rules, "packed", "dispatched");
+      else if (order.status === "dispatched") relevantRule = getRule(rules, "dispatched", "delivered");
 
       const orderData: any = {
         id: order.id,
@@ -130,7 +104,6 @@ export const GET = withRateLimit(withAuth(async (req, authCtx) => {
       };
 
       if (!relevantRule) {
-        // No SLA rule for this status transition - considered compliant
         compliantCount++;
         compliant.push({ ...orderData, slaStatus: "no_rule" });
         continue;
@@ -138,36 +111,28 @@ export const GET = withRateLimit(withAuth(async (req, authCtx) => {
 
       const limitMs = relevantRule.timeLimitHours * 60 * 60 * 1000;
       const remaining = limitMs - orderAge;
-      const timeLimitHours = relevantRule.timeLimitHours;
-      const responsibleRole = relevantRule.responsibleRole;
-
-      orderData.timeLimitHours = timeLimitHours;
-      orderData.responsibleRole = responsibleRole;
+      orderData.timeLimitHours = relevantRule.timeLimitHours;
+      orderData.responsibleRole = relevantRule.responsibleRole;
       orderData.remainingMs = remaining;
       orderData.remainingFormatted = remaining > 0 ? formatDuration(remaining) : formatDuration(Math.abs(remaining));
 
       if (remaining <= 0) {
-        // Breached
         orderData.slaStatus = "breached";
         orderData.breachByMs = Math.abs(remaining);
         orderData.breachByFormatted = formatDuration(Math.abs(remaining));
         breached.push(orderData);
       } else if (remaining <= twoHoursMs) {
-        // Approaching breach
         orderData.slaStatus = "warning";
         approachingBreach.push(orderData);
       } else {
-        // Compliant
         orderData.slaStatus = "compliant";
         compliantCount++;
         compliant.push(orderData);
       }
     }
 
-    // Calculate compliance rate
     const complianceRate = totalOrders > 0 ? Math.round((compliantCount / totalOrders) * 100) : 100;
 
-    // Average response/resolution times per status
     const statusGroups: Record<string, { count: number; totalAge: number }> = {};
     for (const order of orders) {
       if (!statusGroups[order.status]) statusGroups[order.status] = { count: 0, totalAge: 0 };
@@ -182,7 +147,6 @@ export const GET = withRateLimit(withAuth(async (req, authCtx) => {
       avgAgeFormatted: formatDuration(Math.round(data.totalAge / data.count)),
     }));
 
-    // Performance by team role
     const rolePerformance: Record<string, { total: number; breached: number; warning: number }> = {};
     for (const rule of rules.filter((r) => r.enabled)) {
       if (!rolePerformance[rule.responsibleRole]) {
@@ -206,11 +170,7 @@ export const GET = withRateLimit(withAuth(async (req, authCtx) => {
       complianceRate: data.total > 0 ? Math.round(((data.total - data.breached) / data.total) * 100) : 100,
     }));
 
-    // Breaches today
-    const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
     const breachesToday = breached.length;
-
-    // Critical alerts = breached + warning
     const criticalAlerts = breached.length + approachingBreach.length;
 
     return NextResponse.json({
@@ -229,9 +189,8 @@ export const GET = withRateLimit(withAuth(async (req, authCtx) => {
     });
   } catch (error: unknown) {
     logger.error("SLA check error", error, { orgId: authCtx?.organizationId });
-    if (isDbUnavailable(error)) {
-      return dbErrorResponse(error);
-    }
+    if (isDbUnavailable(error)) return dbErrorResponse(error);
     return NextResponse.json({ error: "Failed to check SLA compliance" }, { status: 500 });
   }
 }), { maxRequests: 60, windowSeconds: 60 });
+

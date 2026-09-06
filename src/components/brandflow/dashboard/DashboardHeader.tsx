@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { useValtrioxStore } from "@/store/brandflow-store";
+import { getRoleByName } from "@/lib/roles";
 
 interface DashboardHeaderProps {
   onToggleSidebar: () => void;
@@ -109,7 +110,6 @@ export function DashboardHeader({ onToggleSidebar }: DashboardHeaderProps) {
           }`}
         >
           <Bell className="w-5 h-5" />
-          <span className="absolute top-1.5 right-1.5 h-2 w-2 rounded-full bg-amber-500 ring-2 ring-background" />
         </Button>
 
         <div className={`h-8 w-px ${isGold ? "bg-white/[0.06]" : isDark ? "bg-slate-700/50" : "bg-slate-200"}`} />
@@ -128,7 +128,7 @@ export function DashboardHeader({ onToggleSidebar }: DashboardHeaderProps) {
           </Avatar>
           <div className="hidden sm:block">
             <p className={`text-sm font-medium ${isDark ? "text-white" : "text-slate-900"}`}>{user?.name || "User"}</p>
-            <p className={`text-xs ${isGold ? "text-amber-500/60" : "text-slate-500"}`}>Admin</p>
+            <p className={`text-xs ${isGold ? "text-amber-500/60" : "text-slate-500"}`}>{user?.role ? getRoleByName(user.role)?.label || user.role : ""}</p>
           </div>
         </div>
       </div>

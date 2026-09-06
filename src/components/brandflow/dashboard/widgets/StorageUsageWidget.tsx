@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { HardDrive, ArrowUpRight, Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { fetchWithAuth } from "@/lib/fetch-with-auth";
+import { useTranslation } from "@/lib/i18n";
 import { motion } from "framer-motion";
 
 interface StorageData {
@@ -21,6 +22,7 @@ export function StorageUsageWidget() {
   const { organization, appTheme, setActiveSection } = useValtrioxStore();
   const isGold = appTheme === "premium-dark";
   const isDark = appTheme === "dark" || isGold;
+  const t = useTranslation();
 
   const [storage, setStorage] = useState<StorageData | null>(null);
   const [loading, setLoading] = useState(true);
@@ -33,7 +35,7 @@ export function StorageUsageWidget() {
     }
     setLoading(true);
     try {
-      const res = await fetchWithAuth(`/api/usage/storage?organizationId=${encodeURIComponent(orgId)}`);
+      const res = await fetchWithAuth("/api/usage/storage");
       if (res.ok) {
         const data = await res.json();
         setStorage(data);
@@ -50,9 +52,9 @@ export function StorageUsageWidget() {
   }, [fetchStorage]);
 
   const cardClass = isGold
-    ? "bg-white/[0.03] border-white/[0.06]"
+    ? "bg-slate-800/50 border-slate-700/50"
     : isDark
-    ? "bg-white/[0.03] border-white/[0.06]"
+    ? "bg-slate-800/50 border-slate-700/50"
     : "bg-white border-slate-200";
 
   const textPrimary = isDark ? "text-white" : "text-slate-900";
@@ -81,9 +83,9 @@ export function StorageUsageWidget() {
   };
 
   const getStatusLabel = (status: string) => {
-    if (status === "critical") return "Critical";
-    if (status === "warning") return "Warning";
-    return "Healthy";
+    if (status === "critical") return t("storageCritical", "Critical");
+    if (status === "warning") return t("storageWarning", "Warning");
+    return t("storageHealthy", "Healthy");
   };
 
   const formatMb = (mb: number) => {
@@ -104,8 +106,13 @@ export function StorageUsageWidget() {
 
   if (!storage) return null;
 
-  const isUnlimited = storage.limitGb === -1 || storage.limitMb === -1;
-  const percent = isUnlimited ? -1 : storage.percent;
+  // Safe defaults for NaN/null values
+  const safeUsedMb = storage.usedMb ?? 0;
+  const safeLimitMb = storage.limitMb ?? 0;
+  const safeLimitGb = storage.limitGb ?? 0;
+  const safePercent = Number.isFinite(storage.percent) ? storage.percent : 0;
+  const isUnlimited = safeLimitGb === -1 || safeLimitMb === -1;
+  const percent = isUnlimited ? -1 : safePercent;
 
   return (
     <Card className={cn("transition-all duration-300", cardClass)}>
@@ -117,9 +124,9 @@ export function StorageUsageWidget() {
               <HardDrive className={cn("h-4 w-4", accentColor)} />
             </div>
             <div>
-              <p className={cn("text-xs font-semibold", textPrimary)}>Storage</p>
+              <p className={cn("text-xs font-semibold", textPrimary)}>{t("storageTitle", "Storage")} <span className={cn("text-[9px] font-normal", textMuted)}>{t("storageEstimated", "(est.)")}</span></p>
               <p className={cn("text-[10px]", textMuted)}>
-                {isUnlimited ? "Unlimited" : `${formatMb(storage.usedMb)} / ${storage.limitGb} GB`}
+                {isUnlimited ? t("storageUnlimited", "Unlimited") : `${formatMb(safeUsedMb)} / ${safeLimitGb} GB`}
               </p>
             </div>
           </div>
@@ -146,9 +153,9 @@ export function StorageUsageWidget() {
               />
             </div>
             <div className="flex items-center justify-between">
-              <span className={cn("text-[10px]", textMuted)}>{percent}% used</span>
+            <span className={cn("text-[10px]", textMuted)}>{percent}% {t("storageUsed", "used")}</span>
               <span className={cn("text-[10px]", textMuted)}>
-                {formatMb(storage.limitMb - storage.usedMb)} free
+                {formatMb(Math.max(0, safeLimitMb - safeUsedMb))} {t("storageFree", "free")}
               </span>
             </div>
           </div>
@@ -162,7 +169,7 @@ export function StorageUsageWidget() {
             className={cn("w-full h-8 text-xs rounded-lg gap-1.5", isDark ? "text-amber-400 hover:text-amber-300 hover:bg-amber-500/10" : "text-amber-600 hover:text-amber-700 hover:bg-amber-50")}
             onClick={() => setActiveSection("subscriptions")}
           >
-            Upgrade Plan
+            {t("storageUpgradePlan", "Upgrade Plan")}
             <ArrowUpRight className="h-3 w-3" />
           </Button>
         )}

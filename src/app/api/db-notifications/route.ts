@@ -1,67 +1,122 @@
 import { NextRequest, NextResponse } from "next/server";
-import { db, dbErrorResponse, isDbUnavailable, withRetry} from "@/lib/db";
+import { db, dbErrorResponse, isDbUnavailable, withRetry } from "@/lib/db";
 import { withAuth } from "@/lib/auth-middleware";
 import logger from "@/lib/logger";
 import { withRateLimit } from "@/lib/rate-limit";
+import { getNotificationAudienceWhere } from "@/lib/notification-audience";
+import { isUnlimitedRole } from "@/lib/plan-limits";
 
 // GET /api/db-notifications - Return notifications for the current user/organization
 export const GET = withRateLimit(withAuth(async (req: NextRequest, authCtx) => {
   try {
     logger.info("[DB Notifications] GET request", { userId: authCtx.userId });
     const { searchParams } = new URL(req.url);
-    const orgId = searchParams.get("orgId") || authCtx.organizationId;
-    const userId = searchParams.get("userId");
     const unreadOnly = searchParams.get("unread") === "true";
+    const limit = Math.min(Math.max(parseInt(searchParams.get("limit") || "50") || 50, 1), 100);
+    const offset = Math.max(parseInt(searchParams.get("offset") || "0") || 0, 0);
 
-    // Security: ensure orgId matches auth context
-    if (orgId && orgId !== authCtx.organizationId) {
-      return NextResponse.json({ error: "Access denied" }, { status: 403 });
-    }
-    // Security: ensure userId matches auth context
-    if (userId && userId !== authCtx.userId) {
-      return NextResponse.json({ error: "Access denied" }, { status: 403 });
+    const orgId = authCtx.organizationId;
+    if (!orgId) {
+      return NextResponse.json({ error: "Organization context required" }, { status: 400 });
     }
 
-    const where: any = {};
-    if (orgId) where.orgId = orgId;
-    if (userId) where.userId = userId;
-    if (unreadOnly) where.read = false;
+    const audienceWhere = getNotificationAudienceWhere({
+      userId: authCtx.userId,
+      organizationId: orgId,
+      role: authCtx.role,
+    });
 
-    const limit = parseInt(searchParams.get("limit") || "50");
-    const offset = parseInt(searchParams.get("offset") || "0");
+    // Hidden types for unlimited roles (same as helper, but also used for counts)
+    const hiddenTypes = isUnlimitedRole(authCtx.role)
+      ? ["storage_warning", "storage_critical", "subscription_renewal", "subscription_expired", "trial_expired", "trial_expiring"]
+      : [];
 
-    const notifications = await withRetry(async () => {
-      return await db.notification.findMany({
-      where,
-      orderBy: { createdAt: "desc" },
-      take: limit,
-      skip: offset,
-    })
-    }, 2, 500);
+    // Build base where for counts and listing
+    const baseWhere: any = {
+      ...audienceWhere,
+    };
 
-    const unreadCount = await withRetry(async () => {
+    // Count unread using same per-user logic as read status
+    const targetUnreadCount = await withRetry(async () => {
       return await db.notification.count({
-      where: {
-        ...(orgId ? { orgId } : {}),
-        ...(userId ? { userId } : {}),
-        read: false,
-      },
-    })
+        where: {
+          orgId,
+          userId: authCtx.userId,
+          read: false,
+          ...(hiddenTypes.length > 0 ? { NOT: { type: { in: hiddenTypes } } } : {}),
+        },
+      });
     }, 2, 500);
+
+    const orgWideUnreadCount = await withRetry(async () => {
+      return await db.notification.count({
+        where: {
+          orgId,
+          userId: null,
+          // Legacy row compatibility: rows with read=true are considered read
+          read: false,
+          readReceipts: { none: { userId: authCtx.userId } },
+          ...(hiddenTypes.length > 0 ? { NOT: { type: { in: hiddenTypes } } } : {}),
+        },
+      });
+    }, 2, 500);
+
+    const unreadCount = targetUnreadCount + orgWideUnreadCount;
+
+    // Fetch notifications with unread filter applied at DB level where possible
+    let notifications;
+    if (unreadOnly) {
+      const whereUnread: any = {
+        orgId,
+        OR: [
+          { userId: authCtx.userId, read: false },
+          { userId: null, read: false, readReceipts: { none: { userId: authCtx.userId } } },
+        ],
+        ...(hiddenTypes.length > 0 ? { NOT: { type: { in: hiddenTypes } } } : {}),
+      };
+      notifications = await withRetry(async () => {
+        return await db.notification.findMany({
+          where: whereUnread,
+          orderBy: [{ createdAt: "desc" }, { id: "desc" }],
+          take: limit,
+          skip: offset,
+        });
+      }, 2, 500);
+      notifications = notifications.map((n: any) => ({ ...n, read: false }));
+    } else {
+      notifications = await withRetry(async () => {
+        return await db.notification.findMany({
+          where: baseWhere,
+          orderBy: [{ createdAt: "desc" }, { id: "desc" }],
+          take: limit,
+          skip: offset,
+        });
+      }, 2, 500);
+
+      // For org-wide rows in full listing, compute read from receipts
+      const orgWideIds = notifications.filter(n => n.userId === null).map(n => n.id);
+      let readReceiptIds: string[] = [];
+      if (orgWideIds.length > 0) {
+        const receipts = await withRetry(async () => {
+          return await db.notificationReadReceipt.findMany({
+            where: {
+              userId: authCtx.userId,
+              notificationId: { in: orgWideIds },
+            },
+            select: { notificationId: true },
+          });
+        }, 2, 500);
+        readReceiptIds = receipts.map(r => r.notificationId);
+      }
+
+      notifications = notifications.map(n => ({
+        ...n,
+        read: n.userId === authCtx.userId ? n.read : (n.read || readReceiptIds.includes(n.id)),
+      }));
+    }
 
     return NextResponse.json({
-      notifications: notifications.map((n) => ({
-        id: n.id,
-        orgId: n.orgId,
-        userId: n.userId,
-        type: n.type,
-        title: n.title,
-        message: n.message,
-        actionUrl: n.actionUrl,
-        icon: n.icon,
-        read: n.read,
-        createdAt: n.createdAt,
-      })),
+      notifications,
       unreadCount,
     });
   } catch (error: unknown) {
@@ -72,3 +127,6 @@ export const GET = withRateLimit(withAuth(async (req: NextRequest, authCtx) => {
     return NextResponse.json({ error: "Failed to fetch notifications" }, { status: 500 });
   }
 }), { maxRequests: 60, windowSeconds: 60 });
+
+
+
