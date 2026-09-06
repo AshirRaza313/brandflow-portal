@@ -44,14 +44,16 @@ export async function fetchWithAuth(
     const bodyMethods = ["text", "json", "blob", "arrayBuffer", "formData"] as const;
 
     for (const method of bodyMethods) {
-      const original = (response[method] as (...args: any[]) => any).bind(response);
-      (response as any)[method] = async (...args: any[]) => {
-        try {
-          return await original(...args);
-        } finally {
-          cleanup();
-        }
-      };
+      if (typeof (response as any)[method] === "function") {
+        const original = (response as any)[method].bind(response);
+        (response as any)[method] = async (...args: any[]) => {
+          try {
+            return await original(...args);
+          } finally {
+            cleanup();
+          }
+        };
+      }
     }
 
     return response;
@@ -68,3 +70,4 @@ export async function fetchWithAuth(
 export function getAuthHeaders(): Record<string, string> {
   return {};
 }
+
