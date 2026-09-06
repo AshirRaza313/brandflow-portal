@@ -119,7 +119,7 @@ export function DashboardGrid() {
               Dashboard Widgets
             </h2>
             <p className={cn("text-[10px]", textMuted)}>
-              {t("widgetsActiveTotal", `${availableWidgets.length} widgets active · ${ALL_WIDGETS.length} total`)}
+              {t("widgetsActiveTotal", { active: availableWidgets.length, total: ALL_WIDGETS.length })}
             </p>
           </div>
           <Badge
@@ -149,7 +149,7 @@ export function DashboardGrid() {
             onClick={() => setActiveSection("subscriptions")}
           >
             <Crown className="h-3 w-3" />
-            {t("unlockMoreWidgets", `Unlock ${newWidgetCount} more widgets`)}
+            {t("unlockMoreWidgets", { count: newWidgetCount })}
             <ArrowUpRight className="h-3 w-3" />
           </Button>
         )}
@@ -186,7 +186,7 @@ export function DashboardGrid() {
                 <Crown className={cn("h-3 w-3", TIER_COLORS[nextPlan].text)} />
               </div>
               <p className={cn("text-xs font-semibold", textPrimary)}>
-                {t("unlockWithPlan", `Unlock with ${nextPlan.charAt(0).toUpperCase() + nextPlan.slice(1)}`)}
+                {t("unlockWithPlan", { plan: nextPlan.charAt(0).toUpperCase() + nextPlan.slice(1) })}
               </p>
               <Badge
                 variant="outline"
@@ -239,7 +239,7 @@ export function DashboardGrid() {
                 )}
                 onClick={() => setActiveSection("subscriptions")}
               >
-                {t("moreWidgetsAvailable", `+${lockedWidgets.length - 4} more widgets available with upgrade`)}
+                {t("moreWidgetsAvailable", { count: lockedWidgets.length - 4 })}
                 <ArrowUpRight className="h-2.5 w-2.5" />
               </button>
             </div>
@@ -249,5 +249,6 @@ export function DashboardGrid() {
     </div>
   );
 }
+
 
 

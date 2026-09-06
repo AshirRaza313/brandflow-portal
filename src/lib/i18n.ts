@@ -1183,7 +1183,7 @@ const translations: Record<Language, Record<string, string>> = {
  *   const t = useTranslation();
  *   <h1>{t("dashboard")}</h1>
  */
-export function useTranslation(): (key: string, fallback?: string) => string {
+export function useTranslation(): (key: string, fallbackOrOptions?: string | Record<string, any>) => string {
   // Import useValtrioxStore dynamically to avoid circular dependency
   // eslint-disable-next-line @typescript-eslint/no-require-imports
   const { useValtrioxStore } = require("@/store/brandflow-store");
@@ -1208,3 +1208,5 @@ export function t(lang: Language, key: string, fallback?: string): string {
 }
 
 export default translations;
+
+
