@@ -42,7 +42,7 @@ export function WidgetLockedCard({ widgetLabel, requiredPlan, currentPlan }: Wid
         </div>
         <p className={cn("text-xs font-semibold", textPrimary)}>{widgetLabel}</p>
         <p className={cn("text-[10px] text-center", textMuted)}>
-          {t("requiresPlan", `Requires ${planDisplayName} plan`)}
+          {t("requiresPlan", { plan: planDisplayName })}
         </p>
         <Button
           variant="ghost"
@@ -56,7 +56,7 @@ export function WidgetLockedCard({ widgetLabel, requiredPlan, currentPlan }: Wid
           onClick={() => setActiveSection("subscriptions")}
         >
           <Crown className="h-3 w-3" />
-          {nextPlan ? t("upgradeToPlan", `Upgrade to ${nextPlan.charAt(0).toUpperCase() + nextPlan.slice(1)}`) : t("upgradePlan")}
+          {nextPlan ? t("upgradeToPlan", { plan: nextPlan.charAt(0).toUpperCase() + nextPlan.slice(1) }) : t("upgradePlan")}
           <ArrowRight className="h-2.5 w-2.5" />
         </Button>
       </div>
@@ -72,5 +72,7 @@ export function WidgetLockedCard({ widgetLabel, requiredPlan, currentPlan }: Wid
     </Card>
   );
 }
+
+
 
 

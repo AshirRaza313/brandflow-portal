@@ -1194,7 +1194,7 @@ export function useTranslation(): (key: string, fallbackOrOptions?: string | Rec
       translations.en[key] ||
       (typeof fallbackOrOptions === "string" ? fallbackOrOptions : key);
     if (typeof fallbackOrOptions === "object" && fallbackOrOptions !== null) {
-      return template.replace(/{(w+)}/g, (_, token) => fallbackOrOptions[token] ?? "");
+      return template.replace(/\{(\w+)\}/g, (_, token) => fallbackOrOptions[token] ?? "");
     }
     return template;
   };
@@ -1208,5 +1208,6 @@ export function t(lang: Language, key: string, fallback?: string): string {
 }
 
 export default translations;
+
 
 
