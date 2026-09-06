@@ -25,17 +25,21 @@ async function main() {
   console.log(`Environment: ${env}`);
   console.log(`HEAD SHA: ${headSha}`);
 
-  // Verify SELECT-only grants (no INSERT/UPDATE/DELETE/TRUNCATE/REFERENCES/TRIGGER)
+  // Verify SELECT-only grants for current_user, PUBLIC, and inherited roles
   const writeGrants = await prisma.$queryRawUnsafe(`
-    SELECT table_name, privilege_type
+    SELECT table_name, privilege_type, grantee
     FROM information_schema.role_table_grants
-    WHERE grantee = current_user
-      AND table_schema = 'public'
+    WHERE table_schema = 'public'
       AND privilege_type IN ('INSERT','UPDATE','DELETE','TRUNCATE','REFERENCES','TRIGGER')
+      AND (
+        grantee = current_user
+        OR grantee = 'PUBLIC'
+        OR pg_has_role(current_user, grantee, 'member')
+      )
   `) as any[];
 
   if (writeGrants.length > 0) {
-    console.error("ERROR: current user has write privileges on public tables; SELECT-only role required.");
+    console.error("ERROR: current user has effective write privileges on public tables; SELECT-only role required.");
     console.error(JSON.stringify(writeGrants, null, 2));
     process.exit(1);
   }
@@ -123,3 +127,4 @@ main()
   .finally(async () => {
     await prisma.$disconnect();
   });
+
